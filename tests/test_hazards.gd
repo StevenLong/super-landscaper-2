@@ -10,6 +10,8 @@ var _step := 0
 var _wait := 0
 var _cut0 := -1.0
 var _mood := 0.0
+var _thrown: FlyingStone
+var _bills0 := 0.0
 
 
 func _initialize() -> void:
@@ -79,6 +81,18 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 3
 		5:
 			assert(m.at_truck(), "walked to the truck")
+			# Throwing: pick up a stone and lob it at a window.
+			var house: Node2D = m.get_node("Scenery/House")
+			var bills_before: float = m.bills
+			var f: FlyingStone = m.throw_stone(house.position + Vector2(55, 200), Vector2.UP, 460.0, 300.0)
+			_thrown = f
+			_bills0 = bills_before
+			_wait = 30
+			_step += 1
+			return false
+		6:
+			assert(not is_instance_valid(_thrown), "the thrown stone landed")
+			assert(m.bills > _bills0, "a stone thrown at a window breaks it")
 			var before: int = m.get_node("Stones").get_child_count()
 			m.interact()
 			assert(m.walker.carrying == "" and m.get_node("Stones").get_child_count() == before, "tossed in the truck, not dropped on the lawn")
@@ -95,12 +109,12 @@ func _physics_process(_delta: float) -> bool:
 			m.dog.position = Vector2(700, 500)
 			m.walker.global_position = Vector2(700, 500)
 			_wait = 3
-		6:
+		7:
 			assert(m.dog.following == m.walker, "the dog follows you once you catch it")
 			_mood = m.customer.mood
 			m.walker.global_position = m.get_node("Client").position + Vector2(0, 30)
 			_wait = 180 # the dog has a way to run
-		7:
+		8:
 			assert(not is_instance_valid(m.dog) or m.dog.is_queued_for_deletion(), "the dog went home")
 			assert(m.customer.mood > _mood, "and the owner is grateful")
 			m.hop_on()
@@ -110,7 +124,7 @@ func _physics_process(_delta: float) -> bool:
 			mower.rotation = 0.0
 			Input.action_press("move_forward")
 			_wait = 40
-		8:
+		9:
 			Input.action_release("move_forward")
 			assert(m.customer.knocked_out, "the mower flattens the customer")
 			assert(m.customer.face() == "ko", "their face says so")

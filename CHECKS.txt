@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (26 checks, 5 loads, about 30 minutes)
+PLAY CHECKS OWED  (29 checks, 6 loads, about 35 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -131,4 +131,24 @@ Bigger lawns unlock as reputation rises; the board shrinks as it falls; bankrupt
 
 S1-EXTRAS
 Hold Tab to look around; ponds on bigger lawns; pause-menu music/sound toggles; gamepad (stick, A, X, Start).
+>
+
+
+================================================================================
+LOAD 6 of 6: EDGES AND THROWING, ANY JOB      (about 5 min)
+================================================================================
+
+S2-BORDERS
+Every side of the garden has a hedge or fence; the drive runs out through a gap to the road.
+Does the property feel bounded now, rather than the world just ending?
+>
+
+S2-SPAWNS
+Hedgehogs push out of hedges; squirrels drop out of trees or come over the fence; nothing
+walks over the house, truck, trees or ponds.
+>
+
+S2-THROW
+Off the mower with a stone: [Q] throws it the way you're facing. Lob one at a window or the
+customer: same results as a flung stone (and mischief if you've been paid).
 >

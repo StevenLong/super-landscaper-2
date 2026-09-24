@@ -335,7 +335,7 @@ func _hint() -> String:
 	if walker:
 		match walker.carrying:
 			"stone":
-				return "[E] toss it in the truck" if at_truck() else "[E] drop the stone"
+				return ("[E] toss it in the truck" if at_truck() else "[E] drop it") + "   [Q] throw it"
 			"jerrycan":
 				return "[E] fill up the mower" if walker.global_position.distance_to(mower.global_position) < 44.0 else "Take the can to the mower"
 		if _stone_near(walker.global_position):
@@ -360,6 +360,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			hop_on()
 	elif event.is_action_pressed("interact"):
 		interact()
+	elif event.is_action_pressed("throw") and walker and walker.carrying == "stone":
+		walker.carrying = ""
+		walker.queue_redraw()
+		var dir := Vector2.RIGHT.rotated(walker.rotation)
+		throw_stone(walker.global_position + dir * 12.0, dir, 460.0, 260.0)
+		Sfx.play("ui_move")
 
 
 # ---------------------------------------------------------------- on foot
@@ -578,11 +584,17 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 	Sfx.play("clonk")
 	shake(3.0)
 	if randf() < Stone.LAUNCH_CHANCE:
-		var f := FlyingStone.new()
 		var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
-		f.launch(s.position, dir, randf_range(380.0, 560.0), randf_range(140.0, 380.0), _stone_hit_test)
-		f.landed.connect(_on_stone_landed)
-		$Stones.add_child.call_deferred(f)
+		throw_stone(s.position, dir, randf_range(380.0, 560.0), randf_range(140.0, 380.0))
+
+
+## Send a stone flying along the ground (flung by blades or thrown by hand).
+func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float) -> FlyingStone:
+	var f := FlyingStone.new()
+	f.launch(from, dir, speed, distance, _stone_hit_test)
+	f.landed.connect(_on_stone_landed)
+	$Stones.add_child.call_deferred(f)
+	return f
 
 
 ## What a flying stone at p would hit, or "" for nothing.
