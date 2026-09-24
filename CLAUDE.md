@@ -14,7 +14,7 @@ if a session changes the design, edit the vault doc and push game-dev too.
 - Owed play-checks live in `CHECKS.txt`; a second SessionStart hook opens it in Notepad
   while any `>` answer line is blank. Don't tell the dev to open it.
 - Repo ownership: OWNED (the user's own GitHub account). HANDOFF.md is committed and pushed,
-  so the other machine can read it.
+  so the other machine can read it. Task list and triaged notes: `NOTES.md`.
 
 ## Environment
 - Godot 4.x via Steam. The `GODOT` env var (Windows user variable) points at the editor exe;
