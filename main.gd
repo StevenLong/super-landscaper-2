@@ -13,6 +13,7 @@ const WINDOWS := [40, 120, 290, 370] ## x of each window in the house art (30 wi
 const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
+const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
 @export var squirrel_every := 13.0
@@ -33,6 +34,7 @@ var _next_squirrel := 8.0
 var _dog_in := -1.0
 var _house: Node2D
 var _shake := 0.0
+var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
 
 @onready var lawn: Lawn = $Lawn
 @onready var mower: CharacterBody2D = $Mower
@@ -61,10 +63,11 @@ func _ready() -> void:
 	hud.choice.connect(_on_choice)
 
 	# Keep the camera inside the lawn so nothing beyond its edge is ever shown.
-	cam.limit_left = 0
-	cam.limit_top = 0
-	cam.limit_right = lawn.size_px.x
-	cam.limit_bottom = lawn.size_px.y
+	# The camera may see the property border just outside the lawn, and no further.
+	cam.limit_left = -BORDER
+	cam.limit_top = -BORDER
+	cam.limit_right = lawn.size_px.x + BORDER
+	cam.limit_bottom = lawn.size_px.y + BORDER
 
 	Sfx.music("music_mowing")
 	if Game.arrested_on_arrival():
@@ -172,6 +175,58 @@ func _build_layout() -> void:
 		add_stone(p)
 	lawn.exclude_rect(_house.rect())
 	lawn.exclude_rect(Rect2(drive.position, drive.size))
+	_build_borders(r, drive)
+
+
+## Hedges and fences round the property, just outside the lawn. Each side is one or
+## the other; the top only has the bits either side of the house; the bottom leaves
+## a gap where the driveway goes out to the road.
+func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
+	var w := float(lawn.size_px.x)
+	var h := float(lawn.size_px.y)
+	var b := float(BORDER)
+	var top: String = ["hedge", "fence"][r.randi() % 2]
+	# name: [kind, outer rect, the lawn-side line critters come in along, inward direction]
+	var sides := {
+		"top_l": [top, Rect2(-b, -b, _house.position.x + b, b), [Vector2(0, 0), Vector2(_house.position.x, 0)], Vector2.DOWN],
+		"top_r": [top, Rect2(_house.rect().end.x, -b, w - _house.rect().end.x + b, b), [Vector2(_house.rect().end.x, 0), Vector2(w, 0)], Vector2.DOWN],
+		"left": [["hedge", "fence"][r.randi() % 2], Rect2(-b, -b, b, h + 2.0 * b), [Vector2(0, 0), Vector2(0, h)], Vector2.RIGHT],
+		"right": [["hedge", "fence"][r.randi() % 2], Rect2(w, -b, b, h + 2.0 * b), [Vector2(w, 0), Vector2(w, h)], Vector2.LEFT],
+		"bottom": [["hedge", "fence"][r.randi() % 2], Rect2(drive.size.x, h, w - drive.size.x + b, b), [Vector2(drive.size.x, h), Vector2(w, h)], Vector2.UP],
+	}
+	var road := TextureRect.new() # the drive carries on out to the road
+	road.texture = preload("res://art/gravel.png")
+	road.stretch_mode = TextureRect.STRETCH_TILE
+	road.position = Vector2(0, h)
+	road.size = Vector2(drive.size.x, b)
+	$Borders.add_child(road)
+	for key: String in sides:
+		var s: Array = sides[key]
+		var vertical: bool = key == "left" or key == "right"
+		var tr := TextureRect.new()
+		if s[0] == "hedge":
+			tr.texture = preload("res://art/hedge.png")
+		else:
+			tr.texture = preload("res://art/fence_v.png") if vertical else preload("res://art/fence_h.png")
+		tr.stretch_mode = TextureRect.STRETCH_TILE
+		tr.position = (s[1] as Rect2).position
+		tr.size = (s[1] as Rect2).size
+		$Borders.add_child(tr)
+		_edges.append({"kind": s[0], "from": s[2][0], "to": s[2][1], "inward": s[3]})
+
+
+## Is p inside something a critter can't walk through?
+func _blocked(p: Vector2) -> bool:
+	if _house.rect().has_point(p):
+		return true
+	if Rect2($Truck.position - Vector2(64, 32), Vector2(128, 64)).has_point(p):
+		return true
+	for t in $Scenery.get_children():
+		if t is Pond and t.contains(p):
+			return true
+		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius + 4.0:
+			return true
+	return false
 
 
 func _add_area(bed: Node2D) -> void:
@@ -313,6 +368,7 @@ func hop_off() -> void:
 	walker = WalkerScript.new()
 	var side := Vector2(0, 26).rotated(mower.rotation)
 	walker.position = (mower.global_position + side).clamp(Vector2(12, 12), Vector2(lawn.size_px) - Vector2(12, 12))
+	walker.bounds = Rect2(Vector2(8, 8), Vector2(lawn.size_px) - Vector2(16, 16))
 	add_child(walker)
 	mower.occupied = false
 	cam.reparent(walker, false)
@@ -634,21 +690,35 @@ func _release_dog() -> void:
 
 # ---------------------------------------------------------------- wildlife
 
-## Spawn an animal just outside a random lawn edge, heading for a random point
-## on the lawn so it crosses it.
+## Spawn an animal and send it across the lawn. Hedgehogs push out of a hedge (or
+## under the fence if there's no hedge); squirrels drop out of a tree or hop the
+## fence. Nothing comes from behind the house.
 func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF) -> Animal:
 	if $Animals.get_child_count() >= max_animals and at == Vector2.INF:
 		return null
 	var r := Rect2(Vector2.ZERO, Vector2(lawn.size_px))
+	var grace := 0.0
 	if at == Vector2.INF:
-		match randi() % 4:
-			0: at = Vector2(randf_range(r.position.x, r.end.x), r.position.y - 20)
-			1: at = Vector2(randf_range(r.position.x, r.end.x), r.end.y + 20)
-			2: at = Vector2(r.position.x - 20, randf_range(r.position.y, r.end.y))
-			_: at = Vector2(r.end.x + 20, randf_range(r.position.y, r.end.y))
+		var trees := $Scenery.get_children().filter(func(t: Node) -> bool: return t is StaticBody2D and "radius" in t)
+		if kind == "squirrel" and not trees.is_empty() and randf() < 0.5:
+			var t: Node2D = trees[randi() % trees.size()]
+			at = t.position + Vector2.RIGHT.rotated(randf() * TAU) * t.radius * 0.5
+			grace = 1.0 # climbing down out of the canopy
+		else:
+			var want := "hedge" if kind == "hedgehog" else "fence"
+			var pool := _edges.filter(func(e: Dictionary) -> bool: return e.kind == want)
+			if pool.is_empty():
+				pool = _edges
+			var e: Dictionary = pool[randi() % pool.size()]
+			at = (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95)) - (e.inward as Vector2) * 10.0
 	if toward == Vector2.INF:
-		toward = Vector2(randf_range(r.position.x, r.end.x), randf_range(r.position.y, r.end.y))
+		for i in 10:
+			toward = Vector2(randf_range(r.position.x, r.end.x), randf_range(r.position.y, r.end.y))
+			if not _blocked(toward):
+				break
 	var a := Animal.new()
+	a.blocked = _blocked
+	a.grace = grace
 	a.kind = kind
 	a.position = at
 	a.heading = (toward - at).normalized()

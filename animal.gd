@@ -2,7 +2,8 @@ class_name Animal
 extends Area2D
 ## Wildlife that wanders across the lawn. Hedgehogs trundle in a straight line;
 ## squirrels dart and pause. A moving mower that touches one squashes it.
-## Leaves the lawn (and frees itself) once it walks off the far side.
+## Leaves the lawn (and frees itself) once it walks off the far side. Turns away
+## from anything `blocked` says is solid (house, truck, trees, ponds).
 
 signal squashed(animal: Animal)
 
@@ -11,6 +12,8 @@ signal squashed(animal: Animal)
 @export var radius := 9.0
 
 var lawn_rect := Rect2()
+var blocked: Callable ## (position) -> bool
+var grace := 0.0 ## seconds before obstacles count (a squirrel climbing down a tree)
 var heading := Vector2.RIGHT
 var dead := false
 var _pause := 0.0
@@ -44,9 +47,18 @@ func _physics_process(delta: float) -> void:
 			_dart = randf_range(0.4, 1.2)
 			_pause = randf_range(0.2, 0.9)
 			heading = heading.rotated(randf_range(-0.9, 0.9))
-	position += heading * speed * delta
+	var next := position + heading * speed * delta
+	if grace > 0.0:
+		grace -= delta
+	elif blocked.is_valid() and blocked.call(next):
+		# Something solid ahead: turn well away and try again next frame.
+		heading = heading.rotated(randf_range(1.6, 2.6) * (1.0 if randf() < 0.5 else -1.0))
+		rotation = heading.angle()
+		queue_redraw()
+		return
+	position = next
 	rotation = heading.angle()
-	if not lawn_rect.grow(40.0).has_point(position):
+	if not lawn_rect.grow(30.0).has_point(position):
 		queue_free()
 	queue_redraw()
 

@@ -300,6 +300,54 @@ def splat():
     return c
 
 
+# ---------------------------------------------------------------- borders
+
+def hedge_tile():
+    """24x24 tileable hedge top: packed leaf clumps, lit from the top-left."""
+    r = random.Random(31)
+    c = Canvas(24, 24, LEAF[1])
+    for _ in range(40):
+        x, y = r.uniform(0, 24), r.uniform(0, 24)
+        rr = r.uniform(2.5, 4.5)
+        for ox in (-24, 0, 24):  # wrap so the tile repeats seamlessly
+            for oy in (-24, 0, 24):
+                shaded_ellipse(c, x + ox, y + oy, rr, rr, LEAF[1:], bias=r.uniform(-0.15, 0.1))
+    return c
+
+
+def fence_h():
+    """A 16x24 run of picket fence seen from above-front, for top and bottom edges:
+    a pale rail with pickets and their shadow on the grass."""
+    c = Canvas(16, 24)
+    PALE = [hexc(h) for h in ("6a5a44", "9a8870", "c8b898", "e8dcc0", "fcf4e0")]
+    c.rect(0, 16, 16, 4, hexc("0c200c", 90))                 # shadow
+    c.rect(0, 7, 16, 3, PALE[2])                             # rail
+    c.rect(0, 7, 16, 1, PALE[3])
+    for x in (2, 10):
+        c.rect(x, 2, 4, 16, PALE[3])
+        c.rect(x, 2, 1, 16, PALE[4])
+        c.rect(x + 3, 2, 1, 16, PALE[1])
+        c.set(x + 1, 1, PALE[3])
+        c.set(x + 2, 1, PALE[3])
+        c.rect(x, 17, 4, 1, PALE[0])
+    return c
+
+
+def fence_v():
+    """A 24x16 run of fence for the side edges: the rail seen end-on from above,
+    posts every tile."""
+    c = Canvas(24, 16)
+    PALE = [hexc(h) for h in ("6a5a44", "9a8870", "c8b898", "e8dcc0", "fcf4e0")]
+    c.rect(14, 0, 5, 16, hexc("0c200c", 90))                 # shadow
+    c.rect(9, 0, 5, 16, PALE[2])
+    c.rect(9, 0, 1, 16, PALE[4])
+    c.rect(13, 0, 1, 16, PALE[1])
+    c.rect(7, 5, 9, 6, PALE[3])                              # post cap
+    c.rect(7, 5, 9, 1, PALE[4])
+    c.rect(7, 10, 9, 1, PALE[0])
+    return c
+
+
 # ---------------------------------------------------------------- the pond
 
 def pond(frame):

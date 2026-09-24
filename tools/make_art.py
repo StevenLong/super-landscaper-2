@@ -184,6 +184,7 @@ def main(only=None):
         ],
         "client": lambda: [save("client", sheet([a.client(0), a.client(1), a.client(2)]), 6)],
         "pond": lambda: [save("pond", sheet([a.pond(0), a.pond(1)]), 3)],
+        "borders": lambda: [save("hedge", a.hedge_tile(), 6), save("fence_h", a.fence_h(), 6), save("fence_v", a.fence_v(), 6)],
         "props": lambda: [
             save("stone", a.stone(), 6),
             save("jerrycan", a.jerrycan(), 6),

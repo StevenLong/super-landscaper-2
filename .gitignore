@@ -5,3 +5,6 @@
 # Claude Code: local settings stay untracked
 .claude/settings.local.json*
 .claude/worktrees/
+
+# Python bytecode from tools/
+__pycache__/

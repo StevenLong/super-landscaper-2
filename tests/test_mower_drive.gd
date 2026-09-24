@@ -20,7 +20,7 @@ func _physics_process(_delta: float) -> bool:
 		_start = mower.global_position
 		var cam: Camera2D = mower.get_node("Camera")
 		assert(cam.is_current(), "the mower camera should be the active one")
-		assert(cam.limit_right == lawn.size_px.x and cam.limit_bottom == lawn.size_px.y, "camera limits should match the lawn")
+		assert(cam.limit_right == lawn.size_px.x + 24 and cam.limit_bottom == lawn.size_px.y + 24, "camera limits are the lawn plus its border")
 		Input.action_press("move_forward")
 	elif _frame == 600:
 		Input.action_release("move_forward")
