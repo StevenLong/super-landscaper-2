@@ -79,7 +79,7 @@ Board cheat for testing: F9 on the job board adds $500 (debug builds only).
     customer. A paid customer can't fire you.
   - Mower prices $180 / $650; upgrades: bigger tank $120, sharp blades $150.
 - Not built (deliberately): the garden/meta track, leaderboards, truck inventory Tetris (the
-  trailer is cosmetic), robot mowers, salting the lawn, water features, the serial-killer run
+  trailer is cosmetic), robot mowers, salting the lawn, the serial-killer run
   as a distinct thing.
 - Housekeeping: early test runs wrote a stray best score ($140) to this machine's real save
   (`%APPDATA%\Godot\app_userdata\Super Landscaper\best.cfg`) before tests got their own file.
