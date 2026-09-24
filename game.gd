@@ -179,6 +179,7 @@ func make_job(seed_value: int) -> Dictionary:
 		"hedgehog_every": 7.0 / (1.0 + 0.25 * size_i),
 		"squirrel_every": 13.0 / (1.0 + 0.25 * size_i),
 		"stones": 4 + size_i * 2 + r.randi_range(0, 2),
+		"ponds": 1 if (size_i > 0 and r.randf() < 0.6) else 0,
 		"dog": r.randf() < 0.4,
 		"dog_name": ["Biscuit", "Rolo", "Duchess", "Pickle", "Monty", "Waffles", "Sir Barkley"][r.randi() % 7],
 	}

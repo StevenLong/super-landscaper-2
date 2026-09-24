@@ -80,6 +80,14 @@ func exclude_circle(center: Vector2, radius: float) -> void:
 	_exclude_where(bounds, func(p: Vector2) -> bool: return p.distance_squared_to(center) <= radius * radius)
 
 
+## Remove a lawn-space ellipse (a pond).
+func exclude_ellipse(center: Vector2, rx: float, ry: float) -> void:
+	var bounds := Rect2(center - Vector2(rx, ry), Vector2(rx, ry) * 2.0)
+	_exclude_where(bounds, func(p: Vector2) -> bool:
+		var d := p - center
+		return (d.x * d.x) / (rx * rx) + (d.y * d.y) / (ry * ry) <= 1.0)
+
+
 func _exclude_where(bounds: Rect2, inside: Callable) -> void:
 	var w := _img.get_width()
 	var h := _img.get_height()

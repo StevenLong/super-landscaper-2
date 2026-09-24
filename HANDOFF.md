@@ -38,6 +38,8 @@ Board cheat for testing: F9 on the job board adds $500 (debug builds only).
 **LOAD 5 of 5: ride-on and a whole run (10 min)** (S1)
 - [ ] Ride-on: huge cut, fast, turns like a barge; the trailer shows behind the truck once owned
 - [ ] Bigger lawns unlock as reputation rises; the job board shrinks as it falls; bankruptcy at zero
+- [ ] Hold Tab: the camera pulls back to show more of the garden; lets go smoothly
+- [ ] Ponds on bigger lawns (60%): read as solid obstacles; a flung stone plops in
 - [ ] Pause menu: music and sound toggles work and are remembered
 - [ ] Gamepad: stick/d-pad drive, A interact, X hop, Start pause
 
@@ -54,7 +56,7 @@ Board cheat for testing: F9 on the job board adds $500 (debug builds only).
   (title, job board, shop, reputation, bankruptcy), SNES-style art (all generated in code by
   `tools/`), synthesised audio and music, stones and mower damage, on-foot mode, the dog,
   knockouts and the wanted level, post-payment mischief, time nags, pixel font, attract mode,
-  gamepad, sound toggles, a balance probe.
+  gamepad, sound toggles, hold-Tab zoom-out, ponds, a balance probe.
 - Verified: `bash tests/run_all.sh` green (10 checks incl. a whole-run flow and a hazards test);
   screenshots of every screen reviewed. Nothing here has been played by a person yet.
 - Bugs found and fixed on the way: 100% was unreachable (corner cells); scraping along a wall

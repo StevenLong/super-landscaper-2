@@ -81,7 +81,7 @@ func _ready() -> void:
 		lines.append_array(["", "Mow the lawn. Hand in at your truck when you're happy."])
 		if Game.jobs_done == 0:
 			lines.append_array(["W/S drive, A/D turn. [E] at the truck. [F] hop off to move",
-				"stones, fetch fuel or catch a dog. [Esc] pause."])
+				"stones, fetch fuel or catch a dog. Hold [Tab] to look around. [Esc] pause."])
 		hud.open(job.customer, lines, [["start", "Let's go"]], job.look, "neutral")
 
 
@@ -118,12 +118,17 @@ func _build_layout() -> void:
 	var trees: Array = []
 	var beds: Array = []
 	var stones: Array = []
+	var ponds: Array = []
 	var r := RandomNumberGenerator.new()
 	r.seed = job.seed
 	if fixed:
 		trees = [[Vector2(900, 420), 34.0]]
 		beds = [Rect2(360, 300, 200, 80)]
 	else:
+		for i in job.get("ponds", 0):
+			var pr := _place(r, taken, Vector2(Pond.RX, Pond.RY) * 2.0, size)
+			if pr.has_area():
+				ponds.append(pr.get_center())
 		for i in job.beds:
 			var br := _place(r, taken, Vector2(r.randf_range(140, 240), r.randf_range(64, 96)), size)
 			if br.has_area():
@@ -158,6 +163,11 @@ func _build_layout() -> void:
 		t.add_child(cs)
 		$Scenery.add_child(t)
 		lawn.exclude_circle(t.position, t.radius)
+	for p: Vector2 in ponds:
+		var pond := Pond.new()
+		pond.position = p
+		$Scenery.add_child(pond)
+		lawn.exclude_ellipse(p, Pond.RX, Pond.RY)
 	for p: Vector2 in stones:
 		add_stone(p)
 	lawn.exclude_rect(_house.rect())
@@ -195,6 +205,9 @@ func add_stone(p: Vector2) -> Stone:
 # ---------------------------------------------------------------- the loop
 
 func _process(delta: float) -> void:
+	# Hold [Tab] to pull the camera back and see more of the garden.
+	var want := 1.0 if Input.is_action_pressed("look") and not get_tree().paused else 2.0
+	cam.zoom = cam.zoom.lerp(Vector2(want, want), minf(1.0, delta * 8.0))
 	_shake = maxf(0.0, _shake - delta * 18.0)
 	cam.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
 
@@ -539,6 +552,8 @@ func _stone_hit_test(p: Vector2) -> String:
 	for t in $Scenery.get_children():
 		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius:
 			return "tree"
+		if t is Pond and t.contains(p):
+			return "pond"
 	return ""
 
 
@@ -580,6 +595,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_react()
 		"gone":
 			pass # over the fence and into next door's garden
+		"pond":
+			Sfx.play("glug") # plop
 		_:
 			Sfx.play("thud")
 			add_stone.call_deferred(p)

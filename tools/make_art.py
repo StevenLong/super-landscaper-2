@@ -183,6 +183,7 @@ def main(only=None):
             save("splat", a.splat(), 6),
         ],
         "client": lambda: [save("client", sheet([a.client(0), a.client(1), a.client(2)]), 6)],
+        "pond": lambda: [save("pond", sheet([a.pond(0), a.pond(1)]), 3)],
         "props": lambda: [
             save("stone", a.stone(), 6),
             save("jerrycan", a.jerrycan(), 6),

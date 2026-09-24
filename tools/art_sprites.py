@@ -300,6 +300,42 @@ def splat():
     return c
 
 
+# ---------------------------------------------------------------- the pond
+
+def pond(frame):
+    """An oval garden pond, 132x92: a ring of rim stones, deep-to-shallow water, lily
+    pads, and ripples that shift between the two frames."""
+    import math
+    W, H = 132, 92
+    c = Canvas(W, H)
+    cx, cy = W / 2, H / 2
+    WATER = [hexc(h) for h in ("10283e", "183a58", "225070", "30688c", "5890b8", "a0d0f0")]
+    # Rim stones.
+    r = random.Random(21)
+    for i in range(34):
+        a = i / 34 * 6.283
+        x = cx + math.cos(a) * 60 + r.uniform(-1.5, 1.5)
+        y = cy + math.sin(a) * 40 + r.uniform(-1.5, 1.5)
+        shaded_ellipse(c, x, y, r.uniform(4.5, 6.5), r.uniform(3.5, 5), STONE)
+    # Water: darker in the middle (deeper), lighter at the edges.
+    c.ellipse(cx, cy, 56, 36, None, lambda nx, ny: WATER[max(0, min(3, int((nx * nx + ny * ny) * 4)))])
+    # Ripples.
+    for (rx, ry, rr) in ((cx - 18, cy - 8, 9), (cx + 16, cy + 6, 12), (cx + 2, cy - 14, 6)):
+        rr2 = rr + frame * 3
+        for k in range(24):
+            a = k / 24 * 6.283
+            if k % 3:
+                c.set(int(rx + math.cos(a) * rr2), int(ry + math.sin(a) * rr2 * 0.55), WATER[4])
+    # Lily pads with a notch, one with a flower.
+    for (x, y) in ((cx + 26, cy - 14), (cx - 30, cy + 12), (cx + 12, cy + 18)):
+        shaded_ellipse(c, x, y, 6, 4, LEAF[2:])
+        c.set(int(x) + 3, int(y), WATER[1])
+        c.set(int(x) + 4, int(y), WATER[1])
+    c.stamp(int(cx - 32), int(cy + 9), [".a.", "aya", ".a."], {"a": hexc("f8b8d0"), "y": YELLOW[4]})
+    c.outline(INK)
+    return c
+
+
 # ---------------------------------------------------------------- props and the player on foot
 
 def stone():
