@@ -30,7 +30,7 @@ if a session changes the design, edit the vault doc and push game-dev too.
 
 ## Project
 - 2D, Compatibility renderer (keeps a web export open), 1280x720 viewport, stretch
-  `canvas_items` with `keep` aspect (one fixed lawn screen).
+  `canvas_items` with `keep` aspect. A 2x camera follows the mower, bounded by the lawn.
 
 ## Keeping this file useful
 Aim to keep it under about 60 lines of current rules. Past incidents and "we tried X, it failed
