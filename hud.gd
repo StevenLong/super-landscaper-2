@@ -78,4 +78,4 @@ func open(title: String, lines: Array, buttons: Array, face_look := {}, face_exp
 	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	if first:
-		first.call_deferred("grab_focus")
+		UI.focus(first)

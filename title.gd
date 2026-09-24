@@ -38,7 +38,7 @@ func _ready() -> void:
 	btns.add_child(start)
 	btns.add_child(UI.button("How to play", _help, 22))
 	btns.add_child(UI.button("Quit", func() -> void: get_tree().quit(), 22))
-	start.call_deferred("grab_focus")
+	UI.focus(start)
 
 	_help_label = UI.label("", 18, UI.DIM)
 	_help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

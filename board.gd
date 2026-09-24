@@ -76,7 +76,7 @@ func _build() -> void:
 	for key: String in Game.UPGRADES:
 		shop.add_child(_upgrade_row(key))
 	if first:
-		first.call_deferred("grab_focus")
+		UI.focus(first)
 
 
 func _offer_card(o: Dictionary) -> Control:
@@ -169,4 +169,4 @@ func _run_over(title: String) -> void:
 		get_tree().change_scene_to_file("res://title.tscn"), 24)
 	holder.add_child(again)
 	col.add_child(holder)
-	again.call_deferred("grab_focus")
+	UI.focus(again)

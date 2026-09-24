@@ -67,6 +67,13 @@ static func button(text: String, on_press: Callable, size := 20) -> Button:
 	return b
 
 
+## Focus a control next frame, if it's still around by then (menus can close fast).
+static func focus(c: Control) -> void:
+	(func() -> void:
+		if is_instance_valid(c) and c.is_inside_tree():
+			c.grab_focus()).call_deferred()
+
+
 static func panel(child: Control) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.add_child(child)
