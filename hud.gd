@@ -44,7 +44,7 @@ func close() -> void:
 func open(title: String, lines: Array, buttons: Array, face_look := {}, face_expr := "") -> void:
 	close()
 	_panel = PanelContainer.new()
-	_panel.theme = $Theme.theme if has_node("Theme") else null
+	_panel.theme = UI.theme()
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 18)
@@ -75,10 +75,7 @@ func open(title: String, lines: Array, buttons: Array, face_look := {}, face_exp
 	col.add_child(btns)
 	var first: Button = null
 	for b: Array in buttons:
-		var btn := Button.new()
-		btn.text = b[1]
-		btn.add_theme_font_size_override("font_size", 20)
-		btn.pressed.connect(func() -> void: choice.emit(b[0]))
+		var btn := UI.button(b[1], func() -> void: choice.emit(b[0]))
 		btns.add_child(btn)
 		if first == null:
 			first = btn

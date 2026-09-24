@@ -28,9 +28,14 @@ signal fuel_changed(fraction: float)
 var fuel_used := 0.0
 var throttle := 0.0
 var _stride := 0.0
+var _bump_cooldown := 0.0
+var _low_warned := false
+var _engine: AudioStreamPlayer
 
 
 func _ready() -> void:
+	_engine = AudioStreamPlayer.new()
+	add_child(_engine)
 	_apply_visual()
 
 
@@ -38,6 +43,31 @@ func _apply_visual() -> void:
 	var spr: Sprite2D = $Sprite
 	spr.texture = load("res://art/mower_%s.png" % sprite_kind)
 	spr.hframes = 2
+	_engine.stream = load("res://audio/%s.wav" % {"push": "reel", "rideon": "engine_rideon"}.get(sprite_kind, "engine_petrol"))
+	_engine.play()
+
+
+## Engine note follows speed; a push mower's reel only whirrs while it rolls.
+func _update_sound(delta: float, running: bool) -> void:
+	var s := clampf(velocity.length() / max_speed, 0.0, 1.0)
+	if power == "stamina":
+		_engine.volume_db = linear_to_db(maxf(s, 0.001)) - 4.0
+		_engine.pitch_scale = 0.8 + 0.6 * s
+	elif running:
+		_engine.volume_db = -10.0 + 4.0 * s
+		_engine.pitch_scale = 0.85 + 0.7 * s
+	else:
+		_engine.volume_db = -80.0
+	var frac := fuel / max_fuel
+	if frac < 0.2 and not _low_warned and power == "fuel":
+		_low_warned = true
+		Sfx.play("fuel_low", 0.0)
+	elif frac > 0.3:
+		_low_warned = false
+	_bump_cooldown -= delta
+	if get_slide_collision_count() > 0 and _bump_cooldown <= 0.0 and s > 0.25:
+		_bump_cooldown = 0.5
+		Sfx.play("bump")
 
 
 func apply_spec(spec: Dictionary) -> void:
@@ -94,3 +124,4 @@ func _physics_process(delta: float) -> void:
 		global_position = global_position.clamp(lo, hi)
 		if running or power == "stamina":
 			lawn.cut_segment(before - lawn.global_position, global_position - lawn.global_position, cut_radius)
+	_update_sound(delta, running)

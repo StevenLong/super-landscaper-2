@@ -47,7 +47,9 @@ static func button(text: String, on_press: Callable, size := 20) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.add_theme_font_size_override("font_size", size)
+	b.pressed.connect(func() -> void: Sfx.play("ui_select", 0.0))
 	b.pressed.connect(on_press)
+	b.focus_entered.connect(func() -> void: Sfx.play("ui_move", 0.0))
 	return b
 
 

@@ -6,6 +6,7 @@ var _help_label: Label
 
 func _ready() -> void:
 	theme = UI.theme()
+	Sfx.music("music_menu")
 	var bg := ColorRect.new()
 	bg.color = UI.BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

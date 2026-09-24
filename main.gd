@@ -51,6 +51,7 @@ func _ready() -> void:
 	cam.limit_right = lawn.size_px.x
 	cam.limit_bottom = lawn.size_px.y
 
+	Sfx.music("music_mowing")
 	if Game.in_run:
 		get_tree().paused = true
 		hud.open(job.customer, job.brief + ["", "Mow the lawn. Hand in at your truck when you're happy."],
@@ -206,8 +207,7 @@ func hand_in() -> void:
 	if not customer.accepts(cov):
 		customer.mood -= 10.0
 		customer.last_line = "You call that finished? Get back out there!"
-		hud.say(customer.last_line)
-		$Client.react()
+		_react()
 		hud.close()
 		get_tree().paused = false
 		return
@@ -218,6 +218,17 @@ func _finish(result: Dictionary) -> void:
 	over = true
 	get_tree().paused = true
 	Game.record_result(result)
+	Sfx.music("")
+	match result.outcome:
+		"paid":
+			Sfx.play("cash", 0.0)
+			if result.mood >= 60.0:
+				Sfx.play("voice_happy")
+		"fired":
+			Sfx.play("fired", 0.0)
+			Sfx.play("voice_angry")
+		_:
+			Sfx.play("voice_angry")
 	var lines := []
 	match result.outcome:
 		"fired":
@@ -277,9 +288,19 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF) -> Ani
 
 func _on_squashed(a: Animal) -> void:
 	hits[a.kind] = hits.get(a.kind, 0) + 1
+	Sfx.play("squash")
+	Sfx.play("squeak_" + a.kind)
 	customer.on_squash(a.kind)
+	_react()
+
+
+## The customer's visible reaction: speech, a hop on the patio, and their voice.
+func _react() -> void:
 	hud.say(customer.last_line)
 	$Client.react()
+	var f := customer.face()
+	Sfx.play({"laughing": "voice_laugh", "horrified": "voice_horrified", "delighted": "voice_happy",
+		"happy": "voice_happy"}.get(f, "voice_angry"))
 
 
 func _on_trampled(_flat: int, _total: int) -> void:
@@ -287,6 +308,6 @@ func _on_trampled(_flat: int, _total: int) -> void:
 	for b in $Scenery.get_children():
 		if b.has_method("flattened_count"):
 			total += b.flattened_count()
+	Sfx.play("crunch")
 	if customer.on_flowers(total):
-		hud.say(customer.last_line)
-		$Client.react()
+		_react()

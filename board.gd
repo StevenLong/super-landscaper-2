@@ -7,6 +7,7 @@ var offers: Array[Dictionary] = []
 
 func _ready() -> void:
 	theme = UI.theme()
+	Sfx.music("music_menu")
 	offers = Game.make_offers()
 	_build()
 
