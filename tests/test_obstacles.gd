@@ -22,8 +22,8 @@ func _physics_process(_delta: float) -> bool:
 	if _frame == 1:
 		_mower = _main.get_node("Mower")
 		_lawn = _main.get_node("Lawn")
-		_tree = _main.get_node("Tree")
-		_bed = _main.get_node("Flowerbed")
+		_tree = _main.get_node("Scenery/Tree")
+		_bed = _main.get_node("Scenery/Flowerbed")
 		_bed.trampled.connect(func(_n: int, _t: int) -> void: _trampled_signals += 1)
 
 		# Neither obstacle counts as lawn.

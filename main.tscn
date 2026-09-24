@@ -1,12 +1,13 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_main"]
 [ext_resource type="Script" path="res://lawn.gd" id="2_lawn"]
 [ext_resource type="Script" path="res://mower.gd" id="3_mower"]
 [ext_resource type="Script" path="res://truck.gd" id="4_truck"]
 [ext_resource type="Script" path="res://fuel_gauge.gd" id="5_gauge"]
-[ext_resource type="Script" path="res://tree.gd" id="6_tree"]
-[ext_resource type="Script" path="res://flowerbed.gd" id="7_bed"]
+[ext_resource type="Script" path="res://client.gd" id="6_client"]
+[ext_resource type="Script" path="res://hud.gd" id="7_hud"]
+[ext_resource type="Script" path="res://face.gd" id="8_face"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mower"]
 size = Vector2(36, 28)
@@ -29,19 +30,10 @@ offset_right = 220.0
 offset_bottom = 720.0
 color = Color(0.55, 0.53, 0.5, 1)
 
-[node name="Flowerbed" type="Node2D" parent="."]
-position = Vector2(360, 300)
-script = ExtResource("7_bed")
+[node name="Scenery" type="Node2D" parent="."]
 
-[node name="Area" type="Area2D" parent="Flowerbed"]
-
-[node name="Shape" type="CollisionShape2D" parent="Flowerbed/Area"]
-
-[node name="Tree" type="StaticBody2D" parent="."]
-position = Vector2(900, 420)
-script = ExtResource("6_tree")
-
-[node name="Shape" type="CollisionShape2D" parent="Tree"]
+[node name="Client" type="Node2D" parent="."]
+script = ExtResource("6_client")
 
 [node name="Truck" type="StaticBody2D" parent="."]
 position = Vector2(110, 630)
@@ -93,12 +85,19 @@ position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 
 [node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("7_hud")
 
 [node name="Percent" type="Label" parent="HUD"]
 offset_left = 16.0
 offset_top = 12.0
 theme_override_font_sizes/font_size = 28
 text = "0%"
+
+[node name="Clock" type="Label" parent="HUD"]
+offset_left = 110.0
+offset_top = 16.0
+theme_override_font_sizes/font_size = 24
+text = "0:00"
 
 [node name="Fuel" type="Control" parent="HUD"]
 offset_left = 24.0
@@ -107,7 +106,42 @@ offset_right = 64.0
 offset_bottom = 450.0
 script = ExtResource("5_gauge")
 
-[node name="Hits" type="Label" parent="HUD"]
-offset_left = 110.0
-offset_top = 18.0
-theme_override_font_sizes/font_size = 20
+[node name="Face" type="Control" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -148.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 144.0
+script = ExtResource("8_face")
+
+[node name="Speech" type="Label" parent="HUD"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 16.0
+offset_right = 250.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="HUD"]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -48.0
+offset_right = 300.0
+offset_bottom = -16.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+horizontal_alignment = 1
