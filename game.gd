@@ -2,7 +2,7 @@ extends Node
 ## Run state (autoload "Game"). A run is a chain of jobs picked from a job board;
 ## it ends when reputation runs out (bankruptcy). Score = total earned this run.
 
-const SAVE_PATH := "user://best.cfg"
+var save_path := "user://best.cfg" ## tests point this elsewhere so they never touch the real save
 
 ## Mower specs. The mower scene's own exports are the petrol defaults; a run
 ## applies the equipped spec on top.
@@ -10,8 +10,8 @@ const MOWERS := {
 	"push": {
 		"name": "Push mower", "price": 0, "power": "stamina",
 		"max_speed": 150.0, "reverse_speed": 80.0, "accel": 420.0, "brake": 900.0,
-		"turn_rate": 3.6, "cut_radius": 12.0, "max_fuel": 12.0, "fuel_burn": 1.0,
-		"regen": 2.0, "empty_speed_scale": 0.4, "fuel_price": 0.0,
+		"turn_rate": 3.6, "cut_radius": 12.0, "max_fuel": 20.0, "fuel_burn": 1.0,
+		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0,
 		"blurb": "Your legs are the engine. Narrow, slow, nimble. Rests to recover.",
 	},
 	"petrol": {
@@ -90,7 +90,7 @@ var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	var cfg := ConfigFile.new()
-	if cfg.load(SAVE_PATH) == OK:
+	if cfg.load(save_path) == OK:
 		best_score = cfg.get_value("best", "score", 0)
 
 
@@ -148,7 +148,7 @@ func make_job(seed_value: int) -> Dictionary:
 	var persona_key: String = PERSONAS.keys()[r.randi() % PERSONAS.size()]
 	var p: Dictionary = PERSONAS[persona_key]
 	# Better reputation unlocks bigger, better-paying lawns.
-	var max_size := 0 if reputation < 40.0 else (1 if reputation < 70.0 else 2)
+	var max_size := 0 if reputation < 55.0 else (1 if reputation < 75.0 else 2)
 	var size_i := r.randi_range(0, max_size)
 	var size: Vector2i = LAWN_SIZES[size_i]
 	var area := float(size.x * size.y) / (1280.0 * 720.0)
@@ -164,7 +164,7 @@ func make_job(seed_value: int) -> Dictionary:
 		"beds": r.randi_range(1, 1 + size_i),
 		"target": target,
 		# Seconds they'll happily wait: scales with lawn area and their patience.
-		"patience": 150.0 * area * p.patience,
+		"patience": 240.0 * area * p.patience,
 		"pay": int(round((70.0 + 50.0 * size_i) * area * (1.0 + (target - 0.8)) / 5.0) * 5),
 		"hedgehog_every": 7.0 / (1.0 + 0.25 * size_i),
 		"squirrel_every": 13.0 / (1.0 + 0.25 * size_i),
@@ -203,7 +203,7 @@ func record_result(result: Dictionary) -> void:
 		best_score = total_earned
 		var cfg := ConfigFile.new()
 		cfg.set_value("best", "score", best_score)
-		cfg.save(SAVE_PATH)
+		cfg.save(save_path)
 
 
 func buy(key: String) -> bool:
