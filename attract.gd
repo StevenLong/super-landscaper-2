@@ -4,6 +4,7 @@ extends Node2D
 
 const LANE := 26.0
 const SPEED := 260.0
+const OFF := 120.0 ## turn this far off screen: more than half the 184px sprite, so the flip is never seen
 
 var lawn: Lawn
 var _mower: Sprite2D
@@ -28,7 +29,7 @@ func _start() -> void:
 	lawn.setup()
 	_lane = 0
 	_dir = 1.0
-	_mower.position = Vector2(-60, LANE)
+	_mower.position = Vector2(-OFF, LANE)
 
 
 func _process(delta: float) -> void:
@@ -40,7 +41,7 @@ func _process(delta: float) -> void:
 	if _stride > 14.0:
 		_stride = 0.0
 		_mower.frame = 1 - _mower.frame
-	if (_dir > 0.0 and _mower.position.x > 1340.0) or (_dir < 0.0 and _mower.position.x < -60.0):
+	if (_dir > 0.0 and _mower.position.x > 1280.0 + OFF) or (_dir < 0.0 and _mower.position.x < -OFF):
 		_lane += 1
 		_dir = -_dir
 		_mower.position.y = LANE + _lane * LANE * 2.0

@@ -1,6 +1,8 @@
 """A hand-drawn 5x7 pixel font (ASCII 32-126) as a glyph sheet: 16 columns x 6
-rows of 6x10 cells. Rows 0-6 of a glyph are the body (baseline under row 6),
-rows 7-8 are descenders. pixel_font.gd turns the sheet into a Godot FontFile.
+rows of 6x10 cells, a blank pixel apart so scaling never pulls a neighbour's edge
+into a glyph (a g tail once showed over the w). Rows 0-6 of a glyph are the body
+(baseline under row 6), rows 7-8 are descenders. pixel_font.gd turns the sheet
+into a Godot FontFile.
 
 Run from the repo root: python tools/make_font.py
 """
@@ -108,16 +110,17 @@ G = {
 }
 
 CW, CH, COLS = 6, 10, 16
+GAP = 1  # blank pixels between cells
 WHITE = (255, 255, 255, 255)
 
 
 def main():
     missing = [chr(c) for c in range(33, 127) if chr(c) not in G]
     assert not missing, "glyphs missing: %s" % "".join(missing)
-    c = Canvas(CW * COLS, CH * 6)
+    c = Canvas((CW + GAP) * COLS, (CH + GAP) * 6)
     for code in range(32, 127):
         i = code - 32
-        gx, gy = (i % COLS) * CW, (i // COLS) * CH
+        gx, gy = (i % COLS) * (CW + GAP), (i // COLS) * (CH + GAP)
         for row, line in enumerate(G.get(chr(code), [])):
             assert len(line) <= 5 and row <= 8, "glyph %r too big" % chr(code)
             for col, ch in enumerate(line):

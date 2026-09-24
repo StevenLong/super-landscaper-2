@@ -142,10 +142,18 @@ func _upgrade_row(key: String) -> Control:
 	return UI.panel(row)
 
 
-## Playtest cheat, debug builds only: F9 on the board adds $500.
+## Playtest cheats, debug builds only: [1] adds $500, [2] adds 20 reputation (and
+## redeals the offers, so bigger lawns show up). No function keys: the editor owns them.
 func _unhandled_key_input(event: InputEvent) -> void:
-	if OS.is_debug_build() and event is InputEventKey and event.pressed and event.keycode == KEY_F9:
+	if not (OS.is_debug_build() and event is InputEventKey and event.pressed):
+		return
+	if event.keycode == KEY_1:
 		Game.money += 500
+		_build()
+	elif event.keycode == KEY_2:
+		Game.reputation = minf(100.0, Game.reputation + 20.0)
+		Game.rep_trend = minf(100.0, Game.rep_trend + 20.0)
+		offers = Game.make_offers()
 		_build()
 
 

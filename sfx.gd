@@ -69,7 +69,11 @@ func play(sound: String, pitch_jitter := 0.08) -> void:
 			break
 	if p == null:
 		p = _pool[0]
-	p.stream = load("res://audio/%s.wav" % sound)
+	var s: AudioStreamWAV = load("res://audio/%s.wav" % sound)
+	if s.loop_mode != AudioStreamWAV.LOOP_DISABLED: # glug loops for the truck; a one-shot plays it once
+		s = s.duplicate()
+		s.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	p.stream = s
 	p.volume_db = VOLUME.get(sound, 0.0)
 	p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 	p.play()

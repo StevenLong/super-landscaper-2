@@ -2,7 +2,7 @@ PLAY CHECKS OWED  (29 checks, 6 loads, about 35 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
-Board cheat: F9 on the job board adds $500 (debug builds), so every mower is reachable.
+Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep; in a job [0] finishes it perfectly.
 
 
 ================================================================================

@@ -97,6 +97,11 @@ func _ready() -> void:
 	ThemeDB.fallback_font_size = 20
 	ThemeDB.get_default_theme().default_font = font
 	ThemeDB.get_default_theme().default_font_size = 20
+	# WASD drives the menus too, alongside the arrows and the pad.
+	for pair: Array in [["ui_up", KEY_W], ["ui_down", KEY_S], ["ui_left", KEY_A], ["ui_right", KEY_D]]:
+		var k := InputEventKey.new()
+		k.physical_keycode = pair[1]
+		InputMap.action_add_event(pair[0], k)
 	var cfg := ConfigFile.new()
 	if cfg.load(save_path) == OK:
 		best_score = cfg.get_value("best", "score", 0)

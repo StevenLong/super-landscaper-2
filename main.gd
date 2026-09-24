@@ -351,7 +351,9 @@ func _hint() -> String:
 func _unhandled_input(event: InputEvent) -> void:
 	if over or hud.is_open():
 		return
-	if event.is_action_pressed("pause"):
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and event.keycode == KEY_0:
+		_cheat_win()
+	elif event.is_action_pressed("pause"):
 		open_pause()
 	elif event.is_action_pressed("hop"):
 		if walker == null:
@@ -509,6 +511,18 @@ func hand_in() -> void:
 	hud.open("Paid!", ["\"%s\"" % pay_result.comment, "", "They hand over $%d." % pay_result.paid,
 		"You can drive off now, or hang about.", "(They're watching. Behave.)"],
 		[["leave_paid", "Drive off"], ["hang", "Hang about"]], job.look, customer.face())
+
+
+## Playtest cheat, debug builds only: [0] ends the job as well as it can go (whole
+## lawn, delighted, on time: top pay and rep), to see the high end without grinding.
+func _cheat_win() -> void:
+	if not pay_result.is_empty() or customer.knocked_out:
+		return
+	customer.mood = 100.0
+	customer.elapsed = 0.0
+	pay_result = customer.evaluate(1.0, _costs())
+	customer.paid = true
+	_leave_paid()
 
 
 ## Leave after being paid. Anything you got up to afterwards comes off your reputation.

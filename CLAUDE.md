@@ -52,3 +52,5 @@ because Y" go in `docs/TRIBAL.md` (create on first use), not here.
 ## Conventions
 - Plain hyphens only in code, comments, commits and docs: no em or en dashes.
 - No Co-Authored-By trailer on commits.
+- Keys (cheats included): letters and the number row only. No function keys (the editor
+  owns them while the game runs; F9 pauses it), no backquote, numpad only as a last resort.

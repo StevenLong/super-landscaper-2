@@ -1,11 +1,12 @@
 class_name PixelFont
 ## Builds a crisp bitmap FontFile from art/font.png (tools/make_font.py): 16x6 cells
-## of 6x10 pixels for ASCII 32-126, glyph body in rows 1-7, baseline under row 8.
+## of 6x10 pixels (1px apart) for ASCII 32-126, glyph body in rows 1-7, baseline under row 8.
 ## Proportional: each glyph advances by its inked width plus one pixel.
 
 const CW := 6
 const CH := 10
 const COLS := 16
+const GAP := 1 ## blank pixels between cells, so scaling never samples a neighbour
 const ASCENT := 8
 
 
@@ -25,7 +26,7 @@ static func make() -> FontFile:
 	for code in range(32, 127):
 		var i := code - 32
 		@warning_ignore("integer_division") # whole cells: dropping the remainder is the point
-		var cell := Rect2i((i % COLS) * CW, (i / COLS) * CH, CW, CH)
+		var cell := Rect2i((i % COLS) * (CW + GAP), (i / COLS) * (CH + GAP), CW, CH)
 		var width := 0
 		for x in CW:
 			for y in CH:
