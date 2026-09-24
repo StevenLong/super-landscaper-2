@@ -1,8 +1,40 @@
-[gd_scene format=3]
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="Script" path="res://lawn.gd" id="2_lawn"]
+[ext_resource type="Script" path="res://mower.gd" id="3_mower"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mower"]
+size = Vector2(36, 28)
 
 [node name="Main" type="Node2D"]
+script = ExtResource("1_main")
 
-[node name="Lawn" type="ColorRect" parent="."]
-offset_right = 1280.0
-offset_bottom = 720.0
-color = Color(0.29, 0.55, 0.22, 1)
+[node name="Lawn" type="Sprite2D" parent="."]
+script = ExtResource("2_lawn")
+
+[node name="Mower" type="CharacterBody2D" parent="." node_paths=PackedStringArray("lawn")]
+position = Vector2(640, 620)
+rotation = -1.5708
+motion_mode = 1
+script = ExtResource("3_mower")
+lawn = NodePath("../Lawn")
+
+[node name="Shape" type="CollisionShape2D" parent="Mower"]
+shape = SubResource("RectangleShape2D_mower")
+
+[node name="Handle" type="Polygon2D" parent="Mower"]
+color = Color(0.15, 0.15, 0.15, 1)
+polygon = PackedVector2Array(-18, -4, -34, -4, -34, 4, -18, 4)
+
+[node name="Body" type="Polygon2D" parent="Mower"]
+color = Color(0.8, 0.15, 0.12, 1)
+polygon = PackedVector2Array(-18, -14, 18, -14, 18, 14, -18, 14)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Percent" type="Label" parent="HUD"]
+offset_left = 16.0
+offset_top = 12.0
+theme_override_font_sizes/font_size = 28
+text = "0%"
