@@ -27,6 +27,18 @@ func _initialize() -> void:
 		lawn.cut_segment(Vector2(0, y), Vector2(1280, y), 20.0)
 	assert(lawn.cut_fraction() == 1.0, "full sweep should reach 100%%, got %f" % lawn.cut_fraction())
 
+	# Excluded cells leave the total: cells already cut inside the rect stop counting,
+	# and the rest of the lawn can still reach 100%.
+	var lawn2: Lawn = load("res://lawn.gd").new()
+	lawn2.setup()
+	lawn2.cut_segment(Vector2(40, 40), Vector2(40, 40), 20.0)
+	lawn2.exclude_rect(Rect2(0, 0, 200, 200))
+	assert(lawn2.cut_fraction() == 0.0, "cut cells inside an excluded rect should stop counting")
+	for y in range(0, 720, 20):
+		lawn2.cut_segment(Vector2(0, y), Vector2(1280, y), 20.0)
+	assert(lawn2.cut_fraction() == 1.0, "excluded cells must not block 100%%, got %f" % lawn2.cut_fraction())
+
 	lawn.free()
+	lawn2.free()
 	print("PASS lawn cut grid")
 	quit()

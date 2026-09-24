@@ -24,7 +24,8 @@ if a session changes the design, edit the vault doc and push game-dev too.
 - Godot exits 0 even on script errors, so a test passes only if it prints a line starting
   `PASS` AND its output has no `SCRIPT ERROR`. Each test runs under a 60s timeout, since a
   failed assert halts the script but leaves godot idling.
-- The parse check catches errors, not GDScript warnings.
+- The parse check catches errors, not GDScript warnings, and only in scripts the project loads:
+  a parse error in a test file passes it. The test run itself catches those.
 - New test: a `tests/test_<name>.gd` extending SceneTree that prints `PASS ...` and calls `quit()`.
 
 ## Project
