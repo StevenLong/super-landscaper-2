@@ -31,7 +31,8 @@ func _initialize() -> void:
 
 	var p: Customer = Customer.new(Game.default_job())
 	var mood_before: float = p.mood
-	var nag: String = p.tick(p.job.patience + 10.0)
+	p.tick(p.job.patience)
+	var nag: String = p.tick(1.0)
 	assert(p.mood < mood_before, "waiting past their patience costs mood")
 	assert(nag == "Are you nearly done?", "and they say so, which is your only clue to the hidden time")
 	assert(p.tick(1.0) == "", "but they don't nag every frame")
