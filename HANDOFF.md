@@ -6,6 +6,27 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 2 (2026-09-24): checks file, merge, garden edges, throwing
+- Your first-play notes: critters walked over the house; the world just ended at the edge;
+  critters should come from hedges/trees/over fences; throwing a carried stone. All done.
+- CHECKS.txt now opens in Notepad at session start while any `>` answer is blank (ported
+  from cube). It is the ledger itself, not a copy of this file.
+- `long-horizon` fast-forwarded into `main` (`0911e57`); work continues on `main`. The
+  branch is still on GitHub; delete it whenever.
+- Built: hedge/fence borders outside the lawn with a road gap by the drive; hedgehogs from
+  hedges, squirrels from trees or over fences, none behind the house; critters steer round
+  the house, truck, trees and ponds; on foot you can't leave the garden; Q throws a stone.
+- Verified: run_all green (11 checks; new edges test, and it fails if critter avoidance is
+  switched off); screenshot of the borders. Not played.
+- Fixed in passing: tools/__pycache__ had been committed; now ignored.
+
+OWED CHECKS: CHECKS.txt (29 checks, six loads; load 6 is new).
+
+NEXT:
+1. Play CHECKS.txt (loads 1 to 6) and answer on the `>` lines.
+2. Sign off or change the MY CALLS list in session 1.
+3. Balance once felt (push mower first).
+
 ## Session 1 (2026-09-24): scaffold, the first slice, then a long-horizon experiment
 - Built on `main`, one slice at a time with your feel checks: Godot 4.7 scaffold and test
   runner, mower and cutting, zoomed follow camera, fuel and truck, vertical fuel gauge, tree
