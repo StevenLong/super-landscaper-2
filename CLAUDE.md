@@ -11,6 +11,8 @@ if a session changes the design, edit the vault doc and push game-dev too.
 - Start: a SessionStart hook (`.claude/settings.json`) injects the HANDOFF.md ledger and latest
   session, and warns if the clone is behind origin. Pull if warned.
 - End: `/handoff` (repo skill in `.claude/skills/handoff`).
+- Owed play-checks live in `CHECKS.txt`; a second SessionStart hook opens it in Notepad
+  while any `>` answer line is blank. Don't tell the dev to open it.
 - Repo ownership: OWNED (the user's own GitHub account). HANDOFF.md is committed and pushed,
   so the other machine can read it.
 

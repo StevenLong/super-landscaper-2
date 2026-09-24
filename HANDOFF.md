@@ -1,47 +1,8 @@
 # Handoff
 
 ## Owed checks (rolling ledger)
-Grouped by what you load, so one sitting covers it. Run from the `long-horizon` branch.
-Board cheat for testing: F9 on the job board adds $500 (debug builds only).
-
-**LOAD 1 of 5: title and board (2 min)** (S1)
-- [ ] Title: the attract-mode mower stripes the lawn behind the menu; the text stays readable
-- [ ] The pixel font reads well everywhere (title, board, HUD, panels); nothing clipped
-- [ ] Board: offers, shop and header fit; F9 money cheat works; buying/using mowers updates
-- [ ] Menu music plays; button move/select blips are not annoying
-
-**LOAD 2 of 5: a first job with the push mower (8 min)** (S1)
-- [ ] Briefing shows the customer, their hints and (first job only) the controls
-- [ ] Push mower: speed, 28px cut, stamina (PEP/ZZZ gauge) and resting feel right; exhausted it crawls but still cuts
-- [ ] Stripes: mowing up/right gives light bands, down/left dark; re-mowing restripes
-- [ ] Hedgehogs/squirrels readable at a glance; squashes read (splat, squeak, shake, face reaction, speech)
-- [ ] The corner face changes with mood and reacts to events; the patio customer turns to watch and hops
-- [ ] Past their patience they nag ("Are you nearly done?"). Is that enough of a clue to the hidden time?
-- [ ] Hand in at the truck: refused if far short; when paid you can hang about; the pay screen makes sense
-- [ ] Is a push-mower job winnable? The balance bot says 70% takes ~4 min on a small lawn (see NEXT)
-
-**LOAD 3 of 5: petrol mower job (6 min)** (S1)
-- [ ] Engine note rises with speed; low-fuel beep; glug while refuelling at the truck
-- [ ] Tank (60s) and refuel trips feel like a real trade against the push mower
-- [ ] Mower condition gauge (OK/BUST): head-on hits hurt, scraping along walls doesn't; repairs at the truck
-- [ ] Mow over a stone: clonk, damage, and usually it flies. Watch it hit a window (glass, -$40), the wall, the truck (-$20), wildlife, the customer (hurt face)
-- [ ] Hop off [F]: camera follows you, the parked mower shows empty; carry a stone to the truck [E]; fetch the fuel can from the truck menu and pour it [E]
-- [ ] Dog jobs: the dog gets out, bounds about; catching it on foot and walking it home earns thanks; bowling it over with the mower is a disaster
-- [ ] Tree edges: can you get tight to a trunk? Trees hide what's under the canopy: fair or annoying?
-
-**LOAD 4 of 5: misbehaving (5 min)** (S1)
-- [ ] After being paid, squash/trample/smash something: "Rep -N" pops, and the result screen charges it
-- [ ] Run the customer over on the patio: knocked flat, KO face, "Leave quietly" only, no pay
-- [ ] The board then shows WANTED; a later job may open with ARRESTED and end the run
-- [ ] Getting fired (a gardener's flowers, or mood to zero) ends the job with the buzzer
-
-**LOAD 5 of 5: ride-on and a whole run (10 min)** (S1)
-- [ ] Ride-on: huge cut, fast, turns like a barge; the trailer shows behind the truck once owned
-- [ ] Bigger lawns unlock as reputation rises; the job board shrinks as it falls; bankruptcy at zero
-- [ ] Hold Tab: the camera pulls back to show more of the garden; lets go smoothly
-- [ ] Ponds on bigger lawns (60%): read as solid obstacles; a flung stone plops in
-- [ ] Pause menu: music and sound toggles work and are remembered
-- [ ] Gamepad: stick/d-pad drive, A interact, X hop, Start pause
+The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
+Notepad whenever an answer is still blank.
 
 ---
 
@@ -85,7 +46,7 @@ Board cheat for testing: F9 on the job board adds $500 (debug builds only).
   (`%APPDATA%\Godot\app_userdata\Super Landscaper\best.cfg`) before tests got their own file.
   Delete it if you want a clean slate.
 
-OWED CHECKS: the five loads above.
+OWED CHECKS: CHECKS.txt (26 checks, five loads).
 
 NEXT:
 1. Play the five loads and send notes (triage them in one pass).

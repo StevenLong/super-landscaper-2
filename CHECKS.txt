@@ -1,0 +1,134 @@
+PLAY CHECKS OWED  (26 checks, 5 loads, about 30 minutes)
+
+Answer on the line that starts with ">". Leave it blank if you didn't try that one.
+Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
+Board cheat: F9 on the job board adds $500 (debug builds), so every mower is reachable.
+
+
+================================================================================
+LOAD 1 of 5: TITLE AND BOARD      (about 2 min)
+================================================================================
+
+S1-ATTRACT
+The title's background mower stripes the lawn behind the menu; the text stays readable.
+>
+
+S1-FONT
+The pixel font reads well everywhere (title, board, HUD, panels); nothing is clipped.
+>
+
+S1-BOARD
+Offers, shop and header fit; F9 adds money; buying and using mowers updates the board.
+>
+
+S1-MENU-AUDIO
+Menu music plays; the button move/select blips aren't annoying.
+>
+
+
+================================================================================
+LOAD 2 of 5: A FIRST JOB, PUSH MOWER      (about 8 min)
+================================================================================
+
+S1-BRIEF
+The briefing shows the customer, their hints, and (first job only) the controls.
+>
+
+S1-PUSH
+Push mower: speed, cut width, stamina (PEP/ZZZ gauge) and resting feel right; exhausted it crawls but still cuts.
+>
+
+S1-STRIPES
+Mowing up/right leaves light bands, down/left dark; mowing over a patch again restripes it.
+>
+
+S1-CRITTERS
+Hedgehogs and squirrels read at a glance; a squash reads (splat, squeak, shake, face, speech).
+>
+
+S1-FACE
+The corner face follows their mood and reacts to events; the patio customer watches you and hops.
+>
+
+S1-NAG
+Past their patience they nag ("Are you nearly done?"). Is that enough of a clue to the hidden time?
+>
+
+S1-HANDIN
+At the truck: sent back if far short; once paid you can hang about; the pay screen makes sense.
+>
+
+S1-WINNABLE
+Is a push-mower job winnable? (The balance bot takes ~4 min to reach 70% of a small lawn.)
+>
+
+
+================================================================================
+LOAD 3 of 5: A PETROL MOWER JOB      (about 6 min)
+================================================================================
+
+S1-ENGINE
+Engine note rises with speed; low-fuel beep; glug while refuelling at the truck.
+>
+
+S1-TANK
+The 60s tank and the refuel trips feel like a real trade against the push mower.
+>
+
+S1-CONDITION
+OK/BUST gauge: head-on hits hurt, scraping along walls doesn't; parking at the truck repairs.
+>
+
+S1-STONES
+Mow over a stone: clonk, damage, usually it flies. Seen it hit a window (-$40), the wall, the truck (-$20), wildlife, the customer?
+>
+
+S1-ONFOOT
+[F] hop off: the camera follows you, the parked mower shows empty; carry a stone to the truck [E]; fetch the fuel can from the truck menu and pour it [E].
+>
+
+S1-DOG
+On dog jobs the dog gets out and bounds about; walking it home earns thanks; bowling it over is a disaster.
+>
+
+S1-TREES
+Can you mow tight to a trunk? Canopies hide the grass under them: fair or annoying?
+>
+
+
+================================================================================
+LOAD 4 of 5: MISBEHAVING      (about 5 min)
+================================================================================
+
+S1-MISCHIEF
+After being paid, squash/trample/smash something: "Rep -N" pops, and the result screen charges it.
+>
+
+S1-KO
+Run the customer over on the patio: knocked flat, KO face, only "Leave quietly", no pay.
+>
+
+S1-WANTED
+The board then shows WANTED; a later job may open with ARRESTED and end the run.
+>
+
+S1-FIRED
+Getting fired (a gardener's flowers, or mood hitting zero) ends the job with the buzzer.
+>
+
+
+================================================================================
+LOAD 5 of 5: RIDE-ON AND A WHOLE RUN      (about 10 min)
+================================================================================
+
+S1-RIDEON
+Ride-on: huge cut, fast, turns like a barge; the trailer appears behind the truck once owned.
+>
+
+S1-RUN
+Bigger lawns unlock as reputation rises; the board shrinks as it falls; bankruptcy at zero.
+>
+
+S1-EXTRAS
+Hold Tab to look around; ponds on bigger lawns; pause-menu music/sound toggles; gamepad (stick, A, X, Start).
+>
