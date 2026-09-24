@@ -14,6 +14,8 @@ const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
+const FACE_TOP := 12.0 ## the corner face's home, top right
+const FACE_BOTTOM := 576.0 ## where it ducks to while you're near it: 720 - 12 - its 132px
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
 @export var squirrel_every := 13.0
@@ -296,6 +298,7 @@ func _physics_process(delta: float) -> void:
 		_react()
 	hud.set_clock(customer.elapsed)
 	$HUD/Face.expression = customer.face()
+	_place_face(delta)
 	if customer.fired and pay_result.is_empty():
 		_finish(customer.fired_result(_costs()))
 		return
@@ -491,6 +494,15 @@ func _on_choice(id: String) -> void:
 			get_tree().paused = false
 			Game.in_run = false
 			get_tree().change_scene_to_file("res://title.tscn")
+
+
+## The corner face slides to the bottom-right corner while the player is up near
+## it, so it never hides them, and back once they leave.
+func _place_face(delta: float) -> void:
+	var face: Control = $HUD/Face
+	var p := (walker if walker else mower).get_global_transform_with_canvas().origin
+	var near := Rect2(Vector2(face.position.x, FACE_TOP), face.size).grow(90.0).has_point(p)
+	face.position.y = move_toward(face.position.y, FACE_BOTTOM if near else FACE_TOP, 3000.0 * delta)
 
 
 ## Ask for payment. Too little done and they send you back out, annoyed.

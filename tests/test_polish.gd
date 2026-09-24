@@ -1,6 +1,6 @@
 # Small fixes from the session-2 play checks: one-shot sounds never loop, font cells
-# are a blank pixel apart, WASD drives menus, the truck doesn't refill stamina, and
-# the [0] cheat ends a job at the top of the scale.
+# are a blank pixel apart, WASD drives menus, the truck doesn't refill stamina, the
+# corner face ducks out of the player's way, and the [0] cheat ends a job at the top.
 extends SceneTree
 
 var _main: Node
@@ -56,6 +56,14 @@ func _physics_process(_delta: float) -> bool:
 		_mower.global_position = Vector2(230, 630) # beside the truck, as in test_fuel
 	elif _frame == 62:
 		assert(absf(_mower.fuel - 10.0) < 0.01, "the truck must not refill stamina, got %f" % _mower.fuel)
+		# The corner face ducks to the bottom right while the player is up near it.
+		_mower.global_position = Vector2(_main.lawn.size_px.x - 20, 20)
+	elif _frame == 100:
+		var face: Control = _main.get_node("HUD/Face")
+		assert(face.position.y == _main.FACE_BOTTOM, "the face should duck out of the player's way, y %f" % face.position.y)
+		_mower.global_position = Vector2(_main.lawn.size_px) / 2.0
+	elif _frame == 140:
+		assert(_main.get_node("HUD/Face").position.y == _main.FACE_TOP, "and come back once they leave")
 		_main.hud.close()
 		paused = false
 		_main._cheat_win()

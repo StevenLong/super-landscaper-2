@@ -49,9 +49,10 @@ BLOCKS = spoils the next playtest. DONE items stay until the handoff that record
    DONE: paying updates the truck menu (quote, amount, Drive off / Keep going); leaving
    goes straight to the board, whose top-left panel is the rundown (face, outcome, paid,
    costs, net, rep change, mischief, wanted). A firing holds 1.5s for the buzzer first.
-10. [VISUAL, small] The corner face can cover the player (S1-FACE). FIX options: (a) move
+10. [DONE] [VISUAL, small] The corner face can cover the player (S1-FACE). FIX options: (a) move
    the face to the corner nearest the customer (your idea), (b) move it to the opposite
    corner, or fade it, whenever the player gets near it. DECIDED: (b).
+   DONE: it slides to the bottom-right corner while you're within 90px of it, then back.
 11. [FEATURE, small] Spawn tells (S2-BORDERS, S2-SPAWNS): a tree or hedge rustles, a few
    leaves drop, a moment before a critter comes out. A little telegraphing, not a lot.
 12. [FEATURE, moderate-large] Camera never clamps; the world carries on past the garden
@@ -88,7 +89,7 @@ BLOCKS = spoils the next playtest. DONE items stay until the handoff that record
    the tip/bonus. Hard: told to leave, no pay, big rep hit, but you can stay and misbehave.
    More than one nag, plus a watch-glance on the face, without a visible countdown.
    Merges with 23.
-23. [DESIGN, moderate] Fired shouldn't end the job abruptly (S1-FIRED): stay and cause
+23. [SUPERSEDED by 35] Fired shouldn't end the job abruptly (S1-FIRED): stay and cause
    mischief at a rep cost. Same shape as the hard cutoff in 22.
 24. [DESIGN] Tone (S1-KO): a lawnmower wouldn't just knock someone out; the PG result
    disappoints. The design doc already says "a customer you have killed". Touches the MY
@@ -134,3 +135,32 @@ PROPOSED ORDER: (1 to 7 and 9 done 2026-09-24), then 10, 12, 11, 13, then a
 design session on 21 to 27 before any of them are built. Rationale: clear the bugs and give
 you the cheat so the next playtest reaches ponds and large lawns; then the readability items
 that cause unfair hits; escalation is the real open question and needs deciding, not building.
+
+### Notes 2026-09-24b (after the item 9 build)
+
+35. [FEATURE, moderate, next] Getting fired must not send you to the board, not even after a
+   delay (my 1.5s version is wrong). Fired = no pay and the rep hit, but the job carries on:
+   you leave only by choosing to at the truck. Spite stays possible (fired by a gardener
+   for two flowers, you can flatten the rest), each act costing rep as mischief does after
+   payment. A beat before the full consequences land is fine. DECIDED. Supersedes 23.
+   Home: `main.gd` `_physics_process` (the `customer.fired` check calls `_finish`),
+   truck menu buttons, `_mischief` (today it only counts once paid).
+36. [FEATURE, moderate] Run stats: critters run over or picked up, stones collected, and the
+   rep or money each earned or cost. A funny tally after the job and at run end.
+37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
+   black-market hedgehog dealer turns up. Needs 29 (picking critters up) first.
+38. [DESIGN, large] Punishment needs a witness. Some customers stand on the patio watching the
+   whole job, some go inside and don't care, some watch from the windows. What nobody saw
+   doesn't cost you, but the aftermath can (a lawn left a bloody mess gets opinions).
+   Ideation, not decided. Ties to 22 (impatience), 24 (tone), 26 (cops).
+39. [FEATURE, moderate-large] Layouts that make sense: the truck parks on the street at the
+   end of the drive or in the drive, not on a random patch of concrete on the lawn. Houses
+   get a drive and a garage, and maybe the customer's car in the drive, one more thing to
+   crash into. Ties to 12 (world past the garden: footpath, road).
+40. [DESIGN, large] High-end jobs: a mansion with a loop driveway and a golf course out back.
+   Golf balls act like stones; sinking one in a hole is a secret achievement. Belongs in the
+   escalation session (21).
+
+PROPOSED ORDER (b): (10 done), then 35 (a correction to what just shipped), then
+the earlier order: 12 with 39 (both reshape the garden edge), 11, 13. Design session:
+21 to 27 plus 38 and 40.
