@@ -1,5 +1,5 @@
 # Drives the mower in the real main scene: holding forward moves it and cuts grass,
-# and it stays on the lawn when driven into the edge.
+# it stays on the lawn when driven into the edge, and its camera is bounded by the lawn.
 extends SceneTree
 
 var _main: Node
@@ -18,6 +18,9 @@ func _physics_process(_delta: float) -> bool:
 	var lawn: Lawn = _main.get_node("Lawn")
 	if _frame == 2:
 		_start = mower.global_position
+		var cam: Camera2D = mower.get_node("Camera")
+		assert(cam.is_current(), "the mower camera should be the active one")
+		assert(cam.limit_right == lawn.size_px.x and cam.limit_bottom == lawn.size_px.y, "camera limits should match the lawn")
 		Input.action_press("move_forward")
 	elif _frame == 600:
 		Input.action_release("move_forward")

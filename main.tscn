@@ -31,6 +31,11 @@ polygon = PackedVector2Array(-18, -4, -34, -4, -34, 4, -18, 4)
 color = Color(0.8, 0.15, 0.12, 1)
 polygon = PackedVector2Array(-18, -14, 18, -14, 18, 14, -18, 14)
 
+[node name="Camera" type="Camera2D" parent="Mower"]
+zoom = Vector2(2, 2)
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
 [node name="HUD" type="CanvasLayer" parent="."]
 
 [node name="Percent" type="Label" parent="HUD"]
