@@ -61,7 +61,6 @@ func _on_body_entered(body: Node2D) -> void:
 	dead = true
 	set_deferred("monitoring", false)
 	rotation = 0.0
-	z_index = -1
 	squashed.emit(self)
 	queue_redraw()
 	get_tree().create_timer(12.0).timeout.connect(queue_free)
@@ -69,13 +68,13 @@ func _on_body_entered(body: Node2D) -> void:
 
 func _draw() -> void:
 	if dead:
-		draw_circle(Vector2.ZERO, radius * 1.4, Color(0.45, 0.08, 0.08, 0.8))
-		draw_circle(Vector2(3, -2), radius * 0.6, Color(0.35, 0.25, 0.18))
+		var s := preload("res://art/splat.png")
+		draw_texture(s, -s.get_size() / 2.0)
 		return
-	var bob := sin(_t * 14.0) * 1.0
-	if kind == "hedgehog":
-		draw_circle(Vector2(0, bob * 0.3), radius, Color(0.36, 0.26, 0.18))
-		draw_circle(Vector2(radius * 0.8, 0), radius * 0.45, Color(0.85, 0.7, 0.55))
-	else:
-		draw_circle(Vector2(0, bob * 0.3), radius, Color(0.62, 0.35, 0.15))
-		draw_circle(Vector2(-radius * 1.2, 0), radius * 0.8, Color(0.7, 0.42, 0.2))
+	var tex: Texture2D = preload("res://art/hedgehog.png") if kind == "hedgehog" else preload("res://art/squirrel.png")
+	var fw := tex.get_width() / 2.0
+	var frame := int(_t * (8.0 if speed > 0.0 and _pause <= 0.0 else 0.0)) % 2
+	# Walking left would draw upside down once rotated; mirror vertically instead.
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1, -1 if heading.x < 0.0 else 1))
+	draw_texture_rect_region(tex, Rect2(Vector2(-fw / 2.0, -tex.get_height() / 2.0), Vector2(fw, tex.get_height())),
+		Rect2(frame * fw, 0, fw, tex.get_height()))

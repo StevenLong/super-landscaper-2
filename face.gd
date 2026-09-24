@@ -28,9 +28,19 @@ var _shake := 0.0
 
 
 func set_look(look: Dictionary) -> void:
-	var img := (load("res://art/faces.png") as Texture2D).get_image()
+	_style = look.hair_style
+	_tex = ImageTexture.create_from_image(swapped("res://art/faces.png", look, Rect2i(0, _style * CELL, CELL * FRAMES.size(), CELL)))
+	queue_redraw()
+
+
+## A copy of a key-coloured sheet with this customer's skin, hair and shirt swapped in
+## (only within region, to keep it quick). Shared with the standing sprite.
+static func swapped(path: String, look: Dictionary, region := Rect2i()) -> Image:
+	var img := (load(path) as Texture2D).get_image()
 	img.decompress()
 	img.convert(Image.FORMAT_RGBA8)
+	if not region.has_area():
+		region = Rect2i(Vector2i.ZERO, img.get_size())
 	var skin: Array = SKINS[look.skin % SKINS.size()]
 	var hair: Array = HAIRS[look.hair % HAIRS.size()]
 	var shirt: Array = SHIRTS[look.shirt % SHIRTS.size()]
@@ -41,15 +51,12 @@ func set_look(look: Dictionary) -> void:
 		Color8(1, 255, 1): Color(hair[0]), Color8(2, 254, 2): Color(hair[1]), Color8(3, 253, 3): Color(hair[2]),
 		Color8(1, 1, 255): Color(shirt[0]), Color8(2, 2, 254): Color(shirt[1]),
 	}
-	_style = look.hair_style
-	var y0 := _style * CELL
-	for y in range(y0, y0 + CELL):
-		for x in img.get_width():
+	for y in range(region.position.y, region.end.y):
+		for x in range(region.position.x, region.end.x):
 			var c := img.get_pixel(x, y)
 			if c.a > 0.0 and swap.has(Color8(c.r8, c.g8, c.b8)):
 				img.set_pixel(x, y, swap[Color8(c.r8, c.g8, c.b8)])
-	_tex = ImageTexture.create_from_image(img)
-	queue_redraw()
+	return img
 
 
 func _process(delta: float) -> void:

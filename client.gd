@@ -1,13 +1,19 @@
 extends Node2D
-## The customer standing on their patio, watching. Turns to follow the mower and
-## hops when they react. Placeholder art until the art pass.
+## The customer standing on their patio, watching. Faces the mower and throws their
+## arms up when they react. Palette-swapped to match their portrait.
 
 var watch: Node2D
 var _hop := 0.0
+var _tex: Texture2D
+
+
+func set_look(look: Dictionary) -> void:
+	_tex = ImageTexture.create_from_image(Face.swapped("res://art/client.png", look))
+	queue_redraw()
 
 
 func react() -> void:
-	_hop = 0.5
+	_hop = 0.8
 
 
 func _process(delta: float) -> void:
@@ -16,14 +22,9 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var y := -absf(sin(_hop * 18.0)) * 6.0 if _hop > 0.0 else 0.0
-	var facing := 1.0
-	if watch:
-		facing = signf(watch.global_position.x - global_position.x)
-		if facing == 0.0:
-			facing = 1.0
-	draw_rect(Rect2(-6, -22 + y, 12, 16), Color("4878c8"))
-	draw_circle(Vector2(0, -28 + y), 7.0, Color("e8b088"))
-	draw_circle(Vector2(3 * facing, -29 + y), 1.5, Color("1e2040"))
-	draw_rect(Rect2(-5, -6 + y, 4, 8), Color("383040"))
-	draw_rect(Rect2(1, -6 + y, 4, 8), Color("383040"))
+	if _tex == null:
+		return
+	var y := -absf(sin(_hop * 16.0)) * 5.0 if _hop > 0.0 else 0.0
+	var flip := watch != null and watch.global_position.x < global_position.x
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1 if flip else 1, 1))
+	draw_texture_rect_region(_tex, Rect2(-9, -30 + y, 18, 30), Rect2(18 if _hop > 0.0 else 0, 0, 18, 30))

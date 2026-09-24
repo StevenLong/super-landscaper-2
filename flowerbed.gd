@@ -52,9 +52,11 @@ func _trample(at: Vector2, radius: float) -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.36, 0.24, 0.14))
+	draw_texture_rect(preload("res://art/soil.png"), Rect2(Vector2.ZERO, size), true)
+	draw_rect(Rect2(Vector2.ZERO, size), Color("2e1c10"), false, 2.0)
+	var tex := preload("res://art/flowers.png")
+	var kind := int(position.x + position.y) # one bed tends to one palette, with a mix
 	for i in _flowers.size():
-		if _flat[i]:
-			draw_circle(_flowers[i], 5.0, Color(0.62, 0.56, 0.42))
-		else:
-			draw_circle(_flowers[i], 4.0, Color(0.95, 0.35, 0.6) if i % 3 else Color(1, 0.85, 0.2))
+		var col := (kind + (i % 5 if i % 7 == 0 else 0)) % 6
+		draw_texture_rect_region(tex, Rect2(_flowers[i] - Vector2(4, 5), Vector2(8, 8)),
+			Rect2(col * 8, 8 if _flat[i] else 0, 8, 8))

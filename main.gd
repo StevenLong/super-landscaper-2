@@ -67,22 +67,23 @@ func _build_layout() -> void:
 
 	var house: Node2D = HouseScript.new()
 	house.name = "House"
-	house.size = Vector2(400, 120) if fixed else Vector2(minf(460.0, size.x * 0.34), 130)
-	house.position = Vector2(440, 0) if fixed else Vector2(size.x * 0.5 - house.size.x * 0.5, 0)
+	house.position = Vector2(size.x * 0.5 - house.size.x * 0.5, 0)
 	$Scenery.add_child(house)
 	$Client.position = house.patio_point()
 	$Client.watch = mower
+	$Client.set_look(job.look)
 
-	var drive: ColorRect = $Driveway
+	var drive: Control = $Driveway
 	drive.position = Vector2(0, size.y - 180)
 	$Truck.position = Vector2(110, size.y - 90)
 	mower.position = Vector2(230, size.y - 90)
+	$Truck/Trailer.visible = Game.in_run and "rideon" in Game.owned
 
 	var taken: Array[Rect2] = [house.rect().grow(50), Rect2(drive.position, drive.size).grow(70)]
 	var trees: Array = []
 	var beds: Array = []
 	if fixed:
-		trees = [[Vector2(900, 420), 30.0]]
+		trees = [[Vector2(900, 420), 34.0]]
 		beds = [Rect2(360, 300, 200, 80)]
 	else:
 		var r := RandomNumberGenerator.new()
@@ -92,7 +93,7 @@ func _build_layout() -> void:
 			if br.has_area():
 				beds.append(br)
 		for i in job.trees:
-			var rad := r.randf_range(24, 40)
+			var rad: float = [26.0, 34.0, 42.0][r.randi() % 3] # matches the canopy art sizes
 			var tr := _place(r, taken, Vector2(rad, rad) * 2.0, size)
 			if tr.has_area():
 				trees.append([tr.get_center(), rad])
@@ -111,6 +112,7 @@ func _build_layout() -> void:
 		t.name = "Tree" if i == 0 else "Tree%d" % (i + 1)
 		t.position = trees[i][0]
 		t.radius = trees[i][1]
+		t.variant = i
 		var cs := CollisionShape2D.new()
 		cs.name = "Shape"
 		t.add_child(cs)

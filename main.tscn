@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_main"]
 [ext_resource type="Script" path="res://lawn.gd" id="2_lawn"]
@@ -8,6 +8,9 @@
 [ext_resource type="Script" path="res://client.gd" id="6_client"]
 [ext_resource type="Script" path="res://hud.gd" id="7_hud"]
 [ext_resource type="Script" path="res://face.gd" id="8_face"]
+[ext_resource type="Texture2D" path="res://art/trailer.png" id="9_trailer"]
+[ext_resource type="Texture2D" path="res://art/truck.png" id="10_truck"]
+[ext_resource type="Texture2D" path="res://art/gravel.png" id="11_gravel"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mower"]
 size = Vector2(36, 28)
@@ -24,11 +27,12 @@ script = ExtResource("1_main")
 [node name="Lawn" type="Sprite2D" parent="."]
 script = ExtResource("2_lawn")
 
-[node name="Driveway" type="ColorRect" parent="."]
+[node name="Driveway" type="TextureRect" parent="."]
 offset_top = 540.0
 offset_right = 220.0
 offset_bottom = 720.0
-color = Color(0.55, 0.53, 0.5, 1)
+texture = ExtResource("11_gravel")
+stretch_mode = 1
 
 [node name="Scenery" type="Node2D" parent="."]
 
@@ -42,17 +46,13 @@ script = ExtResource("4_truck")
 [node name="Shape" type="CollisionShape2D" parent="Truck"]
 shape = SubResource("RectangleShape2D_truck")
 
-[node name="Bed" type="Polygon2D" parent="Truck"]
-color = Color(0.18, 0.32, 0.6, 1)
-polygon = PackedVector2Array(-60, -28, 20, -28, 20, 28, -60, 28)
+[node name="Trailer" type="Sprite2D" parent="Truck"]
+visible = false
+position = Vector2(-92, 0)
+texture = ExtResource("9_trailer")
 
-[node name="Cab" type="Polygon2D" parent="Truck"]
-color = Color(0.12, 0.22, 0.45, 1)
-polygon = PackedVector2Array(20, -26, 60, -26, 60, 26, 20, 26)
-
-[node name="FuelCan" type="Polygon2D" parent="Truck"]
-color = Color(0.9, 0.75, 0.1, 1)
-polygon = PackedVector2Array(-50, -14, -30, -14, -30, 14, -50, 14)
+[node name="Sprite" type="Sprite2D" parent="Truck"]
+texture = ExtResource("10_truck")
 
 [node name="RefuelZone" type="Area2D" parent="Truck"]
 
@@ -71,13 +71,7 @@ lawn = NodePath("../Lawn")
 [node name="Shape" type="CollisionShape2D" parent="Mower"]
 shape = SubResource("RectangleShape2D_mower")
 
-[node name="Handle" type="Polygon2D" parent="Mower"]
-color = Color(0.15, 0.15, 0.15, 1)
-polygon = PackedVector2Array(-18, -4, -34, -4, -34, 4, -18, 4)
-
-[node name="Body" type="Polygon2D" parent="Mower"]
-color = Color(0.8, 0.15, 0.12, 1)
-polygon = PackedVector2Array(-18, -14, 18, -14, 18, 14, -18, 14)
+[node name="Sprite" type="Sprite2D" parent="Mower"]
 
 [node name="Camera" type="Camera2D" parent="Mower"]
 zoom = Vector2(2, 2)

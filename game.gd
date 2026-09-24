@@ -8,21 +8,21 @@ var save_path := "user://best.cfg" ## tests point this elsewhere so they never t
 ## applies the equipped spec on top.
 const MOWERS := {
 	"push": {
-		"name": "Push mower", "price": 0, "power": "stamina",
+		"name": "Push mower", "price": 0, "power": "stamina", "sprite": "push", "body": Vector2(30, 22),
 		"max_speed": 150.0, "reverse_speed": 80.0, "accel": 420.0, "brake": 900.0,
 		"turn_rate": 3.6, "cut_radius": 12.0, "max_fuel": 20.0, "fuel_burn": 1.0,
 		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0,
 		"blurb": "Your legs are the engine. Narrow, slow, nimble. Rests to recover.",
 	},
 	"petrol": {
-		"name": "Petrol mower", "price": 180, "power": "fuel",
+		"name": "Petrol mower", "price": 180, "power": "fuel", "sprite": "petrol", "body": Vector2(36, 28),
 		"max_speed": 220.0, "reverse_speed": 110.0, "accel": 600.0, "brake": 900.0,
 		"turn_rate": 3.0, "cut_radius": 16.0, "max_fuel": 40.0, "fuel_burn": 1.0,
 		"regen": 0.0, "empty_speed_scale": 0.35, "fuel_price": 0.25,
 		"blurb": "Faster and wider. Burns fuel the whole time; refill at the truck.",
 	},
 	"rideon": {
-		"name": "Ride-on mower", "price": 650, "power": "fuel",
+		"name": "Ride-on mower", "price": 650, "power": "fuel", "sprite": "rideon", "body": Vector2(52, 40),
 		"max_speed": 300.0, "reverse_speed": 120.0, "accel": 340.0, "brake": 520.0,
 		"turn_rate": 1.9, "cut_radius": 26.0, "max_fuel": 60.0, "fuel_burn": 1.5,
 		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25,

@@ -22,16 +22,33 @@ signal fuel_changed(fraction: float)
 @export var fuel_burn := 1.0 ## per second
 @export var regen := 0.0 ## stamina recovered per second while not pushing
 @export var empty_speed_scale := 0.35 ## pushing a dead mower
+@export var sprite_kind := "petrol" ## art/mower_<kind>.png, two frames
 
 @onready var fuel := max_fuel
 var fuel_used := 0.0
 var throttle := 0.0
+var _stride := 0.0
+
+
+func _ready() -> void:
+	_apply_visual()
+
+
+func _apply_visual() -> void:
+	var spr: Sprite2D = $Sprite
+	spr.texture = load("res://art/mower_%s.png" % sprite_kind)
+	spr.hframes = 2
 
 
 func apply_spec(spec: Dictionary) -> void:
 	for k in ["power", "max_speed", "reverse_speed", "accel", "brake", "turn_rate", "cut_radius",
 			"max_fuel", "fuel_burn", "regen", "empty_speed_scale"]:
 		set(k, spec[k])
+	sprite_kind = spec.sprite
+	var shape := RectangleShape2D.new()
+	shape.size = spec.body
+	$Shape.shape = shape
+	_apply_visual()
 	fuel = max_fuel
 	edge_margin = minf(edge_margin, cut_radius * 0.75)
 
@@ -66,6 +83,11 @@ func _physics_process(delta: float) -> void:
 
 	var before := global_position
 	move_and_slide()
+	# Walk / wheel animation: flip frames every few pixels travelled.
+	_stride += global_position.distance_to(before)
+	if _stride > 7.0:
+		_stride = 0.0
+		$Sprite.frame = 1 - $Sprite.frame
 	if lawn:
 		var lo := lawn.global_position + Vector2(edge_margin, edge_margin)
 		var hi := lawn.global_position + Vector2(lawn.size_px) - Vector2(edge_margin, edge_margin)
