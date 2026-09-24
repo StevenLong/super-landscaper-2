@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{ echo \"=== HANDOFF (auto-injected): ledger + latest session ===\"; awk '/^## Session /{n++} n<2' HANDOFF.md; timeout 5 git fetch -q; n=$(git rev-list --count \"HEAD..@{u}\" 2>/dev/null); if [ -n \"$n\" ] && [ \"$n\" -gt 0 ]; then echo \"WARNING: super-landscaper-2 is $n commit(s) behind origin. Pull before working.\"; fi; } 2>/dev/null || true",
+            "timeout": 15,
+            "statusMessage": "Reading HANDOFF + checking origin"
+          }
+        ]
+      }
+    ]
+  }
+}
