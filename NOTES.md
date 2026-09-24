@@ -69,7 +69,7 @@ BLOCKS = spoils the next playtest. DONE items stay until the handoff that record
    just small and moving. FIX: bigger critter hit radius for stones.
 18. [FEATURE, small] Throw stones at your own truck or mower (damage), a tree or flower bed
    (some effect) (S2-THROW).
-19. [VISUAL, moderate, PARKED] Stripe shade blends with heading instead of snapping light/
+19. [VISUAL, moderate] [PARKED since 2026-09-24] Stripe shade blends with heading instead of snapping light/
    dark (S1-STRIPES). You'd keep the current look; only if cheap. Home: `lawn.gdshader`.
 20. [FEATURE, small] Settings on the title screen (S1-ATTRACT). The pause menu's music/sound
    toggles already exist to reuse.
@@ -111,9 +111,9 @@ BLOCKS = spoils the next playtest. DONE items stay until the handoff that record
 29. [DESIGN, moderate-large] Pick up more than stones (S1-DOG): the dog wriggles free after
    a while, a hedgehog stuns you, a squirrel holds for a few seconds; hedgehog-proof gloves
    from the shop; throwing hedgehogs at things.
-30b. [PARKED] A dark path: jobs for people who are themselves wanted. Mowing a mob boss's
+30b. [PARKED since 2026-09-24] A dark path: jobs for people who are themselves wanted. Mowing a mob boss's
    lawn, or mowing up a mob boss's enemies. Throwaway.
-30. [PARKED] Stamina progression (S1-PUSH): level it up, better push mowers, drug or
+30. [PARKED since 2026-09-24] Stamina progression (S1-PUSH): level it up, better push mowers, drug or
    cybernetic enhancements.
 
 **Answers and still owed**
