@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Job HUD: coverage, clock, fuel, the customer's face, and the modal panels
-## (briefing, truck menu, pay screen, pause). Runs while the game is paused.
+## (briefing, truck menu, pause). Runs while the game is paused.
 
 signal choice(id: String)
 

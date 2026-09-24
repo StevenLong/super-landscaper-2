@@ -1,8 +1,8 @@
 extends Node2D
 ## One job: builds the garden from Game.job(), runs the customer's mood, and ends
-## in a pay screen, a firing, a knockout, or you driving off. Outside a run (tests,
-## playing this scene directly) it uses the slice's hand-made lawn and skips the
-## briefing.
+## in a payment, a firing, a knockout, or you driving off; the board then shows the
+## rundown. Outside a run (tests, playing this scene directly) it uses the slice's
+## hand-made lawn and skips the briefing.
 
 const TreeScript := preload("res://tree.gd")
 const BedScript := preload("res://flowerbed.gd")
@@ -448,11 +448,19 @@ func open_truck_menu() -> void:
 	if walker and walker.carrying == "" and mower.power == "fuel":
 		buttons.append(["can", "Grab the fuel can"])
 	buttons.append(["resume", "Keep going"])
-	var lines := ["Mowed: %d%%" % floori(lawn.cut_fraction() * 100.0),
+	var lines := []
+	if not pay_result.is_empty():
+		lines = ["\"%s\"" % pay_result.comment, "They handed over $%d%s." % [pay_result.paid,
+			(" (a $%d tip!)" % pay_result.tip) if pay_result.tip > 0 else ""],
+			"Drive off when you like. (They're watching. Behave.)", ""]
+	lines += ["Mowed: %d%%" % floori(lawn.cut_fraction() * 100.0),
 		"Mower condition: %d%%" % roundi(mower.condition)]
 	if customer.knocked_out:
 		lines.append("The customer is out cold on the patio.")
-	hud.open("At the truck", lines, buttons)
+	if pay_result.is_empty():
+		hud.open("At the truck", lines, buttons)
+	else:
+		hud.open("Paid", lines, buttons, job.look, customer.face())
 
 
 func _on_choice(id: String) -> void:
@@ -471,20 +479,14 @@ func _on_choice(id: String) -> void:
 		"music", "sound":
 			Sfx.toggle(id)
 			open_pause()
-		"hang":
-			hud.close()
-			get_tree().paused = false
 		"can":
 			walker.carrying = "jerrycan"
 			walker.queue_redraw()
 			hud.close()
 			get_tree().paused = false
-		"continue":
+		"continue": # after ARRESTED: the board shows the run is over
 			get_tree().paused = false
-			if Game.in_run:
-				get_tree().change_scene_to_file("res://board.tscn")
-			else:
-				get_tree().reload_current_scene()
+			get_tree().change_scene_to_file("res://board.tscn")
 		"quit":
 			get_tree().paused = false
 			Game.in_run = false
@@ -507,10 +509,7 @@ func hand_in() -> void:
 	pop_text("+$%d" % pay_result.paid, $Client.position + Vector2(0, -40))
 	if Game.in_run and pay_result.mood >= 60.0:
 		Sfx.play("voice_happy")
-	get_tree().paused = true
-	hud.open("Paid!", ["\"%s\"" % pay_result.comment, "", "They hand over $%d." % pay_result.paid,
-		"You can drive off now, or hang about.", "(They're watching. Behave.)"],
-		[["leave_paid", "Drive off"], ["hang", "Hang about"]], job.look, customer.face())
+	open_truck_menu()
 
 
 ## Playtest cheat, debug builds only: [0] ends the job as well as it can go (whole
@@ -549,9 +548,13 @@ func _costs() -> float:
 	return mower.fuel_used * fuel_price + mower.repaired * REPAIR_PRICE + bills
 
 
+## The job is over: record it and head back to the board, which shows the rundown.
 func _finish(result: Dictionary) -> void:
 	over = true
 	get_tree().paused = true
+	result.customer = job.get("customer", "")
+	result.look = job.look
+	result.face = customer.face() if result.outcome != "walked" else "furious"
 	Game.record_result(result)
 	Sfx.music("")
 	match result.outcome:
@@ -563,29 +566,13 @@ func _finish(result: Dictionary) -> void:
 			Sfx.play("voice_angry")
 		"walked":
 			Sfx.play("voice_angry")
-	var lines := []
-	match result.outcome:
-		"fired":
-			lines = ["\"%s\"" % result.comment, "", "No pay.", "Reputation took a big hit."]
-		"walked":
-			lines = ["\"%s\"" % result.comment, "", "You drove off without being paid.", "Word gets around."]
-		"ko":
-			lines = [result.comment, "", "No pay. But nobody saw a thing... probably.",
-				"(Your wanted level went up.)"]
-		_:
-			lines = ["\"%s\"" % result.comment, "",
-				"Mowed: %d%%" % floori(result.coverage * 100.0),
-				"Time: %d:%02d" % [floori(result.elapsed / 60.0), int(result.elapsed) % 60],
-				"Paid: $%d%s" % [result.paid, ("  (includes $%d tip!)" % result.tip) if result.tip > 0 else ""]]
-			if result.get("mischief", 0.0) > 0.0:
-				lines.append("Mischief after payment: reputation -%d" % roundi(result.mischief))
-	if result.fuel_cost > 0.0:
-		lines.append("Costs: -$%d  (fuel, repairs%s)" % [roundi(result.fuel_cost), ", damages" if bills > 0.0 else ""])
+	if result.outcome == "fired":
+		await get_tree().create_timer(1.5, true).timeout # let the buzzer and the face land
+	get_tree().paused = false
 	if Game.in_run:
-		lines.append("")
-		lines.append("Money: $%d    Reputation: %s" % [Game.money, UI.rep_word(Game.reputation)])
-	var title: String = {"fired": "FIRED!", "walked": "You left", "ko": "Well, that happened"}.get(result.outcome, "Job done")
-	hud.open(title, lines, [["continue", "Continue"]], job.look, customer.face() if result.outcome != "walked" else "furious")
+		get_tree().change_scene_to_file("res://board.tscn")
+	elif get_tree().current_scene == self: # a lone job (dev play): go again
+		get_tree().reload_current_scene()
 
 
 # ---------------------------------------------------------------- stones

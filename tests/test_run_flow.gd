@@ -38,12 +38,15 @@ func _process(_delta: float) -> bool:
 				lawn.cut_segment(Vector2(0, y), Vector2(lawn.size_px.x, y), 20.0)
 			current_scene.hand_in()
 			current_scene._on_choice("leave_paid")
-			assert(current_scene.over, "a mowed lawn is accepted and you drive off")
-			current_scene._on_choice("continue")
+			assert(game.last_result.outcome == "paid", "a mowed lawn is accepted and you drive off (the scene is already on its way out)")
 		4:
 			assert(current_scene.name == "Board", "back to the board after a job")
 			assert(game.day == 2 and game.jobs_done == 1, "the day advanced")
 			assert(game.money > 0, "the job paid")
+			var rundown := current_scene.find_children("*", "Label", true, false).filter(
+				func(l: Label) -> bool: return l.text.begins_with("Last job: Job done"))
+			assert(rundown.size() == 1, "the board shows the last job's rundown")
+			assert(game.last_result.has("rep_before") and game.last_result.has("rep_after"), "the rundown knows the rep change")
 			game.money = 1000
 			assert(game.buy("petrol") and game.equipped == "petrol", "buying a mower equips it")
 			assert(not game.buy("petrol"), "you can't buy the same mower twice")

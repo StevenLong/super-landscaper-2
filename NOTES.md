@@ -41,11 +41,14 @@ BLOCKS = spoils the next playtest. DONE items stay until the handoff that record
 
 **Feel and readability**
 
-9. [FEATURE, moderate] One results screen, not two (S1-HANDIN, S1-MISCHIEF). Now: the
+9. [DONE] [FEATURE, moderate] One results screen, not two (S1-HANDIN, S1-MISCHIEF). Now: the
    "Paid!" panel at the truck (`main.gd:509`) then "Job done" on leaving (`main.gd:574`).
    Wanted: payment at the truck is just the money (the +$ pop, maybe the quote); leaving
    shows one rundown on the board screen (paid, spent, rep change). Mischief is enough as
    the "Rep -N" pop above the head.
+   DONE: paying updates the truck menu (quote, amount, Drive off / Keep going); leaving
+   goes straight to the board, whose top-left panel is the rundown (face, outcome, paid,
+   costs, net, rep change, mischief, wanted). A firing holds 1.5s for the buzzer first.
 10. [VISUAL, small] The corner face can cover the player (S1-FACE). FIX options: (a) move
    the face to the corner nearest the customer (your idea), (b) move it to the opposite
    corner, or fade it, whenever the player gets near it. DECIDED: (b).
@@ -127,7 +130,7 @@ BLOCKS = spoils the next playtest. DONE items stay until the handoff that record
    push-mower winnability, board fit, hand-in send-back, hanging about, spawns avoiding the
    house/truck/trees.
 
-PROPOSED ORDER: (1 to 7 done 2026-09-24), then 9, 10, 12, 11, 13, then a
+PROPOSED ORDER: (1 to 7 and 9 done 2026-09-24), then 10, 12, 11, 13, then a
 design session on 21 to 27 before any of them are built. Rationale: clear the bugs and give
 you the cheat so the next playtest reaches ponds and large lawns; then the readability items
 that cause unfair hits; escalation is the real open question and needs deciding, not building.

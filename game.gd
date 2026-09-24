@@ -212,6 +212,8 @@ func record_result(result: Dictionary) -> void:
 	last_result = result
 	if not in_run:
 		return
+	result.rep_before = reputation
+	var heat_before := heat
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
 	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
@@ -222,6 +224,8 @@ func record_result(result: Dictionary) -> void:
 		heat += 1.0
 	elif result.outcome == "paid":
 		heat = maxf(0.0, heat - 0.34)
+	result.rep_after = reputation
+	result.heat_up = heat > heat_before
 	if total_earned > best_score:
 		best_score = total_earned
 		var cfg := ConfigFile.new()

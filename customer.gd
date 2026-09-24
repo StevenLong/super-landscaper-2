@@ -156,7 +156,7 @@ func accepts(cov: float) -> bool:
 	return cov >= job.target * 0.6
 
 
-## What they pay and how it lands on your reputation, itemised for the pay screen.
+## What they pay and how it lands on your reputation, itemised for the board's rundown.
 func evaluate(cov: float, fuel_cost: float) -> Dictionary:
 	var target: float = job.target
 	var patience: float = job.patience
