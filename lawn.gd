@@ -51,12 +51,22 @@ func cut_fraction() -> float:
 ## Remove a lawn-space rect from the mowable area. Excluded cells never count
 ## toward the total; whatever sits there draws itself.
 func exclude_rect(rect: Rect2) -> void:
+	_exclude_where(rect, func(_p: Vector2) -> bool: return true)
+
+
+## Remove a lawn-space circle (a cell counts if its centre is inside).
+func exclude_circle(center: Vector2, radius: float) -> void:
+	var bounds := Rect2(center - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
+	_exclude_where(bounds, func(p: Vector2) -> bool: return p.distance_squared_to(center) <= radius * radius)
+
+
+func _exclude_where(bounds: Rect2, inside: Callable) -> void:
 	var w := _img.get_width()
 	var h := _img.get_height()
-	for y in range(maxi(0, floori(rect.position.y / cell_px)), mini(h, ceili(rect.end.y / cell_px))):
-		for x in range(maxi(0, floori(rect.position.x / cell_px)), mini(w, ceili(rect.end.x / cell_px))):
+	for y in range(maxi(0, floori(bounds.position.y / cell_px)), mini(h, ceili(bounds.end.y / cell_px))):
+		for x in range(maxi(0, floori(bounds.position.x / cell_px)), mini(w, ceili(bounds.end.x / cell_px))):
 			var i := y * w + x
-			if _grid[i] == EXCLUDED:
+			if _grid[i] == EXCLUDED or not inside.call(Vector2(x + 0.5, y + 0.5) * cell_px):
 				continue
 			if _grid[i] == CUT:
 				_cut -= 1

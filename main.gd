@@ -6,9 +6,13 @@ func _ready() -> void:
 	lawn.cut_changed.connect(func(f: float) -> void: $HUD/Percent.text = "%d%%" % floori(f * 100.0))
 	$Mower.fuel_changed.connect(func(f: float) -> void: $HUD/Fuel.value = f)
 
-	# The driveway draws itself; the lawn just stops counting those cells.
+	# Things that aren't grass draw themselves; the lawn just stops counting those cells.
 	var drive: ColorRect = $Driveway
 	lawn.exclude_rect(Rect2(drive.position - lawn.global_position, drive.size))
+	var bed: Node2D = $Flowerbed
+	lawn.exclude_rect(Rect2(bed.rect().position - lawn.global_position, bed.size))
+	var tree: Node2D = $Tree
+	lawn.exclude_circle(tree.global_position - lawn.global_position, tree.radius)
 
 	# Keep the camera inside the lawn so nothing beyond its edge is ever shown.
 	var cam: Camera2D = $Mower/Camera

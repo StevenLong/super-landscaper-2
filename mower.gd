@@ -13,7 +13,7 @@ signal fuel_changed(fraction: float)
 @export var brake := 900.0
 @export var turn_rate := 3.0 ## radians per second
 @export var cut_radius := 16.0
-@export var edge_margin := 18.0
+@export var edge_margin := 12.0 ## small enough that cut_radius reaches the lawn edge AND corners
 @export var max_fuel := 40.0 ## seconds of running
 @export var fuel_burn := 1.0 ## per second, engine always on
 @export var empty_speed_scale := 0.35 ## pushing a dead mower
