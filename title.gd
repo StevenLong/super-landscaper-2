@@ -7,19 +7,19 @@ var _help_label: Label
 func _ready() -> void:
 	theme = UI.theme()
 	Sfx.music("music_menu")
-	var bg := ColorRect.new()
-	bg.color = UI.BG
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	add_child(preload("res://attract.gd").new())
+	var dim := ColorRect.new() # keep the menu readable over the mowing
+	dim.color = Color(0.05, 0.1, 0.05, 0.55)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(dim)
 
 	var col := UI.vbox(14)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(col)
-	var title := UI.label("SUPER LANDSCAPER", 72, UI.GOLD)
+	var title := UI.label("SUPER LANDSCAPER", 80, UI.GOLD)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_color_override("font_outline_color", Color("3a2a10"))
-	title.add_theme_constant_override("outline_size", 12)
+	UI.shadow(title, 6)
 	col.add_child(title)
 	var sub := UI.label("Mow the lawn. Mind the wildlife. Keep the customer happy. Mostly.", 22, UI.DIM)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

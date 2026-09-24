@@ -78,8 +78,10 @@ func _ready() -> void:
 		var lines: Array = job.brief.duplicate()
 		if job.get("dog", false):
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
-		lines.append_array(["", "Mow the lawn. Hand in at your truck when you're happy.",
-			"[F] hop off to move stones, fetch fuel, or catch a dog."])
+		lines.append_array(["", "Mow the lawn. Hand in at your truck when you're happy."])
+		if Game.jobs_done == 0:
+			lines.append_array(["W/S drive, A/D turn. [E] at the truck. [F] hop off to move",
+				"stones, fetch fuel or catch a dog. [Esc] pause."])
 		hud.open(job.customer, lines, [["start", "Let's go"]], job.look, "neutral")
 
 
