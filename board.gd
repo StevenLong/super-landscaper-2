@@ -142,6 +142,13 @@ func _upgrade_row(key: String) -> Control:
 	return UI.panel(row)
 
 
+## Playtest cheat, debug builds only: F9 on the board adds $500.
+func _unhandled_key_input(event: InputEvent) -> void:
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and event.keycode == KEY_F9:
+		Game.money += 500
+		_build()
+
+
 func _take(o: Dictionary) -> void:
 	Game.current_job = o
 	get_tree().change_scene_to_file("res://main.tscn")
