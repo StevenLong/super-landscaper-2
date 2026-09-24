@@ -164,15 +164,15 @@ func evaluate(cov: float, fuel_cost: float) -> Dictionary:
 	var time_f := 1.0 if elapsed <= patience else maxf(0.4, 1.0 - (elapsed - patience) / patience)
 	var mood_f := 0.5 + mood / 100.0
 	var base: float = job.pay
-	var paid := int(round(base * quality * time_f * mood_f))
+	var pay := int(round(base * quality * time_f * mood_f))
 	var tip := int(round(base * 0.25)) if (cov >= target and elapsed <= patience and mood >= 75.0) else 0
 	var rep := (mood - 50.0) / 5.0 + (2.0 if cov >= target else -3.0)
 	var comment := "Lovely job. Thank you!" if mood >= 75.0 else ("That'll do." if mood >= 45.0 else "Hmph. Take your money and go.")
 	return {
 		"outcome": "paid", "coverage": cov, "target_met": cov >= target,
 		"elapsed": elapsed, "on_time": elapsed <= patience, "mood": mood,
-		"paid": paid + tip, "tip": tip, "fuel_cost": fuel_cost,
-		"net": paid + tip - fuel_cost, "rep": rep, "comment": comment,
+		"paid": pay + tip, "tip": tip, "fuel_cost": fuel_cost,
+		"net": pay + tip - fuel_cost, "rep": rep, "comment": comment,
 	}
 
 

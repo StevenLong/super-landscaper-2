@@ -30,6 +30,7 @@ func _ready() -> void:
 
 
 func setup() -> void:
+	@warning_ignore("integer_division") # whole cells: dropping the remainder is the point
 	var cells := size_px / cell_px
 	_img = Image.create(cells.x, cells.y, false, Image.FORMAT_RGB8)
 	_img.fill(MASK[UNCUT])

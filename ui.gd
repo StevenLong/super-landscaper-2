@@ -15,13 +15,13 @@ static func theme() -> Theme:
 	var t := Theme.new()
 	t.default_font_size = 20
 	t.default_font = ThemeDB.fallback_font
-	var panel := StyleBoxFlat.new()
-	panel.bg_color = PANEL
-	panel.border_color = PANEL_EDGE
-	panel.set_border_width_all(3)
-	panel.set_corner_radius_all(2)
-	panel.set_content_margin_all(14)
-	t.set_stylebox("panel", "PanelContainer", panel)
+	var box := StyleBoxFlat.new()
+	box.bg_color = PANEL
+	box.border_color = PANEL_EDGE
+	box.set_border_width_all(3)
+	box.set_corner_radius_all(2)
+	box.set_content_margin_all(14)
+	t.set_stylebox("panel", "PanelContainer", box)
 	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
 		var b := StyleBoxFlat.new()
 		b.bg_color = {"normal": Color("3a5a2a"), "hover": Color("4a7a34"), "pressed": Color("2a4a1e"),

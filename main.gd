@@ -138,9 +138,9 @@ func _build_layout() -> void:
 				beds.append(br)
 		for i in job.trees:
 			var rad: float = [26.0, 34.0, 42.0][r.randi() % 3] # matches the canopy art sizes
-			var tr := _place(r, taken, Vector2(rad, rad) * 2.0, size)
-			if tr.has_area():
-				trees.append([tr.get_center(), rad])
+			var spot := _place(r, taken, Vector2(rad, rad) * 2.0, size)
+			if spot.has_area():
+				trees.append([spot.get_center(), rad])
 		for i in job.get("stones", 0):
 			var sr := _place(r, taken, Vector2(12, 12), size)
 			if sr.has_area():
@@ -203,15 +203,15 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	for key: String in sides:
 		var s: Array = sides[key]
 		var vertical: bool = key == "left" or key == "right"
-		var tr := TextureRect.new()
+		var strip := TextureRect.new()
 		if s[0] == "hedge":
-			tr.texture = preload("res://art/hedge.png")
+			strip.texture = preload("res://art/hedge.png")
 		else:
-			tr.texture = preload("res://art/fence_v.png") if vertical else preload("res://art/fence_h.png")
-		tr.stretch_mode = TextureRect.STRETCH_TILE
-		tr.position = (s[1] as Rect2).position
-		tr.size = (s[1] as Rect2).size
-		$Borders.add_child(tr)
+			strip.texture = preload("res://art/fence_v.png") if vertical else preload("res://art/fence_h.png")
+		strip.stretch_mode = TextureRect.STRETCH_TILE
+		strip.position = (s[1] as Rect2).position
+		strip.size = (s[1] as Rect2).size
+		$Borders.add_child(strip)
 		_edges.append({"kind": s[0], "from": s[2][0], "to": s[2][1], "inward": s[3]})
 
 

@@ -19,6 +19,8 @@ Notepad whenever an answer is still blank.
 - Verified: run_all green (11 checks; new edges test, and it fails if critter avoidance is
   switched off); screenshot of the borders. Not played.
 - Fixed in passing: tools/__pycache__ had been committed; now ignored.
+- Fixed the five editor warnings you pasted (two integer divisions, three shadowed names);
+  started docs/TRIBAL.md with the warning traps (headless can't see warnings).
 
 OWED CHECKS: CHECKS.txt (29 checks, six loads; load 6 is new).
 

@@ -24,6 +24,7 @@ static func make() -> FontFile:
 	f.set_cache_descent(0, CH, CH - ASCENT)
 	for code in range(32, 127):
 		var i := code - 32
+		@warning_ignore("integer_division") # whole cells: dropping the remainder is the point
 		var cell := Rect2i((i % COLS) * CW, (i / COLS) * CH, CW, CH)
 		var width := 0
 		for x in CW:
