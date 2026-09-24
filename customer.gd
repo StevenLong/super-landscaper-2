@@ -15,7 +15,7 @@ var flowers_flat := 0
 var coverage := 0.0
 var elapsed := 0.0
 var last_line := ""
-var paid := false ## once paid, whatever you do next is mischief
+var paid := false ## once paid they stop watching the clock
 
 var _nag_at := 0.0
 
@@ -33,10 +33,10 @@ func _init(job_data: Dictionary) -> void:
 func face() -> String:
 	if knocked_out:
 		return "ko"
-	if fired:
-		return "fired"
 	if _react_left > 0.0:
 		return _react_face
+	if fired:
+		return "fired"
 	for t: Array in TIERS:
 		if mood >= t[0]:
 			return t[1]
@@ -80,6 +80,9 @@ func on_flowers(total_flat: int) -> bool:
 	if fresh <= 0:
 		return false
 	flowers_flat = total_flat
+	if fired:
+		_react("horrified", 2.0, ["Stop that!", "Get OFF my lawn!", "Vandal!"][randi() % 3])
+		return true
 	var limit: int = persona.get("instant_flowers", 0)
 	if limit > 0 and total_flat >= limit:
 		fire("My FLOWERS! Get off my property!")
@@ -142,8 +145,9 @@ func _change(d: float) -> void:
 		fire("That's it. You're fired!")
 
 
+## Fired you or not, they still react to what you do next (that's the fun of spite).
 func _react(face_name: String, seconds: float, line: String) -> void:
-	if fired or knocked_out:
+	if knocked_out:
 		return
 	_react_face = face_name
 	_react_left = seconds

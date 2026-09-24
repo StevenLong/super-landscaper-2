@@ -65,7 +65,7 @@ func _physics_process(_delta: float) -> bool:
 		for y in range(0, 720, 20):
 			lawn.cut_segment(Vector2(0, y), Vector2(1280, y), 20.0)
 		_main.hand_in()
-		assert(not _main.pay_result.is_empty() and _main.pay_result.paid > 0, "handing in a mowed lawn gets you paid")
+		assert(not _main.settled.is_empty() and _main.settled.paid > 0, "handing in a mowed lawn gets you paid")
 		assert(not _main.over, "and you can still hang about")
 		assert(_main.hud.is_open(), "payment shows in the truck menu")
 		# Mischief after payment: squash something, and it comes off your reputation.
@@ -73,10 +73,10 @@ func _physics_process(_delta: float) -> bool:
 		var a: Animal = _main.spawn_animal("hedgehog", Vector2(640, 300), Vector2(641, 300))
 		a.squash()
 		assert(_main.mischief > 0.0, "squashing after payment is mischief")
-		_main._on_choice("leave_paid")
+		_main._on_choice("drive_off")
 		var r: Dictionary = root.get_node("Game").last_result
 		assert(_main.over and r.outcome == "paid" and r.paid > 0, "driving off ends the job, paid")
-		assert(r.mischief > 0.0 and r.rep < _main.pay_result.rep, "and the mischief costs reputation")
+		assert(r.mischief > 0.0 and r.rep < _main.settled.rep, "and the mischief costs reputation")
 		assert(not _main.hud.is_open(), "no results screen in the job: the board has the rundown")
 		print("PASS customer")
 		quit()

@@ -138,13 +138,17 @@ that cause unfair hits; escalation is the real open question and needs deciding,
 
 ### Notes 2026-09-24b (after the item 9 build)
 
-35. [FEATURE, moderate, next] Getting fired must not send you to the board, not even after a
+35. [DONE] [FEATURE, moderate] Getting fired must not send you to the board, not even after a
    delay (my 1.5s version is wrong). Fired = no pay and the rep hit, but the job carries on:
    you leave only by choosing to at the truck. Spite stays possible (fired by a gardener
    for two flowers, you can flatten the rest), each act costing rep as mischief does after
    payment. A beat before the full consequences land is fine. DECIDED. Supersedes 23.
    Home: `main.gd` `_physics_process` (the `customer.fired` check calls `_finish`),
    truck menu buttons, `_mischief` (today it only counts once paid).
+   DONE: firing books the result (no pay, rep -18) with the buzzer, speech and a FIRED! pop;
+   you stay. Wrecking things after that is mischief, and they keep reacting (a fired
+   gardener shouts at more flattened flowers). Drive off from the truck to leave.
+   `tests/test_fired.gd`.
 36. [FEATURE, moderate] Run stats: critters run over or picked up, stones collected, and the
    rep or money each earned or cost. A funny tally after the job and at run end.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
@@ -161,6 +165,5 @@ that cause unfair hits; escalation is the real open question and needs deciding,
    Golf balls act like stones; sinking one in a hole is a secret achievement. Belongs in the
    escalation session (21).
 
-PROPOSED ORDER (b): (10 done), then 35 (a correction to what just shipped), then
-the earlier order: 12 with 39 (both reshape the garden edge), 11, 13. Design session:
+PROPOSED ORDER (b): (10 and 35 done), then the earlier order: 12 with 39 (both reshape the garden edge), 11, 13. Design session:
 21 to 27 plus 38 and 40.

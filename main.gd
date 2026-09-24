@@ -14,6 +14,7 @@ const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
+const FIRED_HINT := "Fired: no pay. Leave from the truck [E] when you're done."
 const FACE_TOP := 12.0 ## the corner face's home, top right
 const FACE_BOTTOM := 576.0 ## where it ducks to while you're near it: 720 - 12 - its 132px
 
@@ -28,8 +29,8 @@ var over := false
 var bills := 0.0 ## broken windows, dented truck
 var walker: CharacterBody2D = null ## the player on foot, or null while mowing
 var dog: Dog = null
-var pay_result := {} ## set once paid: you can still hang about (and misbehave)
-var mischief := 0.0 ## reputation owed for what you did after being paid
+var settled := {} ## the job's outcome once paid or fired; you stay until you drive off
+var mischief := 0.0 ## reputation owed for what you did after it was settled
 
 var _next_hedgehog := 3.0
 var _next_squirrel := 8.0
@@ -299,9 +300,8 @@ func _physics_process(delta: float) -> void:
 	hud.set_clock(customer.elapsed)
 	$HUD/Face.expression = customer.face()
 	_place_face(delta)
-	if customer.fired and pay_result.is_empty():
-		_finish(customer.fired_result(_costs()))
-		return
+	if customer.fired and settled.is_empty():
+		_fired()
 	hud.set_hint(_hint())
 
 	# Running over the customer on their patio. Don't.
@@ -347,8 +347,10 @@ func _hint() -> String:
 			return "[E] truck"
 		if walker.global_position.distance_to(mower.global_position) < 44.0:
 			return "[F] get back on"
-		return ""
-	return "[E] talk to the customer / leave" if at_truck() else ""
+		return FIRED_HINT if customer.fired else ""
+	if at_truck():
+		return "[E] talk to the customer / leave"
+	return FIRED_HINT if customer.fired else ""
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -441,8 +443,8 @@ func open_pause() -> void:
 func open_truck_menu() -> void:
 	get_tree().paused = true
 	var buttons := []
-	if not pay_result.is_empty():
-		buttons.append(["leave_paid", "Drive off"])
+	if not settled.is_empty():
+		buttons.append(["drive_off", "Drive off"])
 	elif customer.knocked_out:
 		buttons.append(["leave_ko", "Leave quietly"])
 	else:
@@ -452,18 +454,21 @@ func open_truck_menu() -> void:
 		buttons.append(["can", "Grab the fuel can"])
 	buttons.append(["resume", "Keep going"])
 	var lines := []
-	if not pay_result.is_empty():
-		lines = ["\"%s\"" % pay_result.comment, "They handed over $%d%s." % [pay_result.paid,
-			(" (a $%d tip!)" % pay_result.tip) if pay_result.tip > 0 else ""],
+	if settled.get("outcome") == "paid":
+		lines = ["\"%s\"" % settled.comment, "They handed over $%d%s." % [settled.paid,
+			(" (a $%d tip!)" % settled.tip) if settled.tip > 0 else ""],
 			"Drive off when you like. (They're watching. Behave.)", ""]
+	elif settled.get("outcome") == "fired":
+		lines = ["\"%s\"" % settled.comment, "No pay, and word will get around.",
+			"Drive off when you like. Anything else you wreck costs you more.", ""]
 	lines += ["Mowed: %d%%" % floori(lawn.cut_fraction() * 100.0),
 		"Mower condition: %d%%" % roundi(mower.condition)]
 	if customer.knocked_out:
 		lines.append("The customer is out cold on the patio.")
-	if pay_result.is_empty():
+	if settled.is_empty():
 		hud.open("At the truck", lines, buttons)
 	else:
-		hud.open("Paid", lines, buttons, job.look, customer.face())
+		hud.open("Paid" if settled.outcome == "paid" else "Fired", lines, buttons, job.look, customer.face())
 
 
 func _on_choice(id: String) -> void:
@@ -477,8 +482,8 @@ func _on_choice(id: String) -> void:
 			_finish(customer.walked_result(_costs()))
 		"leave_ko":
 			_finish(customer.ko_result(_costs()))
-		"leave_paid":
-			_leave_paid()
+		"drive_off":
+			_drive_off()
 		"music", "sound":
 			Sfx.toggle(id)
 			open_pause()
@@ -515,11 +520,11 @@ func hand_in() -> void:
 		hud.close()
 		get_tree().paused = false
 		return
-	pay_result = customer.evaluate(cov, _costs())
+	settled = customer.evaluate(cov, _costs())
 	customer.paid = true
 	Sfx.play("cash", 0.0)
-	pop_text("+$%d" % pay_result.paid, $Client.position + Vector2(0, -40))
-	if Game.in_run and pay_result.mood >= 60.0:
+	pop_text("+$%d" % settled.paid, $Client.position + Vector2(0, -40))
+	if Game.in_run and settled.mood >= 60.0:
 		Sfx.play("voice_happy")
 	open_truck_menu()
 
@@ -527,18 +532,28 @@ func hand_in() -> void:
 ## Playtest cheat, debug builds only: [0] ends the job as well as it can go (whole
 ## lawn, delighted, on time: top pay and rep), to see the high end without grinding.
 func _cheat_win() -> void:
-	if not pay_result.is_empty() or customer.knocked_out:
+	if not settled.is_empty() or customer.knocked_out:
 		return
 	customer.mood = 100.0
 	customer.elapsed = 0.0
-	pay_result = customer.evaluate(1.0, _costs())
+	settled = customer.evaluate(1.0, _costs())
 	customer.paid = true
-	_leave_paid()
+	_drive_off()
 
 
-## Leave after being paid. Anything you got up to afterwards comes off your reputation.
-func _leave_paid() -> void:
-	var r := pay_result.duplicate()
+## Fired: no pay, and the rep hit is booked, but you're not thrown out. Leaving is
+## your call, from the truck, and anything you wreck on the way costs you more.
+func _fired() -> void:
+	settled = customer.fired_result(_costs())
+	Sfx.play("fired", 0.0)
+	hud.say(customer.fire_line)
+	pop_text("FIRED!", $Client.position + Vector2(0, -40), Color("f07060"))
+	shake(4.0)
+
+
+## Leave once paid or fired. Anything you got up to since comes off your reputation.
+func _drive_off() -> void:
+	var r := settled.duplicate()
 	r.fuel_cost = _costs()
 	r.net = r.paid - r.fuel_cost
 	r.rep -= mischief
@@ -548,9 +563,9 @@ func _leave_paid() -> void:
 	_finish(r)
 
 
-## Wreck something after being paid and it lands on your reputation, not your pay.
+## Wreck something once paid or fired and it lands on your reputation, not your pay.
 func _mischief(points: float) -> void:
-	if customer.paid:
+	if not settled.is_empty():
 		mischief += points
 		pop_text("Rep -%d" % roundi(points), $Client.position + Vector2(0, -40), Color("f07060"))
 
@@ -573,13 +588,8 @@ func _finish(result: Dictionary) -> void:
 		"paid":
 			if result.get("mischief", 0.0) > 0.0:
 				Sfx.play("voice_angry")
-		"fired":
-			Sfx.play("fired", 0.0)
-			Sfx.play("voice_angry")
 		"walked":
 			Sfx.play("voice_angry")
-	if result.outcome == "fired":
-		await get_tree().create_timer(1.5, true).timeout # let the buzzer and the face land
 	get_tree().paused = false
 	if Game.in_run:
 		get_tree().change_scene_to_file("res://board.tscn")
