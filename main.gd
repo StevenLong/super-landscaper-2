@@ -25,6 +25,8 @@ var over := false
 var bills := 0.0 ## broken windows, dented truck
 var walker: CharacterBody2D = null ## the player on foot, or null while mowing
 var dog: Dog = null
+var pay_result := {} ## set once paid: you can still hang about (and misbehave)
+var mischief := 0.0 ## reputation owed for what you did after being paid
 
 var _next_hedgehog := 3.0
 var _next_squirrel := 8.0
@@ -219,10 +221,12 @@ func pop_text(text: String, at: Vector2, color := Color("f8d048")) -> void:
 func _physics_process(delta: float) -> void:
 	if over:
 		return
-	customer.tick(delta)
+	var nag := customer.tick(delta)
+	if nag != "":
+		_react()
 	hud.set_clock(customer.elapsed)
 	$HUD/Face.expression = customer.face()
-	if customer.fired:
+	if customer.fired and pay_result.is_empty():
 		_finish(customer.fired_result(_costs()))
 		return
 	hud.set_hint(_hint())
@@ -350,7 +354,9 @@ func _stone_near(p: Vector2) -> Stone:
 func open_truck_menu() -> void:
 	get_tree().paused = true
 	var buttons := []
-	if customer.knocked_out:
+	if not pay_result.is_empty():
+		buttons.append(["leave_paid", "Drive off"])
+	elif customer.knocked_out:
 		buttons.append(["leave_ko", "Leave quietly"])
 	else:
 		buttons.append(["handin", "Ask to be paid"])
@@ -376,6 +382,11 @@ func _on_choice(id: String) -> void:
 			_finish(customer.walked_result(_costs()))
 		"leave_ko":
 			_finish(customer.ko_result(_costs()))
+		"leave_paid":
+			_leave_paid()
+		"hang":
+			hud.close()
+			get_tree().paused = false
 		"can":
 			walker.carrying = "jerrycan"
 			walker.queue_redraw()
@@ -403,7 +414,35 @@ func hand_in() -> void:
 		hud.close()
 		get_tree().paused = false
 		return
-	_finish(customer.evaluate(cov, _costs()))
+	pay_result = customer.evaluate(cov, _costs())
+	customer.paid = true
+	Sfx.play("cash", 0.0)
+	pop_text("+$%d" % pay_result.paid, $Client.position + Vector2(0, -40))
+	if Game.in_run and pay_result.mood >= 60.0:
+		Sfx.play("voice_happy")
+	get_tree().paused = true
+	hud.open("Paid!", ["\"%s\"" % pay_result.comment, "", "They hand over $%d." % pay_result.paid,
+		"You can drive off now, or hang about.", "(They're watching. Behave.)"],
+		[["leave_paid", "Drive off"], ["hang", "Hang about"]], job.look, customer.face())
+
+
+## Leave after being paid. Anything you got up to afterwards comes off your reputation.
+func _leave_paid() -> void:
+	var r := pay_result.duplicate()
+	r.fuel_cost = _costs()
+	r.net = r.paid - r.fuel_cost
+	r.rep -= mischief
+	r.mischief = mischief
+	if mischief > 0.0:
+		r.comment = "And don't come back!"
+	_finish(r)
+
+
+## Wreck something after being paid and it lands on your reputation, not your pay.
+func _mischief(points: float) -> void:
+	if customer.paid:
+		mischief += points
+		pop_text("Rep -%d" % roundi(points), $Client.position + Vector2(0, -40), Color("f07060"))
 
 
 func _costs() -> float:
@@ -418,9 +457,8 @@ func _finish(result: Dictionary) -> void:
 	Sfx.music("")
 	match result.outcome:
 		"paid":
-			Sfx.play("cash", 0.0)
-			if result.mood >= 60.0:
-				Sfx.play("voice_happy")
+			if result.get("mischief", 0.0) > 0.0:
+				Sfx.play("voice_angry")
 		"fired":
 			Sfx.play("fired", 0.0)
 			Sfx.play("voice_angry")
@@ -440,6 +478,8 @@ func _finish(result: Dictionary) -> void:
 				"Mowed: %d%%" % floori(result.coverage * 100.0),
 				"Time: %d:%02d" % [floori(result.elapsed / 60.0), int(result.elapsed) % 60],
 				"Paid: $%d%s" % [result.paid, ("  (includes $%d tip!)" % result.tip) if result.tip > 0 else ""]]
+			if result.get("mischief", 0.0) > 0.0:
+				lines.append("Mischief after payment: reputation -%d" % roundi(result.mischief))
 	if result.fuel_cost > 0.0:
 		lines.append("Costs: -$%d  (fuel, repairs%s)" % [roundi(result.fuel_cost), ", damages" if bills > 0.0 else ""])
 	if Game.in_run:
@@ -497,12 +537,14 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 	match target:
 		"customer":
 			Sfx.play("thud")
+			_mischief(8.0)
 			if customer.on_stone("customer"):
 				_knock_out()
 			else:
 				_react()
 		"window":
 			Sfx.play("glass", 0.0)
+			_mischief(5.0)
 			bills += WINDOW_BILL
 			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
 			shake(4.0)
@@ -551,6 +593,7 @@ func _release_dog() -> void:
 	dog.bowled.connect(func(_d: Dog) -> void:
 		Sfx.play("yelp")
 		customer.on_dog_hit()
+		_mischief(8.0)
 		_react())
 	dog.home.connect(func(_d: Dog) -> void:
 		customer.on_dog_returned()
@@ -594,6 +637,7 @@ func _on_squashed(a: Animal) -> void:
 	shake(3.0)
 	Sfx.play("squeak_" + a.kind)
 	customer.on_squash(a.kind)
+	_mischief(3.0)
 	_react()
 
 
@@ -615,4 +659,5 @@ func _on_trampled(_flat: int, _total: int) -> void:
 			total += b.flattened_count()
 	Sfx.play("crunch")
 	if customer.on_flowers(total):
+		_mischief(2.0)
 		_react()

@@ -31,8 +31,10 @@ func _initialize() -> void:
 
 	var p: Customer = Customer.new(Game.default_job())
 	var mood_before: float = p.mood
-	p.tick(p.job.patience + 10.0)
+	var nag: String = p.tick(p.job.patience + 10.0)
 	assert(p.mood < mood_before, "waiting past their patience costs mood")
+	assert(nag == "Are you nearly done?", "and they say so, which is your only clue to the hidden time")
+	assert(p.tick(1.0) == "", "but they don't nag every frame")
 
 	var q: Customer = Customer.new(Game.default_job())
 	assert(not q.accepts(0.3), "a barely-mowed lawn is sent back")
@@ -62,9 +64,18 @@ func _physics_process(_delta: float) -> bool:
 		for y in range(0, 720, 20):
 			lawn.cut_segment(Vector2(0, y), Vector2(1280, y), 20.0)
 		_main.hand_in()
-		assert(_main.over, "handing in a mowed lawn ends the job")
-		assert(root.get_node("Game").last_result.outcome == "paid" and root.get_node("Game").last_result.paid > 0, "and pays")
-		assert(paused, "the pay screen pauses the game")
+		assert(not _main.pay_result.is_empty() and _main.pay_result.paid > 0, "handing in a mowed lawn gets you paid")
+		assert(not _main.over, "and you can still hang about")
+		# Mischief after payment: squash something, and it comes off your reputation.
+		_main._on_choice("hang")
+		var a: Animal = _main.spawn_animal("hedgehog", Vector2(640, 300), Vector2(641, 300))
+		a.squash()
+		assert(_main.mischief > 0.0, "squashing after payment is mischief")
+		_main._on_choice("leave_paid")
+		var r: Dictionary = root.get_node("Game").last_result
+		assert(_main.over and r.outcome == "paid" and r.paid > 0, "driving off ends the job, paid")
+		assert(r.mischief > 0.0 and r.rep < _main.pay_result.rep, "and the mischief costs reputation")
+		assert(paused, "the result screen pauses the game")
 		print("PASS customer")
 		quit()
 	return false

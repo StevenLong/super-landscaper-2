@@ -15,6 +15,9 @@ var flowers_flat := 0
 var coverage := 0.0
 var elapsed := 0.0
 var last_line := ""
+var paid := false ## once paid, whatever you do next is mischief
+
+var _nag_at := 0.0
 
 var _react_face := ""
 var _react_left := 0.0
@@ -40,11 +43,18 @@ func face() -> String:
 	return "furious"
 
 
-func tick(delta: float) -> void:
+## Returns a line to say if they've something to say about the time.
+func tick(delta: float) -> String:
 	elapsed += delta
 	_react_left -= delta
-	if elapsed > job.patience and not fired and not knocked_out:
+	if elapsed > job.patience and not fired and not knocked_out and not paid:
 		_change(-1.0 * delta) # waiting past their patience wears them down
+		if elapsed >= _nag_at:
+			var first := _nag_at == 0.0
+			_nag_at = elapsed + 25.0
+			_react("annoyed", 1.5, "Are you nearly done?" if first else ["Tick tock!", "I haven't got all day!", "Any time now..."][randi() % 3])
+			return last_line
+	return ""
 
 
 func on_progress(new_coverage: float) -> void:

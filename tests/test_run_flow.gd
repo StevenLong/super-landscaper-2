@@ -37,7 +37,8 @@ func _process(_delta: float) -> bool:
 			for y in range(0, lawn.size_px.y, 20):
 				lawn.cut_segment(Vector2(0, y), Vector2(lawn.size_px.x, y), 20.0)
 			current_scene.hand_in()
-			assert(current_scene.over, "a mowed lawn is accepted")
+			current_scene._on_choice("leave_paid")
+			assert(current_scene.over, "a mowed lawn is accepted and you drive off")
 			current_scene._on_choice("continue")
 		4:
 			assert(current_scene.name == "Board", "back to the board after a job")
