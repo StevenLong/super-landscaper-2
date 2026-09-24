@@ -41,6 +41,7 @@ var _clippings: CPUParticles2D
 
 func _ready() -> void:
 	_engine = AudioStreamPlayer.new()
+	_engine.bus = "SFX"
 	add_child(_engine)
 	_clippings = CPUParticles2D.new()
 	_clippings.emitting = false

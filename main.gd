@@ -284,8 +284,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if over or hud.is_open():
 		return
 	if event.is_action_pressed("pause"):
-		get_tree().paused = true
-		hud.open("Paused", [], [["resume", "Resume"], ["quit", "Quit to title"]])
+		open_pause()
 	elif event.is_action_pressed("hop"):
 		if walker == null:
 			hop_off()
@@ -353,6 +352,12 @@ func _stone_near(p: Vector2) -> Stone:
 
 # ---------------------------------------------------------------- the truck
 
+func open_pause() -> void:
+	get_tree().paused = true
+	hud.open("Paused", [], [["resume", "Resume"], ["music", "Music: %s" % ("on" if Sfx.music_on else "off")],
+		["sound", "Sound: %s" % ("on" if Sfx.sound_on else "off")], ["quit", "Quit to title"]])
+
+
 func open_truck_menu() -> void:
 	get_tree().paused = true
 	var buttons := []
@@ -386,6 +391,9 @@ func _on_choice(id: String) -> void:
 			_finish(customer.ko_result(_costs()))
 		"leave_paid":
 			_leave_paid()
+		"music", "sound":
+			Sfx.toggle(id)
+			open_pause()
 		"hang":
 			hud.close()
 			get_tree().paused = false

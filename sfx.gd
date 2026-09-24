@@ -10,6 +10,10 @@ const VOLUME := { ## per-sound trims in dB, so the synth levels sit together
 }
 
 var music_db := -12.0
+var music_on := true
+var sound_on := true
+
+const SETTINGS := "user://settings.cfg"
 
 var _pool: Array[AudioStreamPlayer] = []
 var _music: AudioStreamPlayer
@@ -18,12 +22,43 @@ var _music_name := ""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Two buses so music and sound can be muted separately. Every non-music player
+	# in the game (pool, engines, the truck's glug) sits on "SFX".
+	for bus in ["Music", "SFX"]:
+		if AudioServer.get_bus_index(bus) == -1:
+			AudioServer.add_bus()
+			AudioServer.set_bus_name(AudioServer.bus_count - 1, bus)
 	for i in 10:
 		var p := AudioStreamPlayer.new()
+		p.bus = "SFX"
 		add_child(p)
 		_pool.append(p)
 	_music = AudioStreamPlayer.new()
+	_music.bus = "Music"
 	add_child(_music)
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS) == OK:
+		music_on = cfg.get_value("audio", "music", true)
+		sound_on = cfg.get_value("audio", "sound", true)
+	_apply()
+
+
+## Flip music or sound on/off, and remember it.
+func toggle(which: String) -> void:
+	if which == "music":
+		music_on = not music_on
+	else:
+		sound_on = not sound_on
+	_apply()
+	var cfg := ConfigFile.new()
+	cfg.set_value("audio", "music", music_on)
+	cfg.set_value("audio", "sound", sound_on)
+	cfg.save(SETTINGS)
+
+
+func _apply() -> void:
+	AudioServer.set_bus_mute(AudioServer.get_bus_index("Music"), not music_on)
+	AudioServer.set_bus_mute(AudioServer.get_bus_index("SFX"), not sound_on)
 
 
 func play(sound: String, pitch_jitter := 0.08) -> void:

@@ -12,6 +12,7 @@ func _ready() -> void:
 	_glug = AudioStreamPlayer.new()
 	_glug.stream = preload("res://audio/glug.wav")
 	_glug.volume_db = -10.0
+	_glug.bus = "SFX"
 	add_child(_glug)
 
 
