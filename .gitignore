@@ -1,0 +1,7 @@
+# Godot
+.godot/
+/build/
+
+# Claude Code: local settings stay untracked
+.claude/settings.local.json*
+.claude/worktrees/

@@ -17,9 +17,9 @@ next session.
   session's work created, and threads left open.
 
 ## 2. Verify
-Once `project.godot` exists, run the parse check and any tests listed under Verify in
-CLAUDE.md. A failure gets fixed, or recorded as failing; do not write a passing entry over
-it. Before there is a Godot project, note that nothing was runnable.
+Run `bash tests/run_all.sh` (parse check, smoke test, and every test; see Verify in
+CLAUDE.md). A failure gets fixed, or recorded as failing; do not write a passing entry over
+it.
 
 ## 3. Write the session entry
 Add it at the top of the session list, below the ledger block.
