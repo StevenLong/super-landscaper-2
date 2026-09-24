@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (29 checks, 6 loads, about 35 minutes)
+PLAY CHECKS OWED  (12 checks, 4 loads, about 20 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -6,149 +6,78 @@ Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep; in a job [0]
 
 
 ================================================================================
-LOAD 1 of 5: TITLE AND BOARD      (about 2 min)
+LOAD 1 of 4: TITLE AND MENUS      (about 2 min)
 ================================================================================
 
-S1-ATTRACT
-The title's background mower stripes the lawn behind the menu; the text stays readable.
->So I like the animation in the background of the main menu. It doesn't obstruct anything. The only things I notice that are slightly off are that you can see the players or not not the not player in this case, but the lawn mowing mowers sprite does a little flip out when it's like transformed or whatever. It's not quite fully off screen at the end of each row. So you can see it do a little kick flip, I don't know, as it gets teleported to the next row. And then the only other thing I notice immediately is that on the W's in the font you've used, there is a tiny extra line floating above them that looks like an accent. Might also be worth putting a settings menu on the main menu. 
+S3-TITLE
+The title mower never shows its flip at the end of a row, and no line floats over the w's
+(try dragging the window to a few sizes).
+>
 
-S1-FONT
-The pixel font reads well everywhere (title, board, HUD, panels); nothing is clipped.
->Yep, the pixel font looks good. Did you create that for this? Only caveat, again, as above, the W's on the main menu have some random artifacting or pixels or something floating above them. 
-
-S1-BOARD
-Offers, shop and header fit; F9 adds money; buying and using mowers updates the board.
->This stuff fits well. F9 does add money, but I think it also might be a hotkey for Godo. I think it's either pausing the game or yeah, I think it might be just pausing the run or whatever. I think the job board and the shop should maybe be different screens. Maybe the shop should even be an actual shop. You can walk around and look at the things. I mean, we're building the sprites anyway. May as well put them on a shelf or in a showroom. Let the players walk around and look at what's currently available. Maybe we change up the stock in the shop. So we have, you know, right now three options for the mowers. Maybe this is where we add some chance diversity in playthroughs. You go to the shop, early game shop, maybe it's only a few things available. Maybe you invest in the shop between runs and they end up with more stock or better stock. And maybe upgrades are a separate screen as well. Maybe there's a garage you can take your stuff to and they can upgrade it. And similarly, you can upgrade the garage between runs with whatever you took away from a given run. I think the job board should read more like an actual job board as well. It wouldn't have a picture and a hint quote. It should read more like, what are they called? Confidentials? The ads in newspapers, you know, looking for someone to mow lawn, willing to pay, blah, blah, blah. Lawn is approximately blah in size. Maybe then you could give a hint, but it has to kind of a little bit make sense. Like only careful applicants for if there's something like the flowers they shouldn't mow down a little bit more subtle and a little bit less direct. 
-
-S1-MENU-AUDIO
-Menu music plays; the button move/select blips aren't annoying.
->They're not too bad, but I tone them down just a little bit, dropped the pitch a little. There's a slight element of it feels like hiss to them, but they could stay the same and I wouldn't be all that mad about it. One thing I'm just going to note here, not directly related, WASD not also controlling menu navigation is a bit annoying. 
+S3-WASD
+WASD moves around every menu: title, board, briefing, truck, pause.
+>
 
 
 ================================================================================
-LOAD 2 of 5: A FIRST JOB, PUSH MOWER      (about 8 min)
+LOAD 2 of 4: A JOB, PAID      (about 6 min)
 ================================================================================
 
-S1-BRIEF
-The briefing shows the customer, their hints, and (first job only) the controls.
->Good. 
+S3-STAMINA
+Push mower: parking at the truck no longer refills PEP; only resting brings it back.
+>
 
-S1-PUSH
-Push mower: speed, cut width, stamina (PEP/ZZZ gauge) and resting feel right; exhausted it crawls but still cuts.
->It's pretty good. I'm not sure it should reset at the truck though. your stamina, that is. With fuel, at least you're going there to collect a thing and put it in the thing. I think stamina should always have to regen by itself. potential future thing is that you can actually level up your stamina as you go, maybe buy better push mowers and or maybe also buy drug or cybernetic enhancements that make you better at pushing a lawnmower. 
+S3-FACE
+Mow up into the top-right corner: the customer's face slides to the bottom right, then
+slides back when you leave. Never in your way?
+>
 
-S1-STRIPES
-Mowing up/right leaves light bands, down/left dark; mowing over a patch again restripes it.
->This is good. The only thing I would consider changing would be to make it more gradual, the transition between the two. You end up taking quite big arcing turns. It's the nature of the way you move, and I think it's an important part of the way you play, because it makes it harder to actually clear every single bit of the grass and on every pass and turn. You have to do a big arc and then try to line yourself back up, and then you've probably left a teardrop-shaped chunk of grass behind because of the shape of your arc. That's fine. That shouldn't go. But if there was a way to easily make it radiate between the transition of the lighter ones and the darker ones, that would be cool. But honestly, it could stay the way it is and I'd be fine with the two. it might be more complicated than it's worth to make what I'm describing. 
+S3-PAID
+Hand in at the truck: the menu turns into "Paid" (their line, the money, any tip) with
+Drive off / Keep going. Keep going lets you hang about; Drive off goes straight to the board,
+and the Last job panel top left reads right (paid, costs, net, rep change, any mischief).
+>
 
-S1-CRITTERS
-Hedgehogs and squirrels read at a glance; a squash reads (splat, squeak, shake, face, speech).
->They do. The only change I'd like off the top of my head for this is that the kill splatter persists and if possible the lawnmower leaves a streak of red for a short distance after you've mowed a creature down. 
-
-S1-FACE
-The corner face follows their mood and reacts to events; the patio customer watches you and hops.
->Yeah, these things work well. The only thing I would change here is that you can be behind the face in the corner. Not sure entirely what to do about that. If the face moves out of the way or fades out, I'm not sure what's more appropriate. Maybe it moves to the bottom corner when you're in the top corner. Maybe it stays in the corner closest to the customer. I think the logic there would work. If they're in the top left, you would have to go past them to get to the top left corner, and then the portrait would move to the top right before you reached the top left, assuming the house is somewhere in the middle. 
-
-S1-NAG
-Past their patience they nag ("Are you nearly done?"). Is that enough of a clue to the hidden time?
->I think they should have a soft impatience level and a hard impatience level. Point where they become annoyed that you haven't finished. It gives the opportunity for the player to then say, okay, I'm going to try and leave and get paid before they're extremely mad at me. And it would cost you, you know, a hit on your tip or bonus or whatever. And then the hard cutoff is where they just tell you to leave. They don't have time for this. And you get the big rep hit and you get sent away with no pay. And obviously, as a player, that would be frustrating. So you shouldn't be kicked away immediately. You should maybe have the opportunity for mischief after you've been told to leave. You won't get any pay.  Because the timer is so hidden, we might maybe add another hint if we could get the portrait to look at its watch or something like that, a hint, maybe a text bubble or whatever, that, you know, the the nagging thing I think is good, but I think Just doing it once doesn't give enough of a runway for anybody to actually react or respond to it. I also don't want to lean too far in the opposite direction where they're effectively just counting down the entire time. Still trying to find a balance on this. 
-
-S1-HANDIN
-At the truck: sent back if far short; once paid you can hang about; the pay screen makes sense.
->The sent back is good. You can hang out, that works well. The pay screen is fine, but there's a duplicated pay screen, and I think some of the stuff should be moved to a between rounds screen where the job board is and the shops are available. That gives you a rundown. So you get your money when you're there, and then when you leave, you get a rundown of you paid this, you spent this, your rep went up, rather than showing two results screens that are roughly the same and also in the same place. 
-
-S1-WINNABLE
-Is a push-mower job winnable? (The balance bot takes ~4 min to reach 70% of a small lawn.)
->I have managed to win it a fair few times. I don't think it's necessary that it's a perfect win condition. There should be pressure on someone with the worst equipment. And on that note, things will need to escalate more. The only thing stopping you from continuing to succeed for forever in this is patience right now. If things don't get more complicated, more difficult, we're not really going to have a functioning set of pressures that could actually end a run. And I can think of a few things off the top of my head that we could do in order to add pressures to these things, make particularly complicated levels. A mini golf course needs the grassy areas between the holes mode, but hitting the actual play areas is either damaging or frowned upon. And the complicated layout makes it very difficult for you to go back and forth for fuel or whatever. Or a farm or botanical garden or something wants the grassy areas mowed. So then it's not just a single flowerbed somewhere, but there's a ton of danger things. So you're getting more precision, more time pressure. Maybe there are places with squirrel or a hedgehog infestations. And maybe they demand you do not run over, or maybe you have to run them all over. I don't know. Just exploring, trying to find ways we can escalate, I think is the word I'm looking for. 
+S3-CHEATS
+Board [2] a few times, take a medium or large lawn, [0] in the job to finish it. Did the
+high end show up, and does the rundown look right for a [0] finish?
+>
 
 
 ================================================================================
-LOAD 3 of 5: A PETROL MOWER JOB      (about 6 min)
+LOAD 3 of 4: GETTING FIRED      (about 4 min, needs a gardener job)
 ================================================================================
 
-S1-ENGINE
-Engine note rises with speed; low-fuel beep; glug while refuelling at the truck.
->Yep, these are pretty good. 
+S3-FIRED
+Trample the gardener's flowers until they fire you: buzzer, their line, FIRED! over them,
+and you stay in the garden with a hint to leave from the truck.
+>
 
-S1-TANK
-The 60s tank and the refuel trips feel like a real trade against the push mower.
->Yeah, I think until we expand the options, this is a pretty good level for this to be at. It doesn't feel overpowered, it doesn't feel like it lacks the power increase you would expect. None of them feel like they suck completely. Both feel good to use, but there is a noticeable increase in effectiveness from the fueled one. 
+S3-SPITE
+Keep flattening flowers after being fired: they shout, "Rep -N" pops. Drive off from the
+truck; the board's Last job panel shows FIRED and the extra rep lost. Satisfying?
+>
 
-S1-CONDITION
-OK/BUST gauge: head-on hits hurt, scraping along walls doesn't; parking at the truck repairs.
->Yep, pretty good for now. 
+
+================================================================================
+LOAD 4 of 4: STILL OWED FROM EARLIER      (about 8 min, petrol mower, use the cheats)
+================================================================================
+
+S3-GLUG
+Fetch the fuel can from the truck and pour it into the mower: the glug plays once and
+stops. (It used to glug forever.)
+>
+
+S1-PONDS
+With [2] to reach bigger lawns: a pond shows up, critters walk round it, and a stone that
+lands in it plops once.
+>
 
 S1-STONES
-Mow over a stone: clonk, damage, usually it flies. Seen it hit a window (-$40), the wall, the truck (-$20), wildlife, the customer?
->It does often fly. I haven't managed to make it hit everything. I think I got the customer once. I was impressed by the launch. I will have to keep an eye out for it hitting other stuff. Maybe I'll spend some time intentionally running over stones to check all of these conditions. Follow-up. I've been throwing stones at things. The windows don't have any smashed sprite right now. Could be a skill issue. I couldn't manage to throw stones at the critters. Also, side note: maybe for an even bigger reputation hit, if you knock out or worse the customer, you could rifle in their pockets to get some money that they were going to pay you without doing anything. But obviously, then you are wanted and have a terrible reputation. 
+A mowed or thrown stone hitting the truck (-$20), a critter, and the dog. Any you manage.
+>
 
-S1-ONFOOT
-[F] hop off: the camera follows you, the parked mower shows empty; carry a stone to the truck [E]; fetch the fuel can from the truck menu and pour it [E].
->This all seems to mostly work, although I think I found a glitch or bug where when you fetch fuel and then pour it into the lawnmower, the audio plays forever of the glug. The lawnmower was already full when I did this, so that could be a cause. I haven't tested it too much. 
-
-S1-DOG
-On dog jobs the dog gets out and bounds about; walking it home earns thanks; bowling it over is a disaster.
->This works, although it was slightly unclear that I was actually interacting with the dog, and it seemed more like I just inadvertently forced the dog to run back towards the owner. But I assume I had interacted with the dog and brought the dog back. While on this and the previous notes, I think the player should be allowed to pick things up other than stones. I don't think it should go well. I think the dog is fine. It will wiggle out of your grasp after a short but not extremely short time. But picking up a hedgehog should have some negative consequences. Maybe a brief stun. Similarly, picking up a squirrel probably shouldn't go well. Maybe you can hold a squirrel for a few seconds. Maybe you can buy hedgehog-proof gloves in the store and they will let you treat hedgehogs like stones. And maybe there's a silly reason to collect hedgehogs or throw hedgehogs at customers or dogs or windows. I don't know. 
-
-S1-TREES
-Can you mow tight to a trunk? Canopies hide the grass under them: fair or annoying?
->I think this could do it a bit of improvement. The trees don't fully read as trees, and I have run things over that were, you know, under/inside the tree that I couldn't see while trying to go around the edge. I think canopies can afford to be a bit bigger. Trunks can afford to be different sizes as well. But I think the canopies should gain transparency when you get close to under them. But the trunks should be very obvious, more obvious than they are now, that this is not a place you can mow over. So it will be nice to have more variety in these kinds of things. Not to n n it's early, just so you know, there shouldn't be a ton of variety immediately, but just to set an expectation, I would like a variety of these type of objects. Also, I swear I saw you building pools, but I haven't seen a pool in game. I is that behind some level of job that I haven't reached yet? 
-
-
-================================================================================
-LOAD 4 of 5: MISBEHAVING      (about 5 min)
-================================================================================
-
-S1-MISCHIEF
-After being paid, squash/trample/smash something: "Rep -N" pops, and the result screen charges it.
->Yes, this happened. And I now realize why there are two screens that are kind of duplicates. If you choose to leave immediately, you get both screens right after one another. I still think the point above about putting that stuff into the post return to the job board screen, I think that's still correct. And I think we can have some kind of I don't even know what they're called, little text sprite pop up above the head for a negative rep, and then that's enough. 
-
-S1-KO
-Run the customer over on the patio: knocked flat, KO face, only "Leave quietly", no pay.
->Yeah, this happens. I feel like you're being quite gentle with it. You're slightly unwilling to go too graphic, it feels like. But I think it's probably going to go that direction. I don't think getting run over with a lawnmower knocked you out. And I think the video game all of the void, if you get what I mean, the idea of well, you can do this stuff in a video game that you would never do in real life. If we didn't allow that kind of stuff to happen, we would miss out on a big point of humor in the game, whether intentional or accidental, or someone just trying stuff out out of curiosity. They can only be disappointed by the PG, oh, they were knocked out result. 
-
-S1-WANTED
-The board then shows WANTED; a later job may open with ARRESTED and end the run.
->I haven't had the arrested thing fire, and I'm not sure how we resolve the wanted thing. I'm not sure it fully fits in a way that we can exploit it to be an interesting or satisfying thing. The coin-op Arcade version that popped into my head is that a portly police officer has a chance to spawn on a level and try to chase you around the place while you try to mow the lawn. But I'm not sure this particular thread is going anywhere. If you have ideas, let me know. 
-
-S1-FIRED
-Getting fired (a gardener's flowers, or mood hitting zero) ends the job with the buzzer.
->This does happen and it does work, but I think like ending the job, you should still be allowed to stay and cause more mischief. Obviously still at the cost of rep. But having this be the kind of only way that has the abrupt level ended thing feels off. And maybe this is another opportunity for a Portly police officer to chase you out of the level. 
-
-
-================================================================================
-LOAD 5 of 5: RIDE-ON AND A WHOLE RUN      (about 10 min)
-================================================================================
-
-S1-RIDEON
-Ride-on: huge cut, fast, turns like a barge; the trailer appears behind the truck once owned.
->It sure does. Pretty good as well. Pretty extreme level of upgrade. Could make levels very fast, but also hard not to mow down things you're supposed to be protective of. So I think a pretty decent trade-off, demands some level of skill. 
-
-S1-RUN
-Bigger lawns unlock as reputation rises; the board shrinks as it falls; bankruptcy at zero.
->I've definitely seen the board shrink. Maybe put in a dev sheet to boost rep. Maybe a button that lets me instantly com complete a job with max money and max rep gained so I can see the high end of the stuff without having to get good. 
-
-S1-EXTRAS
-Hold Tab to look around; ponds on bigger lawns; pause-menu music/sound toggles; gamepad (stick, A, X, Start).
->Okay, so ponds are only on bigger lawns. As above, I need to get good. Tab does indeed let you look around. I don't have a gamepad here right now to test how it plays on GamePad. 
-
-
-================================================================================
-LOAD 6 of 6: EDGES AND THROWING, ANY JOB      (about 5 min)
-================================================================================
-
-S2-BORDERS
-Every side of the garden has a hedge or fence; the drive runs out through a gap to the road.
-Does the property feel bounded now, rather than the world just ending?
->What I kind of wanted from adding those bounds was that the camera wouldn't stop keeping the player centered, that there would be some ground outside the arena. You know, at the at the in the sort of default pattern we have right now, the southern edge you would see a footpath and a road below. Either side you'd see the lawns, gardens, whatever of other houses. You wouldn't be able to access them, but they would exist in a way that you could sort of see them. And you wouldn't get that thing where the player is mostly directly under the camera until they get to the edge of the screen. And then the camera stops centering on them because it's hit its bounding wall. And then additionally, that would potentially prevent the thing that's happened quite a bit where a critter spawns just off-screen and takes one pixel of a step under where the lawnmower is going. So there's an unavoidable impact. We could instead have those critters spawn in an area where the player can see but can't already be. Similarly with the bushes and the trees potentially spawning critters, a moment before these critters spawn, the tree could rustle and have some leaves move or whatever. Same with the bush. Just to give a moment's advance warning that, hey, there's going to be a potential threat in this location. 
-
-S2-SPAWNS
-Hedgehogs push out of hedges; squirrels drop out of trees or come over the fence; nothing
-walks over the house, truck, trees or ponds.
->Yeah, you can see the note above for some stuff on this. They were coming out of the hedges. I think I didn't specifically notice them come out of the trees, and I think that's kind of the problem I was pointing at above. Things coming out of places as a surprise isn't great. I don't want it to be hugely telegraphed, but just a little bit would help. And I didn't see anything walking over the house of the truck or anything else. Still haven't seen a pond. I might be bad at this game. 
-
-S2-THROW
-Off the mower with a stone: [Q] throws it the way you're facing. Lob one at a window or the
-customer: same results as a flung stone (and mischief if you've been paid).
->Yeah, this works. And as I said above, maybe it's a skill issue, but I couldn't hit the critters roaming around. And I'm now curious about if I can throw them at my own truck or lawnmower and cause damage. Or maybe throw them at a tree or into the flower bed and cause some effect there. 
+S1-PAD
+Gamepad: stick or d-pad drives, A interacts, X hops off, B throws, Y looks, Start pauses.
+(Owed since session 1.)
+>

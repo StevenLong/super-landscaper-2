@@ -6,6 +6,38 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 3 (2026-09-24): play-check triage, quick fixes, one rundown, fired stays in the job
+- You answered all 29 checks. Signed off: briefing, engine audio, tank trade-off, condition
+  gauge, ride-on, push-mower winnability, board fit, hand-in send-back, hanging about, spawns
+  avoiding the house/truck/trees. Everything else became NOTES.md items (now the task list).
+- Fixed: glug looped forever (one-shot sounds never loop now; ponds had it too); the truck
+  refilled push-mower stamina; a g tail bled over the w (reproduced at a 1600x900 window, a
+  1px atlas gap fixes it at five sizes); the attract mower's flip showed; WASD in menus.
+- Cheats moved off F9 (the editor's pause key): board [1] cash, [2] rep; job [0] perfect
+  finish. New CLAUDE.md rule: letters and number row only, no function keys, no backquote.
+- One rundown: paying updates the truck menu; driving off goes straight to the board, whose
+  Last job panel shows the outcome, money and rep change. The corner face ducks to the bottom
+  right when you're near it (your call: option b).
+- Fired no longer ends the job (you corrected my 1.5s-then-board version): no pay and the rep
+  hit land at once, you stay, spite is mischief, you leave from the truck.
+- Handoff now sorts NOTES.md: decided design goes to the doc, the rest waits for a grill or
+  sits parked with a date. Promoted this time (veto any): fired stays in the job; tone (no
+  punches pulled, gruesome only when you go absurd); the cop-call countdown. The tone call
+  supersedes session 1's MY CALLS item "the dog is never killed".
+- Verified: run_all green (13 checks; new test_polish and test_fired, both shown to fail with
+  their fix removed); screenshots of the title, board rundown, paid and fired truck menus, and
+  the ducked face. None of it played.
+
+OWED CHECKS: CHECKS.txt (12 checks, four loads). S1-PAD (gamepad) has been owed since
+session 1.
+
+NEXT:
+1. Play CHECKS.txt and answer on the `>` lines.
+2. Build 12 with 39: the world past the garden (road, footpath, neighbours) and a sensible
+   layout (truck on the street or in the drive, a drive and garage). Needs a few layout calls.
+3. A `/grill` session on the queued design items: 21, 22, 25, 26, 27, 29, 38, 40.
+4. Still open from session 1: sign off or change the rest of the MY CALLS list.
+
 ## Session 2 (2026-09-24): checks file, merge, garden edges, throwing
 - Your first-play notes: critters walked over the house; the world just ended at the edge;
   critters should come from hedges/trees/over fences; throwing a carried stone. All done.
