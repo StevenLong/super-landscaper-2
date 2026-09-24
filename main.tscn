@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_main"]
 [ext_resource type="Script" path="res://lawn.gd" id="2_lawn"]
 [ext_resource type="Script" path="res://mower.gd" id="3_mower"]
 [ext_resource type="Script" path="res://truck.gd" id="4_truck"]
+[ext_resource type="Script" path="res://fuel_gauge.gd" id="5_gauge"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mower"]
 size = Vector2(36, 28)
@@ -81,12 +82,9 @@ offset_top = 12.0
 theme_override_font_sizes/font_size = 28
 text = "0%"
 
-[node name="Fuel" type="ProgressBar" parent="HUD"]
-offset_left = 16.0
-offset_top = 56.0
-offset_right = 216.0
-offset_bottom = 74.0
-max_value = 1.0
-step = 0.0
-value = 1.0
-show_percentage = false
+[node name="Fuel" type="Control" parent="HUD"]
+offset_left = 24.0
+offset_top = 70.0
+offset_right = 64.0
+offset_bottom = 450.0
+script = ExtResource("5_gauge")

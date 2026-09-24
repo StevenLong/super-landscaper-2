@@ -28,8 +28,9 @@ func _ready() -> void:
 
 
 func setup() -> void:
-	var w := size_px.x / cell_px
-	var h := size_px.y / cell_px
+	var cells := size_px / cell_px
+	var w := cells.x
+	var h := cells.y
 	_img = Image.create(w, h, false, Image.FORMAT_RGB8)
 	_img.fill(uncut_color)
 	_grid.resize(w * h)
