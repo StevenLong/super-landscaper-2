@@ -34,6 +34,7 @@ var occupied := true ## false while the player is off on foot
 var throttle := 0.0
 var _stride := 0.0
 var _bump_cooldown := 0.0
+var _was_touching := false
 var _low_warned := false
 var _engine: AudioStreamPlayer
 var _clippings: CPUParticles2D
@@ -69,6 +70,8 @@ func _apply_visual() -> void:
 	var spr: Sprite2D = $Sprite
 	spr.texture = load("res://art/mower_%s.png" % sprite_kind)
 	spr.hframes = 3 # two frames of motion, then empty
+	if _engine == null:
+		return # not in the tree yet; _ready will finish the job
 	_engine.stream = load("res://audio/%s.wav" % {"push": "reel", "rideon": "engine_rideon"}.get(sprite_kind, "engine_petrol"))
 	_engine.play()
 
@@ -91,10 +94,24 @@ func _update_sound(delta: float, running: bool) -> void:
 	elif frac > 0.3:
 		_low_warned = false
 	_bump_cooldown -= delta
-	if get_slide_collision_count() > 0 and _bump_cooldown <= 0.0 and s > 0.25:
-		_bump_cooldown = 0.5
+
+
+## Damage from what we just drove into: only the moment of contact, and only the
+## speed INTO the obstacle, counts. Scraping along a wall, or pressing against it,
+## is free; a head-on smack is not.
+func _check_impacts(velocity_before: Vector2) -> void:
+	var touching := get_slide_collision_count() > 0
+	var fresh := touching and not _was_touching
+	_was_touching = touching
+	if not fresh:
+		return
+	var impact := 0.0
+	for i in get_slide_collision_count():
+		impact = maxf(impact, -velocity_before.dot(get_slide_collision(i).get_normal()))
+	if impact > 60.0 and _bump_cooldown <= 0.0:
+		_bump_cooldown = 0.4
 		Sfx.play("bump")
-		damage(2.0 + 8.0 * s)
+		damage(impact / 25.0)
 
 
 func apply_spec(spec: Dictionary) -> void:
@@ -154,7 +171,9 @@ func _physics_process(delta: float) -> void:
 	velocity = fwd * speed
 
 	var before := global_position
+	var v_before := velocity
 	move_and_slide()
+	_check_impacts(v_before)
 	# Walk / wheel animation: flip frames every few pixels travelled.
 	_stride += global_position.distance_to(before)
 	if not occupied:

@@ -9,22 +9,22 @@ var save_path := "user://best.cfg" ## tests point this elsewhere so they never t
 const MOWERS := {
 	"push": {
 		"name": "Push mower", "price": 0, "power": "stamina", "sprite": "push", "body": Vector2(30, 22),
-		"max_speed": 150.0, "reverse_speed": 80.0, "accel": 420.0, "brake": 900.0,
-		"turn_rate": 3.6, "cut_radius": 12.0, "max_fuel": 20.0, "fuel_burn": 1.0,
+		"max_speed": 165.0, "reverse_speed": 80.0, "accel": 420.0, "brake": 900.0,
+		"turn_rate": 3.6, "cut_radius": 14.0, "max_fuel": 20.0, "fuel_burn": 1.0,
 		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0, "toughness": 0.8,
 		"blurb": "Legs for an engine. Narrow, nimble.",
 	},
 	"petrol": {
 		"name": "Petrol mower", "price": 180, "power": "fuel", "sprite": "petrol", "body": Vector2(36, 28),
 		"max_speed": 220.0, "reverse_speed": 110.0, "accel": 600.0, "brake": 900.0,
-		"turn_rate": 3.0, "cut_radius": 16.0, "max_fuel": 40.0, "fuel_burn": 1.0,
+		"turn_rate": 3.0, "cut_radius": 16.0, "max_fuel": 60.0, "fuel_burn": 1.0,
 		"regen": 0.0, "empty_speed_scale": 0.35, "fuel_price": 0.25, "toughness": 1.0,
 		"blurb": "Faster, wider. Burns fuel nonstop.",
 	},
 	"rideon": {
 		"name": "Ride-on mower", "price": 650, "power": "fuel", "sprite": "rideon", "body": Vector2(52, 40),
 		"max_speed": 300.0, "reverse_speed": 120.0, "accel": 340.0, "brake": 520.0,
-		"turn_rate": 1.9, "cut_radius": 26.0, "max_fuel": 60.0, "fuel_burn": 1.5,
+		"turn_rate": 1.9, "cut_radius": 26.0, "max_fuel": 80.0, "fuel_burn": 1.5,
 		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25, "toughness": 2.0,
 		"blurb": "Huge cut. Turns like a barge.",
 	},
@@ -174,7 +174,7 @@ func make_job(seed_value: int) -> Dictionary:
 		"beds": r.randi_range(1, 1 + size_i),
 		"target": target,
 		# Seconds they'll happily wait: scales with lawn area and their patience.
-		"patience": 240.0 * area * p.patience,
+		"patience": 300.0 * area * p.patience, # tools: tests/sim_balance.gd measures mowing times
 		"pay": int(round((70.0 + 50.0 * size_i) * area * (1.0 + (target - 0.8)) / 5.0) * 5),
 		"hedgehog_every": 7.0 / (1.0 + 0.25 * size_i),
 		"squirrel_every": 13.0 / (1.0 + 0.25 * size_i),

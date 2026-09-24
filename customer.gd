@@ -48,7 +48,7 @@ func tick(delta: float) -> String:
 	elapsed += delta
 	_react_left -= delta
 	if elapsed > job.patience and not fired and not knocked_out and not paid:
-		_change(-1.0 * delta) # waiting past their patience wears them down
+		_change(-0.35 * delta) # waiting past their patience wears them down, slowly
 		if elapsed >= _nag_at:
 			var first := _nag_at == 0.0
 			_nag_at = elapsed + 25.0
