@@ -53,6 +53,6 @@ func _draw() -> void:
 		draw_line(Vector2(tube.position.x, y), Vector2(tube.position.x + w, y), Color(0, 0, 0, 0.6), 2.0)
 	draw_rect(tube, Color(0.9, 0.9, 0.9), false, 2.0)
 
-	var fs := 18
+	var fs := 10
 	draw_string(font, Vector2(-20, label_h - 4), top_label, HORIZONTAL_ALIGNMENT_CENTER, size.x + 40, fs)
 	draw_string(font, Vector2(-20, size.y - 4), bottom_label, HORIZONTAL_ALIGNMENT_CENTER, size.x + 40, fs)

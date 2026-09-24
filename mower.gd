@@ -36,11 +36,31 @@ var _stride := 0.0
 var _bump_cooldown := 0.0
 var _low_warned := false
 var _engine: AudioStreamPlayer
+var _clippings: CPUParticles2D
 
 
 func _ready() -> void:
 	_engine = AudioStreamPlayer.new()
 	add_child(_engine)
+	_clippings = CPUParticles2D.new()
+	_clippings.emitting = false
+	_clippings.amount = 24
+	_clippings.lifetime = 0.45
+	_clippings.local_coords = false
+	_clippings.direction = Vector2(0, -1)
+	_clippings.spread = 70.0
+	_clippings.initial_velocity_min = 40.0
+	_clippings.initial_velocity_max = 90.0
+	_clippings.gravity = Vector2.ZERO
+	_clippings.damping_min = 120.0
+	_clippings.damping_max = 160.0
+	_clippings.scale_amount_min = 1.5
+	_clippings.scale_amount_max = 2.5
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color("86c85a"))
+	ramp.set_color(1, Color(0.3, 0.55, 0.2, 0.0))
+	_clippings.color_ramp = ramp
+	add_child(_clippings)
 	_apply_visual()
 
 
@@ -145,6 +165,10 @@ func _physics_process(delta: float) -> void:
 		var lo := lawn.global_position + Vector2(edge_margin, edge_margin)
 		var hi := lawn.global_position + Vector2(lawn.size_px) - Vector2(edge_margin, edge_margin)
 		global_position = global_position.clamp(lo, hi)
+		var was := lawn.cut_fraction()
 		if running or (power == "stamina" and condition > 0.0):
 			lawn.cut_segment(before - lawn.global_position, global_position - lawn.global_position, cut_radius)
+		# Clippings spray off the side while it's eating long grass.
+		_clippings.emitting = lawn.cut_fraction() > was
+		_clippings.position = Vector2(0, -cut_radius).rotated(0.0)
 	_update_sound(delta, running)

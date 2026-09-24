@@ -12,26 +12,26 @@ const MOWERS := {
 		"max_speed": 150.0, "reverse_speed": 80.0, "accel": 420.0, "brake": 900.0,
 		"turn_rate": 3.6, "cut_radius": 12.0, "max_fuel": 20.0, "fuel_burn": 1.0,
 		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0, "toughness": 0.8,
-		"blurb": "Your legs are the engine. Narrow, slow, nimble. Rests to recover.",
+		"blurb": "Legs for an engine. Narrow, nimble.",
 	},
 	"petrol": {
 		"name": "Petrol mower", "price": 180, "power": "fuel", "sprite": "petrol", "body": Vector2(36, 28),
 		"max_speed": 220.0, "reverse_speed": 110.0, "accel": 600.0, "brake": 900.0,
 		"turn_rate": 3.0, "cut_radius": 16.0, "max_fuel": 40.0, "fuel_burn": 1.0,
 		"regen": 0.0, "empty_speed_scale": 0.35, "fuel_price": 0.25, "toughness": 1.0,
-		"blurb": "Faster and wider. Burns fuel the whole time; refill at the truck.",
+		"blurb": "Faster, wider. Burns fuel nonstop.",
 	},
 	"rideon": {
 		"name": "Ride-on mower", "price": 650, "power": "fuel", "sprite": "rideon", "body": Vector2(52, 40),
 		"max_speed": 300.0, "reverse_speed": 120.0, "accel": 340.0, "brake": 520.0,
 		"turn_rate": 1.9, "cut_radius": 26.0, "max_fuel": 60.0, "fuel_burn": 1.5,
 		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25, "toughness": 2.0,
-		"blurb": "Huge cut, huge speed, turns like a barge. Comes with a trailer.",
+		"blurb": "Huge cut. Turns like a barge.",
 	},
 }
 
 const UPGRADES := {
-	"tank": {"name": "Bigger tank", "price": 120, "blurb": "+50% fuel (or stamina) capacity."},
+	"tank": {"name": "Bigger tank", "price": 120, "blurb": "+50% fuel or stamina."},
 	"blades": {"name": "Sharp blades", "price": 150, "blurb": "+15% cutting width."},
 }
 
@@ -91,6 +91,12 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	# The pixel font everywhere: glyphs are 10px, so sizes render at whole multiples.
+	var font := PixelFont.make()
+	ThemeDB.fallback_font = font
+	ThemeDB.fallback_font_size = 20
+	ThemeDB.get_default_theme().default_font = font
+	ThemeDB.get_default_theme().default_font_size = 20
 	var cfg := ConfigFile.new()
 	if cfg.load(save_path) == OK:
 		best_score = cfg.get_value("best", "score", 0)

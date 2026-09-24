@@ -69,10 +69,10 @@ func _build() -> void:
 	var shop := UI.vbox(10)
 	shop.custom_minimum_size = Vector2(430, 0)
 	cols.add_child(shop)
-	shop.add_child(UI.label("Your mowers", 26))
+	shop.add_child(UI.label("Your mowers", 30))
 	for key: String in Game.MOWERS:
 		shop.add_child(_mower_row(key))
-	shop.add_child(UI.label("Upgrades", 24))
+	shop.add_child(UI.label("Upgrades", 30))
 	for key: String in Game.UPGRADES:
 		shop.add_child(_upgrade_row(key))
 	if first:
@@ -106,10 +106,7 @@ func _mower_row(key: String) -> Control:
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_child(UI.label(m.name + ("  (in use)" if Game.equipped == key else ""), 20,
 		UI.GOLD if Game.equipped == key else UI.TEXT))
-	var blurb := UI.label(m.blurb, 15, UI.DIM)
-	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD
-	blurb.custom_minimum_size = Vector2(280, 0)
-	info.add_child(blurb)
+	info.add_child(UI.label(m.blurb, 20, UI.DIM))
 	row.add_child(info)
 	if key in Game.owned:
 		var use := UI.button("Use", func() -> void:
@@ -132,7 +129,7 @@ func _upgrade_row(key: String) -> Control:
 	var info := UI.vbox(2)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_child(UI.label(u.name, 20))
-	info.add_child(UI.label(u.blurb, 15, UI.DIM))
+	info.add_child(UI.label(u.blurb, 20, UI.DIM))
 	row.add_child(info)
 	if key in Game.upgrades:
 		row.add_child(UI.label("Owned", 18, UI.GOOD))

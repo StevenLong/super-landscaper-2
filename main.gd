@@ -30,6 +30,7 @@ var _next_hedgehog := 3.0
 var _next_squirrel := 8.0
 var _dog_in := -1.0
 var _house: Node2D
+var _shake := 0.0
 
 @onready var lawn: Lawn = $Lawn
 @onready var mower: CharacterBody2D = $Mower
@@ -188,6 +189,32 @@ func add_stone(p: Vector2) -> Stone:
 
 
 # ---------------------------------------------------------------- the loop
+
+func _process(delta: float) -> void:
+	_shake = maxf(0.0, _shake - delta * 18.0)
+	cam.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
+
+
+## A camera shake of the given strength in pixels, decaying fast.
+func shake(amount: float) -> void:
+	_shake = maxf(_shake, amount)
+
+
+## Floating text in the world, rising and fading: bills, thanks, that sort of thing.
+func pop_text(text: String, at: Vector2, color := Color("f8d048")) -> void:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", 10)
+	l.add_theme_color_override("font_color", color)
+	UI.shadow(l, 1)
+	l.position = at - Vector2(30, 20)
+	l.z_index = 5
+	add_child(l)
+	var tw := l.create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 30.0, 1.2)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 1.2).set_delay(0.5)
+	tw.tween_callback(l.queue_free)
+
 
 func _physics_process(delta: float) -> void:
 	if over:
@@ -430,6 +457,7 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 	s.queue_free()
 	m.damage(12.0)
 	Sfx.play("clonk")
+	shake(3.0)
 	if randf() < Stone.LAUNCH_CHANCE:
 		var f := FlyingStone.new()
 		var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
@@ -476,6 +504,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"window":
 			Sfx.play("glass", 0.0)
 			bills += WINDOW_BILL
+			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
+			shake(4.0)
 			customer.on_stone("window")
 			_react()
 		"wall":
@@ -485,6 +515,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"truck":
 			Sfx.play("clonk")
 			bills += DENT_BILL
+			pop_text("-$%d" % DENT_BILL, p, Color("f07060"))
 		"animal":
 			for a in $Animals.get_children():
 				if a is Animal and not a.dead and a.position.distance_to(p) < 12.0:
@@ -506,6 +537,7 @@ func _knock_out() -> void:
 	customer.knock_out()
 	$Client.knock_out()
 	Sfx.play("thud")
+	shake(6.0)
 	hud.say("(Out cold.)")
 
 
@@ -559,6 +591,7 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF) -> Ani
 func _on_squashed(a: Animal) -> void:
 	hits[a.kind] = hits.get(a.kind, 0) + 1
 	Sfx.play("squash")
+	shake(3.0)
 	Sfx.play("squeak_" + a.kind)
 	customer.on_squash(a.kind)
 	_react()

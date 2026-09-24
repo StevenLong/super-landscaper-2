@@ -86,13 +86,19 @@ script = ExtResource("7_hud")
 [node name="Percent" type="Label" parent="HUD"]
 offset_left = 16.0
 offset_top = 12.0
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
 text = "0%"
 
 [node name="Clock" type="Label" parent="HUD"]
 offset_left = 110.0
 offset_top = 16.0
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
 text = "0:00"
 
 [node name="Fuel" type="Control" parent="HUD"]
@@ -131,9 +137,10 @@ offset_left = -400.0
 offset_top = 16.0
 offset_right = 250.0
 offset_bottom = 50.0
-theme_override_font_sizes/font_size = 24
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
 horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="HUD"]
@@ -147,7 +154,8 @@ offset_left = -300.0
 offset_top = -48.0
 offset_right = 300.0
 offset_bottom = -16.0
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
 horizontal_alignment = 1

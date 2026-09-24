@@ -14,6 +14,7 @@ const GOLD := Color("f8d048")
 static func theme() -> Theme:
 	var t := Theme.new()
 	t.default_font_size = 20
+	t.default_font = ThemeDB.fallback_font
 	var panel := StyleBoxFlat.new()
 	panel.bg_color = PANEL
 	panel.border_color = PANEL_EDGE
@@ -38,15 +39,28 @@ static func theme() -> Theme:
 static func label(text: String, size := 20, color := TEXT) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", px(size))
 	l.add_theme_color_override("font_color", color)
+	shadow(l)
 	return l
+
+
+## Snap a font size to a whole multiple of the 10px pixel font (never below 2x).
+static func px(size: int) -> int:
+	return maxi(20, roundi(size / 10.0) * 10)
+
+
+## A one-pixel-per-scale drop shadow (bitmap fonts can't draw outlines).
+static func shadow(c: Control, strength := 2) -> void:
+	c.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.75))
+	c.add_theme_constant_override("shadow_offset_x", strength)
+	c.add_theme_constant_override("shadow_offset_y", strength)
 
 
 static func button(text: String, on_press: Callable, size := 20) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.add_theme_font_size_override("font_size", size)
+	b.add_theme_font_size_override("font_size", px(size))
 	b.pressed.connect(func() -> void: Sfx.play("ui_select", 0.0))
 	b.pressed.connect(on_press)
 	b.focus_entered.connect(func() -> void: Sfx.play("ui_move", 0.0))

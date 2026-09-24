@@ -61,15 +61,9 @@ func open(title: String, lines: Array, buttons: Array, face_look := {}, face_exp
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)
 	row.add_child(col)
-	var t := Label.new()
-	t.text = title
-	t.add_theme_font_size_override("font_size", 30)
-	col.add_child(t)
+	col.add_child(UI.label(title, 30, UI.GOLD))
 	for l in lines:
-		var lab := Label.new()
-		lab.text = str(l)
-		lab.add_theme_font_size_override("font_size", 20)
-		col.add_child(lab)
+		col.add_child(UI.label(str(l), 20))
 	var btns := HBoxContainer.new()
 	btns.add_theme_constant_override("separation", 12)
 	col.add_child(btns)
