@@ -29,7 +29,7 @@ STEAM_SH = hexc("b8b8c0", 230)
 VEIN = hexc("c01830")
 
 W = H = 40
-FRAMES = ["delighted", "happy", "neutral", "annoyed", "furious", "horrified", "laughing", "fired"]
+FRAMES = ["delighted", "happy", "neutral", "annoyed", "furious", "horrified", "laughing", "fired", "hurt", "ko"]
 
 
 def base(hair_style, angry=False):
@@ -154,6 +154,22 @@ def draw(name, style):
         c.stamp(14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmggmmmmk", ".kmmmmmmmmk.", "..kkkkkkkk.."], PAL)
         c.stamp(11, 20, ["d", "d"], PAL)
         c.stamp(28, 20, ["d", "d"], PAL)
+    elif name == "hurt":
+        # The Doom-guy special: a black eye, a bloody brow and nose, gritted pain.
+        brows(c, ["b...", ".bbb"], ["bb..", "..bb"], 14)
+        c.stamp(13, 17, ["kkkk", "wwpk", ".kk."], PAL)
+        c.stamp(22, 16, [".uuuu.", "uukkuu", "uukkuu", ".uuuu."], {**PAL, "u": hexc("5a3a6a")})
+        c.stamp(14, 25, ["kkkkkkkkkkkk", "ktktktktktkk", "kkkkkkkkkkkk"], PAL)
+        c.stamp(15, 8, ["...v", "..vv", ".vv.", "vv..", "v..."], PAL)
+        c.stamp(19, 22, ["v", "v", "vv"], PAL)
+        c.stamp(29, 22, ["v", "vv"], PAL)
+    elif name == "ko":
+        c.stamp(13, 17, ["k..k", ".kk.", ".kk.", "k..k"], PAL)
+        c.stamp(23, 17, ["k..k", ".kk.", ".kk.", "k..k"], PAL)
+        c.stamp(16, 25, [".kkkkk.", "kgggggk", ".kkkkk."], PAL)
+        c.stamp(22, 12, ["vvv", "v.v"], PAL)
+        for (x, y) in ((5, 5), (17, 1), (31, 4)):
+            c.stamp(x, y, [".y.", "yyy", ".y."], {"y": hexc("f8e070")})
     c.outline(INK)
     return c
 

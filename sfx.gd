@@ -6,6 +6,7 @@ const VOLUME := { ## per-sound trims in dB, so the synth levels sit together
 	"squeak_hedgehog": -10.0, "squeak_squirrel": -12.0, "fired": -6.0, "fuel_low": -8.0,
 	"ui_move": -14.0, "ui_select": -10.0, "bump": -6.0, "crunch": -4.0,
 	"voice_happy": -8.0, "voice_laugh": -8.0, "voice_angry": -6.0, "voice_horrified": -6.0,
+	"clonk": -6.0, "thud": -4.0, "glass": -4.0, "yelp": -8.0, "glug": -8.0,
 }
 
 var music_db := -12.0

@@ -38,7 +38,7 @@ def wheel(c, x, y, w, h, phase=0):
 
 # ---------------------------------------------------------------- mowers
 
-def petrol(step):
+def petrol(step, rider=True):
     W, H = 92, 40
     c = Canvas(W, H)
     cx, cy = W // 2, H // 2          # body 36x28
@@ -56,12 +56,13 @@ def petrol(step):
         c.rect(hx, yy, 17, 2, STEEL[2])
         c.rect(hx, yy, 17, 1, STEEL[4])
     c.rect(hx, y0 + 5, 2, 19, STEEL[3])
-    player_topdown(c, hx - 7, cy, step, arms_to=((hx, y0 + 5), (hx, y0 + 22)))
+    if rider:
+        player_topdown(c, hx - 7, cy, step, arms_to=((hx, y0 + 5), (hx, y0 + 22)))
     c.outline(INK)
     return c
 
 
-def push(step):
+def push(step, rider=True):
     W, H = 80, 36
     c = Canvas(W, H)
     cx, cy = W // 2, H // 2          # body 30x22
@@ -79,12 +80,13 @@ def push(step):
     for yy in (y0 + 5, y0 + 15):
         c.rect(hx, yy, 17, 2, WOOD[3])
     c.rect(hx, y0 + 5, 2, 12, WOOD[4])
-    player_topdown(c, hx - 7, cy, step, arms_to=((hx, y0 + 5), (hx, y0 + 16)))
+    if rider:
+        player_topdown(c, hx - 7, cy, step, arms_to=((hx, y0 + 5), (hx, y0 + 16)))
     c.outline(INK)
     return c
 
 
-def rideon(step):
+def rideon(step, rider=True):
     W, H = 76, 64
     c = Canvas(W, H)
     cx, cy = W // 2, H // 2          # body 52x40
@@ -106,7 +108,8 @@ def rideon(step):
     shaded_rect(c, x0 + 8, y0 + 11, 12, 18, STEEL[:4])
     c.ellipse(x0 + 27, cy, 3.5, 5, STEEL[1])
     c.ellipse(x0 + 27, cy, 2, 3.5, YELLOW[3])
-    player_topdown(c, x0 + 15, cy, 0, arms_to=((x0 + 26, cy - 4), (x0 + 26, cy + 4)))
+    if rider:
+        player_topdown(c, x0 + 15, cy, 0, arms_to=((x0 + 26, cy - 4), (x0 + 26, cy + 4)))
     c.outline(INK)
     return c
 
@@ -297,11 +300,95 @@ def splat():
     return c
 
 
+# ---------------------------------------------------------------- props and the player on foot
+
+def stone():
+    c = Canvas(12, 10)
+    shaded_ellipse(c, 6, 5, 5, 4, STONE)
+    c.set(4, 3, STONE[4])
+    c.set(7, 6, STONE[1])
+    c.outline(INK)
+    return c
+
+
+def jerrycan():
+    c = Canvas(12, 14)
+    shaded_rect(c, 1, 3, 10, 11, RED)
+    c.rect(3, 0, 6, 3, RED[1])
+    c.rect(4, 1, 4, 1, (0, 0, 0, 0))
+    c.rect(8, 1, 2, 3, STEEL[3])
+    c.rect(3, 6, 6, 1, RED[4])
+    c.rect(3, 9, 6, 1, RED[1])
+    c.outline(INK)
+    return c
+
+
+def walker(step):
+    """The player on foot, from above, facing right: arms swing as they walk."""
+    c = Canvas(22, 22)
+    cx, cy = 10, 11
+    for k, dy in enumerate((-3, 3)):
+        fwd = 3 if k == step else -3
+        c.ellipse(cx + fwd, cy + dy, 2.4, 1.8, STEEL[1])
+    for k, sy in enumerate((-7, 7)):
+        fwd = -3 if k == step else 3
+        c.ellipse(cx + fwd, cy + sy, 1.8, 1.8, P_SKIN[1])
+    c.ellipse(cx, cy, 4.5, 7.5, None, lambda nx, ny: lit(P_SHIRT, nx, ny))
+    c.ellipse(cx + 0.5, cy, 3.6, 3.6, None, lambda nx, ny: lit(P_CAP, nx, ny))
+    c.rect(cx + 3, cy - 2, 2, 4, P_CAP[0])
+    c.outline(INK)
+    return c
+
+
+def dog(step):
+    """The customer's dog, side-on and bouncy: golden, floppy-eared, waggy."""
+    c = Canvas(28, 20)
+    FUR = [hexc(h) for h in ("5a3410", "8a5820", "c08a38", "e0b058", "f8d890")]
+    c.ellipse(13, 11, 8, 5, None, lambda nx, ny: lit(FUR, nx, ny))
+    c.ellipse(22, 7, 4.5, 4, None, lambda nx, ny: lit(FUR, nx, ny))
+    c.rect(25, 7, 3, 3, FUR[3])                   # snout
+    c.set(27, 7, INK)
+    c.set(23, 6, INK)
+    c.rect(20, 6, 2, 5, FUR[1])                   # ear
+    tail_y = 5 if step == 0 else 7
+    c.rect(2, tail_y, 4, 2, FUR[2])
+    c.rect(4, tail_y + 1, 2, 3, FUR[2])
+    for fx in ((8, 17) if step == 0 else (10, 15)):
+        c.rect(fx, 15, 2, 4, FUR[1])
+    c.rect(19, 10, 3, 2, RED[3])                  # collar
+    c.outline(INK)
+    return c
+
+
 # ---------------------------------------------------------------- the customer, standing
 
 def client(frame):
     """The customer on their patio, facing us (3/4 SNES RPG view). Key-coloured
-    skin/hair/shirt so client.gd can swap them to match the portrait."""
+    skin/hair/shirt so client.gd can swap them to match the portrait.
+    Frames: 0 idle, 1 arms up in outrage, 2 knocked flat."""
+    if frame == 2:
+        return client_flat()
+    c = Canvas(30, 30)
+    c.blit(client_upright(frame), 6, 0)
+    return c
+
+
+def client_flat():
+    c = Canvas(30, 30)
+    TROUSER = [hexc(h) for h in ("1c1c28", "2c2c40", "40405a")]
+    c.rect(2, 22, 9, 3, TROUSER[1])
+    c.rect(2, 26, 9, 3, TROUSER[1])
+    c.ellipse(15, 24, 6.5, 5, None, lambda nx, ny: K_SHIRT[1] if ny < 0.3 else K_SHIRT[0])
+    c.ellipse(24, 24, 4.5, 4.5, None, lambda nx, ny: K_SKIN[1] if ny < 0.4 else K_SKIN[0])
+    c.ellipse(26, 22, 3, 4, None, lambda nx, ny: K_HAIR[1])
+    c.stamp(21, 23, ["x.x", ".x.", "x.x"], {"x": INK})
+    for x, y in ((18, 13), (24, 11), (29, 15)):
+        c.stamp(x - 1, y - 1, [".y.", "yyy", ".y."], {"y": hexc("f8e070")})
+    c.outline(INK)
+    return c
+
+
+def client_upright(frame):
     c = Canvas(18, 30)
     TROUSER = [hexc(h) for h in ("1c1c28", "2c2c40", "40405a")]
     c.rect(5, 21, 3, 7, TROUSER[1])

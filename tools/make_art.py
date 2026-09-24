@@ -169,9 +169,10 @@ def main(only=None):
     import art_sprites as a
     jobs.update({
         "mowers": lambda: [
-            save("mower_petrol", sheet([a.petrol(0), a.petrol(1)])),
-            save("mower_push", sheet([a.push(0), a.push(1)])),
-            save("mower_rideon", sheet([a.rideon(0), a.rideon(1)])),
+            # Frames: two while ridden/pushed, then the mower left standing empty.
+            save("mower_petrol", sheet([a.petrol(0), a.petrol(1), a.petrol(0, False)])),
+            save("mower_push", sheet([a.push(0), a.push(1), a.push(0, False)])),
+            save("mower_rideon", sheet([a.rideon(0), a.rideon(1), a.rideon(0, False)])),
         ],
         "vehicles": lambda: [save("truck", a.truck(), 3), save("trailer", a.trailer(), 3)],
         "flowers": lambda: [save("flowers", a.flowers(), 6)],
@@ -181,7 +182,13 @@ def main(only=None):
             save("squirrel", sheet([a.squirrel(0), a.squirrel(1)]), 6),
             save("splat", a.splat(), 6),
         ],
-        "client": lambda: [save("client", sheet([a.client(0), a.client(1)]), 6)],
+        "client": lambda: [save("client", sheet([a.client(0), a.client(1), a.client(2)]), 6)],
+        "props": lambda: [
+            save("stone", a.stone(), 6),
+            save("jerrycan", a.jerrycan(), 6),
+            save("walker", sheet([a.walker(0), a.walker(1)]), 6),
+            save("dog", sheet([a.dog(0), a.dog(1)]), 6),
+        ],
     })
     for k, fn in jobs.items():
         if only is None or k in only:

@@ -12,9 +12,14 @@ var value := 1.0:
 		value = clampf(v, 0.0, 1.0)
 		queue_redraw()
 
+@export var top_label := "F"
+@export var bottom_label := "E"
+
 var stamina := false: ## a push mower: label it as energy, not fuel
 	set(v):
 		stamina = v
+		top_label = "PEP" if v else "F"
+		bottom_label = "ZZZ" if v else "E"
 		queue_redraw()
 
 var _t := 0.0
@@ -49,5 +54,5 @@ func _draw() -> void:
 	draw_rect(tube, Color(0.9, 0.9, 0.9), false, 2.0)
 
 	var fs := 18
-	draw_string(font, Vector2(-20, label_h - 4), "PEP" if stamina else "F", HORIZONTAL_ALIGNMENT_CENTER, size.x + 40, fs)
-	draw_string(font, Vector2(-20, size.y - 4), "ZZZ" if stamina else "E", HORIZONTAL_ALIGNMENT_CENTER, size.x + 40, fs)
+	draw_string(font, Vector2(-20, label_h - 4), top_label, HORIZONTAL_ALIGNMENT_CENTER, size.x + 40, fs)
+	draw_string(font, Vector2(-20, size.y - 4), bottom_label, HORIZONTAL_ALIGNMENT_CENTER, size.x + 40, fs)

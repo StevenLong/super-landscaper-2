@@ -8,6 +8,7 @@ extends CharacterBody2D
 ## it crawls (but still cuts: it's your legs, not an engine).
 
 signal fuel_changed(fraction: float)
+signal condition_changed(fraction: float)
 
 @export var lawn: Lawn
 @export var power := "fuel"
@@ -22,10 +23,14 @@ signal fuel_changed(fraction: float)
 @export var fuel_burn := 1.0 ## per second
 @export var regen := 0.0 ## stamina recovered per second while not pushing
 @export var empty_speed_scale := 0.35 ## pushing a dead mower
-@export var sprite_kind := "petrol" ## art/mower_<kind>.png, two frames
+@export var sprite_kind := "petrol" ## art/mower_<kind>.png: two frames of motion, then empty
+@export var toughness := 1.0 ## damage taken is divided by this
 
 @onready var fuel := max_fuel
 var fuel_used := 0.0
+var condition := 100.0 ## 0 = broken: crawls and cuts nothing until repaired at the truck
+var repaired := 0.0 ## points repaired this job (costs money)
+var occupied := true ## false while the player is off on foot
 var throttle := 0.0
 var _stride := 0.0
 var _bump_cooldown := 0.0
@@ -42,7 +47,7 @@ func _ready() -> void:
 func _apply_visual() -> void:
 	var spr: Sprite2D = $Sprite
 	spr.texture = load("res://art/mower_%s.png" % sprite_kind)
-	spr.hframes = 2
+	spr.hframes = 3 # two frames of motion, then empty
 	_engine.stream = load("res://audio/%s.wav" % {"push": "reel", "rideon": "engine_rideon"}.get(sprite_kind, "engine_petrol"))
 	_engine.play()
 
@@ -68,11 +73,12 @@ func _update_sound(delta: float, running: bool) -> void:
 	if get_slide_collision_count() > 0 and _bump_cooldown <= 0.0 and s > 0.25:
 		_bump_cooldown = 0.5
 		Sfx.play("bump")
+		damage(2.0 + 8.0 * s)
 
 
 func apply_spec(spec: Dictionary) -> void:
 	for k in ["power", "max_speed", "reverse_speed", "accel", "brake", "turn_rate", "cut_radius",
-			"max_fuel", "fuel_burn", "regen", "empty_speed_scale"]:
+			"max_fuel", "fuel_burn", "regen", "empty_speed_scale", "toughness"]:
 		set(k, spec[k])
 	sprite_kind = spec.sprite
 	var shape := RectangleShape2D.new()
@@ -83,6 +89,18 @@ func apply_spec(spec: Dictionary) -> void:
 	edge_margin = minf(edge_margin, cut_radius * 0.75)
 
 
+func damage(amount: float) -> void:
+	condition = maxf(0.0, condition - amount / toughness)
+	condition_changed.emit(condition / 100.0)
+
+
+func repair(amount: float) -> void:
+	var before := condition
+	condition = minf(100.0, condition + amount)
+	repaired += condition - before
+	condition_changed.emit(condition / 100.0)
+
+
 func add_fuel(amount: float) -> void:
 	var before := fuel
 	fuel = minf(max_fuel, fuel + amount)
@@ -91,7 +109,7 @@ func add_fuel(amount: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	throttle = Input.get_axis("move_back", "move_forward")
+	throttle = Input.get_axis("move_back", "move_forward") if occupied else 0.0
 	if power == "stamina":
 		if throttle != 0.0:
 			fuel = maxf(0.0, fuel - fuel_burn * delta)
@@ -100,14 +118,17 @@ func _physics_process(delta: float) -> void:
 	else:
 		fuel = maxf(0.0, fuel - fuel_burn * delta)
 	fuel_changed.emit(fuel / max_fuel)
-	var running := fuel > 0.0
+	var running := fuel > 0.0 and condition > 0.0
 
-	rotation += Input.get_axis("turn_left", "turn_right") * turn_rate * delta
+	if occupied:
+		rotation += Input.get_axis("turn_left", "turn_right") * turn_rate * delta
 
 	var fwd := Vector2.RIGHT.rotated(rotation)
 	var target := throttle * (max_speed if throttle > 0.0 else reverse_speed)
 	if not running:
 		target *= empty_speed_scale
+	elif condition < 35.0:
+		target *= 0.8 # sputtering
 	var speed := move_toward(velocity.dot(fwd), target, (accel if throttle != 0.0 else brake) * delta)
 	velocity = fwd * speed
 
@@ -115,13 +136,15 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	# Walk / wheel animation: flip frames every few pixels travelled.
 	_stride += global_position.distance_to(before)
-	if _stride > 7.0:
+	if not occupied:
+		$Sprite.frame = 2
+	elif _stride > 7.0 or $Sprite.frame == 2:
 		_stride = 0.0
-		$Sprite.frame = 1 - $Sprite.frame
+		$Sprite.frame = 1 - mini($Sprite.frame, 1)
 	if lawn:
 		var lo := lawn.global_position + Vector2(edge_margin, edge_margin)
 		var hi := lawn.global_position + Vector2(lawn.size_px) - Vector2(edge_margin, edge_margin)
 		global_position = global_position.clamp(lo, hi)
-		if running or power == "stamina":
+		if running or (power == "stamina" and condition > 0.0):
 			lawn.cut_segment(before - lawn.global_position, global_position - lawn.global_position, cut_radius)
 	_update_sound(delta, running)

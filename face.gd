@@ -3,7 +3,7 @@ extends Control
 ## The customer's portrait: art/faces.png drawn in key colours, palette-swapped for
 ## this customer's skin, hair and shirt. Shakes briefly when the expression changes.
 
-const FRAMES := ["delighted", "happy", "neutral", "annoyed", "furious", "horrified", "laughing", "fired"]
+const FRAMES := ["delighted", "happy", "neutral", "annoyed", "furious", "horrified", "laughing", "fired", "hurt", "ko"]
 const CELL := 40
 
 const SKINS := [["f8d0a8", "e8b088", "c08060"], ["f0c090", "d09868", "a06840"], ["d8a070", "b07848", "805030"],

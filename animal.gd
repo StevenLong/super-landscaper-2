@@ -52,11 +52,17 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if dead or not ("velocity" in body):
-		return
+	if dead or not ("cut_radius" in body):
+		return # only mowers squash; people on foot just step round
 	if (body.velocity as Vector2).length() < 15.0:
 		# A stopped mower is just an obstacle: turn back the way we came.
 		heading = -heading
+		return
+	squash()
+
+
+func squash() -> void:
+	if dead:
 		return
 	dead = true
 	set_deferred("monitoring", false)

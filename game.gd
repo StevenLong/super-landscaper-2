@@ -11,21 +11,21 @@ const MOWERS := {
 		"name": "Push mower", "price": 0, "power": "stamina", "sprite": "push", "body": Vector2(30, 22),
 		"max_speed": 150.0, "reverse_speed": 80.0, "accel": 420.0, "brake": 900.0,
 		"turn_rate": 3.6, "cut_radius": 12.0, "max_fuel": 20.0, "fuel_burn": 1.0,
-		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0,
+		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0, "toughness": 0.8,
 		"blurb": "Your legs are the engine. Narrow, slow, nimble. Rests to recover.",
 	},
 	"petrol": {
 		"name": "Petrol mower", "price": 180, "power": "fuel", "sprite": "petrol", "body": Vector2(36, 28),
 		"max_speed": 220.0, "reverse_speed": 110.0, "accel": 600.0, "brake": 900.0,
 		"turn_rate": 3.0, "cut_radius": 16.0, "max_fuel": 40.0, "fuel_burn": 1.0,
-		"regen": 0.0, "empty_speed_scale": 0.35, "fuel_price": 0.25,
+		"regen": 0.0, "empty_speed_scale": 0.35, "fuel_price": 0.25, "toughness": 1.0,
 		"blurb": "Faster and wider. Burns fuel the whole time; refill at the truck.",
 	},
 	"rideon": {
 		"name": "Ride-on mower", "price": 650, "power": "fuel", "sprite": "rideon", "body": Vector2(52, 40),
 		"max_speed": 300.0, "reverse_speed": 120.0, "accel": 340.0, "brake": 520.0,
 		"turn_rate": 1.9, "cut_radius": 26.0, "max_fuel": 60.0, "fuel_burn": 1.5,
-		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25,
+		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25, "toughness": 2.0,
 		"blurb": "Huge cut, huge speed, turns like a barge. Comes with a trailer.",
 	},
 }
@@ -84,6 +84,8 @@ var in_run := false
 var current_job := {}
 var last_result := {}
 var best_score := 0
+var run_over_reason := "" ## "" while running; "arrested" ends the run at the next board
+var heat := 0.0 ## the wanted level: each knocked-out customer adds one; the police may be waiting
 
 var _rng := RandomNumberGenerator.new()
 
@@ -111,6 +113,8 @@ func new_run(seed_value := 0) -> void:
 	in_run = true
 	current_job = {}
 	last_result = {}
+	heat = 0.0
+	run_over_reason = ""
 
 
 ## The mower spec for the equipped mower, with upgrades applied.
@@ -168,6 +172,9 @@ func make_job(seed_value: int) -> Dictionary:
 		"pay": int(round((70.0 + 50.0 * size_i) * area * (1.0 + (target - 0.8)) / 5.0) * 5),
 		"hedgehog_every": 7.0 / (1.0 + 0.25 * size_i),
 		"squirrel_every": 13.0 / (1.0 + 0.25 * size_i),
+		"stones": 4 + size_i * 2 + r.randi_range(0, 2),
+		"dog": r.randf() < 0.4,
+		"dog_name": ["Biscuit", "Rolo", "Duchess", "Pickle", "Monty", "Waffles", "Sir Barkley"][r.randi() % 7],
 	}
 
 
@@ -199,11 +206,20 @@ func record_result(result: Dictionary) -> void:
 	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
 	jobs_done += 1
 	day += 1
+	if result.outcome == "ko":
+		heat += 1.0
+	elif result.outcome == "paid":
+		heat = maxf(0.0, heat - 0.34)
 	if total_earned > best_score:
 		best_score = total_earned
 		var cfg := ConfigFile.new()
 		cfg.set_value("best", "score", best_score)
 		cfg.save(save_path)
+
+
+## Are the police waiting at this job? The more customers you've flattened, the likelier.
+func arrested_on_arrival() -> bool:
+	return in_run and heat > 0.0 and _rng.randf() < heat * 0.12
 
 
 func buy(key: String) -> bool:

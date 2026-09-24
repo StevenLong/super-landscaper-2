@@ -8,6 +8,9 @@ var offers: Array[Dictionary] = []
 func _ready() -> void:
 	theme = UI.theme()
 	Sfx.music("music_menu")
+	if Game.run_over_reason == "arrested":
+		_run_over("ARRESTED")
+		return
 	offers = Game.make_offers()
 	_build()
 
@@ -37,6 +40,8 @@ func _build() -> void:
 	var arrow := "  (rising)" if trend > 3.0 else ("  (sliding)" if trend < -3.0 else "")
 	head.add_child(UI.label("Reputation: %s%s" % [UI.rep_word(Game.reputation), arrow], 22,
 		UI.GOOD if Game.reputation >= 45.0 else (UI.GOLD if Game.reputation >= 20.0 else UI.BAD)))
+	if Game.heat > 0.0:
+		head.add_child(UI.label("WANTED " + "*".repeat(ceili(Game.heat)), 22, UI.BAD))
 	root.add_child(head)
 
 	var cols := UI.hbox(24)
@@ -51,7 +56,7 @@ func _build() -> void:
 	var first: Control = null
 	if offers.is_empty():
 		jobs.add_child(UI.label("Nobody's calling. Word has got around.", 22, UI.BAD))
-		var b := UI.button("File for bankruptcy", _bankrupt, 22)
+		var b := UI.button("File for bankruptcy", func() -> void: _run_over("BANKRUPT"), 22)
 		jobs.add_child(b)
 		first = b
 	for o in offers:
@@ -145,7 +150,7 @@ func _take(o: Dictionary) -> void:
 	get_tree().change_scene_to_file("res://main.tscn")
 
 
-func _bankrupt() -> void:
+func _run_over(title: String) -> void:
 	for c in get_children():
 		c.queue_free()
 	var bg := ColorRect.new()
@@ -156,7 +161,7 @@ func _bankrupt() -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(col)
-	for l: Array in [["BANKRUPT", 64, UI.BAD], ["You lasted %d days." % Game.day, 26, UI.TEXT],
+	for l: Array in [[title, 64, UI.BAD], ["You lasted %d days." % Game.day, 26, UI.TEXT],
 			["Total earned: $%d" % Game.total_earned, 30, UI.GOLD], ["Best ever: $%d" % Game.best_score, 22, UI.DIM]]:
 		var lab := UI.label(l[0], l[1], l[2])
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

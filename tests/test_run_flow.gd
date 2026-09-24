@@ -51,7 +51,7 @@ func _process(_delta: float) -> bool:
 			current_scene._ready()
 		5:
 			assert(current_scene.offers.is_empty(), "no reputation, no offers")
-			current_scene._bankrupt()
+			current_scene._run_over("BANKRUPT")
 			print("PASS run flow")
 			quit()
 	_step += 1

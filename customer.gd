@@ -9,6 +9,7 @@ var job: Dictionary
 var persona: Dictionary
 var mood := 60.0
 var fired := false
+var knocked_out := false ## out cold: nobody can pay you, and nobody can fire you
 var fire_line := ""
 var flowers_flat := 0
 var coverage := 0.0
@@ -27,6 +28,8 @@ func _init(job_data: Dictionary) -> void:
 
 ## The expression to show right now: a short reaction if one is playing, else the mood tier.
 func face() -> String:
+	if knocked_out:
+		return "ko"
 	if fired:
 		return "fired"
 	if _react_left > 0.0:
@@ -40,7 +43,7 @@ func face() -> String:
 func tick(delta: float) -> void:
 	elapsed += delta
 	_react_left -= delta
-	if elapsed > job.patience and not fired:
+	if elapsed > job.patience and not fired and not knocked_out:
 		_change(-1.0 * delta) # waiting past their patience wears them down
 
 
@@ -76,8 +79,44 @@ func on_flowers(total_flat: int) -> bool:
 	return true
 
 
+## A flung stone (or worse) lands on something of theirs. Returns true if it knocked them out.
+func on_stone(target: String) -> bool:
+	match target:
+		"customer":
+			_change(-35.0)
+			if randf() < 0.35 or mood < 25.0:
+				knock_out()
+				return true
+			_react("hurt", 3.0, "OW! My EYE!")
+		"window":
+			_change(-25.0)
+			_react("horrified", 2.5, "My WINDOW!")
+		"wall":
+			_change(-5.0)
+			_react("annoyed", 1.5, "Careful!")
+		"dog":
+			_change(-40.0)
+			_react("horrified", 2.5, "You hit %s!" % job.get("dog_name", "the dog"))
+	return false
+
+
+func knock_out() -> void:
+	knocked_out = true
+	last_line = "..."
+
+
+func on_dog_hit() -> void:
+	_change(-60.0)
+	_react("horrified", 3.0, "%s! NO!" % job.get("dog_name", "My dog"))
+
+
+func on_dog_returned() -> void:
+	_change(10.0)
+	_react("delighted", 2.0, "Oh, thank you! Bad %s!" % job.get("dog_name", "dog"))
+
+
 func fire(line: String) -> void:
-	if fired:
+	if fired or knocked_out:
 		return
 	fired = true
 	mood = 0.0
@@ -86,13 +125,15 @@ func fire(line: String) -> void:
 
 
 func _change(d: float) -> void:
+	if knocked_out:
+		return
 	mood = clampf(mood + d, 0.0, 100.0)
 	if mood <= 0.0:
 		fire("That's it. You're fired!")
 
 
 func _react(face_name: String, seconds: float, line: String) -> void:
-	if fired:
+	if fired or knocked_out:
 		return
 	_react_face = face_name
 	_react_left = seconds
@@ -131,6 +172,16 @@ func fired_result(fuel_cost: float) -> Dictionary:
 		"elapsed": elapsed, "on_time": false, "mood": 0.0,
 		"paid": 0, "tip": 0, "fuel_cost": fuel_cost, "net": -fuel_cost,
 		"rep": -18.0, "comment": fire_line,
+	}
+
+
+## Out cold: nobody pays, but nobody conscious saw enough to hurt your reputation.
+func ko_result(fuel_cost: float) -> Dictionary:
+	return {
+		"outcome": "ko", "coverage": coverage, "target_met": false,
+		"elapsed": elapsed, "on_time": false, "mood": 0.0,
+		"paid": 0, "tip": 0, "fuel_cost": fuel_cost, "net": -fuel_cost,
+		"rep": 0.0, "comment": "(They're out cold. Nobody is paying you today.)",
 	}
 
 

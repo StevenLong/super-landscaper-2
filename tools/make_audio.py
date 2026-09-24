@@ -176,6 +176,49 @@ def beep(hz, dur, name, duty=0.5, vol=0.5):
     write(name, [square(i * hz / RATE, duty) * vol * env(i, total, 0.002, dur * 0.4) for i in range(total)])
 
 
+def clonk():
+    """Metal on stone: a bright ringing hit."""
+    total = n(0.3)
+    out = []
+    for i in range(total):
+        t = i / RATE
+        s = sum(math.sin(t * 6.283 * f) * a for f, a in ((620, 0.5), (1480, 0.3), (2330, 0.2)))
+        out.append((s * math.exp(-t * 14) + noise() * math.exp(-t * 80) * 0.6))
+    write("clonk", out)
+
+
+def thud():
+    total = n(0.2)
+    write("thud", lowpass([(math.sin(i * 6.283 * 90 / RATE * (1 - i / total * 0.5)) + noise() * 0.4)
+                           * env(i, total, 0.001, 0.15) for i in range(total)], 0.15))
+
+
+def glass():
+    """A window going: a burst of noise and a scatter of high tinkles."""
+    total = n(0.9)
+    out = [noise() * math.exp(-i / RATE * 18) * 0.8 for i in range(total)]
+    for _ in range(22):
+        start = rng.randrange(n(0.03), n(0.7))
+        f = rng.uniform(2400, 5200)
+        for k in range(n(0.08)):
+            if start + k < total:
+                t = k / RATE
+                out[start + k] += math.sin(t * 6.283 * f) * math.exp(-t * 45) * 0.35
+    write("glass", out)
+
+
+def yelp():
+    total = n(0.25)
+    out = []
+    ph = 0.0
+    for i in range(total):
+        t = i / RATE
+        f = 900 + 700 * math.sin(min(1.0, t * 8) * 3.14)
+        ph += f / RATE
+        out.append(square(ph, 0.35) * env(i, total, 0.005, 0.1) * 0.5)
+    write("yelp", lowpass(out, 0.5))
+
+
 def bump():
     total = n(0.15)
     write("bump", lowpass([(noise() * 0.6 + math.sin(i * 6.283 * 70 / RATE)) * env(i, total, 0.001, 0.1) for i in range(total)], 0.2))
@@ -274,6 +317,10 @@ def main():
     beep(880, 0.05, "ui_move", 0.25, 0.3)
     beep(1320, 0.08, "ui_select", 0.5, 0.35)
     bump()
+    clonk()
+    thud()
+    glass()
+    yelp()
     mowing_song()
     menu_song()
 
