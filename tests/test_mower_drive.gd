@@ -17,10 +17,12 @@ func _physics_process(_delta: float) -> bool:
 	var mower: Node2D = _main.get_node("Mower")
 	var lawn: Lawn = _main.get_node("Lawn")
 	if _frame == 2:
+		mower.global_position = Vector2(400, 650) # on the grass (it starts on the drive, facing up)
+		mower.rotation = -PI / 2.0
 		_start = mower.global_position
 		var cam: Camera2D = mower.get_node("Camera")
 		assert(cam.is_current(), "the mower camera should be the active one")
-		assert(cam.limit_right == lawn.size_px.x + 24 and cam.limit_bottom == lawn.size_px.y + 24, "camera limits are the lawn plus its border")
+		assert(cam.limit_right > 100000 and cam.limit_bottom > 100000, "the camera never clamps: the street and next door are there to see")
 		Input.action_press("move_forward")
 	elif _frame == 600:
 		Input.action_release("move_forward")

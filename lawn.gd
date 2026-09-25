@@ -18,6 +18,8 @@ const MASK := {UNCUT: Color(0, 0, 0), CUT: Color(0.5, 0, 0), CUT_DARK: Color(1, 
 @export var size_px := Vector2i(1280, 720)
 @export var cell_px := 4
 
+var exits: Array[Rect2] = [] ## walkable ground past the lawn's edge (the drive out to the kerb)
+
 var _img: Image
 var _tex: ImageTexture
 var _grid := PackedByteArray()
@@ -107,6 +109,18 @@ func _exclude_where(bounds: Rect2, inside: Callable) -> void:
 ## Cut a stroke of the given radius from one point to another, stamping circles
 ## every cell along it so fast movement leaves no gaps. Moving up or right mows a
 ## light stripe, down or left a dark one; a standing stamp keeps existing stripes.
+## The nearest point to p that the player may stand on: on the lawn or in an exit,
+## at least margin in from the edge.
+func keep_in(p: Vector2, margin: float) -> Vector2:
+	var best := Vector2.INF
+	for area: Rect2 in [Rect2(Vector2.ZERO, size_px)] + exits:
+		var a := area.grow(-margin)
+		var q := p.clamp(a.position, a.end)
+		if q.distance_squared_to(p) < best.distance_squared_to(p):
+			best = q
+	return best
+
+
 func cut_segment(from: Vector2, to: Vector2, radius: float) -> void:
 	var d := to - from
 	var stripe := -1

@@ -182,9 +182,7 @@ func _physics_process(delta: float) -> void:
 		_stride = 0.0
 		$Sprite.frame = 1 - mini($Sprite.frame, 1)
 	if lawn:
-		var lo := lawn.global_position + Vector2(edge_margin, edge_margin)
-		var hi := lawn.global_position + Vector2(lawn.size_px) - Vector2(edge_margin, edge_margin)
-		global_position = global_position.clamp(lo, hi)
+		global_position = lawn.global_position + lawn.keep_in(global_position - lawn.global_position, edge_margin)
 		var was := lawn.cut_fraction()
 		if running or (power == "stamina" and condition > 0.0):
 			lawn.cut_segment(before - lawn.global_position, global_position - lawn.global_position, cut_radius)

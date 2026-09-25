@@ -5,7 +5,7 @@ extends CharacterBody2D
 @export var speed := 140.0
 
 var carrying := "" ## "", "stone" or "jerrycan"
-var bounds := Rect2(-1e9, -1e9, 2e9, 2e9) ## the garden; you don't wander off the property
+var keep_in := func(p: Vector2) -> Vector2: return p ## main: the garden, you don't wander off the property
 var _stride := 0.0
 var _frame := 0
 
@@ -30,7 +30,7 @@ func _physics_process(_delta: float) -> void:
 		rotation = dir.angle()
 	var before := global_position
 	move_and_slide()
-	global_position = global_position.clamp(bounds.position, bounds.end)
+	global_position = keep_in.call(global_position)
 	_stride += global_position.distance_to(before)
 	if _stride > 9.0:
 		_stride = 0.0

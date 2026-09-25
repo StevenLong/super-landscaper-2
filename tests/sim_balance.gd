@@ -56,7 +56,7 @@ func _next() -> void:
 	# side of the house are mowed as their own blocks, joined by a detour under it.
 	waypoints.clear()
 	var step: float = mower.cut_radius * 1.7
-	var house: Rect2 = m.get_node("Scenery/House").rect().grow(40)
+	var house: Rect2 = m.get_node("Scenery/House").footprint().grow(40)
 	var lo: float = mower.edge_margin
 	var hi: float = lawn.size_px.x - mower.edge_margin
 	var below: float = house.end.y + 30.0
@@ -121,7 +121,7 @@ func _physics_process(_delta: float) -> bool:
 				_drive(Vector2.INF)
 				refuelling = frac < 0.98
 				return false
-			target = Vector2(230, lawn.size_px.y - 90)
+			target = m.truck_spot()
 	if backing > 0:
 		backing -= 1
 		Input.action_release("move_forward")

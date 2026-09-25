@@ -77,7 +77,7 @@ func _physics_process(_delta: float) -> bool:
 		2:
 			Input.action_release("move_forward")
 			assert(lawn.cut_fraction() == _cut0, "a broken mower cuts nothing")
-			mower.global_position = Vector2(230, 630)
+			mower.global_position = m.truck_spot()
 			_wait = 60
 		3:
 			assert(mower.condition > 10.0 and mower.repaired > 0.0, "the truck repairs the mower (and bills it)")
@@ -91,7 +91,7 @@ func _physics_process(_delta: float) -> bool:
 		4:
 			m.interact()
 			assert(m.walker.carrying == "stone", "E picks up a nearby stone")
-			m.walker.global_position = Vector2(200, 630)
+			m.walker.global_position = m.truck_spot()
 			_wait = 3
 		5:
 			assert(m.at_truck(), "walked to the truck")

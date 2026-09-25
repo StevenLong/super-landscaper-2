@@ -20,13 +20,12 @@ func _ready() -> void:
 	$Speech.add_theme_stylebox_override("normal", box)
 
 
-## Speech hangs under the portrait, or above it while the portrait is ducked at the bottom.
+## Speech hangs under the portrait.
 func _process(_delta: float) -> void:
 	var f: Control = $Face
 	var s: Label = $Speech
 	s.size = Vector2(SPEECH_W, 0.0) # the height grows back to fit the wrapped line
-	s.position.x = f.position.x + f.size.x - SPEECH_W
-	s.position.y = f.position.y + f.size.y + 6.0 if f.position.y < 300.0 else f.position.y - s.size.y - 6.0
+	s.position = f.position + Vector2(f.size.x - SPEECH_W, f.size.y + 6.0)
 
 
 func set_clock(seconds: float) -> void:

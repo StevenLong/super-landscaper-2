@@ -15,9 +15,10 @@ const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
+const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
+const ROAD := 150
+const GRAVEL := Color(1.0, 0.88, 0.68) ## tints the grey gravel tile for the drive
 const FIRED_HINT := "Fired: no pay. Leave from the truck [E] when you're done."
-const FACE_TOP := 12.0 ## the corner face's home, top right
-const FACE_BOTTOM := 576.0 ## where it ducks to while you're near it: 720 - 12 - its 132px
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
 @export var squirrel_every := 13.0
@@ -72,13 +73,6 @@ func _ready() -> void:
 	$HUD/Face.set_look(job.look)
 	hud.choice.connect(_on_choice)
 
-	# Keep the camera inside the lawn so nothing beyond its edge is ever shown.
-	# The camera may see the property border just outside the lawn, and no further.
-	cam.limit_left = -BORDER
-	cam.limit_top = -BORDER
-	cam.limit_right = lawn.size_px.x + BORDER
-	cam.limit_bottom = lawn.size_px.y + BORDER
-
 	Sfx.music("music_mowing")
 	if Game.arrested_on_arrival():
 		Game.run_over_reason = "arrested"
@@ -98,44 +92,58 @@ func _ready() -> void:
 		hud.open(job.customer, lines, [["start", "Let's go"]], job.look, "neutral")
 
 
-## Lay out the garden: house along the top, driveway and truck bottom-left, then
-## trees, flowerbeds and stones. The default job keeps the slice's hand-placed layout.
+## Lay out the garden: house along the top with a garage on one side, the drive from
+## the garage down to the road, the truck at the kerb, then trees, flowerbeds and
+## stones. The default job keeps the slice's hand-placed layout.
 func _build_layout() -> void:
 	var size: Vector2i = job.size
 	lawn.size_px = size
 	lawn.setup()
 	var fixed: bool = job.get("fixed_layout", false)
+	var r := RandomNumberGenerator.new()
+	r.seed = job.seed
 
 	_house = HouseScript.new()
 	_house.name = "House"
-	_house.position = Vector2(size.x * 0.5 - _house.size.x * 0.5, 0)
-	var wall := StaticBody2D.new() # the house itself is solid; the patio in front isn't
-	var wall_shape := CollisionShape2D.new()
-	wall_shape.shape = RectangleShape2D.new()
-	wall_shape.shape.size = Vector2(_house.size.x, 106)
-	wall_shape.position = Vector2(_house.size.x * 0.5, 53)
-	wall.add_child(wall_shape)
+	_house.garage = 1 if fixed else [-1, 1][r.randi() % 2]
+	# Centre the house and garage together.
+	_house.position = Vector2(size.x * 0.5 - (_house.size.x + _house.GARAGE_W) * 0.5 + (_house.GARAGE_W if _house.garage < 0 else 0.0), 0)
+	var wall := StaticBody2D.new() # the house and garage are solid; the patio in front isn't
+	for box: Rect2 in [_house.rect(), _house.garage_rect()]:
+		var wall_shape := CollisionShape2D.new()
+		wall_shape.shape = RectangleShape2D.new()
+		wall_shape.shape.size = Vector2(box.size.x, _house.WALL_H)
+		wall_shape.position = box.position - _house.position + Vector2(box.size.x, _house.WALL_H) * 0.5
+		wall.add_child(wall_shape)
 	_house.add_child(wall)
 	$Scenery.add_child(_house)
 	$Client.position = _house.patio_point()
 	$Client.watch = mower
 	$Client.set_look(job.look)
 
+	# The drive runs from the garage door to the road; its mouth crosses the pavement.
 	var drive: Control = $Driveway
-	drive.position = Vector2(0, size.y - 180)
-	$Truck.position = Vector2(110, size.y - 90)
-	mower.position = Vector2(230, size.y - 90)
+	var g: Rect2 = _house.garage_rect()
+	drive.position = Vector2(g.position.x + 10, _house.WALL_H)
+	drive.size = Vector2(g.size.x - 20, size.y - _house.WALL_H)
+	drive.self_modulate = GRAVEL # warm it so it doesn't read as more road
+	lawn.exits = [Rect2(drive.position.x, size.y - 40, drive.size.x, 40 + BORDER + FOOTPATH)]
+	$Truck.position = Vector2(drive.position.x + drive.size.x * 0.5, size.y + BORDER + FOOTPATH + 34)
+	# Parked along the kerb: the zone reaches back up the drive mouth to where you pull in.
+	$Truck/RefuelZone/Shape.position = Vector2(0, -80)
+	($Truck/RefuelZone/Shape.shape as RectangleShape2D).size = Vector2(180, 150)
+	mower.position = truck_spot()
+	mower.rotation = -PI / 2.0 # facing up the drive
 	$Truck/Trailer.visible = Game.in_run and "rideon" in Game.owned
+	_build_street()
 
-	var taken: Array[Rect2] = [_house.rect().grow(50), Rect2(drive.position, drive.size).grow(70)]
+	var taken: Array[Rect2] = [_house.footprint().grow(50), Rect2(drive.position, drive.size).grow(30)]
 	var trees: Array = []
 	var beds: Array = []
 	var stones: Array = []
 	var ponds: Array = []
-	var r := RandomNumberGenerator.new()
-	r.seed = job.seed
 	if fixed:
-		trees = [[Vector2(900, 420), 34.0]]
+		trees = [[Vector2(1080, 440), 34.0]]
 		beds = [Rect2(360, 300, 200, 80)]
 	else:
 		for i in job.get("ponds", 0):
@@ -185,32 +193,70 @@ func _build_layout() -> void:
 	for p: Vector2 in stones:
 		add_stone(p)
 	lawn.exclude_rect(_house.rect())
+	lawn.exclude_rect(_house.garage_rect())
 	lawn.exclude_rect(Rect2(drive.position, drive.size))
 	_build_borders(r, drive)
 
 
+## Where to pull up in front of the truck: the drive's mouth, on the pavement.
+func truck_spot() -> Vector2:
+	var d: Control = $Driveway
+	return Vector2(d.position.x + d.size.x * 0.5, lawn.size_px.y + 16.0)
+
+
+## The world past the garden, seen but not reachable: next door's lawns all round,
+## and to the south the pavement, the kerb and the road the truck is parked on.
+func _build_street() -> void:
+	var w := float(lawn.size_px.x)
+	var h := float(lawn.size_px.y)
+	var world: Node2D = $World
+	world.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	world.draw.connect(func() -> void:
+		var far := 1200.0 # past anything the zoomed-out camera can show
+		var across := Rect2(-far, 0, w + far * 2.0, 0)
+		# Next door's lawns, a touch duller than the one you're mowing.
+		world.draw_texture_rect(preload("res://art/grass_light.png"), Rect2(-far, -far, w + far * 2.0, h + far * 2.0), true, Color(0.72, 0.8, 0.7))
+		var path_y := h + BORDER
+		var road_y := path_y + FOOTPATH
+		world.draw_texture_rect(preload("res://art/paving.png"), Rect2(across.position.x, path_y, across.size.x, FOOTPATH), true)
+		world.draw_texture_rect(preload("res://art/asphalt.png"), Rect2(across.position.x, road_y, across.size.x, ROAD), true)
+		world.draw_texture_rect(preload("res://art/paving.png"), Rect2(across.position.x, road_y + ROAD, across.size.x, FOOTPATH), true)
+		for y: float in [road_y, road_y + ROAD - 3.0]: # kerbs
+			world.draw_rect(Rect2(across.position.x, y, across.size.x, 3.0), Color("a8a8b0"))
+		var x := -far
+		while x < w + far: # the centre line
+			world.draw_rect(Rect2(x, road_y + ROAD * 0.5 - 1.5, 24.0, 3.0), Color("e8e4d0"))
+			x += 56.0)
+
+
 ## Hedges and fences round the property, just outside the lawn. Each side is one or
-## the other; the top only has the bits either side of the house; the bottom leaves
-## a gap where the driveway goes out to the road.
+## the other; the top only has the bits either side of the house and garage; the
+## bottom leaves a gap where the drive goes out to the road.
 func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	var w := float(lawn.size_px.x)
 	var h := float(lawn.size_px.y)
 	var b := float(BORDER)
 	var top: String = ["hedge", "fence"][r.randi() % 2]
 	# name: [kind, outer rect, the lawn-side line critters come in along, inward direction]
+	var fp: Rect2 = _house.footprint()
+	var front: String = ["hedge", "fence"][r.randi() % 2]
+	var d0 := drive.position.x
+	var d1 := drive.position.x + drive.size.x
 	var sides := {
-		"top_l": [top, Rect2(-b, -b, _house.position.x + b, b), [Vector2(0, 0), Vector2(_house.position.x, 0)], Vector2.DOWN],
-		"top_r": [top, Rect2(_house.rect().end.x, -b, w - _house.rect().end.x + b, b), [Vector2(_house.rect().end.x, 0), Vector2(w, 0)], Vector2.DOWN],
+		"top_l": [top, Rect2(-b, -b, fp.position.x + b, b), [Vector2(0, 0), Vector2(fp.position.x, 0)], Vector2.DOWN],
+		"top_r": [top, Rect2(fp.end.x, -b, w - fp.end.x + b, b), [Vector2(fp.end.x, 0), Vector2(w, 0)], Vector2.DOWN],
 		"left": [["hedge", "fence"][r.randi() % 2], Rect2(-b, -b, b, h + 2.0 * b), [Vector2(0, 0), Vector2(0, h)], Vector2.RIGHT],
 		"right": [["hedge", "fence"][r.randi() % 2], Rect2(w, -b, b, h + 2.0 * b), [Vector2(w, 0), Vector2(w, h)], Vector2.LEFT],
-		"bottom": [["hedge", "fence"][r.randi() % 2], Rect2(drive.size.x, h, w - drive.size.x + b, b), [Vector2(drive.size.x, h), Vector2(w, h)], Vector2.UP],
+		"bottom_l": [front, Rect2(-b, h, d0 + b, b), [Vector2(0, h), Vector2(d0, h)], Vector2.UP],
+		"bottom_r": [front, Rect2(d1, h, w - d1 + b, b), [Vector2(d1, h), Vector2(w, h)], Vector2.UP],
 	}
-	var road := TextureRect.new() # the drive carries on out to the road
-	road.texture = preload("res://art/gravel.png")
-	road.stretch_mode = TextureRect.STRETCH_TILE
-	road.position = Vector2(0, h)
-	road.size = Vector2(drive.size.x, b)
-	$Borders.add_child(road)
+	var mouth := TextureRect.new() # the drive carries on across the pavement to the road
+	mouth.texture = preload("res://art/gravel.png")
+	mouth.stretch_mode = TextureRect.STRETCH_TILE
+	mouth.position = Vector2(d0, h)
+	mouth.size = Vector2(drive.size.x, b + FOOTPATH)
+	mouth.self_modulate = GRAVEL
+	$Borders.add_child(mouth)
 	for key: String in sides:
 		var s: Array = sides[key]
 		var vertical: bool = key == "left" or key == "right"
@@ -223,12 +269,13 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		strip.position = (s[1] as Rect2).position
 		strip.size = (s[1] as Rect2).size
 		$Borders.add_child(strip)
-		_edges.append({"kind": s[0], "from": s[2][0], "to": s[2][1], "inward": s[3]})
+		if (s[2][0] as Vector2).distance_to(s[2][1]) > 40.0: # too short to come out of
+			_edges.append({"kind": s[0], "from": s[2][0], "to": s[2][1], "inward": s[3]})
 
 
 ## Is p inside something a critter can't walk through?
 func _blocked(p: Vector2) -> bool:
-	if _house.rect().has_point(p):
+	if _house.footprint().has_point(p):
 		return true
 	if Rect2($Truck.position - Vector2(64, 32), Vector2(128, 64)).has_point(p):
 		return true
@@ -338,7 +385,6 @@ func _physics_process(delta: float) -> void:
 		_react()
 	hud.set_clock(customer.elapsed)
 	$HUD/Face.expression = customer.face()
-	_place_face(delta)
 	if customer.fired and settled.is_empty():
 		_fired()
 	hud.set_hint(_hint())
@@ -429,8 +475,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func hop_off() -> void:
 	walker = WalkerScript.new()
 	var side := Vector2(0, 26).rotated(mower.rotation)
-	walker.position = (mower.global_position + side).clamp(Vector2(12, 12), Vector2(lawn.size_px) - Vector2(12, 12))
-	walker.bounds = Rect2(Vector2(8, 8), Vector2(lawn.size_px) - Vector2(16, 16))
+	walker.position = lawn.keep_in(mower.global_position + side, 12.0)
+	walker.keep_in = lawn.keep_in.bind(8.0)
 	add_child(walker)
 	mower.occupied = false
 	cam.reparent(walker, false)
@@ -548,15 +594,6 @@ func _on_choice(id: String) -> void:
 			get_tree().paused = false
 			Game.in_run = false
 			get_tree().change_scene_to_file("res://title.tscn")
-
-
-## The corner face slides to the bottom-right corner while the player is up near
-## it, so it never hides them, and back once they leave.
-func _place_face(delta: float) -> void:
-	var face: Control = $HUD/Face
-	var p := (walker if walker else mower).get_global_transform_with_canvas().origin
-	var near := Rect2(Vector2(face.position.x, FACE_TOP), face.size).grow(90.0).has_point(p)
-	face.position.y = move_toward(face.position.y, FACE_BOTTOM if near else FACE_TOP, 3000.0 * delta)
 
 
 ## Ask for payment. Too little done and they send you back out, annoyed.
@@ -683,15 +720,17 @@ func _window_at(p: Vector2) -> int:
 
 ## What a flying stone at p would hit, or "" for nothing.
 func _stone_hit_test(p: Vector2) -> String:
-	if not Rect2(Vector2.ZERO, Vector2(lawn.size_px)).has_point(p):
-		return "gone"
+	if Rect2($Truck.position - Vector2(60, 28), Vector2(120, 56)).has_point(p):
+		return "truck" # parked on the road, just past the garden
+	if lawn.keep_in(p, 0.0) != p:
+		return "gone" # over the fence
+	if _house.garage_rect().has_point(p):
+		return "wall"
 	if not customer.knocked_out and p.distance_to($Client.position + Vector2(0, -14)) < 11.0:
 		return "customer"
 	var h: Rect2 = _house.rect()
 	if h.has_point(p) and p.y < h.position.y + 106.0:
 		return "window" if _window_at(p) >= 0 else "wall"
-	if Rect2($Truck.position - Vector2(60, 28), Vector2(120, 56)).has_point(p):
-		return "truck"
 	if walker and p.distance_to(mower.global_position) < 18.0: # your own mower, parked
 		return "mower"
 	for a in $Animals.get_children():

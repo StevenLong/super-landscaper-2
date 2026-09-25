@@ -104,6 +104,26 @@ def speckle_tile(ramp, seed, size=16, base_i=2, n=60):
     return c
 
 
+ASPHALT = [hexc(h) for h in ("1e1e24", "2a2a31", "34343c", "404049", "4c4c55")]
+
+
+def paving_tile(seed):
+    """Footpath slabs, 16x16 each, two to a tile with the joins offset row to row."""
+    r = random.Random(seed)
+    c = Canvas(32, 32, STONE[3])
+    for y in range(32):
+        for x in range(32):
+            if r.random() < 0.12:
+                c.px[y][x] = STONE[r.choice((2, 4))]
+    for y in (0, 16):
+        for x in range(32):
+            c.px[y][x] = STONE[1]
+    for x, y0 in ((0, 0), (16, 16)):
+        for y in range(y0, y0 + 16):
+            c.px[y][x] = STONE[1]
+    return c
+
+
 # ---------------------------------------------------------------- trees
 
 def canopy(d, seed):
@@ -164,6 +184,7 @@ def main(only=None):
             save("soil", speckle_tile(SOIL, 4)),
             save("gravel", speckle_tile(STONE, 5, base_i=1, n=36)),
         ],
+        "street": lambda: [save("asphalt", speckle_tile(ASPHALT, 6, base_i=2, n=70)), save("paving", paving_tile(7))],
         "trees": lambda: [save("tree_%d" % d, sheet([canopy(d, s) for s in (11, 12, 13)]), 3) for d in (52, 68, 84, 100)],
     }
     import art_sprites as a

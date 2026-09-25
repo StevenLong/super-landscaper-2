@@ -12,20 +12,13 @@ BLOCKS = spoils the next playtest.
 
 **Build (no design call needed)**
 
-12. [FEATURE, moderate-large] Camera never clamps; the world carries on past the garden
-   (S2-BORDERS): footpath and road to the south, next door's gardens either side, seen but
-   not reachable. The player stays centred. Critters then spawn where the player can see
-   them but can't already be, which ends the unavoidable one-pixel-step-into-the-blades hit.
-   Home: `main.gd` camera limits, garden build in `main.gd`. Build with 39.
 28. [FEATURE, moderate] The job board as newspaper classifieds (S1-BOARD): text ads, no
    picture or quote, rough lawn size, pay, and subtle hints ("careful applicants only").
+46. [FEATURE, moderate] More layout variety (after 12/39's attached garage, left or right):
+   a detached garage, the drive's shape, the customer's car in the drive (one more thing
+   to hit), houses across the road. Not formulaic, but not drastically different.
 36. [FEATURE, moderate] Run stats: critters run over or picked up, stones collected, and the
    rep or money each earned or cost. A funny tally after the job and at run end.
-39. [FEATURE, moderate-large] Layouts that make sense: the truck parks on the street at the
-   end of the drive or in the drive, not on a random patch of concrete on the lawn. Houses
-   get a drive and a garage, and maybe the customer's car in the drive, one more thing to
-   crash into. Build with 12.
-
 **Needs a grill (design calls, queued for one session)**
 
 21. [DESIGN, large] Escalation (S1-WINNABLE). Right now only patience can end a run, so there
@@ -69,7 +62,7 @@ BLOCKS = spoils the next playtest.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
-PROPOSED ORDER: 12 with 39 (both reshape the garden edge), then 36, 28. A grill session
+PROPOSED ORDER: 36, 28, then 46. A grill session
 on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
 
 ### Notes 2026-09-25 (session 3 play checks)
@@ -83,4 +76,4 @@ on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
    QUESTION: synthesise SNES-ish in the tool (wavetable/sampled voices, filtering, reverb),
    or source/commission real samples? Needs a listen-through to pick the worst offenders.
 
-PROPOSED ORDER: 12 with 39, then 36, 28. 44 is a feel check; 45 needs a listen-through.
+PROPOSED ORDER: 44 is a feel check; 45 needs a listen-through.

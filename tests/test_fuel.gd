@@ -37,7 +37,7 @@ func _physics_process(_delta: float) -> bool:
 		assert(moved > 20.0, "an empty mower can still be pushed")
 		assert(moved < _mower.max_speed * 0.5, "an empty mower should be slow, moved %f in 1s" % moved)
 		assert(_lawn.cut_fraction() == _cut0, "an empty mower must not cut")
-		_mower.global_position = Vector2(230, 630) # beside the truck
+		_mower.global_position = _main.truck_spot() # pulled up at the truck
 	elif _frame == 303:
 		assert(_mower.fuel > _mower.max_fuel - 0.1, "parking at the truck should fill the tank (the engine still burns while parked), got %f" % _mower.fuel)
 		assert(_main.get_node("HUD/Fuel").value > 0.99, "HUD fuel bar should read full")
