@@ -117,16 +117,16 @@ MOUTH_ROWS = {
     "hurt": (14, 25, ["kkkkkkkkkkkk", "ktktktktktkk", "kkkkkkkkkkkk"]),
     "ko": (16, 25, [".kkkkk.", "kgggggk", ".kkkkk."]),
 }
-TALK_ROWS = {
-    "delighted": (15, 25, ["kkkkkkkkkk", ".kttttttk.", "..kkkkkk.."]),
-    "happy": (15, 25, [".kkkkkk.", "kmmggmmk", ".kkkkkk."]),
-    "neutral": (16, 25, [".kkkk.", "kmmmmk", ".kkkk."]),
-    "annoyed": (16, 25, ["kkkkkk", "kmmmmk", ".kkkk."]),
-    "furious": (14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmmmmmmmk", "kttttttttttk", "kkkkkkkkkkkk"]),
-    "fired": (14, 26, ["kkkkkkkkkkkk", "kttttttttttk", "kkkkkkkkkkkk"]),
-    "horrified": (18, 25, [".kk.", "kmmk", "kmmk", ".kk."]),
-    "laughing": (14, 25, ["kkkkkkkkkkkk", "kttttttttttk", ".kmmmmmmmmk.", "..kkkkkkkk.."]),
-    "hurt": (14, 24, ["kkkkkkkkkkkk", "kmmmmmmmmmmk", "kttttttttttk", "kkkkkkkkkkkk"]),
+TALK_ROWS = {  # open where the resting mouth is shut and shut where it's open, so it reads
+    "delighted": (15, 26, ["k........k", ".kkkkkkkk."]),
+    "happy": (15, 24, ["kkkkkkkk", "kttttttk", "kmmggmmk", "kmmmmmmk", ".kkkkkk."]),
+    "neutral": (16, 24, [".kkkk.", "kmmmmk", "kmggmk", "kmmmmk", ".kkkk."]),
+    "annoyed": (16, 24, ["kkkkkk", "kmmmmk", "kmggmk", ".kkkk."]),
+    "furious": (14, 23, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmmmmmmmk", "kmmmggggmmmk", "kttttttttttk", "kkkkkkkkkkkk"]),
+    "fired": (14, 26, ["kkkkkkkkkkkk", "ktktktktktkk", "kkkkkkkkkkkk"]),
+    "horrified": (16, 26, [".kkkkk.", "kmmmmmk", ".kkkkk."]),
+    "laughing": (14, 26, ["kkkkkkkkkkkk", "kttttttttttk", "kkkkkkkkkkkk"]),
+    "hurt": (14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmmmmmmmk", "kmmmggggmmmk", "kkkkkkkkkkkk"]),
     "ko": (16, 25, [".kkkkk.", "kgggggk", ".kkkkk."]),  # out cold: no talking
 }
 

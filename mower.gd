@@ -73,6 +73,7 @@ func _apply_visual() -> void:
 	if _engine == null:
 		return # not in the tree yet; _ready will finish the job
 	_engine.stream = load("res://audio/%s.wav" % {"push": "reel", "rideon": "engine_rideon"}.get(sprite_kind, "engine_petrol"))
+	_engine.volume_db = -80.0 # the loops don't start at zero: at full volume that step pops
 	_engine.play()
 
 

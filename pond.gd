@@ -5,6 +5,8 @@ extends StaticBody2D
 
 const RX := 62.0
 const RY := 42.0
+const WATER_RX := 56.0 ## the water inside the rim stones (tools/art_sprites.py pond)
+const WATER_RY := 36.0
 
 var _t := 0.0
 
@@ -22,6 +24,18 @@ func _ready() -> void:
 func contains(p: Vector2) -> bool:
 	var d := p - position
 	return (d.x * d.x) / (RX * RX) + (d.y * d.y) / (RY * RY) <= 1.0
+
+
+## Where a stone landing at p splashes, and how big the splash can be before its rings
+## (26 x 14 px at full size) cross the rim: [centre, size 0.3..1]. On the rim stones it
+## goes in at the water's edge.
+func splash_fit(p: Vector2) -> Array:
+	var d := p - position
+	var q := sqrt((d.x * d.x) / (WATER_RX * WATER_RX) + (d.y * d.y) / (WATER_RY * WATER_RY))
+	if q > 0.85:
+		d *= 0.85 / q
+		q = 0.85
+	return [position + d, clampf((1.0 - q) / 0.5, 0.3, 1.0)]
 
 
 func _process(delta: float) -> void:

@@ -46,6 +46,7 @@ var _splats: Array[Vector2] = [] ## squashed critters: they stay for the whole j
 var _tracks: Array = [] ## red wheel marks: [position, sideways unit, strength 0..1]
 var _blood := 0.0 ## px of red trail the mower has left to lay after running something over
 var _blood_from := Vector2.ZERO
+var _flowers_quiet_until := 0 ## msec: one scream per burst of flowers, not one per flower
 
 @onready var lawn: Lawn = $Lawn
 @onready var mower: CharacterBody2D = $Mower
@@ -764,7 +765,7 @@ func _stone_hit_test(p: Vector2) -> String:
 	for t in $Scenery.get_children():
 		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius:
 			return "tree"
-	return "" # a pond is flat: the stone flies over it, see _in_pond on landing
+	return "" # a pond is flat: the stone flies over it, see _pond_at on landing
 
 
 func _on_stone_landed(f: FlyingStone, target: String) -> void:
@@ -817,13 +818,18 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			add_stone.call_deferred(p)
 		"tree":
 			Sfx.play("thud")
-			_rustle(p, Vector2.DOWN) # leaves come down
+			for t in $Scenery.get_children():
+				if t is StaticBody2D and t.has_method("shake") and p.distance_to(t.position) < t.radius + 10.0:
+					t.shake() # the canopy sways and drops leaves
+					_rustle(t.position + t.crown_centre(), Vector2.DOWN)
 			_count("trees_hit")
 			add_stone.call_deferred(p - f.velocity.normalized() * 8.0) # drops just outside the trunk
 		_:
-			if _in_pond(p):
+			var pond := _pond_at(p)
+			if pond:
 				Sfx.play("splash")
-				_splash(p)
+				var fit := pond.splash_fit(p)
+				_splash(fit[0], fit[1])
 				_count("splashes")
 			else:
 				Sfx.play("thud")
@@ -833,17 +839,19 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				add_stone.call_deferred(p)
 
 
-func _in_pond(p: Vector2) -> bool:
+func _pond_at(p: Vector2) -> Pond:
 	for t in $Scenery.get_children():
 		if t is Pond and t.contains(p):
-			return true
-	return false
+			return t
+	return null
 
 
 ## Rings spreading on the water and a few drops thrown up, gone in under a second.
-func _splash(p: Vector2) -> void:
+## Size shrinks near the edge so the rings stay on the water.
+func _splash(p: Vector2, size := 1.0) -> void:
 	var s := Node2D.new()
 	s.position = p
+	s.scale = Vector2(size, size)
 	s.z_index = 1
 	var k := [0.0]
 	s.draw.connect(func() -> void:
@@ -1032,4 +1040,6 @@ func _on_trampled(_flat: int, _total: int) -> void:
 	Sfx.play("crunch")
 	if customer.on_flowers(total):
 		_mischief(2.0)
-		_react()
+		if Time.get_ticks_msec() >= _flowers_quiet_until: # the rep still counts every flower
+			_flowers_quiet_until = Time.get_ticks_msec() + 1500
+			_react()

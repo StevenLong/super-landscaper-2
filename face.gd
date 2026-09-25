@@ -75,7 +75,7 @@ func _process(delta: float) -> void:
 	if talking:
 		_flap -= delta
 		if _flap <= 0.0:
-			_flap = 0.11
+			_flap = 0.15
 			_mouth_open = not _mouth_open
 			queue_redraw()
 

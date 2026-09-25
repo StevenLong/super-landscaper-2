@@ -32,6 +32,13 @@ func _ready() -> void:
 	add_child(_crown)
 
 
+## Knocked by a stone: the canopy sways side to side and settles.
+func shake() -> void:
+	var tw := create_tween()
+	for x in [4.0, -3.0, 2.0, -1.0, 0.0]:
+		tw.tween_property(_crown, "position:x", crown_centre().x + x, 0.07)
+
+
 ## Where the canopy sits, relative to the trunk's base: high enough to show some trunk.
 func crown_centre() -> Vector2:
 	return Vector2(0, -canopy - radius * 1.6 - 6.0)

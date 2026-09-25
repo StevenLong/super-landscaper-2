@@ -59,6 +59,10 @@ func _physics_process(_delta: float) -> bool:
 			m._on_stone_landed(drop, "")
 			assert(m._stone_near(pond.position) == null, "a stone landing in a pond sinks")
 			assert(m.get_child_count() == kids + 1, "and splashes")
+			var mid: Array = pond.splash_fit(pond.position)
+			assert(mid[1] == 1.0, "a splash mid-pond is full size")
+			var rim: Array = pond.splash_fit(pond.position + Vector2(60, 0)) # on the rim stones
+			assert((rim[0] as Vector2).x - pond.position.x + 26.0 * rim[1] <= Pond.WATER_RX, "a splash at the edge keeps its rings on the water")
 			drop.free()
 			pond.free()
 			var f := FlyingStone.new()
@@ -107,6 +111,11 @@ func _physics_process(_delta: float) -> bool:
 			hit.position = bed.rect().get_center()
 			m._on_stone_landed(hit, "")
 			assert(bed.flattened_count() > flat0, "a stone landing in a flower bed flattens flowers")
+			var quiet: int = m._flowers_quiet_until
+			assert(quiet > Time.get_ticks_msec(), "the customer screamed about the flowers")
+			var counted: int = m.customer.flowers_flat
+			bed._trample(bed.to_local(bed.rect().position + Vector2(6, 6)), 12.0) # more flowers, straight after
+			assert(m.customer.flowers_flat > counted and m._flowers_quiet_until == quiet, "counted, but no second scream straight away")
 			hit.free()
 			# Throwing: pick up a stone and lob it at a window.
 			var house: Node2D = m.get_node("Scenery/House")
