@@ -36,6 +36,7 @@ func _physics_process(_delta: float) -> bool:
 		var speech: Label = _main.hud.get_node("Speech")
 		assert(speech.visible and speech.text.contains(_main.customer.fire_line), "their line is under the portrait")
 		assert(speech.visible_characters < speech.text.length(), "typed out a word at a time, not all at once")
+		assert(_main.hud.get_node("Face").talking, "while their mouth moves")
 		_main.hud._process(0.0) # physics can run ahead of the first idle frame
 		var face: Control = _main.hud.get_node("Face")
 		assert(speech.position.y >= face.position.y + face.size.y, "and it hangs below the face")

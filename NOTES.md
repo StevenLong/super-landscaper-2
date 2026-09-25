@@ -74,9 +74,13 @@ on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
 
 ### Notes 2026-09-25 (session 3 play checks)
 
-43. [VISUAL, small] The mouth moves while the customer talks (S3-FIRED). Speech under the
-   portrait (typed a word at a time), rep pops by it and the YOU'RE FIRED banner are built;
-   `face.gd` has no mouth animation yet. QUESTION: a second face frame with the mouth open
-   in `tools/make_faces.py` (recommended), or flap the existing mouth region?
+44. [DESIGN, moderate] One view for everything? Trees and the house are 3/4; the mower,
+   truck, player and critters are straight top-down. Does it read as a mismatch? A feel
+   check first (owed in CHECKS.txt), then decide whether the sprites move to 3/4.
+45. [DESIGN, large] Audio is grating: a listener found much of the music and sound
+   unpleasant, and it leans NES (bare squares, noise) rather than SNES (sampled
+   instruments, softer envelopes, echo/reverb). All of it comes from `tools/make_audio.py`.
+   QUESTION: synthesise SNES-ish in the tool (wavetable/sampled voices, filtering, reverb),
+   or source/commission real samples? Needs a listen-through to pick the worst offenders.
 
-PROPOSED ORDER: 43 once the mouth is decided, then 12 with 39.
+PROPOSED ORDER: 12 with 39, then 36, 28. 44 is a feel check; 45 needs a listen-through.

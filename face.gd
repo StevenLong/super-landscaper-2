@@ -3,6 +3,7 @@ extends Control
 ## The customer's portrait: art/faces.png drawn in key colours, palette-swapped for
 ## this customer's skin, hair and shirt. Shakes briefly when the expression changes.
 
+## The sheet has each of these, then each again mid-word (mouth moved) for talking.
 const FRAMES := ["delighted", "happy", "neutral", "annoyed", "furious", "horrified", "laughing", "fired", "hurt", "ko"]
 const CELL := 40
 
@@ -22,14 +23,22 @@ var expression := "neutral":
 		expression = v
 		queue_redraw()
 
+var talking := false: ## flaps the mouth between the two frames
+	set(v):
+		talking = v
+		_mouth_open = false
+		queue_redraw()
+
 var _tex: Texture2D
 var _style := 0
 var _shake := 0.0
+var _mouth_open := false
+var _flap := 0.0
 
 
 func set_look(look: Dictionary) -> void:
 	_style = look.hair_style
-	_tex = ImageTexture.create_from_image(swapped("res://art/faces.png", look, Rect2i(0, _style * CELL, CELL * FRAMES.size(), CELL)))
+	_tex = ImageTexture.create_from_image(swapped("res://art/faces.png", look, Rect2i(0, _style * CELL, CELL * FRAMES.size() * 2, CELL)))
 	queue_redraw()
 
 
@@ -63,6 +72,12 @@ func _process(delta: float) -> void:
 	if _shake > 0.0:
 		_shake -= delta
 		queue_redraw()
+	if talking:
+		_flap -= delta
+		if _flap <= 0.0:
+			_flap = 0.11
+			_mouth_open = not _mouth_open
+			queue_redraw()
 
 
 func _draw() -> void:
@@ -74,6 +89,6 @@ func _draw() -> void:
 	if _tex == null:
 		return
 	var jitter := Vector2(randf_range(-2, 2), randf_range(-2, 2)) if _shake > 0.0 else Vector2.ZERO
-	var i := FRAMES.find(expression)
+	var i := FRAMES.find(expression) + (FRAMES.size() if _mouth_open else 0)
 	draw_texture_rect_region(_tex, Rect2(Vector2(6, 6) + jitter, Vector2(s, s)),
 		Rect2(i * CELL, _style * CELL, CELL, CELL))

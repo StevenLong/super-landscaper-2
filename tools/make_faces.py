@@ -103,7 +103,35 @@ def brows(c, left, right, y):
     c.stamp(23, y, right, PAL)
 
 
-def draw(name, style):
+# Each expression's mouth (x, y, rows), and the one it flaps to while talking: two
+# frames per expression, alternated as the words come out.
+MOUTH_ROWS = {
+    "delighted": (15, 25, ["kkkkkkkkkk", "kttttttttk", ".kmmggmmk.", "..kkkkkk.."]),
+    "happy": (15, 26, ["k......k", ".kkkkkk."]),
+    "neutral": (16, 26, ["kkkkkk"]),
+    "annoyed": (16, 26, [".kkkk.", "k....k"]),
+    "furious": (14, 25, ["kkkkkkkkkkkk", "ktktktktktk.", "kkkkkkkkkkkk"]),
+    "fired": (14, 25, ["kkkkkkkkkkkk", "kmmmmmmmmmmk", "kttttttttttk", "kkkkkkkkkkkk"]),
+    "horrified": (17, 24, [".kkkk.", "kmmmmk", "kmggmk", "kmmmmk", ".kkkk."]),
+    "laughing": (14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmggmmmmk", ".kmmmmmmmmk.", "..kkkkkkkk.."]),
+    "hurt": (14, 25, ["kkkkkkkkkkkk", "ktktktktktkk", "kkkkkkkkkkkk"]),
+    "ko": (16, 25, [".kkkkk.", "kgggggk", ".kkkkk."]),
+}
+TALK_ROWS = {
+    "delighted": (15, 25, ["kkkkkkkkkk", ".kttttttk.", "..kkkkkk.."]),
+    "happy": (15, 25, [".kkkkkk.", "kmmggmmk", ".kkkkkk."]),
+    "neutral": (16, 25, [".kkkk.", "kmmmmk", ".kkkk."]),
+    "annoyed": (16, 25, ["kkkkkk", "kmmmmk", ".kkkk."]),
+    "furious": (14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmmmmmmmk", "kttttttttttk", "kkkkkkkkkkkk"]),
+    "fired": (14, 26, ["kkkkkkkkkkkk", "kttttttttttk", "kkkkkkkkkkkk"]),
+    "horrified": (18, 25, [".kk.", "kmmk", "kmmk", ".kk."]),
+    "laughing": (14, 25, ["kkkkkkkkkkkk", "kttttttttttk", ".kmmmmmmmmk.", "..kkkkkkkk.."]),
+    "hurt": (14, 24, ["kkkkkkkkkkkk", "kmmmmmmmmmmk", "kttttttttttk", "kkkkkkkkkkkk"]),
+    "ko": (16, 25, [".kkkkk.", "kgggggk", ".kkkkk."]),  # out cold: no talking
+}
+
+
+def draw(name, style, talk=False):
     angry = name in ("furious", "fired")
     c = base(style, angry)
     skin_sh = "a" if angry else "s"
@@ -113,26 +141,21 @@ def draw(name, style):
     if name == "delighted":
         brows(c, ["bbbb"], ["bbbb"], 15)
         eyes(c, EYE_ARC, 18)
-        c.stamp(15, 25, ["kkkkkkkkkk", "kttttttttk", ".kmmggmmk.", "..kkkkkk.."], PAL)
         c.stamp(10, 23, ["rr"], PAL)
         c.stamp(28, 23, ["rr"], PAL)
     elif name == "happy":
         brows(c, ["bbbb"], ["bbbb"], 15)
         eyes(c, EYE_OPEN, 17)
-        c.stamp(15, 26, ["k......k", ".kkkkkk."], PAL)
     elif name == "neutral":
         brows(c, ["bbbb"], ["bbbb"], 15)
         eyes(c, EYE_OPEN, 17)
-        c.stamp(16, 26, ["kkkkkk"], PAL)
     elif name == "annoyed":
         brows(c, ["bb..", "..bb"], ["bb..", "..bb"][::-1], 14)
         brows(c, ["bb..", "..bb"], ["..bb", "bb.."], 14)
         eyes(c, EYE_HALF, 18)
-        c.stamp(16, 26, [".kkkk.", "k....k"], PAL)
     elif name in ("furious", "fired"):
         brows(c, ["b...", "bb..", ".bbb"], ["...b", "..bb", "bbb."], 13)
         eyes(c, EYE_HALF, 17)
-        c.stamp(14, 25, ["kkkkkkkkkkkk", "ktktktktktk.", "kkkkkkkkkkkk"], PAL)
         # Anger vein.
         c.stamp(27, 9, ["v.v", ".v.", "v.v"], PAL)
         # Steam puffs from the ears.
@@ -141,17 +164,14 @@ def draw(name, style):
         if name == "fired":
             for (x, y, r) in ((4, 3, 2.4), (36, 3, 2.4), (20, 1, 2.0)):
                 c.ellipse(x, y, r, r, None, lambda nx, ny: STEAM_SH if ny > 0.3 else STEAM)
-            c.stamp(14, 25, ["kkkkkkkkkkkk", "kmmmmmmmmmmk", "kttttttttttk", "kkkkkkkkkkkk"], PAL)
     elif name == "horrified":
         brows(c, ["..bb", "bb.."], ["bb..", "..bb"], 12)
         c.stamp(12, 16, EYE_WIDE, PAL)
         c.stamp(23, 16, EYE_WIDE, PAL)
-        c.stamp(17, 24, [".kkkk.", "kmmmmk", "kmggmk", "kmmmmk", ".kkkk."], PAL)
         c.stamp(31, 12, [".d.", "ddd", "ddd", ".d."], PAL)
     elif name == "laughing":
         brows(c, ["bbbb"], ["bbbb"], 14)
         eyes(c, EYE_SQUINT, 18)
-        c.stamp(14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmggmmmmk", ".kmmmmmmmmk.", "..kkkkkkkk.."], PAL)
         c.stamp(11, 20, ["d", "d"], PAL)
         c.stamp(28, 20, ["d", "d"], PAL)
     elif name == "hurt":
@@ -159,17 +179,17 @@ def draw(name, style):
         brows(c, ["b...", ".bbb"], ["bb..", "..bb"], 14)
         c.stamp(13, 17, ["kkkk", "wwpk", ".kk."], PAL)
         c.stamp(22, 16, [".uuuu.", "uukkuu", "uukkuu", ".uuuu."], {**PAL, "u": hexc("5a3a6a")})
-        c.stamp(14, 25, ["kkkkkkkkkkkk", "ktktktktktkk", "kkkkkkkkkkkk"], PAL)
         c.stamp(15, 8, ["...v", "..vv", ".vv.", "vv..", "v..."], PAL)
         c.stamp(19, 22, ["v", "v", "vv"], PAL)
         c.stamp(29, 22, ["v", "vv"], PAL)
     elif name == "ko":
         c.stamp(13, 17, ["k..k", ".kk.", ".kk.", "k..k"], PAL)
         c.stamp(23, 17, ["k..k", ".kk.", ".kk.", "k..k"], PAL)
-        c.stamp(16, 25, [".kkkkk.", "kgggggk", ".kkkkk."], PAL)
         c.stamp(22, 12, ["vvv", "v.v"], PAL)
         for (x, y) in ((5, 5), (17, 1), (31, 4)):
             c.stamp(x, y, [".y.", "yyy", ".y."], {"y": hexc("f8e070")})
+    mx, my, rows = (TALK_ROWS if talk else MOUTH_ROWS)[name]
+    c.stamp(mx, my, rows, PAL)
     c.outline(INK)
     return c
 
@@ -177,7 +197,8 @@ def draw(name, style):
 def main():
     out = os.path.join(os.path.dirname(__file__), "..", "art")
     os.makedirs(out, exist_ok=True)
-    rows = [sheet([draw(n, style) for n in FRAMES]) for style in range(5)]
+    # Per hair style: every expression, then every expression mid-word (face.gd FRAMES).
+    rows = [sheet([draw(n, style) for n in FRAMES] + [draw(n, style, True) for n in FRAMES]) for style in range(5)]
     full = Canvas(rows[0].w, H * len(rows))
     for i, r in enumerate(rows):
         full.blit(r, 0, i * H)

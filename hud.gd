@@ -44,17 +44,20 @@ func say(line: String) -> void:
 	if _say_tween:
 		_say_tween.kill() # a new line replaces the old one, fade and all
 	s.visible = line != ""
+	$Face.talking = false
 	if line == "":
 		return
 	s.text = "\"%s\"" % line
 	s.modulate.a = 1.0
 	s.visible_characters = 0
 	_say_tween = create_tween()
+	$Face.talking = true # the mouth moves while the words come out
 	var shown := 0
 	for word in s.text.split(" "):
 		shown = mini(shown + word.length() + 1, s.text.length())
 		_say_tween.tween_callback(s.set.bind("visible_characters", shown))
 		_say_tween.tween_interval(0.12)
+	_say_tween.tween_callback(func() -> void: $Face.talking = false)
 	_say_tween.tween_interval(2.2)
 	_say_tween.tween_property(s, "modulate:a", 0.0, 0.6)
 
