@@ -381,6 +381,11 @@ func _hint() -> String:
 				return "[E] fill up the mower" if walker.global_position.distance_to(mower.global_position) < 44.0 else "Take the can to the mower"
 		if _stone_near(walker.global_position):
 			return "[E] pick up the stone"
+		if dog and is_instance_valid(dog):
+			if dog.following == walker:
+				return "Walk %s back to the patio" % job.dog_name
+			if not dog.limping and walker.global_position.distance_to(dog.position) < 80.0:
+				return "Walk into %s to put them on the lead" % job.dog_name
 		if at_truck():
 			return "[E] truck"
 		if walker.global_position.distance_to(mower.global_position) < 44.0:
@@ -796,6 +801,9 @@ func _release_dog() -> void:
 		customer.on_dog_hit()
 		_mischief(8.0)
 		_react())
+	dog.caught.connect(func(d: Dog) -> void:
+		Sfx.play("ui_select", 0.0)
+		pop_text("On the lead!", d.position + Vector2(0, -10), UI.GOOD))
 	dog.home.connect(func(_d: Dog) -> void:
 		customer.on_dog_returned()
 		_react())

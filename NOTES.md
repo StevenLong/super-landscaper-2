@@ -20,8 +20,6 @@ BLOCKS = spoils the next playtest.
 13. [VISUAL, moderate] Trees (S1-TREES): they don't read as trees; things under canopies got
    hit unseen. Bigger canopies that fade when you get close or under, much bolder trunks
    that read as solid, varied trunk sizes. Variety of objects expected later, not now.
-15. [FEATURE, small] Dog pickup/walk-home isn't clear that you're interacting (S1-DOG).
-   FIX: a visible lead or held state and a prompt.
 18. [FEATURE, small] Throw stones at your own truck or mower (damage), a tree or flower bed
    (some effect) (S2-THROW).
 20. [FEATURE, small] Settings on the title screen (S1-ATTRACT). The pause menu's music/sound

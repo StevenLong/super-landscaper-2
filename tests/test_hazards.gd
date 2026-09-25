@@ -125,6 +125,7 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 3
 		7:
 			assert(m.dog.following == m.walker, "the dog follows you once you catch it")
+			assert(m._hint().begins_with("Walk Biscuit back"), "and the hint says where to take them")
 			_mood = m.customer.mood
 			m.walker.global_position = m.get_node("Client").position + Vector2(0, 30)
 			_wait = 180 # the dog has a way to run
