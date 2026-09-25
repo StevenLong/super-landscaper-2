@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (6 checks, 2 loads, about 10 minutes)
+PLAY CHECKS OWED  (13 checks, 3 loads, about 20 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -6,7 +6,7 @@ Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep; in a job [0]
 
 
 ================================================================================
-LOAD 1 of 2: A JOB, PAD IN HAND      (about 6 min, a gardener job is best)
+LOAD 1 of 3: A JOB, PAD IN HAND      (about 6 min, a gardener job is best)
 ================================================================================
 
 S5-POP
@@ -29,7 +29,7 @@ Press anything on the pad: the hints switch to (A) / (X) / (B). Touch the keyboa
 
 
 ================================================================================
-LOAD 2 of 2: STONES      (about 4 min, [2] a few times for a lawn with a pond)
+LOAD 2 of 3: STONES      (about 4 min, [2] a few times for a lawn with a pond)
 ================================================================================
 
 S5-POND-EDGE
@@ -40,4 +40,39 @@ rings stay on the water.
 S5-TREE-SHAKE
 Throw a stone at a tree trunk: the whole canopy sways and settles, and the leaves fall from
 the canopy, not from a tuft at the trunk.
+>
+
+
+================================================================================
+LOAD 3 of 3: THE 3/4 LOOK      (about 8 min, any job; [1] for cash to try other mowers)
+================================================================================
+
+S6-LOOK
+Look around the whole garden (hold the look key too). Does it read as one 3/4 world: the
+house, garage, fences or hedges, truck, trees and mower? Say what jars, if anything.
+>
+
+S6-FACINGS
+Drive the mower round in a slow full circle. It turns through 8 facings with the operator
+always behind the handle, and no step between facings jars. Same with another mower if you
+can buy one.
+>
+
+S6-DEPTH
+Drive behind a tree trunk and into the strip of lawn behind the garage: you go behind them.
+Come back out in front: you're drawn over them.
+>
+
+S6-HEDGE
+Mow along the fence or hedge by the road: it fades while you're behind it, so you can still
+see the lawn's edge.
+>
+
+S6-FOOT
+Hop off and walk about carrying a stone, then let a hedgehog and a squirrel cross. You, the
+stone and the critters face where you're going; the stone goes behind you as you walk away.
+>
+
+S6-WINDOW
+Throw a stone at a ground-floor window: the glass smashes where the window is.
 >
