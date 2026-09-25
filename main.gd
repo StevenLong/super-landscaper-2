@@ -39,6 +39,10 @@ var _dog_in := -1.0
 var _house: Node2D
 var _shake := 0.0
 var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
+var _splats: Array[Vector2] = [] ## squashed critters: they stay for the whole job
+var _tracks: Array = [] ## red wheel marks: [position, sideways unit, strength 0..1]
+var _blood := 0.0 ## px of red trail the mower has left to lay after running something over
+var _blood_from := Vector2.ZERO
 
 @onready var lawn: Lawn = $Lawn
 @onready var mower: CharacterBody2D = $Mower
@@ -47,6 +51,7 @@ var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, i
 
 
 func _ready() -> void:
+	$Decals.draw.connect(_draw_decals)
 	job = Game.job()
 	customer = Customer.new(job)
 	hedgehog_every = job.get("hedgehog_every", hedgehog_every)
@@ -269,6 +274,32 @@ func _process(delta: float) -> void:
 	cam.zoom = cam.zoom.lerp(Vector2(want, want), minf(1.0, delta * 8.0))
 	_shake = maxf(0.0, _shake - delta * 18.0)
 	cam.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
+	_lay_track()
+
+
+const TRAIL := 140.0 ## how far the mower trails red after running a critter over
+
+
+## After a squash the mower lays fading red wheel marks for a short way.
+func _lay_track() -> void:
+	var moved := mower.global_position.distance_to(_blood_from)
+	if _blood <= 0.0 or moved < 3.0:
+		return
+	_blood -= moved
+	_blood_from = mower.global_position
+	_tracks.append([_blood_from, Vector2.DOWN.rotated(mower.rotation), clampf(_blood / TRAIL, 0.0, 1.0)])
+	$Decals.queue_redraw()
+
+
+func _draw_decals() -> void:
+	var d: Node2D = $Decals
+	var splat := preload("res://art/splat.png")
+	for p in _splats:
+		d.draw_texture(splat, p - splat.get_size() / 2.0)
+	for t: Array in _tracks:
+		var c := Color(0.55, 0.04, 0.04, 0.85 * t[2])
+		for side: float in [-7.0, 7.0]:
+			d.draw_rect(Rect2(t[0] + t[1] * side - Vector2(1.5, 1.5), Vector2(3, 3)), c)
 
 
 ## A camera shake of the given strength in pixels, decaying fast.
@@ -811,6 +842,11 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF) -> Ani
 
 func _on_squashed(a: Animal) -> void:
 	hits[a.kind] = hits.get(a.kind, 0) + 1
+	_splats.append(a.position)
+	if a.position.distance_to(mower.global_position) < 40.0: # run over, not stoned
+		_blood = TRAIL
+		_blood_from = mower.global_position
+	$Decals.queue_redraw()
 	Sfx.play("squash")
 	shake(3.0)
 	Sfx.play("squeak_" + a.kind)

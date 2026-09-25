@@ -34,6 +34,8 @@ offset_bottom = 720.0
 texture = ExtResource("11_gravel")
 stretch_mode = 1
 
+[node name="Decals" type="Node2D" parent="."]
+
 [node name="Borders" type="Node2D" parent="."]
 
 [node name="Scenery" type="Node2D" parent="."]

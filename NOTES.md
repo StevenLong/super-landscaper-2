@@ -22,8 +22,6 @@ BLOCKS = spoils the next playtest.
 13. [VISUAL, moderate] Trees (S1-TREES): they don't read as trees; things under canopies got
    hit unseen. Bigger canopies that fade when you get close or under, much bolder trunks
    that read as solid, varied trunk sizes. Variety of objects expected later, not now.
-14. [VISUAL, moderate] A squash leaves a lasting splat, and the mower trails red for a short
-   distance after (S1-CRITTERS). Fits the tone decision in the design doc.
 15. [FEATURE, small] Dog pickup/walk-home isn't clear that you're interacting (S1-DOG).
    FIX: a visible lead or held state and a prompt.
 18. [FEATURE, small] Throw stones at your own truck or mower (damage), a tree or flower bed

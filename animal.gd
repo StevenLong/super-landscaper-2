@@ -86,9 +86,7 @@ func squash() -> void:
 
 func _draw() -> void:
 	if dead:
-		var s := preload("res://art/splat.png")
-		draw_texture(s, -s.get_size() / 2.0)
-		return
+		return # main.gd's Decals draw the splat, which outlasts this node
 	var tex: Texture2D = preload("res://art/hedgehog.png") if kind == "hedgehog" else preload("res://art/squirrel.png")
 	var fw := tex.get_width() / 2.0
 	var frame := int(_t * (8.0 if speed > 0.0 and _pause <= 0.0 else 0.0)) % 2
