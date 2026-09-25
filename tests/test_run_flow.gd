@@ -36,6 +36,8 @@ func _process(_delta: float) -> bool:
 			var lawn: Lawn = current_scene.get_node("Lawn")
 			for y in range(0, lawn.size_px.y, 20):
 				lawn.cut_segment(Vector2(0, y), Vector2(lawn.size_px.x, y), 20.0)
+			current_scene._count("windows", 40.0) # as if a stone went through one
+			current_scene._count("sent_back")
 			current_scene.hand_in()
 			current_scene._on_choice("drive_off")
 			assert(game.last_result.outcome == "paid", "a mowed lawn is accepted and you drive off (the scene is already on its way out)")
@@ -47,6 +49,12 @@ func _process(_delta: float) -> bool:
 				func(l: Label) -> bool: return l.text.begins_with("Last job: Job done"))
 			assert(rundown.size() == 1, "the board shows the last job's rundown")
 			assert(game.last_result.has("rep_before") and game.last_result.has("rep_after"), "the rundown knows the rep change")
+			var tally := current_scene.find_children("*", "Label", true, false).filter(
+				func(l: Label) -> bool: return l.text.begins_with("Also counted:"))
+			assert(tally.size() == 1 and tally[0].text.contains("Windows put through 1 (-$40)") and tally[0].text.contains("sent back"),
+				"the rundown lists what the job counted, with what it cost")
+			assert(not tally[0].text.contains("Hedgehogs"), "and nothing that didn't happen")
+			assert(game.run_tally.get("windows", 0) == 1, "the run adds it up")
 			game.money = 1000
 			assert(game.buy("petrol") and game.equipped == "petrol", "buying a mower equips it")
 			assert(not game.buy("petrol"), "you can't buy the same mower twice")
@@ -56,6 +64,8 @@ func _process(_delta: float) -> bool:
 		5:
 			assert(current_scene.offers.is_empty(), "no reputation, no offers")
 			current_scene._run_over("BANKRUPT")
+			var lines := current_scene.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+			assert("The tally" in lines and "Windows put through 1 (-$40)" in lines, "the run-over screen shows the run's tally")
 			print("PASS run flow")
 			quit()
 	_step += 1

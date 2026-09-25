@@ -83,6 +83,23 @@ var jobs_done := 0
 var in_run := false
 var current_job := {}
 var last_result := {}
+var run_tally := {} ## the job tallies added up over the run
+var run_tally_cost := {}
+
+## Names for everything the jobs count, in the order they're shown. Only counts above
+## zero appear, so most of these are a surprise the first time.
+const TALLY := {
+	"squashed_hedgehog": "Hedgehogs flattened", "squashed_squirrel": "Squirrels flattened",
+	"stoned_hedgehog": "Hedgehogs stoned", "stoned_squirrel": "Squirrels sniped",
+	"dog_bowled": "Dogs bowled over", "dog_returned": "Dogs walked home",
+	"customer_hits": "Customers hit with a stone", "knockouts": "Customers knocked out cold",
+	"windows": "Windows put through", "dents": "Dents in your own truck",
+	"own_goals": "Stones at your own mower", "flowers": "Flowers flattened",
+	"stones_mowed": "Stones through the blades", "stones_thrown": "Stones thrown",
+	"trees_hit": "Trees stoned", "splashes": "Stones fed to the pond",
+	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
+	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",
+}
 var best_score := 0
 var run_over_reason := "" ## "" while running; "arrested" ends the run at the next board
 var heat := 0.0 ## the wanted level: each knocked-out customer adds one; the police may be waiting
@@ -128,6 +145,8 @@ func new_run(seed_value := 0) -> void:
 	in_run = true
 	current_job = {}
 	last_result = {}
+	run_tally = {}
+	run_tally_cost = {}
 	heat = 0.0
 	run_over_reason = ""
 
@@ -210,6 +229,18 @@ func job() -> Dictionary:
 	return current_job if not current_job.is_empty() else default_job()
 
 
+## The non-zero counts as "Name 3" (with "-$40" where it cost money), in TALLY order.
+func tally_lines(counts: Dictionary, costs: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	for k: String in TALLY:
+		if counts.get(k, 0) > 0:
+			var line := "%s %d" % [TALLY[k], counts[k]]
+			if costs.get(k, 0.0) > 0.0:
+				line += " (-$%d)" % roundi(costs[k])
+			out.append(line)
+	return out
+
+
 ## Apply a finished job's result to the run. Reputation drifts toward the trend
 ## rather than jumping, so bad behaviour catches up with you a job or two later.
 func record_result(result: Dictionary) -> void:
@@ -217,6 +248,10 @@ func record_result(result: Dictionary) -> void:
 	if not in_run:
 		return
 	result.rep_before = reputation
+	for k: String in result.get("tally", {}):
+		run_tally[k] = run_tally.get(k, 0) + result.tally[k]
+	for k: String in result.get("tally_cost", {}):
+		run_tally_cost[k] = run_tally_cost.get(k, 0.0) + result.tally_cost[k]
 	var heat_before := heat
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))

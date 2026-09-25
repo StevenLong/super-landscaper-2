@@ -17,8 +17,6 @@ BLOCKS = spoils the next playtest.
 46. [FEATURE, moderate] More layout variety (after 12/39's attached garage, left or right):
    a detached garage, the drive's shape, the customer's car in the drive (one more thing
    to hit), houses across the road. Not formulaic, but not drastically different.
-36. [FEATURE, moderate] Run stats: critters run over or picked up, stones collected, and the
-   rep or money each earned or cost. A funny tally after the job and at run end.
 **Needs a grill (design calls, queued for one session)**
 
 21. [DESIGN, large] Escalation (S1-WINNABLE). Right now only patience can end a run, so there
@@ -62,7 +60,7 @@ BLOCKS = spoils the next playtest.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
-PROPOSED ORDER: 36, 28, then 46. A grill session
+PROPOSED ORDER: 28, then 46. A grill session
 on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
 
 ### Notes 2026-09-25 (session 3 play checks)

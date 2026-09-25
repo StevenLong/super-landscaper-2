@@ -115,6 +115,15 @@ func _rundown(r: Dictionary) -> Control:
 	if r.get("heat_up", false):
 		rep += "   Wanted level up"
 	info.add_child(UI.label(rep, 20, UI.GOOD if d >= 0.0 and r.outcome == "paid" else UI.BAD))
+	var tally := Game.tally_lines(r.get("tally", {}), r.get("tally_cost", {}))
+	if not tally.is_empty():
+		var shown := tally.slice(0, 5) # the rest wait for the run's end, so the panel stays short
+		if tally.size() > 5:
+			shown.append("and %d more" % (tally.size() - 5))
+		var t := UI.label("Also counted: " + ",  ".join(shown), 18, UI.GOLD)
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		t.custom_minimum_size.x = 560
+		info.add_child(t)
 	return UI.panel(row)
 
 
@@ -217,6 +226,20 @@ func _run_over(title: String) -> void:
 		var lab := UI.label(l[0], l[1], l[2])
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(lab)
+	var tally := Game.tally_lines(Game.run_tally, Game.run_tally_cost)
+	if not tally.is_empty():
+		col.add_child(Control.new())
+		var head := UI.label("The tally", 22, UI.GOLD)
+		head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(head)
+		var grid := GridContainer.new() # two columns once it's long, so it fits the screen
+		grid.columns = 2 if tally.size() > 6 else 1
+		grid.add_theme_constant_override("h_separation", 40)
+		var centre := CenterContainer.new()
+		centre.add_child(grid)
+		col.add_child(centre)
+		for line in tally:
+			grid.add_child(UI.label(line, 20))
 	var holder := CenterContainer.new()
 	var again := UI.button("Back to the title", func() -> void:
 		Game.in_run = false

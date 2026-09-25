@@ -26,7 +26,8 @@ const FIRED_HINT := "Fired: no pay. Leave from the truck [E] when you're done."
 
 var job: Dictionary
 var customer: Customer
-var hits := {}
+var tally := {} ## everything countable this job, key -> count (Game.TALLY names them)
+var tally_cost := {} ## key -> dollars those cost you
 var over := false
 var bills := 0.0 ## broken windows, dented truck
 var walker: CharacterBody2D = null ## the player on foot, or null while mowing
@@ -467,6 +468,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		walker.queue_redraw()
 		var dir := Vector2.RIGHT.rotated(walker.rotation)
 		throw_stone(walker.global_position + dir * 12.0, dir, 460.0, 260.0)
+		_count("stones_thrown")
 		Sfx.play("ui_move")
 
 
@@ -500,12 +502,15 @@ func interact() -> void:
 		"stone":
 			if not at_truck():
 				add_stone(walker.global_position + Vector2(14, 0).rotated(walker.rotation))
+			else:
+				_count("stones_binned")
 			Sfx.play("bump")
 			walker.carrying = ""
 			walker.queue_redraw()
 		"jerrycan":
 			if walker.global_position.distance_to(mower.global_position) < 44.0:
 				mower.add_fuel(mower.max_fuel)
+				_count("cans")
 				walker.carrying = ""
 				walker.queue_redraw()
 				Sfx.play("glug", 0.0)
@@ -513,6 +518,7 @@ func interact() -> void:
 			var s := _stone_near(walker.global_position)
 			if s:
 				s.queue_free()
+				_count("stones_picked")
 				walker.carrying = "stone"
 				walker.queue_redraw()
 				Sfx.play("ui_move", 0.0)
@@ -602,6 +608,7 @@ func hand_in() -> void:
 	if not customer.accepts(cov):
 		customer.mood -= 10.0
 		customer.last_line = "You call that finished? Get back out there!"
+		_count("sent_back")
 		_react()
 		hud.close()
 		get_tree().paused = false
@@ -667,6 +674,14 @@ func _costs() -> float:
 ## The job is over: record it and head back to the board, which shows the rundown.
 func _finish(result: Dictionary) -> void:
 	over = true
+	var flat := 0
+	for b in $Scenery.get_children():
+		if b.has_method("flattened_count"):
+			flat += b.flattened_count()
+	if flat > 0:
+		tally["flowers"] = flat
+	result.tally = tally
+	result.tally_cost = tally_cost
 	get_tree().paused = true
 	result.customer = job.get("customer", "")
 	result.look = job.look
@@ -692,12 +707,20 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 	if s.is_queued_for_deletion():
 		return
 	s.queue_free()
+	_count("stones_mowed")
 	m.damage(12.0)
 	Sfx.play("clonk")
 	shake(3.0)
 	if randf() < Stone.LAUNCH_CHANCE:
 		var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
 		throw_stone(s.position, dir, randf_range(380.0, 560.0), randf_range(140.0, 380.0))
+
+
+## Count something for the job's tally (shown on the board if it isn't zero).
+func _count(key: String, cost := 0.0) -> void:
+	tally[key] = tally.get(key, 0) + 1
+	if cost > 0.0:
+		tally_cost[key] = tally_cost.get(key, 0.0) + cost
 
 
 ## Send a stone flying along the ground (flung by blades or thrown by hand).
@@ -749,6 +772,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 	match target:
 		"customer":
 			Sfx.play("thud")
+			_count("customer_hits")
 			_mischief(8.0)
 			if customer.on_stone("customer"):
 				_knock_out()
@@ -757,6 +781,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"window":
 			Sfx.play("glass", 0.0)
 			_house.smash(_window_at(p))
+			_count("windows", WINDOW_BILL)
 			_mischief(5.0)
 			bills += WINDOW_BILL
 			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
@@ -769,6 +794,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_react()
 		"truck":
 			Sfx.play("clonk")
+			_count("dents", DENT_BILL)
 			bills += DENT_BILL
 			pop_text("-$%d" % DENT_BILL, p, Color("f07060"))
 		"animal":
@@ -786,16 +812,19 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"mower":
 			Sfx.play("clonk")
 			mower.damage(8.0)
+			_count("own_goals")
 			shake(2.0)
 			add_stone.call_deferred(p)
 		"tree":
 			Sfx.play("thud")
 			_rustle(p, Vector2.DOWN) # leaves come down
+			_count("trees_hit")
 			add_stone.call_deferred(p - f.velocity.normalized() * 8.0) # drops just outside the trunk
 		_:
 			if _in_pond(p):
 				Sfx.play("splash")
 				_splash(p)
+				_count("splashes")
 			else:
 				Sfx.play("thud")
 				for b in $Scenery.get_children():
@@ -841,6 +870,7 @@ func _splash(p: Vector2) -> void:
 
 
 func _knock_out() -> void:
+	_count("knockouts")
 	customer.knock_out()
 	$Client.knock_out()
 	Sfx.play("thud")
@@ -856,6 +886,7 @@ func _release_dog() -> void:
 	dog.home_point = $Client.position
 	dog.lawn_rect = Rect2(Vector2(0, _house.size.y), Vector2(lawn.size_px) - Vector2(0, _house.size.y))
 	dog.bowled.connect(func(_d: Dog) -> void:
+		_count("dog_bowled")
 		Sfx.play("yelp")
 		customer.on_dog_hit()
 		_mischief(8.0)
@@ -864,6 +895,7 @@ func _release_dog() -> void:
 		Sfx.play("ui_select", 0.0)
 		pop_text("On the lead!", d.position + Vector2(0, -10), UI.GOOD))
 	dog.home.connect(func(_d: Dog) -> void:
+		_count("dog_returned")
 		customer.on_dog_returned()
 		_react())
 	$Animals.add_child(dog)
@@ -965,11 +997,13 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF, grace 
 
 
 func _on_squashed(a: Animal) -> void:
-	hits[a.kind] = hits.get(a.kind, 0) + 1
 	_splats.append(a.position)
 	if a.position.distance_to(mower.global_position) < 40.0: # run over, not stoned
+		_count("squashed_" + a.kind)
 		_blood = TRAIL
 		_blood_from = mower.global_position
+	else:
+		_count("stoned_" + a.kind)
 	$Decals.queue_redraw()
 	Sfx.play("squash")
 	shake(3.0)
