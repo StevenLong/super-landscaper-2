@@ -7,9 +7,10 @@ Notepad whenever an answer is still blank.
 ---
 
 ## Session 5 (2026-09-25): your session-4 answers, five small fixes, pad prompts
-- Your session-4 answers: 12 of 15 signed off as they were (settings, ads, squash, dog,
-  tally, fired, splash, throws, talking, tells, pad menus mostly). The rest became NOTES
-  47-56 (46e2220); 47 (board left/right) waits on the shop (27).
+- Your session-4 answers: 11 of 15 were yes (settings, ads, squash, dog, tally, fired,
+  splash, throws, talking, tells, pad menus mostly), several with notes; audio, street,
+  trees and view were not. All of it became NOTES 44-56 (46e2220); 47 (board left/right)
+  waits on the shop (27).
 - Your calls: my 3/4 trees are vetoed (the flat trunk reads as cardboard): trees go back
   top-down, the house keeps its face. Audio is yours, in Ableton, later; the generated
   sounds are placeholders. Promoted to the design doc as "Look and Sound" (game-dev
