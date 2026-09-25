@@ -54,7 +54,7 @@ func _build() -> void:
 	cols.add_child(jobs)
 	if not Game.last_result.is_empty():
 		jobs.add_child(_rundown(Game.last_result))
-	jobs.add_child(UI.label("Job board", 26))
+	jobs.add_child(UI.label("Classifieds: gardens & grounds", 26))
 	var first: Control = null
 	if offers.is_empty():
 		jobs.add_child(UI.label("Nobody's calling. Word has got around.", 22, UI.BAD))
@@ -127,24 +127,31 @@ func _rundown(r: Dictionary) -> Control:
 	return UI.panel(row)
 
 
+## An offer as a classified ad on newsprint: no picture, just the words and the hints
+## buried in them. You meet the customer at the briefing.
 func _offer_card(o: Dictionary) -> Control:
 	var row := UI.hbox(14)
-	var f := Face.new()
-	f.pixel_scale = 2
-	f.custom_minimum_size = Vector2(92, 92)
-	f.set_look(o.look)
-	f.expression = "neutral"
-	row.add_child(f)
-	var info := UI.vbox(4)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(info)
-	var size_word: String = ["Small", "Medium", "Large"][Game.LAWN_SIZES.find(o.size)]
-	info.add_child(UI.label("%s   %s lawn   $%d" % [o.customer, size_word, o.pay], 22))
-	info.add_child(UI.label("\"%s\"" % o.brief[0], 18, UI.DIM))
-	var take := UI.button("Take job", func() -> void: _take(o), 20)
+	var ad := RichTextLabel.new()
+	ad.bbcode_enabled = true
+	ad.fit_content = true
+	ad.scroll_active = false
+	ad.custom_minimum_size.x = 540
+	ad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ad.add_theme_color_override("default_color", Color("2a2420"))
+	ad.text = Game.ad_text(o)
+	row.add_child(ad)
+	var take := UI.button("Take", func() -> void: _take(o), 20)
 	take.name = "Take"
-	info.add_child(take)
-	return UI.panel(row)
+	take.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(take)
+	var paper := StyleBoxFlat.new()
+	paper.bg_color = Color("e8e0c8")
+	paper.border_color = Color("b8ac8c")
+	paper.set_border_width_all(2)
+	paper.set_content_margin_all(12)
+	var p := UI.panel(row)
+	p.add_theme_stylebox_override("panel", paper)
+	return p
 
 
 func _mower_row(key: String) -> Control:

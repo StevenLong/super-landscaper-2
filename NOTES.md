@@ -12,8 +12,6 @@ BLOCKS = spoils the next playtest.
 
 **Build (no design call needed)**
 
-28. [FEATURE, moderate] The job board as newspaper classifieds (S1-BOARD): text ads, no
-   picture or quote, rough lawn size, pay, and subtle hints ("careful applicants only").
 46. [FEATURE, moderate] More layout variety (after 12/39's attached garage, left or right):
    a detached garage, the drive's shape, the customer's car in the drive (one more thing
    to hit), houses across the road. Not formulaic, but not drastically different.
@@ -60,7 +58,7 @@ BLOCKS = spoils the next playtest.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
-PROPOSED ORDER: 28, then 46. A grill session
+PROPOSED ORDER: 46. A grill session
 on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
 
 ### Notes 2026-09-25 (session 3 play checks)

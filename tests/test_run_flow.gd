@@ -25,6 +25,12 @@ func _process(_delta: float) -> bool:
 			assert(current_scene.name == "Board", "new run goes to the board")
 			assert(game.in_run and game.day == 1 and game.owned == ["push"], "fresh run state")
 			assert(current_scene.offers.size() == 3, "fair reputation shows 3 offers")
+			for o: Dictionary in current_scene.offers:
+				var ad: String = game.ad_text(o)
+				assert(ad.contains("$%d cash" % o.pay) and ad.contains(o.customer.split(" ")[0][0]), "an ad gives the pay and who to ring: %s" % ad)
+				assert(not ad.contains("\""), "and reads as an ad, not a quote")
+			for k: String in game.PERSONAS:
+				assert(game.PERSONAS[k].ads.size() >= 2, "every kind of customer has ads")
 			current_scene._take(current_scene.offers[0])
 		2:
 			assert(current_scene.name == "Main", "taking a job loads it")

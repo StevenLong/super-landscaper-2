@@ -45,26 +45,38 @@ const LAST := ["Pemberton", "Figgis", "Oakley", "Thistlewood", "Grubb", "Hedges"
 const PERSONAS := {
 	"nature": {
 		"brief": ["I do love the hedgehogs that visit.", "Please be gentle with the little ones."],
+		"ads": [["LAWN MOWING.", "Wildlife-friendly garden; hedgehogs visit nightly. Gentle hands only."],
+			["CAREFUL MOWER SOUGHT", "by nature lover. The little ones must come to no harm."]],
 		"hedgehog": -40.0, "squirrel": -30.0, "flower": -2.0, "patience": 1.3, "target": 0.8,
 	},
 	"squirrel_hater": {
 		"brief": ["The squirrels have dug up every bulb I own.", "I shan't be sad if one has an... accident."],
+		"ads": [["GARDENER WANTED.", "Squirrel problem: every bulb dug up. Accidents happen."],
+			["LAWN MOWN,", "squirrels discouraged by any means. No questions asked."]],
 		"hedgehog": -20.0, "squirrel": 14.0, "flower": -2.0, "patience": 1.0, "target": 0.8,
 	},
 	"gardener": {
 		"brief": ["DO NOT touch my prize flowerbeds.", "Tread on more than a couple of my flowers and you're finished."],
+		"ads": [["MOWING AROUND PRIZE BORDERS.", "Careful applicants only. Beds strictly out of bounds."],
+			["EXPERIENCED MOWER WANTED.", "Award-winning flowerbeds: tread on them and you're finished."]],
 		"hedgehog": -20.0, "squirrel": -10.0, "flower": -6.0, "instant_flowers": 3, "patience": 1.1, "target": 0.85,
 	},
 	"busy": {
 		"brief": ["I'm on a call. Just get it done, quickly.", "I'm paying for speed, not a masterpiece."],
+		"ads": [["LAWN MOWED ASAP.", "Speed over finesse. Owner on calls, do not disturb."],
+			["QUICK MOW WANTED,", "today if possible. Not fussy, just fast."]],
 		"hedgehog": -15.0, "squirrel": -5.0, "flower": -1.0, "patience": 0.7, "target": 0.7,
 	},
 	"perfectionist": {
 		"brief": ["Every blade, please. I will be checking.", "Take the time you need to do it properly."],
+		"ads": [["METICULOUS MOWER WANTED.", "Every blade. Work will be inspected. Take your time."],
+			["LAWN TO BOWLING-GREEN STANDARD.", "No stripe missed, no corner cut. No rush."]],
 		"hedgehog": -25.0, "squirrel": -15.0, "flower": -4.0, "patience": 1.6, "target": 0.96,
 	},
 	"grump": {
 		"brief": ["Last lad was useless.", "Don't make me regret calling you."],
+		"ads": [["MOWER WANTED.", "Last one was useless. Don't waste my time."],
+			["LAWN. NEEDS CUTTING.", "Previous contractor dismissed. Prove me wrong."]],
 		"hedgehog": -30.0, "squirrel": -20.0, "flower": -3.0, "patience": 0.9, "target": 0.85, "start_mood": 45.0,
 	},
 }
@@ -159,6 +171,22 @@ func mower_spec() -> Dictionary:
 	if "blades" in upgrades:
 		s.cut_radius *= 1.15
 	return s
+
+
+## A job as a newspaper classified (BBCode): the headline, the customer's hint worked
+## into the wording, the plot, anything to watch for, the pay and who to ring.
+func ad_text(job: Dictionary) -> String:
+	var ads: Array = PERSONAS[job.persona].ads
+	var ad: Array = ads[job.seed % ads.size()]
+	var parts: Array[String] = [ad[1]]
+	parts.append(["Small lawn.", "Good-sized garden.", "Extensive grounds."][LAWN_SIZES.find(job.size)])
+	if job.get("ponds", 0) > 0:
+		parts.append("Ornamental pond.")
+	if job.get("dog", false):
+		parts.append("Friendly dog, a known escapee.")
+	var names: PackedStringArray = job.customer.split(" ")
+	parts.append("$%d cash. Ring %s." % [job.pay, names[0] if job.seed % 2 == 0 else "%s. %s" % [names[0][0], names[-1]]])
+	return "[color=#7a1c14]%s[/color] %s" % [ad[0], " ".join(parts)]
 
 
 ## How many offers the board shows at this reputation. Zero means bankrupt.
