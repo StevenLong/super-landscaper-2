@@ -39,6 +39,7 @@ var _dog_in := -1.0
 var _house: Node2D
 var _shake := 0.0
 var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
+var _tells: Array[Dictionary] = [] ## critters about to come out: {kind, at, grace, left}
 var _splats: Array[Vector2] = [] ## squashed critters: they stay for the whole job
 var _tracks: Array = [] ## red wheel marks: [position, sideways unit, strength 0..1]
 var _blood := 0.0 ## px of red trail the mower has left to lay after running something over
@@ -351,10 +352,15 @@ func _physics_process(delta: float) -> void:
 	_next_squirrel -= delta
 	if _next_hedgehog <= 0.0:
 		_next_hedgehog = hedgehog_every * randf_range(0.6, 1.4)
-		spawn_animal("hedgehog")
+		_tell("hedgehog")
 	if _next_squirrel <= 0.0:
 		_next_squirrel = squirrel_every * randf_range(0.6, 1.4)
-		spawn_animal("squirrel")
+		_tell("squirrel")
+	for t: Dictionary in _tells.duplicate():
+		t.left -= delta
+		if t.left <= 0.0:
+			_tells.erase(t)
+			spawn_animal(t.kind, t.at, Vector2.INF, t.grace)
 
 
 ## Who the player is right now: the mower, or themselves on foot.
@@ -805,24 +811,75 @@ func _release_dog() -> void:
 ## Spawn an animal and send it across the lawn. Hedgehogs push out of a hedge (or
 ## under the fence if there's no hedge); squirrels drop out of a tree or hop the
 ## fence. Nothing comes from behind the house.
-func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF) -> Animal:
+const TELL := 0.9 ## seconds of rustling before a critter comes out
+
+
+## A critter is coming: the hedge, fence or tree it's in rustles and drops leaves first.
+func _tell(kind: String) -> void:
+	if $Animals.get_child_count() + _tells.size() >= max_animals:
+		return
+	var spot := _spawn_spot(kind)
+	_tells.append({"kind": kind, "at": spot.at, "grace": spot.grace, "left": TELL})
+	_rustle(spot.at, spot.inward)
+
+
+## Where a critter of this kind comes in: {at, grace}. Squirrels may climb down a tree.
+func _spawn_spot(kind: String) -> Dictionary:
+	var trees := $Scenery.get_children().filter(func(t: Node) -> bool: return t is StaticBody2D and "radius" in t)
+	if kind == "squirrel" and not trees.is_empty() and randf() < 0.5:
+		var t: Node2D = trees[randi() % trees.size()]
+		return {"at": t.position + Vector2.RIGHT.rotated(randf() * TAU) * t.radius * 0.5,
+			"grace": 1.0, "inward": Vector2.DOWN} # climbing down out of the canopy
+	var want := "hedge" if kind == "hedgehog" else "fence"
+	var pool := _edges.filter(func(e: Dictionary) -> bool: return e.kind == want)
+	if pool.is_empty():
+		pool = _edges
+	var e: Dictionary = pool[randi() % pool.size()]
+	return {"at": (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95)) - (e.inward as Vector2) * 10.0,
+		"grace": 0.0, "inward": e.inward}
+
+
+## The spot jiggles and a few leaves are shaken loose onto the lawn (along inward),
+## gone as the critter appears.
+func _rustle(p: Vector2, inward := Vector2.DOWN) -> void:
+	var r := Node2D.new()
+	r.position = p
+	r.z_index = 3
+	var k := [0.0]
+	var leaves: Array[Vector3] = [] # sideways offset, distance thrown, flutter phase
+	for i in 7:
+		leaves.append(Vector3(randf_range(-14, 14), randf_range(16, 34), randf() * TAU))
+	var side := inward.orthogonal()
+	r.draw.connect(func() -> void:
+		var t: float = k[0]
+		var fade := clampf(1.0 - (t - TELL) * 2.0, 0.0, 1.0)
+		if t < TELL:
+			var j := Vector2(sin(t * 55.0), cos(t * 47.0)) * 2.0 # the tuft shaking
+			r.draw_circle(j + side * -5.0, 6.0, Color("2e6428"))
+			r.draw_circle(j * -1.0 + side * 5.0, 6.0, Color("4a8a38"))
+			r.draw_circle(j + inward * 3.0, 5.0, Color("5e9e40"))
+		for i in leaves.size():
+			var l := leaves[i]
+			var out := minf(t / TELL, 1.0)
+			var at := side * (l.x + sin(t * 8.0 + l.z) * 5.0) + inward * l.y * out
+			var c := Color("9ad050") if i % 2 == 0 else Color("d8b848")
+			r.draw_rect(Rect2(at - Vector2(2, 1.5), Vector2(4, 3)), Color(c, fade)))
+	add_child(r)
+	var tw := r.create_tween()
+	tw.tween_method(func(v: float) -> void:
+		k[0] = v
+		r.queue_redraw(), 0.0, TELL + 0.5, TELL + 0.5)
+	tw.tween_callback(r.queue_free)
+
+
+func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF, grace := 0.0) -> Animal:
 	if $Animals.get_child_count() >= max_animals and at == Vector2.INF:
 		return null
 	var r := Rect2(Vector2.ZERO, Vector2(lawn.size_px))
-	var grace := 0.0
 	if at == Vector2.INF:
-		var trees := $Scenery.get_children().filter(func(t: Node) -> bool: return t is StaticBody2D and "radius" in t)
-		if kind == "squirrel" and not trees.is_empty() and randf() < 0.5:
-			var t: Node2D = trees[randi() % trees.size()]
-			at = t.position + Vector2.RIGHT.rotated(randf() * TAU) * t.radius * 0.5
-			grace = 1.0 # climbing down out of the canopy
-		else:
-			var want := "hedge" if kind == "hedgehog" else "fence"
-			var pool := _edges.filter(func(e: Dictionary) -> bool: return e.kind == want)
-			if pool.is_empty():
-				pool = _edges
-			var e: Dictionary = pool[randi() % pool.size()]
-			at = (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95)) - (e.inward as Vector2) * 10.0
+		var spot := _spawn_spot(kind)
+		at = spot.at
+		grace = spot.grace
 	if toward == Vector2.INF:
 		for i in 10:
 			toward = Vector2(randf_range(r.position.x, r.end.x), randf_range(r.position.y, r.end.y))

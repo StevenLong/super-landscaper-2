@@ -12,8 +12,6 @@ BLOCKS = spoils the next playtest.
 
 **Build (no design call needed)**
 
-11. [FEATURE, small] Spawn tells (S2-BORDERS, S2-SPAWNS): a tree or hedge rustles, a few
-   leaves drop, a moment before a critter comes out. A little telegraphing, not a lot.
 12. [FEATURE, moderate-large] Camera never clamps; the world carries on past the garden
    (S2-BORDERS): footpath and road to the south, next door's gardens either side, seen but
    not reachable. The player stays centred. Critters then spawn where the player can see
