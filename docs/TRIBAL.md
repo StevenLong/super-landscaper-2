@@ -11,4 +11,5 @@ Traps and "we tried X, it failed because Y". Current rules live in CLAUDE.md.
 - The job scene "running at 49 FPS" (2026-09-25) was the OMEN laptop's hybrid graphics, not
   the game: an empty tree gave the same 49, every API on the RTX 5080 blocked ~20 ms in
   present, and Vulkan on the AMD iGPU (which drives the panel) ran the job at 1785 FPS
-  uncapped. Check `tools/fps.gd` (and `EMPTY=1`) before hunting game code for frame rate.
+  uncapped. Fix: OMEN Gaming Hub GPU mode "Discrete" (60.0 FPS after). Check `tools/fps.gd`
+  (and `EMPTY=1`) before hunting game code for frame rate.
