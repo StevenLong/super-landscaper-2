@@ -114,8 +114,9 @@ func _build_layout() -> void:
 	for box: Rect2 in [_house.rect(), _house.garage_rect()]:
 		var wall_shape := CollisionShape2D.new()
 		wall_shape.shape = RectangleShape2D.new()
-		wall_shape.shape.size = Vector2(box.size.x, _house.WALL_H)
-		wall_shape.position = box.position - _house.position + Vector2(box.size.x, _house.WALL_H) * 0.5
+		box.size.y = minf(box.size.y, _house.WALL_H) # not the patio
+		wall_shape.shape.size = box.size
+		wall_shape.position = box.position - _house.position + box.size * 0.5
 		wall.add_child(wall_shape)
 	_house.add_child(wall)
 	$Scenery.add_child(_house)
@@ -126,8 +127,8 @@ func _build_layout() -> void:
 	# The drive runs from the garage door to the road; its mouth crosses the pavement.
 	var drive: Control = $Driveway
 	var g: Rect2 = _house.garage_rect()
-	drive.position = Vector2(g.position.x + 10, _house.WALL_H)
-	drive.size = Vector2(g.size.x - 20, size.y - _house.WALL_H)
+	drive.position = Vector2(g.position.x + 10, g.end.y)
+	drive.size = Vector2(g.size.x - 20, size.y - g.end.y)
 	drive.self_modulate = GRAVEL # warm it so it doesn't read as more road
 	lawn.exits = [Rect2(drive.position.x, size.y - 40, drive.size.x, 40 + BORDER + FOOTPATH)]
 	$Truck.position = Vector2(drive.position.x + drive.size.x * 0.5, size.y + BORDER + FOOTPATH + 34)
@@ -146,7 +147,7 @@ func _build_layout() -> void:
 	var ponds: Array = []
 	if fixed:
 		trees = [[Vector2(1080, 440), 34.0]]
-		beds = [Rect2(360, 300, 200, 80)]
+		beds = [Rect2(360, 420, 200, 80)]
 	else:
 		for i in job.get("ponds", 0):
 			var pr := _place(r, taken, Vector2(Pond.RX, Pond.RY) * 2.0, size)
@@ -232,7 +233,8 @@ func _build_street() -> void:
 
 
 ## Hedges and fences round the property, just outside the lawn. Each side is one or
-## the other; the top only has the bits either side of the house and garage; the
+## the other; the top only has the bits either side of the house (it runs on behind
+## the lower garage); the
 ## bottom leaves a gap where the drive goes out to the road.
 func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	var w := float(lawn.size_px.x)
@@ -240,7 +242,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	var b := float(BORDER)
 	var top: String = ["hedge", "fence"][r.randi() % 2]
 	# name: [kind, outer rect, the lawn-side line critters come in along, inward direction]
-	var fp: Rect2 = _house.footprint()
+	var fp: Rect2 = _house.rect()
 	var front: String = ["hedge", "fence"][r.randi() % 2]
 	var d0 := drive.position.x
 	var d1 := drive.position.x + drive.size.x
@@ -277,7 +279,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 
 ## Is p inside something a critter can't walk through?
 func _blocked(p: Vector2) -> bool:
-	if _house.footprint().has_point(p):
+	if _house.rect().has_point(p) or _house.garage_rect().has_point(p):
 		return true
 	if Rect2($Truck.position - Vector2(64, 32), Vector2(128, 64)).has_point(p):
 		return true
@@ -741,7 +743,7 @@ func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float) -> 
 func _window_at(p: Vector2) -> int:
 	var h: Rect2 = _house.rect()
 	for wx: int in WINDOWS:
-		if p.x - h.position.x >= wx and p.x - h.position.x <= wx + 30 and p.y > h.position.y + 60.0:
+		if p.x - h.position.x >= wx and p.x - h.position.x <= wx + 30 and p.y > h.position.y + _house.WALL_H - 46.0:
 			return wx
 	return -1
 
@@ -757,7 +759,7 @@ func _stone_hit_test(p: Vector2) -> String:
 	if not customer.knocked_out and p.distance_to($Client.position + Vector2(0, -14)) < 11.0:
 		return "customer"
 	var h: Rect2 = _house.rect()
-	if h.has_point(p) and p.y < h.position.y + 106.0:
+	if h.has_point(p) and p.y < h.position.y + _house.WALL_H:
 		return "window" if _window_at(p) >= 0 else "wall"
 	if walker and p.distance_to(mower.global_position) < 18.0: # your own mower, parked
 		return "mower"

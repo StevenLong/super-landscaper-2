@@ -14,7 +14,7 @@ func _process(_d: float) -> bool:
 		m.get_node("HUD").visible = true
 	if f == 40:
 		root.get_texture().get_image().save_png(out + "/truck.png")
-		m.mower.position = Vector2(560, 190)
+		m.mower.position = Vector2(560, 400)
 		m.get_node("Scenery/House").smash(120)
 	if f == 70:
 		root.get_texture().get_image().save_png(out + "/house.png")

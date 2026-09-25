@@ -68,8 +68,9 @@ the biggest open question); 46 is buildable any time.
    long; in the design doc's "Look and Sound". The build is 57.
 
 57. [VISUAL, large] The 3/4 conversion, in steps, each playable on its own:
-   (1) DONE (S6): the house and garage stand up 3/4 from the old wall line, same ground
-   footprint, only ground-floor windows smashable; (2) fences, hedges and the truck with fronts, which
+   (1) DONE (S6): the house and garage stand up 3/4, the house's ridge on the back fence
+   (the drive is 40% shorter; lawn behind the lower garage), only ground-floor windows
+   smashable; (2) fences, hedges and the truck with fronts, which
    also covers 54; (3) Y-sorting so the mower goes behind trunks, the truck and the
    customer; (4) trees with trunks; (5) mowers, the player on foot and critters drawn per
    facing direction, the sprite no longer rotated. QUESTION for (5): 8 facings (proposed,

@@ -43,8 +43,8 @@ func _physics_process(_delta: float) -> bool:
 			# What a flung stone can hit.
 			var house: Node2D = m.get_node("Scenery/House")
 			assert(m._stone_hit_test(m.get_node("Client").position + Vector2(0, -14)) == "customer", "stone hits the customer")
-			assert(m._stone_hit_test(house.position + Vector2(55, 80)) == "window", "stone hits a window")
-			assert(m._stone_hit_test(house.position + Vector2(95, 80)) == "wall", "stone hits the wall between windows")
+			assert(m._stone_hit_test(house.position + Vector2(55, house.WALL_H - 26.0)) == "window", "stone hits a window")
+			assert(m._stone_hit_test(house.position + Vector2(95, house.WALL_H - 26.0)) == "wall", "stone hits the wall between windows")
 			assert(m._stone_hit_test(m.get_node("Truck").position) == "truck", "stone dents the truck")
 			assert(m._stone_hit_test(Vector2(-5, 300)) == "gone", "stone over the fence")
 			assert(m._stone_hit_test(Vector2(640, 600)) == "", "stone lands on grass")
@@ -66,7 +66,7 @@ func _physics_process(_delta: float) -> bool:
 			drop.free()
 			pond.free()
 			var f := FlyingStone.new()
-			f.position = house.position + Vector2(55, 80)
+			f.position = house.position + Vector2(55, house.WALL_H - 26.0)
 			var mood: float = m.customer.mood
 			m._on_stone_landed(f, "window")
 			assert(m.bills >= m.WINDOW_BILL and m.customer.mood < mood, "a broken window costs money and mood")
@@ -74,7 +74,7 @@ func _physics_process(_delta: float) -> bool:
 			f.free()
 			# A broken mower cuts nothing; parking at the truck repairs it.
 			mower.condition = 0.0
-			mower.global_position = Vector2(640, 300)
+			mower.global_position = Vector2(640, 420)
 			_cut0 = lawn.cut_fraction()
 			Input.action_press("move_forward")
 			_wait = 30
@@ -120,7 +120,7 @@ func _physics_process(_delta: float) -> bool:
 			# Throwing: pick up a stone and lob it at a window.
 			var house: Node2D = m.get_node("Scenery/House")
 			var bills_before: float = m.bills
-			var f: FlyingStone = m.throw_stone(house.position + Vector2(55, 200), Vector2.UP, 460.0, 300.0)
+			var f: FlyingStone = m.throw_stone(house.position + Vector2(55, house.WALL_H + 94.0), Vector2.UP, 460.0, 300.0)
 			_thrown = f
 			_bills0 = bills_before
 			_wait = 30

@@ -70,7 +70,7 @@ func _physics_process(_delta: float) -> bool:
 		assert(_main.hud.is_open(), "payment shows in the truck menu")
 		# Mischief after payment: squash something, and it comes off your reputation.
 		_main._on_choice("resume")
-		var a: Animal = _main.spawn_animal("hedgehog", Vector2(640, 300), Vector2(641, 300))
+		var a: Animal = _main.spawn_animal("hedgehog", Vector2(640, 500), Vector2(641, 500))
 		a.squash()
 		assert(_main.mischief > 0.0, "squashing after payment is mischief")
 		_main._on_choice("drive_off")

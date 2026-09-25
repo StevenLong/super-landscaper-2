@@ -1,16 +1,20 @@
 extends Node2D
-## The customer's house along the top of the garden, with a patio they watch from,
-## and a garage attached on one side that the drive leads up to. Not lawn. Seen 3/4:
-## the ground footprint is `size` (the wall's foot at WALL_H, the patio below it) and
-## the art stands up from the foot, over the neighbour's lawn behind.
+## The customer's house at the top of the garden, with a patio they watch from, and a
+## garage attached on one side that the drive leads up to. Not lawn. Seen 3/4: the art
+## stands up from the front wall's foot at WALL_H, and its ridge meets the back fence
+## (y 0), so the ground from the fence to the foot is all house. What's behind the roof
+## can't be seen, so it can't be reached either. The garage is lower: the lawn carries
+## on behind it.
 
 const GARAGE_W := 120.0
-const WALL_H := 106.0 ## the solid part, down to the foot of the front wall
 const ART_FOOT := 348.0 ## y of the wall's foot in art/house.png (tools/art_sprites.py HOUSE_BASE)
-const GARAGE_FOOT := 150.0 ## the same in art/garage.png
-const GLASS := Rect2(0, 44, 30, 36) ## a ground-floor window's glass, from its x (main.gd WINDOWS)
+const ART_RIDGE := 36.0 ## y of its ridge
+const WALL_H := ART_FOOT - ART_RIDGE ## back fence to the foot of the front wall: all solid
+const GARAGE_FOOT := 150.0 ## the foot in art/garage.png
+const GARAGE_H := GARAGE_FOOT - 4.0 ## its roof's top to its foot: the solid part
+const GLASS := Rect2(0, -62, 30, 36) ## a ground-floor window's glass, from its x (main.gd WINDOWS) and the foot
 
-var size := Vector2(440, 130)
+var size := Vector2(440, WALL_H + 24.0) ## the house and its patio
 var garage := 1 ## which side it's on: -1 left, 1 right
 var broken: Array[int] = [] ## x of each smashed window (main.gd WINDOWS)
 
@@ -20,7 +24,7 @@ func rect() -> Rect2:
 
 
 func garage_rect() -> Rect2:
-	return Rect2(position + Vector2(-GARAGE_W if garage < 0 else size.x, 0), Vector2(GARAGE_W, WALL_H))
+	return Rect2(position + Vector2(-GARAGE_W if garage < 0 else size.x, WALL_H - GARAGE_H), Vector2(GARAGE_W, GARAGE_H))
 
 
 ## The house and garage together, for keeping other things clear of them.
@@ -44,7 +48,7 @@ func _draw() -> void:
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
 	for x in broken:
-		var o := GLASS.position + Vector2(x, 0)
+		var o := GLASS.position + Vector2(x, WALL_H)
 		var s := GLASS.size
 		draw_rect(Rect2(o, s), Color("1a1820"))
 		for shard: PackedVector2Array in [

@@ -21,7 +21,7 @@ func _physics_process(_delta: float) -> bool:
 	if _frame == 1:
 		_mower = _main.get_node("Mower")
 		_lawn = _main.get_node("Lawn")
-		_mower.global_position = Vector2(640, 200) # away from the truck
+		_mower.global_position = Vector2(640, 440) # away from the truck
 	elif _frame == 3:
 		_fuel0 = _mower.fuel
 	elif _frame == 63:
