@@ -185,19 +185,20 @@ def main(only=None):
         "trees": lambda: [save("tree_%d" % d, sheet([canopy(d, s) for s in (11, 12, 13)]), 3) for d in (52, 68, 84, 100)],
     }
     import art_sprites as a
+    import voxel as v
     jobs.update({
         "mowers": lambda: [
-            # Frames: two while ridden/pushed, then the mower left standing empty.
-            save("mower_petrol", sheet([a.petrol(0), a.petrol(1), a.petrol(0, False)])),
-            save("mower_push", sheet([a.push(0), a.push(1), a.push(0, False)])),
-            save("mower_rideon", sheet([a.rideon(0), a.rideon(1), a.rideon(0, False)])),
+            # Frames: two while ridden/pushed, then the mower left standing empty; a row per facing.
+            save("mower_petrol", v.sheet([v.petrol(0), v.petrol(1), v.petrol(0, False)]), 2),
+            save("mower_push", v.sheet([v.push(0), v.push(1), v.push(0, False)]), 2),
+            save("mower_rideon", v.sheet([v.rideon(0), v.rideon(1), v.rideon(0, False)]), 2),
         ],
         "vehicles": lambda: [save("truck", a.truck(), 3), save("trailer", a.trailer(), 3)],
         "flowers": lambda: [save("flowers", a.flowers(), 6)],
         "house": lambda: [save("house", a.house(), 2), save("garage", a.garage(), 2)],
         "animals": lambda: [
-            save("hedgehog", sheet([a.hedgehog(0), a.hedgehog(1)]), 6),
-            save("squirrel", sheet([a.squirrel(0), a.squirrel(1)]), 6),
+            save("hedgehog", v.sheet([v.hedgehog(0), v.hedgehog(1)]), 4),
+            save("squirrel", v.sheet([v.squirrel(0), v.squirrel(1)]), 4),
             save("splat", a.splat(), 6),
         ],
         "client": lambda: [save("client", sheet([a.client(0), a.client(1), a.client(2)]), 6)],
@@ -207,8 +208,8 @@ def main(only=None):
         "props": lambda: [
             save("stone", a.stone(), 6),
             save("jerrycan", a.jerrycan(), 6),
-            save("walker", sheet([a.walker(0), a.walker(1)]), 6),
-            save("dog", sheet([a.dog(0), a.dog(1)]), 6),
+            save("walker", v.sheet([v.walker(0), v.walker(1)]), 4),
+            save("dog", v.sheet([v.dog(0), v.dog(1)]), 4),
         ],
     })
     for k, fn in jobs.items():

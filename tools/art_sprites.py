@@ -1,117 +1,11 @@
-"""Sprite drawings for make_art.py: people, mowers, vehicles, flowers, house,
-animals and the customer. Sprites face RIGHT (+x); mower canvases are centred on
-the collision body so the game needs no sprite offset."""
+"""Sprite drawings for make_art.py for things that don't turn: vehicles, flowers,
+house, borders, pond, props and the customer, drawn 3/4. Things that turn (mowers,
+the player on foot, critters) are voxel models in voxel.py."""
 import random
 
 from canvas import Canvas, hexc
 from make_art import (INK, STEEL, RED, YELLOW, BLUE, GLASS, WOOD, BRICK, CREAM, ROOF, STONE, LEAF,
-                      P_SHIRT, P_SKIN, P_CAP, K_SKIN, K_HAIR, K_SHIRT, lit, shaded_ellipse, shaded_rect)
-
-
-# ---------------------------------------------------------------- people
-
-def player_topdown(c, cx, cy, step, arms_to=None):
-    """The player seen from above: shoulders, capped head, arms reaching forward
-    to arms_to (a pair of points) and feet showing behind on alternate steps."""
-    fy = (-3, 3)
-    for k, dy in enumerate(fy):
-        c.ellipse(cx - 6 + (1 if k == step else -1), cy + dy, 2.2, 1.8, STEEL[1])
-    c.ellipse(cx, cy, 4.5, 7.5, None, lambda nx, ny: lit(P_SHIRT, nx, ny))
-    if arms_to:
-        for (ax, ay), sy in zip(arms_to, (-5, 5)):
-            steps = 8
-            for i in range(steps + 1):
-                t = i / steps
-                x = cx + 1 + (ax - cx - 1) * t
-                y = cy + sy + (ay - cy - sy) * t
-                c.rect(int(x), int(y), 2, 2, P_SHIRT[1] if t < 0.7 else P_SKIN[1])
-    c.ellipse(cx + 0.5, cy, 3.6, 3.6, None, lambda nx, ny: lit(P_CAP, nx, ny))
-    c.rect(int(cx + 3), int(cy - 2), 2, 4, P_CAP[0])  # brim
-
-
-def wheel(c, x, y, w, h, phase=0):
-    c.rect(x, y, w, h, STEEL[0])
-    for i in range(x + phase, x + w, 2):
-        c.set(i, y, STEEL[2])
-        c.set(i, y + h - 1, STEEL[2])
-
-
-# ---------------------------------------------------------------- mowers
-
-def petrol(step, rider=True):
-    W, H = 92, 40
-    c = Canvas(W, H)
-    cx, cy = W // 2, H // 2          # body 36x28
-    x0, y0 = cx - 18, cy - 14
-    for wx, wy in ((x0 + 2, y0 - 2), (x0 + 26, y0 - 2), (x0 + 2, y0 + 25), (x0 + 26, y0 + 25)):
-        wheel(c, wx, wy, 8, 5, step)
-    shaded_rect(c, x0, y0, 36, 28, RED)
-    c.rect(x0 + 2, y0 + 2, 32, 2, RED[4])
-    shaded_ellipse(c, cx + 2, cy, 9, 9, STEEL)
-    shaded_ellipse(c, cx + 2, cy, 4, 4, STEEL[1:5])
-    c.rect(cx + 8, cy - 7, 3, 3, YELLOW[3])       # fuel cap
-    c.rect(cx - 4, cy + 5, 2, 2, STEEL[5])         # pull cord handle
-    hx = x0 - 16
-    for yy in (y0 + 5, y0 + 22):
-        c.rect(hx, yy, 17, 2, STEEL[2])
-        c.rect(hx, yy, 17, 1, STEEL[4])
-    c.rect(hx, y0 + 5, 2, 19, STEEL[3])
-    if rider:
-        player_topdown(c, hx - 7, cy, step, arms_to=((hx, y0 + 5), (hx, y0 + 22)))
-    c.outline(INK)
-    return c
-
-
-def push(step, rider=True):
-    W, H = 80, 36
-    c = Canvas(W, H)
-    cx, cy = W // 2, H // 2          # body 30x22
-    x0, y0 = cx - 15, cy - 11
-    for wy in (y0 - 2, y0 + 19):
-        wheel(c, x0 + 8, wy, 14, 5, step)
-    GREEN = [hexc(h) for h in ("123a1c", "1e5a2a", "2c7a38", "44a050", "68c070")]
-    shaded_rect(c, x0 + 4, y0 + 2, 22, 18, GREEN)
-    # The reel: spiral blades as diagonal steel strokes that roll with the step.
-    for i in range(6):
-        for j in range(16):
-            c.set(x0 + 6 + i * 3 + (j + step * 2) % 3, y0 + 3 + j, STEEL[4] if j % 4 else STEEL[5])
-    c.rect(x0 + 22, y0 + 3, 4, 16, STEEL[2])      # rear roller
-    hx = x0 - 12
-    for yy in (y0 + 5, y0 + 15):
-        c.rect(hx, yy, 17, 2, WOOD[3])
-    c.rect(hx, y0 + 5, 2, 12, WOOD[4])
-    if rider:
-        player_topdown(c, hx - 7, cy, step, arms_to=((hx, y0 + 5), (hx, y0 + 16)))
-    c.outline(INK)
-    return c
-
-
-def rideon(step, rider=True):
-    W, H = 76, 64
-    c = Canvas(W, H)
-    cx, cy = W // 2, H // 2          # body 52x40
-    x0, y0 = cx - 26, cy - 20
-    # Cutting deck underneath, wider than the body.
-    shaded_rect(c, cx - 14, cy - 27, 26, 54, STEEL[1:5])
-    for yy in (cy - 25, cy + 22):
-        c.rect(cx - 12, yy, 22, 2, STEEL[4])
-    for wy in (y0 - 3, y0 + 34):
-        wheel(c, x0 + 1, wy, 16, 9, step)
-    for wy in (y0 + 1, y0 + 32):
-        wheel(c, x0 + 40, wy, 10, 7, step)
-    shaded_rect(c, x0 + 2, y0 + 6, 48, 28, YELLOW)
-    shaded_rect(c, x0 + 32, y0 + 9, 18, 22, YELLOW[1:])
-    for i in range(4):
-        c.rect(x0 + 47, y0 + 12 + i * 5, 2, 3, STEEL[1])   # grille
-    c.rect(x0 + 49, y0 + 9, 2, 3, hexc("fff8c0"))
-    c.rect(x0 + 49, y0 + 28, 2, 3, hexc("fff8c0"))
-    shaded_rect(c, x0 + 8, y0 + 11, 12, 18, STEEL[:4])
-    c.ellipse(x0 + 27, cy, 3.5, 5, STEEL[1])
-    c.ellipse(x0 + 27, cy, 2, 3.5, YELLOW[3])
-    if rider:
-        player_topdown(c, x0 + 15, cy, 0, arms_to=((x0 + 26, cy - 4), (x0 + 26, cy + 4)))
-    c.outline(INK)
-    return c
+                      K_SKIN, K_HAIR, K_SHIRT, lit, shaded_ellipse, shaded_rect)
 
 
 # ---------------------------------------------------------------- vehicles
@@ -322,51 +216,6 @@ def garage():
 
 # ---------------------------------------------------------------- animals
 
-def hedgehog(step):
-    c = Canvas(22, 16)
-    SP = [hexc(h) for h in ("2a1c14", "4a3222", "6a4a30", "8a6844", "b08c60")]
-    c.ellipse(9, 8, 8, 6, None, lambda nx, ny: lit(SP, nx, ny))
-    r = random.Random(3)
-    for _ in range(26):
-        x, y = r.randint(3, 15), r.randint(3, 13)
-        if (x - 9) ** 2 / 64 + (y - 8) ** 2 / 36 < 0.9:
-            c.set(x, y, SP[0])
-            c.set(x + 1, y - 1, SP[4])
-    FACE = [hexc("a07858"), hexc("d0a880"), hexc("f0d0a8")]
-    c.ellipse(17, 8, 3.5, 3, None, lambda nx, ny: lit(FACE, nx, ny))
-    c.set(20, 8, INK)
-    c.set(17, 7, INK)
-    for fx in ((6, 12) if step == 0 else (8, 14)):
-        c.set(fx, 14, SP[0])
-        c.set(fx + 1, 2, SP[0])
-    c.outline(INK)
-    return c
-
-
-def squirrel(step):
-    """Side-on grey squirrel: a big question-mark tail drawn as its own outlined
-    shape so it reads separately from the body."""
-    FUR = [hexc(h) for h in ("2e2e34", "4e4e58", "74747e", "9a9aa4", "c8c8d0")]
-    BELLY = hexc("e8e0d0")
-    tail = Canvas(28, 20)
-    tail.ellipse(7, 7 - step, 6, 6.5, None, lambda nx, ny: lit(FUR, nx, ny, 0.25))
-    tail.ellipse(6, 13, 4, 3.5, None, lambda nx, ny: lit(FUR, nx, ny, 0.2))
-    tail.ellipse(8.5, 6 - step, 2.5, 3, FUR[1])  # the curl's shadowed inside
-    tail.outline(INK)
-    body = Canvas(28, 20)
-    body.ellipse(16, 13, 6, 4.5, None, lambda nx, ny: BELLY if ny > 0.45 else lit(FUR, nx, ny))
-    body.ellipse(22.5, 9.5, 3.8, 3.4, None, lambda nx, ny: lit(FUR, nx, ny))
-    body.set(21, 5, FUR[2])
-    body.set(21, 6, FUR[2])
-    body.set(23, 9, INK)
-    body.set(26, 10, INK)
-    for fx in ((13, 18) if step == 0 else (15, 20)):
-        body.rect(fx, 17, 2, 1, FUR[0])
-    body.outline(INK)
-    tail.blit(body, 0, 0)
-    return tail
-
-
 def splat():
     c = Canvas(24, 20)
     r = random.Random(9)
@@ -488,7 +337,7 @@ def pond(frame):
     return c
 
 
-# ---------------------------------------------------------------- props and the player on foot
+# ---------------------------------------------------------------- props
 
 def stone():
     c = Canvas(12, 10)
@@ -507,43 +356,6 @@ def jerrycan():
     c.rect(8, 1, 2, 3, STEEL[3])
     c.rect(3, 6, 6, 1, RED[4])
     c.rect(3, 9, 6, 1, RED[1])
-    c.outline(INK)
-    return c
-
-
-def walker(step):
-    """The player on foot, from above, facing right: arms swing as they walk."""
-    c = Canvas(22, 22)
-    cx, cy = 10, 11
-    for k, dy in enumerate((-3, 3)):
-        fwd = 3 if k == step else -3
-        c.ellipse(cx + fwd, cy + dy, 2.4, 1.8, STEEL[1])
-    for k, sy in enumerate((-7, 7)):
-        fwd = -3 if k == step else 3
-        c.ellipse(cx + fwd, cy + sy, 1.8, 1.8, P_SKIN[1])
-    c.ellipse(cx, cy, 4.5, 7.5, None, lambda nx, ny: lit(P_SHIRT, nx, ny))
-    c.ellipse(cx + 0.5, cy, 3.6, 3.6, None, lambda nx, ny: lit(P_CAP, nx, ny))
-    c.rect(cx + 3, cy - 2, 2, 4, P_CAP[0])
-    c.outline(INK)
-    return c
-
-
-def dog(step):
-    """The customer's dog, side-on and bouncy: golden, floppy-eared, waggy."""
-    c = Canvas(28, 20)
-    FUR = [hexc(h) for h in ("5a3410", "8a5820", "c08a38", "e0b058", "f8d890")]
-    c.ellipse(13, 11, 8, 5, None, lambda nx, ny: lit(FUR, nx, ny))
-    c.ellipse(22, 7, 4.5, 4, None, lambda nx, ny: lit(FUR, nx, ny))
-    c.rect(25, 7, 3, 3, FUR[3])                   # snout
-    c.set(27, 7, INK)
-    c.set(23, 6, INK)
-    c.rect(20, 6, 2, 5, FUR[1])                   # ear
-    tail_y = 5 if step == 0 else 7
-    c.rect(2, tail_y, 4, 2, FUR[2])
-    c.rect(4, tail_y + 1, 2, 3, FUR[2])
-    for fx in ((8, 17) if step == 0 else (10, 15)):
-        c.rect(fx, 15, 2, 4, FUR[1])
-    c.rect(19, 10, 3, 2, RED[3])                  # collar
     c.outline(INK)
     return c
 

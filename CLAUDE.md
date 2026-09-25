@@ -45,6 +45,9 @@ if a session changes the design, edit the vault doc and push game-dev too.
   `tools/make_font.py`, `tools/make_audio.py` (stdlib only), then `"$GODOT" --headless --editor
   --quit` to import. Once a PNG/WAV is hand-edited, stop regenerating it (the tool would
   overwrite it). Faces and the patio customer use key colours that `Face.swapped()` replaces.
+- The view is 3/4 (design doc "Look and Sound"). Things that turn (mowers, the player on foot,
+  critters) are voxel models in `tools/voxel.py`, rendered to 8-facing sheets; `Facing` picks
+  the row and the sprite never rotates. The scene is Y-sorted; flat ground things sit on z < 0.
 
 ## Keeping this file useful
 Aim to keep it under about 60 lines of current rules. Past incidents and "we tried X, it failed

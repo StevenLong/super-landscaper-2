@@ -20,6 +20,7 @@ func _ready() -> void:
 	_mower = Sprite2D.new()
 	_mower.texture = preload("res://art/mower_petrol.png")
 	_mower.hframes = 3
+	_mower.vframes = 8
 	_mower.scale = Vector2(2, 2)
 	add_child(_mower)
 	_start()
@@ -35,12 +36,11 @@ func _start() -> void:
 func _process(delta: float) -> void:
 	var before := _mower.position
 	_mower.position.x += _dir * SPEED * delta
-	_mower.rotation = 0.0 if _dir > 0.0 else PI
 	lawn.cut_segment(before, _mower.position, 34.0)
 	_stride += SPEED * delta
 	if _stride > 14.0:
 		_stride = 0.0
-		_mower.frame = 1 - _mower.frame
+		_mower.frame = (1 - _mower.frame % 3) + (0 if _dir > 0.0 else 4 * 3) # the east or west row
 	if (_dir > 0.0 and _mower.position.x > 1280.0 + OFF) or (_dir < 0.0 and _mower.position.x < -OFF):
 		_lane += 1
 		_dir = -_dir

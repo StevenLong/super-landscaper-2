@@ -53,11 +53,9 @@ func _physics_process(delta: float) -> void:
 	elif blocked.is_valid() and blocked.call(next):
 		# Something solid ahead: turn well away and try again next frame.
 		heading = heading.rotated(randf_range(1.6, 2.6) * (1.0 if randf() < 0.5 else -1.0))
-		rotation = heading.angle()
 		queue_redraw()
 		return
 	position = next
-	rotation = heading.angle()
 	if not lawn_rect.grow(30.0).has_point(position):
 		queue_free()
 	queue_redraw()
@@ -78,7 +76,6 @@ func squash() -> void:
 		return
 	dead = true
 	set_deferred("monitoring", false)
-	rotation = 0.0
 	squashed.emit(self)
 	queue_redraw()
 	get_tree().create_timer(12.0).timeout.connect(queue_free)
@@ -88,9 +85,5 @@ func _draw() -> void:
 	if dead:
 		return # main.gd's Decals draw the splat, which outlasts this node
 	var tex: Texture2D = preload("res://art/hedgehog.png") if kind == "hedgehog" else preload("res://art/squirrel.png")
-	var fw := tex.get_width() / 2.0
 	var frame := int(_t * (8.0 if speed > 0.0 and _pause <= 0.0 else 0.0)) % 2
-	# Walking left would draw upside down once rotated; mirror vertically instead.
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1, -1 if heading.x < 0.0 else 1))
-	draw_texture_rect_region(tex, Rect2(Vector2(-fw / 2.0, -tex.get_height() / 2.0), Vector2(fw, tex.get_height())),
-		Rect2(frame * fw, 0, fw, tex.get_height()))
+	Facing.draw(self, tex, 2, frame, heading.angle())

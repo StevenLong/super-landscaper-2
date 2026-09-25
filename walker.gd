@@ -38,11 +38,20 @@ func _physics_process(_delta: float) -> void:
 		queue_redraw()
 
 
+## Drawn upright whatever way the body faces: rotation picks the art's facing row.
+## A carried thing is held out in front, so it's behind you while you walk away.
 func _draw() -> void:
-	var t := preload("res://art/walker.png")
-	var fw := t.get_width() / 2.0
-	draw_texture_rect_region(t, Rect2(-fw / 2.0, -t.get_height() / 2.0, fw, t.get_height()), Rect2(_frame * fw, 0, fw, t.get_height()))
+	draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
+	var held := Vector2(10, 0).rotated(rotation) * Vector2(1.0, 0.6) + Vector2(0, -12)
+	var away := sin(rotation) < -0.1
+	if away:
+		_draw_held(held)
+	Facing.draw(self, preload("res://art/walker.png"), 2, _frame, rotation)
+	if not away:
+		_draw_held(held)
+
+
+func _draw_held(at: Vector2) -> void:
 	if carrying != "":
 		var c: Texture2D = preload("res://art/stone.png") if carrying == "stone" else preload("res://art/jerrycan.png")
-		draw_set_transform(Vector2(10, 0), -rotation, Vector2.ONE)
-		draw_texture(c, -c.get_size() / 2.0)
+		draw_texture(c, at - c.get_size() / 2.0)

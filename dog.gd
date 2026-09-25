@@ -74,21 +74,16 @@ func _on_body_entered(body: Node2D) -> void:
 
 
 func _draw() -> void:
-	var t := preload("res://art/dog.png")
-	var fw := t.get_width() / 2.0
 	var frame := int(_t * 9.0) % 2
-	var flip := -1.0 if heading.x < 0.0 else 1.0
 	var hop := -absf(sin(_t * 12.0)) * 3.0
+	Facing.draw(self, preload("res://art/dog.png"), 2, frame, heading.angle(), Vector2(0, hop))
 	if following:
 		# The lead, from the collar to the hand, sagging a little.
-		var hand := to_local(following.global_position) + Vector2(0, -4)
-		var collar := Vector2(4.0 * flip, -4.0 + hop)
+		var hand := to_local(following.global_position) + Vector2(0, -14)
+		var collar := Vector2(6, 0).rotated(heading.angle()) * Vector2(1.0, 0.6) + Vector2(0, -10.0 + hop)
 		var mid := (collar + hand) / 2.0 + Vector2(0, 6)
 		draw_polyline(PackedVector2Array([collar, mid, hand]), Color("c03828"), 1.0)
-	draw_set_transform(Vector2(0, hop), 0.0, Vector2(flip, 1))
-	draw_texture_rect_region(t, Rect2(-fw / 2.0, -t.get_height() / 2.0, fw, t.get_height()), Rect2(frame * fw, 0, fw, t.get_height()))
 	if limping:
-		draw_set_transform(Vector2.ZERO)
 		for i in 3:
 			var a := _t * 5.0 + i * TAU / 3.0
 			draw_circle(Vector2(cos(a) * 10.0, -14.0 + sin(a) * 3.0), 1.5, Color("f8e070"))

@@ -23,7 +23,7 @@ signal condition_changed(fraction: float)
 @export var fuel_burn := 1.0 ## per second
 @export var regen := 0.0 ## stamina recovered per second while not pushing
 @export var empty_speed_scale := 0.35 ## pushing a dead mower
-@export var sprite_kind := "petrol" ## art/mower_<kind>.png: two frames of motion, then empty
+@export var sprite_kind := "petrol" ## art/mower_<kind>.png: two frames of motion, then empty; a row per facing
 @export var toughness := 1.0 ## damage taken is divided by this
 
 @onready var fuel := max_fuel
@@ -66,10 +66,22 @@ func _ready() -> void:
 	_apply_visual()
 
 
+var _anim := 0 ## 0/1 while moving, 2 standing empty
+
+
+## The sprite stays upright; the body's rotation picks the facing row.
+func _show() -> void:
+	var spr: Sprite2D = $Sprite
+	spr.global_rotation = 0.0
+	spr.frame = Facing.of(rotation) * 3 + _anim
+
+
 func _apply_visual() -> void:
 	var spr: Sprite2D = $Sprite
 	spr.texture = load("res://art/mower_%s.png" % sprite_kind)
 	spr.hframes = 3 # two frames of motion, then empty
+	spr.vframes = 8 # the facings: the body turns, the sprite picks a row and stays upright
+	_show()
 	if _engine == null:
 		return # not in the tree yet; _ready will finish the job
 	_engine.stream = load("res://audio/%s.wav" % {"push": "reel", "rideon": "engine_rideon"}.get(sprite_kind, "engine_petrol"))
@@ -178,10 +190,11 @@ func _physics_process(delta: float) -> void:
 	# Walk / wheel animation: flip frames every few pixels travelled.
 	_stride += global_position.distance_to(before)
 	if not occupied:
-		$Sprite.frame = 2
-	elif _stride > 7.0 or $Sprite.frame == 2:
+		_anim = 2
+	elif _stride > 7.0 or _anim == 2:
 		_stride = 0.0
-		$Sprite.frame = 1 - mini($Sprite.frame, 1)
+		_anim = 1 - mini(_anim, 1)
+	_show()
 	if lawn:
 		global_position = lawn.global_position + lawn.keep_in(global_position - lawn.global_position, edge_margin)
 		var was := lawn.cut_fraction()

@@ -73,8 +73,9 @@ the biggest open question); 46 is buildable any time.
    smashable; (2) DONE (S6): fences, hedges, truck and trailer 3/4 (54 went with it), the
    front run fades while you're behind it; (3) DONE (S6): depth sorting, checked in
    screenshots behind/in front of a trunk, the garage, the truck and the customer; (4) DONE (S6): trees 3/4, a round shaded trunk
-   with roots, canopies lit from above; (5) mowers, the player on foot and critters drawn per
-   facing direction, the sprite no longer rotated: 8 facings (the dev's call, S6).
+   with roots, canopies lit from above; (5) DONE (S6): mowers, the player on foot, critters
+   and the dog are voxel models rendered at 8 facings (tools/voxel.py), the sprite
+   upright. 57 is done; what's left is the dev's eye on it (and any hand pixel art).
 
 ### Notes 2026-09-25b (session 4 play checks)
 
