@@ -8,3 +8,7 @@ Traps and "we tried X, it failed because Y". Current rules live in CLAUDE.md.
   remainder is intended, put `@warning_ignore("integer_division")` on the line above.
 - A local named like a member, a method, or an Object method (`tr`, `panel`, `name`, `size`)
   raises SHADOWED_VARIABLE. Pick another name.
+- The job scene "running at 49 FPS" (2026-09-25) was the OMEN laptop's hybrid graphics, not
+  the game: an empty tree gave the same 49, every API on the RTX 5080 blocked ~20 ms in
+  present, and Vulkan on the AMD iGPU (which drives the panel) ran the job at 1785 FPS
+  uncapped. Check `tools/fps.gd` (and `EMPTY=1`) before hunting game code for frame rate.
