@@ -127,35 +127,32 @@ def paving_tile(seed):
 # ---------------------------------------------------------------- trees
 
 def canopy(d, seed):
-    """Round tree canopy seen from above, d px across, built from leaf clumps,
-    with a soft shadow falling down-right onto the grass."""
+    """A tree's canopy seen 3/4, d px across: leaf clumps lit from above, a shaded
+    underside, a broken outline. No shadow: tree.gd lays that on the ground."""
     import math
     r = random.Random(seed)
     pad = 8
     c = Canvas(d + pad, d + pad)
-    cx = cy = (d + 4) / 2
-    R = d / 2
-    shadow = hexc("0c200c", 110)
-    c.ellipse(cx + 4, cy + 5, R, R, shadow)
-    c.ellipse(cx, cy, R, R, LEAF[1])
+    cx = cy = (d + pad) / 2
+    R = d / 2 - 1
+    c.ellipse(cx, cy, R - 2, R - 2, LEAF[1])
     clumps = []
-    for _ in range(int(d * 2.2)):
+    for _ in range(int(d * 2.4)):
         a = r.random() * 6.283
-        dist = (r.random() ** 0.5) * (R - 3.5)
-        clumps.append((cx + math.cos(a) * dist, cy + math.sin(a) * dist, r.uniform(3.5, 6.5) * d / 72))
-    # Paint back-to-front: lower-right (shadowed) clumps first, top-left last.
-    clumps.sort(key=lambda t: -(t[0] + t[1]))
+        dist = (r.random() ** 0.45) * (R - 2)
+        clumps.append((cx + math.cos(a) * dist, cy + math.sin(a) * dist, r.uniform(3.5, 6.5) * max(1.0, d / 72)))
+    # Paint bottom first, top last, so the lit upper clumps sit over the shaded ones.
+    clumps.sort(key=lambda t: -t[1])
     for x, y, rr in clumps:
-        up = (-(x - cx) * 0.6 - (y - cy) * 0.8) / R
-        shaded_ellipse(c, x, y, rr, rr, LEAF, bias=up * 0.3 - 0.05)
-    # Outline only the canopy, not the shadow.
+        up = (-(x - cx) * 0.35 - (y - cy) * 0.95) / R      # -1 underside .. 1 top
+        bias = up * 0.35 - (0.25 if y > cy + R * 0.45 else 0.0)
+        shaded_ellipse(c, x, y, rr, rr, LEAF, bias=bias)
     edge = []
     for y in range(c.h):
         for x in range(c.w):
-            if c.px[y][x] == shadow or c.px[y][x][3] == 0:
+            if c.px[y][x][3] == 0:
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    n = c.get(x + dx, y + dy)
-                    if n[3] == 255 and n != shadow:
+                    if c.get(x + dx, y + dy)[3] == 255:
                         edge.append((x, y))
                         break
     for x, y in edge:

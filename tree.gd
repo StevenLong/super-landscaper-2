@@ -27,7 +27,6 @@ func _ready() -> void:
 	_crown.hframes = 3
 	_crown.frame = variant % 3
 	_crown.position = crown_centre()
-	_crown.offset = Vector2(2, 2) # the art pads for the shadow; centre it on the canopy
 	add_child(_crown)
 
 
@@ -48,16 +47,33 @@ func crown_rect() -> Rect2:
 	return Rect2(position + crown_centre() - Vector2(canopy, canopy), Vector2(canopy, canopy) * 2.0)
 
 
+const BARK := [Color("2e1c10"), Color("4a2e18"), Color("6a4428"), Color("8a6038"), Color("a87c4c")]
+
+
+## The trunk, drawn a row at a time: round (lit from the left), tapering a little,
+## flaring into roots at the foot, with grooves of bark. The canopy hides its top.
 func _draw() -> void:
-	var bark := Color("6a4428")
-	var dark := Color("3a2414")
 	var top := crown_centre().y + canopy * 0.5
-	draw_set_transform(Vector2(0, 2), 0.0, Vector2(1.0, 0.45))
-	draw_circle(Vector2.ZERO, radius + 6.0, Color(0.05, 0.12, 0.05, 0.45)) # shadow on the grass
-	draw_circle(Vector2.ZERO, radius + 2.0, dark) # the root flare
+	draw_set_transform(Vector2(0, 1), 0.0, Vector2(1.0, 0.35))
+	draw_circle(Vector2.ZERO, canopy * 0.8, Color(0.05, 0.12, 0.05, 0.35)) # the canopy's shadow, sun overhead
 	draw_set_transform(Vector2.ZERO)
-	var trunk := Rect2(-radius, top, radius * 2.0, -top)
-	draw_rect(trunk.grow(1.0), dark)
-	draw_rect(trunk, bark)
-	draw_rect(Rect2(-radius + 2.0, top, maxf(2.0, radius * 0.5), -top - 2.0), Color("8a6038")) # lit side
-	draw_rect(Rect2(radius * 0.4, top, 2.0, -top - 2.0), Color("50321c")) # a groove of bark
+	var rng := RandomNumberGenerator.new()
+	rng.seed = variant * 31 + int(canopy)
+	var grooves: Array[Vector3] = [] # x across (-1..1), from height, to height
+	for i in 2 + int(radius / 5.0):
+		var a := rng.randf_range(0.0, -top * 0.6)
+		grooves.append(Vector3(rng.randf_range(-0.6, 0.6), a, a + rng.randf_range(6.0, -top * 0.6)))
+	# (edge of the band across the trunk, colour): rim, highlight, mid, shade, rim
+	var bands := [[-0.7, BARK[2]], [-0.25, BARK[4]], [0.2, BARK[3]], [0.7, BARK[2]], [1.0, BARK[1]]]
+	for h in int(-top):
+		var hw := radius * (1.0 - 0.12 * h / -top) + 4.0 * pow(maxf(0.0, 1.0 - h / 7.0), 2.0)
+		var y := -1.0 - h
+		draw_rect(Rect2(-hw - 1.0, y, hw * 2.0 + 2.0, 1.0), BARK[0]) # outline
+		var from := -hw
+		for b: Array in bands:
+			var to: float = hw * b[0]
+			draw_rect(Rect2(from, y, to - from, 1.0), b[1])
+			from = to
+		for g in grooves:
+			if h >= g.y and h <= g.z:
+				draw_rect(Rect2(roundf(g.x * hw), y, 1.0, 1.0), BARK[1])
