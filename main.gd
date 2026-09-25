@@ -686,6 +686,8 @@ func _stone_hit_test(p: Vector2) -> String:
 		return "window" if _window_at(p) >= 0 else "wall"
 	if Rect2($Truck.position - Vector2(60, 28), Vector2(120, 56)).has_point(p):
 		return "truck"
+	if walker and p.distance_to(mower.global_position) < 18.0: # your own mower, parked
+		return "mower"
 	for a in $Animals.get_children():
 		if a is Animal and not a.dead and a.position.distance_to(p) < CRITTER_HIT:
 			return "animal"
@@ -736,12 +738,24 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_react()
 		"gone":
 			pass # over the fence and into next door's garden
+		"mower":
+			Sfx.play("clonk")
+			mower.damage(8.0)
+			shake(2.0)
+			add_stone.call_deferred(p)
+		"tree":
+			Sfx.play("thud")
+			_rustle(p, Vector2.DOWN) # leaves come down
+			add_stone.call_deferred(p - f.velocity.normalized() * 8.0) # drops just outside the trunk
 		_:
 			if _in_pond(p):
 				Sfx.play("splash")
 				_splash(p)
 			else:
 				Sfx.play("thud")
+				for b in $Scenery.get_children():
+					if b.has_method("flattened_count") and b.rect().has_point(p):
+						b._trample(b.to_local(p), 12.0) # flattens a flower or two where it lands
 				add_stone.call_deferred(p)
 
 

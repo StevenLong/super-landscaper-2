@@ -95,6 +95,19 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 3
 		5:
 			assert(m.at_truck(), "walked to the truck")
+			# On foot, a stone can hit your own parked mower, and one landing in a bed flattens flowers.
+			assert(m._stone_hit_test(mower.global_position) == "mower", "a stone hits your parked mower")
+			var cond: float = mower.condition
+			var hit := FlyingStone.new()
+			hit.position = mower.global_position
+			m._on_stone_landed(hit, "mower")
+			assert(mower.condition < cond, "and dents it")
+			var bed: Node2D = m.get_node("Scenery/Flowerbed")
+			var flat0: int = bed.flattened_count()
+			hit.position = bed.rect().get_center()
+			m._on_stone_landed(hit, "")
+			assert(bed.flattened_count() > flat0, "a stone landing in a flower bed flattens flowers")
+			hit.free()
 			# Throwing: pick up a stone and lob it at a window.
 			var house: Node2D = m.get_node("Scenery/House")
 			var bills_before: float = m.bills
