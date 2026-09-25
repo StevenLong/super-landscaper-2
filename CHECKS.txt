@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (12 checks, 4 loads, about 20 minutes)
+PLAY CHECKS OWED  (15 checks, 4 loads, about 20 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -6,78 +6,95 @@ Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep; in a job [0]
 
 
 ================================================================================
-LOAD 1 of 4: TITLE AND MENUS      (about 2 min)
+LOAD 1 of 4: TITLE, BOARD AND SOUND      (about 4 min)
 ================================================================================
 
-S3-TITLE
-The title mower never shows its flip at the end of a row, and no line floats over the w's
-(try dragging the window to a few sizes).
->Fixed
+S4-SETTINGS
+The title has Music and Sound buttons. They flip, relabel, and the setting holds in a job.
+>
 
-S3-WASD
-WASD moves around every menu: title, board, briefing, truck, pause.
->Yes
+S4-PAD-MENUS
+Gamepad: A presses buttons in every menu (title, board, briefing, truck, pause).
+>
 
+S4-ADS
+The board reads as newspaper classifieds, no pictures. Can you tell what each customer is
+about from the ad alone?
+>
 
-================================================================================
-LOAD 2 of 4: A JOB, PAID      (about 6 min)
-================================================================================
-
-S3-STAMINA
-Push mower: parking at the truck no longer refills PEP; only resting brings it back.
->Yes
-
-S3-FACE
-Mow up into the top-right corner: the customer's face slides to the bottom right, then
-slides back when you leave. Never in your way?
->Yes
-
-S3-PAID
-Hand in at the truck: the menu turns into "Paid" (their line, the money, any tip) with
-Drive off / Keep going. Keep going lets you hang about; Drive off goes straight to the board,
-and the Last job panel top left reads right (paid, costs, net, rep change, any mischief).
->yes
-
-S3-CHEATS
-Board [2] a few times, take a medium or large lawn, [0] in the job to finish it. Did the
-high end show up, and does the rundown look right for a [0] finish?
->Yes
+S4-AUDIO
+Listen through the menu blips (now lower and softer) and a job's sounds and music. Name the
+worst offenders, for the SNES-style audio pass (NOTES 45).
+>
 
 
 ================================================================================
-LOAD 3 of 4: GETTING FIRED      (about 4 min, needs a gardener job)
+LOAD 2 of 4: A JOB ON THE STREET      (about 6 min)
 ================================================================================
 
-S3-FIRED
-Trample the gardener's flowers until they fire you: buzzer, their line, FIRED! over them,
-and you stay in the garden with a hint to leave from the truck.
->So the negative rep and fired speech bubble thingies appearing over the customer's head means they can happen off screen where you can't see them. The text appearing at the top of the screen is a little too subtle and too detached. It should maybe appear under their portrait and if we could do the thing where their mouth moves and the text appears a word at a time, that would be neat. And also the rep damage numbers should also appear at the portrait. They can also appear over the customer's head in the real world, but because the customer can be off screen, they should also appear by the portrait. Also, the actual firing event is a little bit too subtle. It doesn't read as a mini game over. It just has the same sort of level of noise as any talking or rep change or whatever. We can probably do a large game over-esque text on the screen temporarily that just reads fired or you've been fired or whatever. It doesn't need to pause or break gameplay. Just needs to be more obvious that a kind of a breakpoint has happened. 
+S4-STREET
+You start at the end of the drive by your truck, parked at the kerb. Drive up the drive and
+back out to the truck. Next door's lawns and the road are there to see but not reach. Over a
+few jobs the garage turns up on both sides of the house. Anything feel off?
+>
 
-S3-SPITE
-Keep flattening flowers after being fired: they shout, "Rep -N" pops. Drive off from the
-truck; the board's Last job panel shows FIRED and the extra rep lost. Satisfying?
->Yes
+S4-TREES
+Trees now have a visible trunk under a raised canopy, and the canopy fades while you're under
+or beside it. Do they read as trees? Only the trunk is solid now.
+>
+
+S4-VIEW
+Feel check (NOTES 44): the trees and house are 3/4 view, the mower, truck and player are
+straight top-down. Does it look like a mismatch?
+>
+
+S4-TELLS
+Before a critter comes out, its hedge, fence or tree jiggles and drops a few leaves.
+Noticeable without being loud?
+>
+
+S4-SQUASH
+Run over a critter: the splat stays for the rest of the job, and the mower trails red for a
+short way after.
+>
+
+S4-DOG
+Catch the loose dog on foot: a red lead to your hand, "On the lead!", and hints that say what
+to do.
+>
 
 
 ================================================================================
-LOAD 4 of 4: STILL OWED FROM EARLIER      (about 8 min, petrol mower, use the cheats)
+LOAD 3 of 4: STONES      (about 5 min, [2] a few times for a lawn with a pond)
 ================================================================================
 
-S3-GLUG
-Fetch the fuel can from the truck and pour it into the mower: the glug plays once and
-stops. (It used to glug forever.)
->Yes
+S4-SPLASH
+Throw a stone into the pond: it flies over the edge, lands in the water and splashes (rings,
+spray, a splash sound, no glug).
+>
 
-S1-PONDS
-With [2] to reach bigger lawns: a pond shows up, critters walk round it, and a stone that
-lands in it plops once.
->throwing a stone into the pond. It would be neat if it could cause a splash and currently it plays the fuel glugging sound which doesn't really match at all. Also the sprite disappears under the pond when it should sort of land on the top of the sprite and then disappear and then cause a splash. 
+S4-THROWS
+Throw stones at: a window (it stays smashed), your own parked mower (it dents), a tree
+(leaves fall), a flower bed (a flower or two flattens), a critter (easier to hit than before).
+>
 
-S1-STONES
-A mowed or thrown stone hitting the truck (-$20), a critter, and the dog. Any you manage.
->yes
+S4-TALLY
+After the job, the board's Last job panel lists "Also counted: ..." for what you did. File for
+bankruptcy (or run out of rep) to see the whole run's tally. A pleasant surprise?
+>
 
-S1-PAD
-Gamepad: stick or d-pad drives, A interacts, X hops off, B throws, Y looks, Start pauses.
-(Owed since session 1.)
->The menus don't seem to work with the face buttons on the gamepad. In-game stuff seems like it works though. 
+
+================================================================================
+LOAD 4 of 4: GETTING FIRED      (about 3 min, needs a gardener job)
+================================================================================
+
+S4-FIRED
+Trample the gardener's flowers until they fire you: their line types out under the portrait
+while the mouth moves, "Rep -18" pops beside it, and a big YOU'RE FIRED banner shows above you
+without stopping play. Does it read as a breakpoint now?
+>
+
+S4-TALKING
+Any customer line (a nag, a squashed hedgehog): the mouth moves while the words come out,
+then stops.
+>

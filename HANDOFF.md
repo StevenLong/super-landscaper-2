@@ -6,6 +6,37 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 4 (2026-09-25): every buildable NOTES item, the street, the tally, classifieds
+- Your session-3 answers: 9 of 12 signed off (title flip, WASD, stamina, face duck, paid
+  menu, cheats, spite, glug, stones). Three became NOTES 41-43 and are now built: pad A in
+  menus (Godot's ui_accept has no pad button), pond splash (the hit test ignored hop height),
+  reactions at the portrait.
+- Your calls this session: talking mouth as a second face frame; garage attached left or
+  right with the drive to it, truck at the kerb (more variety later, NOTES 46); ads read as
+  ads with the customer's gimmick blended in; the tally shows only non-zero counts, as a
+  surprise. Promoted to the design doc (veto any): street layout, reactions at the
+  portrait, classifieds, the tally (game-dev 4322d86).
+- My calls, flagged for your veto: trees went 3/4 (visible trunk, only the trunk is solid,
+  canopy fades near you); the fired banner reads YOU'RE FIRED; the corner face no longer
+  ducks, because with the camera always centred you can never be near it (it was your option
+  b in session 3).
+- Also built: splats that last and a red trail, spawn tells (rustle and leaves 0.9s before),
+  a dog lead and hints, smashed windows, 16px critter hits, stones at your mower/trees/beds,
+  title music/sound toggles, softer menu blips.
+- New notes from you: 44 (one view for everything? a feel check), 45 (audio grates and
+  leans NES not SNES; synth in the tool or real samples is your call after a listen).
+- Verified: run_all green (16 checks; new test_street, test_tells, test_title); screenshots
+  of every visual change; sim_balance after the trees and the street stays in the same
+  range (push 85% 278s, petrol 189s, ride-on 130s). None of it played or listened to.
+
+OWED CHECKS: CHECKS.txt (15 checks, four loads, about 20 min). S1-PAD is now S4-PAD-MENUS.
+
+NEXT:
+1. Play CHECKS.txt and answer on the `>` lines. S4-VIEW and S4-AUDIO feed 44 and 45.
+2. A `/grill` session on the queued design items: 21 (escalation, the biggest), 22, 25, 26,
+   27, 29, 38, 40.
+3. 46, more layout variety, whenever a build session wants something concrete.
+
 ## Session 3 (2026-09-24): play-check triage, quick fixes, one rundown, fired stays in the job
 - You answered all 29 checks. Signed off: briefing, engine audio, tank trade-off, condition
   gauge, ride-on, push-mower winnability, board fit, hand-in send-back, hanging about, spawns

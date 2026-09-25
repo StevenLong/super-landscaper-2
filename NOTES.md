@@ -15,6 +15,7 @@ BLOCKS = spoils the next playtest.
 46. [FEATURE, moderate] More layout variety (after 12/39's attached garage, left or right):
    a detached garage, the drive's shape, the customer's car in the drive (one more thing
    to hit), houses across the road. Not formulaic, but not drastically different.
+
 **Needs a grill (design calls, queued for one session)**
 
 21. [DESIGN, large] Escalation (S1-WINNABLE). Right now only patience can end a run, so there
@@ -58,8 +59,8 @@ BLOCKS = spoils the next playtest.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
-PROPOSED ORDER: 46. A grill session
-on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
+PROPOSED ORDER: a grill session on 21, 22, 25, 26, 27, 29, 38, 40 (eight waiting, and 21 is
+the biggest open question); 46 is buildable any time.
 
 ### Notes 2026-09-25 (session 3 play checks)
 
@@ -72,4 +73,4 @@ on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
    QUESTION: synthesise SNES-ish in the tool (wavetable/sampled voices, filtering, reverb),
    or source/commission real samples? Needs a listen-through to pick the worst offenders.
 
-PROPOSED ORDER: 44 is a feel check; 45 needs a listen-through.
+PROPOSED ORDER: 44 waits on S4-VIEW, 45 on S4-AUDIO (both in CHECKS.txt); then decide.
