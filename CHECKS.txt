@@ -11,21 +11,21 @@ LOAD 1 of 4: TITLE, BOARD AND SOUND      (about 4 min)
 
 S4-SETTINGS
 The title has Music and Sound buttons. They flip, relabel, and the setting holds in a job.
->
+>Yes
 
 S4-PAD-MENUS
 Gamepad: A presses buttons in every menu (title, board, briefing, truck, pause).
->
+>Mostly. In the board menu, left and right can go up and down the list of mowers. Might not need a fix if we are going to make the shop.
 
 S4-ADS
 The board reads as newspaper classifieds, no pictures. Can you tell what each customer is
 about from the ad alone?
->
+>Yes
 
 S4-AUDIO
 Listen through the menu blips (now lower and softer) and a job's sounds and music. Name the
 worst offenders, for the SNES-style audio pass (NOTES 45).
->
+>Moving in the menu is better. The sound that plays the moment you enter a job has an audio pop that is not nice, could be an audio source getting killed mid playback on the scene change. The customer screaming about each flower being run over with no gap or pause when you can hit many flowers in a short time is painful to hear. All the music tracks are repetitive earaches. I have Ableton and some rudimentary music production skills, we can do a session for audio later and just have some placeholders here for now.
 
 
 ================================================================================
@@ -36,32 +36,32 @@ S4-STREET
 You start at the end of the drive by your truck, parked at the kerb. Drive up the drive and
 back out to the truck. Next door's lawns and the road are there to see but not reach. Over a
 few jobs the garage turns up on both sides of the house. Anything feel off?
->
+>The abscence of anything in the surrounding lots is surreal. It costs us an opportunity to make the world feel more varied and interesting. We could have a variety of different things for different surrounding plots. Some forest, a park, a playground, other houses, an abandoned empty lot. Instead, we have a weird green void. 
 
 S4-TREES
 Trees now have a visible trunk under a raised canopy, and the canopy fades while you're under
 or beside it. Do they read as trees? Only the trunk is solid now.
->
+>Not sure I like the angle switch. And we instead have a top-down where the canopy is visible but fades when you get under it or close to under it. And then the tree trunk stays the obvious solid mass and is more circular. The current one is an odd combination of 2D and 3D. It makes the trunk look like paper cardboard cutout. This as well as other things. But we'll want more variety in the future. You know, much smaller or larger trees or decorative bushes out in the middle of the lawn. Just to add some variety to these things. Same for other obstructions. Right now we just have stones, but there could be lawn games, trash, traffic cones, other ornamental things. What are those lawn pelicans? Garden gnomes. 
 
 S4-VIEW
 Feel check (NOTES 44): the trees and house are 3/4 view, the mower, truck and player are
 straight top-down. Does it look like a mismatch?
->
+>As I said above, I'm not feeling the change in the trees. I think the house can stay the way it is, and we keep the top down for the rest. I feel like maybe there is a less large difference. Maybe it doesn't need to be three-quarters, but we could we would still want to see the face of the house so we know where the windows are. Let me know what you think would be the best course here. Looking at everything critically, the perspective is wildly all over the place, as is sort of the scale of things. The house is a small rectangle. The driveway is miles long. I'm not sure what the fix here is. Maybe we do a visual design session and you can show me some examples of things in matching perspective with a few different, you know, examples completely top-down, three-quarters, whatever the non-isometric one is. Maybe that is three quarters, but a few different versions. 
 
 S4-TELLS
 Before a critter comes out, its hedge, fence or tree jiggles and drops a few leaves.
 Noticeable without being loud?
->
+>Yes. One thing slightly related to this though, now that the hedges are freed from the edges of the world, they don't look quite as they don't make quite as much sense visually as they did before. So they might benefit a lot from a a visual rework with the new positions in mind. 
 
 S4-SQUASH
 Run over a critter: the splat stays for the rest of the job, and the mower trails red for a
 short way after.
->
+>yes
 
 S4-DOG
 Catch the loose dog on foot: a red lead to your hand, "On the lead!", and hints that say what
 to do.
->
+>yes
 
 
 ================================================================================
@@ -71,17 +71,17 @@ LOAD 3 of 4: STONES      (about 5 min, [2] a few times for a lawn with a pond)
 S4-SPLASH
 Throw a stone into the pond: it flies over the edge, lands in the water and splashes (rings,
 spray, a splash sound, no glug).
->
+>Yes. Unrelated, but I better say before I forget, we only show keyboard controls and that's not very helpful when you're using a controller. Might be nice to switch, depending on last input, and have some gamepad control icons. I didn't try it but what happens if the stone lands at the edge of the pond? Will the ripples show over the ground?
 
 S4-THROWS
 Throw stones at: a window (it stays smashed), your own parked mower (it dents), a tree
 (leaves fall), a flower bed (a flower or two flattens), a critter (easier to hit than before).
->
+>Yes. The tree animation is a bit off. It would be nice if the whole tree would shake on impact.
 
 S4-TALLY
 After the job, the board's Last job panel lists "Also counted: ..." for what you did. File for
 bankruptcy (or run out of rep) to see the whole run's tally. A pleasant surprise?
->
+>Yes
 
 
 ================================================================================
@@ -92,9 +92,9 @@ S4-FIRED
 Trample the gardener's flowers until they fire you: their line types out under the portrait
 while the mouth moves, "Rep -18" pops beside it, and a big YOU'RE FIRED banner shows above you
 without stopping play. Does it read as a breakpoint now?
->
+>yes
 
 S4-TALKING
 Any customer line (a nag, a squashed hedgehog): the mouth moves while the words come out,
 then stops.
->
+>yes, I think I'd like the dialogue reveal to be a bit slower and the sprite work on the mouth could be a little bit better. It's a little hard to notice the mouth moving. similar to doing an audio session, we might consider having me take some of your creations and patterns and making my own pixel art. But I'm not sure about that yet. You're doing a pretty good job so far. 

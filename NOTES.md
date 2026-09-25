@@ -62,15 +62,65 @@ BLOCKS = spoils the next playtest.
 PROPOSED ORDER: a grill session on 21, 22, 25, 26, 27, 29, 38, 40 (eight waiting, and 21 is
 the biggest open question); 46 is buildable any time.
 
-### Notes 2026-09-25 (session 3 play checks)
+### Notes 2026-09-25 (session 3 play checks, answered in session 4's S4-VIEW / S4-AUDIO)
 
-44. [DESIGN, moderate] One view for everything? Trees and the house are 3/4; the mower,
-   truck, player and critters are straight top-down. Does it read as a mismatch? A feel
-   check first (owed in CHECKS.txt), then decide whether the sprites move to 3/4.
-45. [DESIGN, large] Audio is grating: a listener found much of the music and sound
-   unpleasant, and it leans NES (bare squares, noise) rather than SNES (sampled
-   instruments, softer envelopes, echo/reverb). All of it comes from `tools/make_audio.py`.
-   QUESTION: synthesise SNES-ish in the tool (wavetable/sampled voices, filtering, reverb),
-   or source/commission real samples? Needs a listen-through to pick the worst offenders.
+44. [DESIGN, large] Perspective and scale: a visual design session (S4-VIEW, S4-TREES).
+   The 3/4 trees are vetoed: the flat trunk reads as a cardboard cutout. Decided: trees go
+   back to top-down, a round canopy that fades when you're under or near it, and a round
+   trunk that is the obvious solid mass. The house keeps showing its face (you need to see
+   the windows), but maybe a shallower tilt. Beyond that the dev finds the perspective and
+   the scale all over the place: the house is a small rectangle, the drive is miles long.
+   FIX: a session where the same garden is mocked up in a few matching styles (pure
+   top-down; a shallow oblique on tall things only; full 3/4 like A Link to the Past /
+   Stardew) with the house/drive/lawn scale corrected, and the dev picks. 54, 55, 56 and
+   the tree redraw all redraw art, so they wait on this. The dev may take over some pixel
+   art later (not decided).
+45. [DESIGN, large] Audio (S4-AUDIO). Decided: the dev will do a music/sound session in
+   Ableton later; until then `tools/make_audio.py` output stays as placeholders. All the
+   music tracks are repetitive earaches; menu blips are better now. Two concrete bugs came
+   out of the listen-through and are filed as 48 and 49.
 
-PROPOSED ORDER: 44 waits on S4-VIEW, 45 on S4-AUDIO (both in CHECKS.txt); then decide.
+### Notes 2026-09-25b (session 4 play checks)
+
+**Build (no design call needed)**
+
+47. [BUG, small] Board: pad (and arrows) left/right step up and down the mower list
+   (S4-PAD-MENUS). Home: `board.gd` `_mower_row`, Godot's default focus neighbours. The dev
+   says it may not need a fix if 27's shop replaces this menu.
+48. [BUG, small] An audio pop the moment a job starts (S4-AUDIO). Not diagnosed. Suspect:
+   `mower.gd:76` starts the engine loop at 0 dB in `_apply_visual`, before `_update_sound`
+   sets its volume, so the first frames jump. Board sounds can't be the culprit (the Sfx
+   pool is an autoload and survives the scene change). FIX: start the engine at -80 dB and
+   let `_update_sound` bring it up; confirm by recording the first second of a job.
+49. [BUG, small] The customer screams on every flower flattened, back to back (S4-AUDIO).
+   `main.gd:1033` `_on_trampled` calls `_react()` for each fresh flower, and `_react` plays
+   the voice every time. FIX: a voice/line cooldown (~1.5 s, the reaction window) in
+   `_react`; the rep still counts every flower.
+50. [FEATURE, moderate] Controller prompts (S4-SPLASH aside). Hints show keyboard keys only
+   (`main.gd:432-448` hardcode [E]/[Q]). FIX: Game remembers the last input device; hints
+   swap to pad glyphs (small pixel A/B/X/Y). QUESTION (defaulted): Xbox layout.
+51. [BUG, small] A stone landing at the pond's edge: the splash rings (up to ~26 px across)
+   will draw over the ground. Predicted from `main.gd:844` `_splash`, not seen in play:
+   `_in_pond` tests only the landing point. FIX: cap the ring size by the distance to the
+   pond's edge.
+52. [VISUAL, small] The whole tree shakes when a stone hits it (S4-THROWS). Today only a
+   loose leaf tuft rustles at the hit point (`main.gd` `_rustle`); `tree.gd` never moves.
+   FIX: a short shake on the tree's canopy; reuse it when a squirrel's tell is in a tree.
+53. [VISUAL, small] Talking (S4-TALKING): a slower reveal (`hud.gd:58`, 0.12 s per word) and
+   a mouth frame you can actually see moving (`tools/make_faces.py`'s second frame).
+
+**Needs the visual session (44) or a design call**
+
+54. [VISUAL, moderate] Hedges need a rework now they sit off the world's edge (S4-TELLS):
+   they read as border strips that lost their border.
+55. [FEATURE, large] The plots around the garden are a green void (S4-STREET), a missed
+   chance for variety: forest, a park, a playground, other houses, an abandoned empty lot,
+   varying per job. Goes with 46.
+56. [DESIGN, moderate] More obstacles and trees (S4-TREES): much smaller and larger trees,
+   bushes out in the lawn, lawn games, litter, traffic cones, garden gnomes, plastic pink
+   flamingos (the "lawn pelicans"). Each needs a call: solid, mowable, throwable, a rep
+   cost if broken?
+
+PROPOSED ORDER: 49, 48, 51, 52, 53 as one small build (art-independent, and 49 is the
+painful one); 50 next; then the visual session (44), which unblocks 54-56; 45 waits on the
+dev's Ableton time; the grill queue (21...) is unchanged; 47 waits on 27.
