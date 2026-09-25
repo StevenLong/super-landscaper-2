@@ -547,6 +547,8 @@ func _fired() -> void:
 	settled = customer.fired_result(_costs())
 	Sfx.play("fired", 0.0)
 	hud.say(customer.fire_line)
+	hud.banner("YOU'RE FIRED")
+	hud.pop("Rep %d" % roundi(settled.rep))
 	pop_text("FIRED!", $Client.position + Vector2(0, -40), Color("f07060"))
 	shake(4.0)
 
@@ -568,6 +570,7 @@ func _mischief(points: float) -> void:
 	if not settled.is_empty():
 		mischief += points
 		pop_text("Rep -%d" % roundi(points), $Client.position + Vector2(0, -40), Color("f07060"))
+		hud.pop("Rep -%d" % roundi(points))
 
 
 func _costs() -> float:

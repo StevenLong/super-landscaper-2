@@ -29,6 +29,16 @@ func _physics_process(_delta: float) -> bool:
 		assert(not _main.over and not _main.hud.is_open() and not paused, "but you stay in the garden")
 		assert(_main._hint().begins_with("Fired"), "and the hint says how to leave")
 		assert(_main.mischief == 0.0, "the flowers that got you fired aren't mischief")
+		# It lands at the portrait (the customer may be off screen) and as a big banner.
+		var texts: Array = _main.hud.get_children().filter(func(c: Node) -> bool: return c is Label).map(func(l: Label) -> String: return l.text)
+		assert("YOU'RE FIRED" in texts, "a big banner says you're fired")
+		assert("Rep -18" in texts, "the rep hit pops by the portrait")
+		var speech: Label = _main.hud.get_node("Speech")
+		assert(speech.visible and speech.text.contains(_main.customer.fire_line), "their line is under the portrait")
+		assert(speech.visible_characters < speech.text.length(), "typed out a word at a time, not all at once")
+		_main.hud._process(0.0) # physics can run ahead of the first idle frame
+		var face: Control = _main.hud.get_node("Face")
+		assert(speech.position.y >= face.position.y + face.size.y, "and it hangs below the face")
 		_bed._trample(Vector2(_bed.size.x - 8, _bed.size.y - 8), 30.0) # spite
 	elif _frame == 6:
 		assert(_main.mischief > 0.0, "flattening the rest after being fired is mischief")
