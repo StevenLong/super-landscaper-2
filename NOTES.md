@@ -22,8 +22,6 @@ BLOCKS = spoils the next playtest.
    that read as solid, varied trunk sizes. Variety of objects expected later, not now.
 18. [FEATURE, small] Throw stones at your own truck or mower (damage), a tree or flower bed
    (some effect) (S2-THROW).
-20. [FEATURE, small] Settings on the title screen (S1-ATTRACT). The pause menu's music/sound
-   toggles already exist to reuse.
 28. [FEATURE, moderate] The job board as newspaper classifieds (S1-BOARD): text ads, no
    picture or quote, rough lawn size, pay, and subtle hints ("careful applicants only").
 36. [FEATURE, moderate] Run stats: critters run over or picked up, stones collected, and the

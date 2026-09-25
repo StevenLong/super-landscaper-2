@@ -1,5 +1,5 @@
 extends Control
-## Title screen: new run, best score, quit.
+## Title screen: new run, best score, music/sound settings, quit.
 
 var _help_label: Label
 
@@ -37,12 +37,21 @@ func _ready() -> void:
 	var start := UI.button("Start a new run", _start, 26)
 	btns.add_child(start)
 	btns.add_child(UI.button("How to play", _help, 22))
+	for which: String in ["music", "sound"]:
+		var b := UI.button(_setting(which), Sfx.toggle.bind(which), 22)
+		b.pressed.connect(func() -> void: b.text = _setting(which))
+		btns.add_child(b)
 	btns.add_child(UI.button("Quit", func() -> void: get_tree().quit(), 22))
 	UI.focus(start)
 
 	_help_label = UI.label("", 18, UI.DIM)
 	_help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_help_label)
+
+
+func _setting(which: String) -> String:
+	var on: bool = Sfx.music_on if which == "music" else Sfx.sound_on
+	return "%s: %s" % [which.capitalize(), "on" if on else "off"]
 
 
 func _start() -> void:
