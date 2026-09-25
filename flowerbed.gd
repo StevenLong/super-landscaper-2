@@ -14,6 +14,7 @@ var _flattened := 0
 
 
 func _ready() -> void:
+	z_index = -1 # flat on the ground: under anything that stands, whatever the depth
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1
 	for y in range(int(spacing / 2), int(size.y), int(spacing)):

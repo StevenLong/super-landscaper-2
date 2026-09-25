@@ -39,18 +39,36 @@ func patio_point() -> Vector2:
 func smash(window_x: int) -> void:
 	if window_x not in broken:
 		broken.append(window_x)
-		queue_redraw()
+		_front.queue_redraw()
 
 
-func _draw() -> void:
-	draw_texture(preload("res://art/house.png"), Vector2(0, WALL_H - ART_FOOT))
-	draw_texture(preload("res://art/garage.png"), Vector2(-GARAGE_W if garage < 0 else size.x, WALL_H - GARAGE_FOOT))
+## The art hangs off two children standing at the wall's foot, so depth sorting puts
+## whatever is behind the garage (or the house) behind it, not in front.
+var _front: Node2D
+
+
+func _ready() -> void:
+	y_sort_enabled = true
+	_front = Node2D.new()
+	_front.position = Vector2(0, WALL_H)
+	_front.draw.connect(_draw_house)
+	add_child(_front)
+	var g := Sprite2D.new()
+	g.texture = preload("res://art/garage.png")
+	g.centered = false
+	g.position = Vector2(-GARAGE_W if garage < 0 else size.x, WALL_H)
+	g.offset = Vector2(0, -GARAGE_FOOT)
+	add_child(g)
+
+
+func _draw_house() -> void:
+	_front.draw_texture(preload("res://art/house.png"), Vector2(0, -ART_FOOT))
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
 	for x in broken:
-		var o := GLASS.position + Vector2(x, WALL_H)
+		var o := GLASS.position + Vector2(x, 0)
 		var s := GLASS.size
-		draw_rect(Rect2(o, s), Color("1a1820"))
+		_front.draw_rect(Rect2(o, s), Color("1a1820"))
 		for shard: PackedVector2Array in [
 			[Vector2(0, 0), Vector2(0.4, 0), Vector2(0.08, 0.35)],
 			[Vector2(1, 0), Vector2(1, 0.55), Vector2(0.7, 0)],
@@ -60,4 +78,4 @@ func _draw() -> void:
 			var pts := PackedVector2Array()
 			for v in shard:
 				pts.append(o + v * s)
-			draw_colored_polygon(pts, glass)
+			_front.draw_colored_polygon(pts, glass)

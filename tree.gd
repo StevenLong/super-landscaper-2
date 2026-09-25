@@ -28,7 +28,6 @@ func _ready() -> void:
 	_crown.frame = variant % 3
 	_crown.position = crown_centre()
 	_crown.offset = Vector2(2, 2) # the art pads for the shadow; centre it on the canopy
-	_crown.z_index = 1 # canopies overhang the mower and animals
 	add_child(_crown)
 
 

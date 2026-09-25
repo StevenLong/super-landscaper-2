@@ -12,6 +12,7 @@ var _t := 0.0
 
 
 func _ready() -> void:
+	z_index = -1 # flat on the ground: under anything that stands, whatever the depth
 	var pts := PackedVector2Array()
 	for i in 24:
 		var a := TAU * i / 24.0

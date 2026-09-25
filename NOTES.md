@@ -71,8 +71,8 @@ the biggest open question); 46 is buildable any time.
    (1) DONE (S6): the house and garage stand up 3/4, the house's ridge on the back fence
    (the drive is 40% shorter; lawn behind the lower garage), only ground-floor windows
    smashable; (2) DONE (S6): fences, hedges, truck and trailer 3/4 (54 went with it), the
-   front run fades while you're behind it; (3) Y-sorting so the mower goes behind trunks,
-   the truck and the customer; (4) trees with trunks; (5) mowers, the player on foot and critters drawn per
+   front run fades while you're behind it; (3) DONE (S6): depth sorting, checked in
+   screenshots behind/in front of a trunk, the garage, the truck and the customer; (4) trees with trunks; (5) mowers, the player on foot and critters drawn per
    facing direction, the sprite no longer rotated: 8 facings (the dev's call, S6).
 
 ### Notes 2026-09-25b (session 4 play checks)
