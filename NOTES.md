@@ -90,3 +90,27 @@ BLOCKS = spoils the next playtest.
 
 PROPOSED ORDER: 12 with 39 (both reshape the garden edge), then 11, 13, 14. A grill session
 on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
+
+### Notes 2026-09-25 (session 3 play checks)
+
+41. [BUG, small] BLOCKS gamepad play. Menus ignore the pad's face buttons (S1-PAD); in-game
+   is fine. Cause (verified by printing the InputMap): Godot's default `ui_accept` is Enter,
+   Kp Enter, Space only, and `ui_cancel` is Escape only. Y happens to work (ui_select).
+   FIX: in `game.gd`, next to the WASD loop, add JOY_BUTTON_A to ui_accept and JOY_BUTTON_B
+   to ui_cancel. Test: assert both actions carry a joypad event.
+42. [BUG + VISUAL, small] Stone into a pond (S1-PONDS): plays the fuel glug (`main.gd`
+   `_on_stone_landed` "pond" case, a placeholder), and the stone vanishes mid-arc. Cause:
+   `_stone_hit_test` checks only the ground point, ignoring hop height, so the stone dies
+   the moment its shadow crosses the pond edge. FIX: a pond counts only where the stone
+   lands (it's flat); on landing, a short ripple/splash sprite and a new `splash` sound in
+   `tools/make_audio.py`. Other targets keep mid-air hits.
+43. [FEATURE, moderate] Customer reactions live at the portrait (S3-FIRED). Speech, "Rep -N"
+   and FIRED! pop over the customer in the world, so they happen off screen; the top-of-screen
+   speech line (`hud.gd` `say`) is subtle and detached. FIX: speech sits under the portrait,
+   typed a word at a time while the mouth moves; rep numbers pop by the portrait too (the
+   world pops stay). Getting fired gets a big game-over style FIRED banner across the screen
+   for a moment, no pause. `face.gd` has no mouth animation yet: needs a mouth-open frame.
+   QUESTION: banner text ("FIRED!" or "YOU'RE FIRED")? Mouth: a second face frame with the
+   mouth open, or just flap the existing mouth region?
+
+PROPOSED ORDER: 41, 42 (small, and 41 blocks pad play), then 43, then 12 with 39.

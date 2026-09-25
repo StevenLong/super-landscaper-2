@@ -12,11 +12,11 @@ LOAD 1 of 4: TITLE AND MENUS      (about 2 min)
 S3-TITLE
 The title mower never shows its flip at the end of a row, and no line floats over the w's
 (try dragging the window to a few sizes).
->
+>Fixed
 
 S3-WASD
 WASD moves around every menu: title, board, briefing, truck, pause.
->
+>Yes
 
 
 ================================================================================
@@ -25,23 +25,23 @@ LOAD 2 of 4: A JOB, PAID      (about 6 min)
 
 S3-STAMINA
 Push mower: parking at the truck no longer refills PEP; only resting brings it back.
->
+>Yes
 
 S3-FACE
 Mow up into the top-right corner: the customer's face slides to the bottom right, then
 slides back when you leave. Never in your way?
->
+>Yes
 
 S3-PAID
 Hand in at the truck: the menu turns into "Paid" (their line, the money, any tip) with
 Drive off / Keep going. Keep going lets you hang about; Drive off goes straight to the board,
 and the Last job panel top left reads right (paid, costs, net, rep change, any mischief).
->
+>yes
 
 S3-CHEATS
 Board [2] a few times, take a medium or large lawn, [0] in the job to finish it. Did the
 high end show up, and does the rundown look right for a [0] finish?
->
+>Yes
 
 
 ================================================================================
@@ -51,12 +51,12 @@ LOAD 3 of 4: GETTING FIRED      (about 4 min, needs a gardener job)
 S3-FIRED
 Trample the gardener's flowers until they fire you: buzzer, their line, FIRED! over them,
 and you stay in the garden with a hint to leave from the truck.
->
+>So the negative rep and fired speech bubble thingies appearing over the customer's head means they can happen off screen where you can't see them. The text appearing at the top of the screen is a little too subtle and too detached. It should maybe appear under their portrait and if we could do the thing where their mouth moves and the text appears a word at a time, that would be neat. And also the rep damage numbers should also appear at the portrait. They can also appear over the customer's head in the real world, but because the customer can be off screen, they should also appear by the portrait. Also, the actual firing event is a little bit too subtle. It doesn't read as a mini game over. It just has the same sort of level of noise as any talking or rep change or whatever. We can probably do a large game over-esque text on the screen temporarily that just reads fired or you've been fired or whatever. It doesn't need to pause or break gameplay. Just needs to be more obvious that a kind of a breakpoint has happened. 
 
 S3-SPITE
 Keep flattening flowers after being fired: they shout, "Rep -N" pops. Drive off from the
 truck; the board's Last job panel shows FIRED and the extra rep lost. Satisfying?
->
+>Yes
 
 
 ================================================================================
@@ -66,18 +66,18 @@ LOAD 4 of 4: STILL OWED FROM EARLIER      (about 8 min, petrol mower, use the ch
 S3-GLUG
 Fetch the fuel can from the truck and pour it into the mower: the glug plays once and
 stops. (It used to glug forever.)
->
+>Yes
 
 S1-PONDS
 With [2] to reach bigger lawns: a pond shows up, critters walk round it, and a stone that
 lands in it plops once.
->
+>throwing a stone into the pond. It would be neat if it could cause a splash and currently it plays the fuel glugging sound which doesn't really match at all. Also the sprite disappears under the pond when it should sort of land on the top of the sprite and then disappear and then cause a splash. 
 
 S1-STONES
 A mowed or thrown stone hitting the truck (-$20), a critter, and the dog. Any you manage.
->
+>yes
 
 S1-PAD
 Gamepad: stick or d-pad drives, A interacts, X hops off, B throws, Y looks, Start pauses.
 (Owed since session 1.)
->
+>The menus don't seem to work with the face buttons on the gamepad. In-game stuff seems like it works though. 
