@@ -112,6 +112,10 @@ const TALLY := {
 	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
 	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",
 }
+## Button prompts follow what you last touched: keyboard keys, or an Xbox-style pad.
+const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "X"], "throw": ["Q", "B"], "look": ["Tab", "Y"], "pause": ["Esc", "Start"]}
+var pad := false
+
 var best_score := 0
 var run_over_reason := "" ## "" while running; "arrested" ends the run at the next board
 var heat := 0.0 ## the wanted level: each knocked-out customer adds one; the police may be waiting
@@ -120,6 +124,7 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS # hears the pad in paused menus too
 	# The pixel font everywhere: glyphs are 10px, so sizes render at whole multiples.
 	var font := PixelFont.make()
 	ThemeDB.fallback_font = font
@@ -138,6 +143,18 @@ func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(save_path) == OK:
 		best_score = cfg.get_value("best", "score", 0)
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):
+		pad = true
+	elif event is InputEventKey or event is InputEventMouseButton:
+		pad = false
+
+
+## The prompt for an action: "[E]" on the keyboard, "(A)" on a pad.
+func key(action: String) -> String:
+	return ("(%s)" if pad else "[%s]") % PROMPTS[action][1 if pad else 0]
 
 
 func new_run(seed_value := 0) -> void:

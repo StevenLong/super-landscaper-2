@@ -18,7 +18,6 @@ const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
 const ROAD := 150
 const GRAVEL := Color(1.0, 0.88, 0.68) ## tints the grey gravel tile for the drive
-const FIRED_HINT := "Fired: no pay. Leave from the truck [E] when you're done."
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
 @export var squirrel_every := 13.0
@@ -89,8 +88,9 @@ func _ready() -> void:
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
 		lines.append_array(["", "Mow the lawn. Hand in at your truck when you're happy."])
 		if Game.jobs_done == 0:
-			lines.append_array(["W/S drive, A/D turn. [E] at the truck. [F] hop off to move",
-				"stones, fetch fuel or catch a dog. Hold [Tab] to look around. [Esc] pause."])
+			lines.append_array(["%s %s at the truck. %s hop off to move" % ["Stick drives and turns." if Game.pad
+				else "W/S drive, A/D turn.", Game.key("interact"), Game.key("hop")],
+				"stones, fetch fuel or catch a dog. Hold %s to look around. %s pause." % [Game.key("look"), Game.key("pause")]])
 		hud.open(job.customer, lines, [["start", "Let's go"]], job.look, "neutral")
 
 
@@ -417,6 +417,10 @@ func _physics_process(delta: float) -> void:
 			spawn_animal(t.kind, t.at, Vector2.INF, t.grace)
 
 
+func _fired_hint() -> String:
+	return "Fired: no pay. Leave from the truck %s when you're done." % Game.key("interact")
+
+
 ## Who the player is right now: the mower, or themselves on foot.
 func actor() -> Node2D:
 	return walker if walker else mower
@@ -430,24 +434,24 @@ func _hint() -> String:
 	if walker:
 		match walker.carrying:
 			"stone":
-				return ("[E] toss it in the truck" if at_truck() else "[E] drop it") + "   [Q] throw it"
+				return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   %s throw it" % Game.key("throw")
 			"jerrycan":
-				return "[E] fill up the mower" if walker.global_position.distance_to(mower.global_position) < 44.0 else "Take the can to the mower"
+				return Game.key("interact") + " fill up the mower" if walker.global_position.distance_to(mower.global_position) < 44.0 else "Take the can to the mower"
 		if _stone_near(walker.global_position):
-			return "[E] pick up the stone"
+			return Game.key("interact") + " pick up the stone"
 		if dog and is_instance_valid(dog):
 			if dog.following == walker:
 				return "Walk %s back to the patio" % job.dog_name
 			if not dog.limping and walker.global_position.distance_to(dog.position) < 80.0:
 				return "Walk into %s to put them on the lead" % job.dog_name
 		if at_truck():
-			return "[E] truck"
+			return Game.key("interact") + " truck"
 		if walker.global_position.distance_to(mower.global_position) < 44.0:
-			return "[F] get back on"
-		return FIRED_HINT if customer.fired else ""
+			return Game.key("hop") + " get back on"
+		return _fired_hint() if customer.fired else ""
 	if at_truck():
-		return "[E] talk to the customer / leave"
-	return FIRED_HINT if customer.fired else ""
+		return Game.key("interact") + " talk to the customer / leave"
+	return _fired_hint() if customer.fired else ""
 
 
 func _unhandled_input(event: InputEvent) -> void:

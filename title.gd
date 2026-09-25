@@ -61,8 +61,10 @@ func _start() -> void:
 
 func _help() -> void:
 	_help_label.text = "\n".join([
-		"W/S or Up/Down: throttle.  A/D or Left/Right: turn.  E at your truck: hand in or leave.",
-		"F: hop off (carry stones, fetch fuel, catch the dog).  Hold Tab: look around.  Esc: pause.",
+		("Stick up/down: throttle.  Left/right: turn.  %s at your truck: hand in or leave." if Game.pad
+			else "W/S or Up/Down: throttle.  A/D or Left/Right: turn.  %s at your truck: hand in or leave.") % Game.key("interact"),
+		"%s: hop off (carry stones, fetch fuel, catch the dog).  Hold %s: look around.  %s: pause." % [
+			Game.key("hop"), Game.key("look"), Game.key("pause")],
 		"Every customer wants a different share of their lawn mowed, in a different time. They won't say.",
 		"Read the briefing. Squashed wildlife and trampled flowers go down badly (usually).",
 		"Pay buys better mowers. Reputation brings better jobs. Run out of reputation and you're finished.",
