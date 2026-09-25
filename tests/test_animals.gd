@@ -41,6 +41,14 @@ func _physics_process(_delta: float) -> bool:
 		Input.action_release("move_forward")
 		assert(_victim.dead, "a moving mower should squash a hedgehog")
 		assert(_main.hits.get("hedgehog", 0) == 1, "the squash should be counted once")
+		# A thrown stone that passes near a walking critter, not dead on, still hits it.
+		var near := _walker.global_position + Vector2(0, 14)
+		assert(_main._stone_hit_test(near) == "animal", "a stone 14px off a critter hits it")
+		var f := FlyingStone.new()
+		f.position = near
+		_main._on_stone_landed(f, "animal")
+		f.free()
+		assert(_walker.dead, "and the critter it hit is the one knocked over")
 		print("PASS animals")
 		quit()
 	return false

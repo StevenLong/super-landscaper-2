@@ -187,9 +187,11 @@ def fired():
     write("fired", out)
 
 
-def beep(hz, dur, name, duty=0.5, vol=0.5):
+def beep(hz, dur, name, duty=0.5, vol=0.5, soft=1.0):
+    """soft < 1 lowpasses the square, taking the hiss off its harmonics."""
     total = n(dur)
-    write(name, [square(i * hz / RATE, duty) * vol * env(i, total, 0.002, dur * 0.4) for i in range(total)])
+    out = [square(i * hz / RATE, duty) * vol * env(i, total, 0.002, dur * 0.4) for i in range(total)]
+    write(name, lowpass(out, soft) if soft < 1.0 else out)
 
 
 def clonk():
@@ -330,8 +332,8 @@ def main():
     cash()
     fired()
     beep(1760, 0.12, "fuel_low", 0.5, 0.35)
-    beep(880, 0.05, "ui_move", 0.25, 0.3)
-    beep(1320, 0.08, "ui_select", 0.5, 0.35)
+    beep(587, 0.05, "ui_move", 0.5, 0.3, soft=0.3)
+    beep(880, 0.08, "ui_select", 0.5, 0.35, soft=0.35)
     bump()
     clonk()
     thud()

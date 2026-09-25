@@ -66,6 +66,7 @@ func _physics_process(_delta: float) -> bool:
 			var mood: float = m.customer.mood
 			m._on_stone_landed(f, "window")
 			assert(m.bills >= m.WINDOW_BILL and m.customer.mood < mood, "a broken window costs money and mood")
+			assert(house.broken == [40], "and stays smashed")
 			f.free()
 			# A broken mower cuts nothing; parking at the truck repairs it.
 			mower.condition = 0.0

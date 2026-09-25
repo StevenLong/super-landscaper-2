@@ -12,8 +12,6 @@ BLOCKS = spoils the next playtest.
 
 **Build (no design call needed)**
 
-8. [VISUAL, small] Menu blips: a bit lower in pitch, less hiss (S1-MENU-AUDIO). Optional.
-   Home: `tools/make_audio.py` ui_move / ui_select.
 11. [FEATURE, small] Spawn tells (S2-BORDERS, S2-SPAWNS): a tree or hedge rustles, a few
    leaves drop, a moment before a critter comes out. A little telegraphing, not a lot.
 12. [FEATURE, moderate-large] Camera never clamps; the world carries on past the garden
@@ -28,10 +26,6 @@ BLOCKS = spoils the next playtest.
    distance after (S1-CRITTERS). Fits the tone decision in the design doc.
 15. [FEATURE, small] Dog pickup/walk-home isn't clear that you're interacting (S1-DOG).
    FIX: a visible lead or held state and a prompt.
-16. [VISUAL, small] Broken windows have no smashed sprite (S1-STONES).
-17. [FEATURE, small] Thrown stones hard to land on critters (S2-THROW). Not a bug: hit radius
-   is 10px (`main.gd` `_stone_hit_test`) and the stone moves ~8px a frame, so no
-   tunnelling; the target is just small and moving. FIX: bigger critter hit radius.
 18. [FEATURE, small] Throw stones at your own truck or mower (damage), a tree or flower bed
    (some effect) (S2-THROW).
 20. [FEATURE, small] Settings on the title screen (S1-ATTRACT). The pause menu's music/sound

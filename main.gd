@@ -13,6 +13,7 @@ const WINDOWS := [40, 120, 290, 370] ## x of each window in the house art (30 wi
 const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
+const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FIRED_HINT := "Fired: no pay. Leave from the truck [E] when you're done."
 const FACE_TOP := 12.0 ## the corner face's home, top right
@@ -623,6 +624,15 @@ func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float) -> 
 	return f
 
 
+## The x of the house window at p (see WINDOWS), or -1.
+func _window_at(p: Vector2) -> int:
+	var h: Rect2 = _house.rect()
+	for wx: int in WINDOWS:
+		if p.x - h.position.x >= wx and p.x - h.position.x <= wx + 30 and p.y > h.position.y + 60.0:
+			return wx
+	return -1
+
+
 ## What a flying stone at p would hit, or "" for nothing.
 func _stone_hit_test(p: Vector2) -> String:
 	if not Rect2(Vector2.ZERO, Vector2(lawn.size_px)).has_point(p):
@@ -631,15 +641,11 @@ func _stone_hit_test(p: Vector2) -> String:
 		return "customer"
 	var h: Rect2 = _house.rect()
 	if h.has_point(p) and p.y < h.position.y + 106.0:
-		var lx := p.x - h.position.x
-		for wx: int in WINDOWS:
-			if lx >= wx and lx <= wx + 30 and p.y > h.position.y + 60.0:
-				return "window"
-		return "wall"
+		return "window" if _window_at(p) >= 0 else "wall"
 	if Rect2($Truck.position - Vector2(60, 28), Vector2(120, 56)).has_point(p):
 		return "truck"
 	for a in $Animals.get_children():
-		if a is Animal and not a.dead and a.position.distance_to(p) < 10.0:
+		if a is Animal and not a.dead and a.position.distance_to(p) < CRITTER_HIT:
 			return "animal"
 	if dog and is_instance_valid(dog) and dog.position.distance_to(p) < 12.0:
 		return "dog"
@@ -661,6 +667,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_react()
 		"window":
 			Sfx.play("glass", 0.0)
+			_house.smash(_window_at(p))
 			_mischief(5.0)
 			bills += WINDOW_BILL
 			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
@@ -677,7 +684,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			pop_text("-$%d" % DENT_BILL, p, Color("f07060"))
 		"animal":
 			for a in $Animals.get_children():
-				if a is Animal and not a.dead and a.position.distance_to(p) < 12.0:
+				if a is Animal and not a.dead and a.position.distance_to(p) <= CRITTER_HIT:
 					a.squash()
 					break
 		"dog":
