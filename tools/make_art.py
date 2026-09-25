@@ -164,7 +164,7 @@ def main(only=None):
             save("soil", speckle_tile(SOIL, 4)),
             save("gravel", speckle_tile(STONE, 5, base_i=1, n=36)),
         ],
-        "trees": lambda: [save("tree_%d" % d, sheet([canopy(d, s) for s in (11, 12, 13)]), 3) for d in (52, 68, 84)],
+        "trees": lambda: [save("tree_%d" % d, sheet([canopy(d, s) for s in (11, 12, 13)]), 3) for d in (52, 68, 84, 100)],
     }
     import art_sprites as a
     jobs.update({

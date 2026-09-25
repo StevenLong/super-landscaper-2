@@ -147,10 +147,11 @@ func _build_layout() -> void:
 			if br.has_area():
 				beds.append(br)
 		for i in job.trees:
-			var rad: float = [26.0, 34.0, 42.0][r.randi() % 3] # matches the canopy art sizes
-			var spot := _place(r, taken, Vector2(rad, rad) * 2.0, size)
+			var rad: float = [34.0, 42.0, 50.0][r.randi() % 3] # canopy radius: matches the art sizes
+			# Room for the canopy and the trunk under it; the trunk's base sits low in the box.
+			var spot := _place(r, taken, Vector2(rad * 2.0, rad * 3.0), size)
 			if spot.has_area():
-				trees.append([spot.get_center(), rad])
+				trees.append([spot.get_center() + Vector2(0, rad), rad])
 		for i in job.get("stones", 0):
 			var sr := _place(r, taken, Vector2(12, 12), size)
 			if sr.has_area():
@@ -169,7 +170,7 @@ func _build_layout() -> void:
 		var t: StaticBody2D = TreeScript.new()
 		t.name = "Tree" if i == 0 else "Tree%d" % (i + 1)
 		t.position = trees[i][0]
-		t.radius = trees[i][1]
+		t.canopy = trees[i][1]
 		t.variant = i
 		var cs := CollisionShape2D.new()
 		cs.name = "Shape"
@@ -276,6 +277,11 @@ func _process(delta: float) -> void:
 	_shake = maxf(0.0, _shake - delta * 18.0)
 	cam.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
 	_lay_track()
+	# A canopy fades while you're under it or close, so nothing hides there.
+	var me := actor().global_position
+	for t in $Scenery.get_children():
+		if "canopy" in t:
+			t.near = t.crown_rect().grow(20.0).has_point(me) or me.distance_to(t.position) < t.radius + 30.0
 
 
 const TRAIL := 140.0 ## how far the mower trails red after running a critter over

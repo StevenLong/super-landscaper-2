@@ -17,9 +17,6 @@ BLOCKS = spoils the next playtest.
    not reachable. The player stays centred. Critters then spawn where the player can see
    them but can't already be, which ends the unavoidable one-pixel-step-into-the-blades hit.
    Home: `main.gd` camera limits, garden build in `main.gd`. Build with 39.
-13. [VISUAL, moderate] Trees (S1-TREES): they don't read as trees; things under canopies got
-   hit unseen. Bigger canopies that fade when you get close or under, much bolder trunks
-   that read as solid, varied trunk sizes. Variety of objects expected later, not now.
 28. [FEATURE, moderate] The job board as newspaper classifieds (S1-BOARD): text ads, no
    picture or quote, rough lawn size, pay, and subtle hints ("careful applicants only").
 36. [FEATURE, moderate] Run stats: critters run over or picked up, stones collected, and the
