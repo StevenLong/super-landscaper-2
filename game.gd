@@ -102,6 +102,10 @@ func _ready() -> void:
 		var k := InputEventKey.new()
 		k.physical_keycode = pair[1]
 		InputMap.action_add_event(pair[0], k)
+	# Godot's ui_accept has no pad button; A presses menu buttons like it interacts in a job.
+	var a := InputEventJoypadButton.new()
+	a.button_index = JOY_BUTTON_A
+	InputMap.action_add_event("ui_accept", a)
 	var cfg := ConfigFile.new()
 	if cfg.load(save_path) == OK:
 		best_score = cfg.get_value("best", "score", 0)

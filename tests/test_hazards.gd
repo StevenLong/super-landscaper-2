@@ -48,6 +48,19 @@ func _physics_process(_delta: float) -> bool:
 			assert(m._stone_hit_test(m.get_node("Truck").position) == "truck", "stone dents the truck")
 			assert(m._stone_hit_test(Vector2(-5, 300)) == "gone", "stone over the fence")
 			assert(m._stone_hit_test(Vector2(640, 600)) == "", "stone lands on grass")
+			# A pond is flat: a stone flies over it, and only one landing in it splashes.
+			var pond := Pond.new()
+			pond.position = Vector2(640, 600) # clear grass, as above
+			m.get_node("Scenery").add_child(pond)
+			assert(m._stone_hit_test(pond.position) == "", "a stone in the air passes over a pond")
+			var kids := m.get_child_count()
+			var drop := FlyingStone.new()
+			drop.position = pond.position
+			m._on_stone_landed(drop, "")
+			assert(m._stone_near(pond.position) == null, "a stone landing in a pond sinks")
+			assert(m.get_child_count() == kids + 1, "and splashes")
+			drop.free()
+			pond.free()
 			var f := FlyingStone.new()
 			f.position = house.position + Vector2(55, 80)
 			var mood: float = m.customer.mood

@@ -643,9 +643,7 @@ func _stone_hit_test(p: Vector2) -> String:
 	for t in $Scenery.get_children():
 		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius:
 			return "tree"
-		if t is Pond and t.contains(p):
-			return "pond"
-	return ""
+	return "" # a pond is flat: the stone flies over it, see _in_pond on landing
 
 
 func _on_stone_landed(f: FlyingStone, target: String) -> void:
@@ -686,11 +684,49 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_react()
 		"gone":
 			pass # over the fence and into next door's garden
-		"pond":
-			Sfx.play("glug") # plop
 		_:
-			Sfx.play("thud")
-			add_stone.call_deferred(p)
+			if _in_pond(p):
+				Sfx.play("splash")
+				_splash(p)
+			else:
+				Sfx.play("thud")
+				add_stone.call_deferred(p)
+
+
+func _in_pond(p: Vector2) -> bool:
+	for t in $Scenery.get_children():
+		if t is Pond and t.contains(p):
+			return true
+	return false
+
+
+## Rings spreading on the water and a few drops thrown up, gone in under a second.
+func _splash(p: Vector2) -> void:
+	var s := Node2D.new()
+	s.position = p
+	s.z_index = 1
+	var k := [0.0]
+	s.draw.connect(func() -> void:
+		var t: float = k[0]
+		var c := Color(0.85, 0.95, 1.0, 1.0 - t)
+		s.draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
+		if t < 0.15:
+			s.draw_circle(Vector2.ZERO, 6.0, c)
+		s.draw_arc(Vector2.ZERO, 4.0 + t * 22.0, 0.0, TAU, 24, c, 2.0)
+		if t > 0.2:
+			s.draw_arc(Vector2.ZERO, (t - 0.2) * 18.0, 0.0, TAU, 20, c, 2.0)
+		s.draw_set_transform(Vector2.ZERO)
+		if t < 0.7:
+			for i in 7:
+				var spread := (i - 3) * 7.0 * t
+				var lift := (30.0 - absf(i - 3) * 6.0) * sin(t / 0.7 * PI)
+				s.draw_rect(Rect2(spread - 1.5, -lift - 1.5, 3, 3), c))
+	add_child(s)
+	var tw := s.create_tween()
+	tw.tween_method(func(v: float) -> void:
+		k[0] = v
+		s.queue_redraw(), 0.0, 1.0, 0.7)
+	tw.tween_callback(s.queue_free)
 
 
 func _knock_out() -> void:

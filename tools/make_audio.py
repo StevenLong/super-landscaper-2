@@ -146,6 +146,22 @@ def glug():
     write("glug", lowpass(out, 0.3), loop=True)
 
 
+def splash():
+    """A stone into a pond: a bloop dropping in pitch, then a hiss of spray."""
+    total = n(0.5)
+    out = []
+    ph = 0.0
+    y = 0.0
+    for i in range(total):
+        t = i / RATE
+        ph += (900 * math.exp(-t * 18) + 180) / RATE
+        s = math.sin(ph * 6.283) * math.exp(-t * 14) * 0.6
+        y += 0.25 * (noise() - y)
+        s += y * math.exp(-t * 7) * min(1.0, t / 0.03) * 0.8
+        out.append(s)
+    write("splash", lowpass(out, 0.5))
+
+
 def cash():
     total = n(0.9)
     out = []
@@ -323,6 +339,7 @@ def main():
     yelp()
     mowing_song()
     menu_song()
+    splash()  # last, so its noise doesn't shift the sounds made before it
 
 
 if __name__ == "__main__":

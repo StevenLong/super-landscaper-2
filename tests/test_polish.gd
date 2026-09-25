@@ -42,6 +42,9 @@ func _static_checks() -> void:
 		var k := InputEventKey.new()
 		k.physical_keycode = pair[1]
 		assert(InputMap.action_has_event(pair[0], k), "%s should answer to WASD" % pair[0])
+	var pad_a := InputEventJoypadButton.new()
+	pad_a.button_index = JOY_BUTTON_A
+	assert(InputMap.action_has_event("ui_accept", pad_a), "the pad's A should press menu buttons")
 
 
 func _physics_process(_delta: float) -> bool:
