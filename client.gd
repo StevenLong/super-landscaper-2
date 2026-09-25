@@ -1,6 +1,7 @@
 extends Node2D
-## The customer standing on their patio, watching. Faces the mower and throws their
-## arms up when they react. Palette-swapped to match their portrait.
+## The customer standing on their patio, watching. Turns to face the mower (8
+## facings) and throws their arms up when they react. Palette-swapped to match their
+## portrait.
 
 var watch: Node2D
 var _hop := 0.0
@@ -33,7 +34,8 @@ func _draw() -> void:
 	if _tex == null:
 		return
 	var y := -absf(sin(_hop * 16.0)) * 5.0 if _hop > 0.0 else 0.0
-	var flip := watch != null and is_instance_valid(watch) and watch.global_position.x < global_position.x
+	var toward := PI / 2.0 # facing out over the garden until there's a mower to watch
+	if watch != null and is_instance_valid(watch):
+		toward = (watch.global_position - global_position).angle()
 	var frame := 2 if _out else (1 if _hop > 0.0 else 0)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1 if flip and not _out else 1, 1))
-	draw_texture_rect_region(_tex, Rect2(-15, -30 + y, 30, 30), Rect2(frame * 30, 0, 30, 30))
+	Facing.draw(self, _tex, 3, frame, toward, Vector2(0, y))

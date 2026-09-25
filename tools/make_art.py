@@ -201,7 +201,7 @@ def main(only=None):
             save("squirrel", v.sheet([v.squirrel(0), v.squirrel(1)]), 4),
             save("splat", a.splat(), 6),
         ],
-        "client": lambda: [save("client", sheet([a.client(0), a.client(1), a.client(2)]), 6)],
+        "client": lambda: [save("client", v.sheet([v.client(0), v.client(1), v.client(2)]), 4)],
         "pond": lambda: [save("pond", sheet([a.pond(0), a.pond(1)]), 3)],
         "borders": lambda: [save("hedge_h", a.hedge_h(), 6), save("hedge_v", a.hedge_v(), 6),
                               save("fence_h", a.fence_h(), 6), save("fence_v", a.fence_v(), 6)],

@@ -11,7 +11,7 @@ import math
 import random
 
 from canvas import Canvas, hexc
-from make_art import INK, STEEL, RED, YELLOW, BLUE, WOOD, LEAF, P_SKIN, P_SHIRT, P_CAP
+from make_art import INK, STEEL, RED, YELLOW, BLUE, WOOD, LEAF, P_SKIN, P_SHIRT, P_CAP, K_SKIN, K_HAIR, K_SHIRT
 
 F, G = 0.9, 0.6          # height -> screen px, depth -> screen px (as the house art)
 LIGHT = (-0.45, 0.35, 0.82)
@@ -129,9 +129,10 @@ CAP = [P_CAP[0], P_CAP[1], P_CAP[2], hexc("f07058")]
 EYE = [INK]
 
 
-def person(m, x, step, arms_to=None, seated=False, z0=0):
-    """The player, facing +x, standing at (x, 0, z0): legs stride with step (0/1,
-    or None standing still); arms reach to arms_to (two points) or swing."""
+def person(m, x, step, arms_to=None, seated=False, z0=0, shirt=SHIRT, skin=SKIN, hair=None):
+    """A person facing +x, standing at (x, 0, z0): legs stride with step (0/1, or None
+    standing still); arms reach to arms_to (two points) or swing. The player by
+    default (the red cap); pass shirt/skin/hair ramps for anyone else."""
     if seated:
         for s in (-1, 1):
             m.box(x - 2, x + 9, s * 4 - 2, s * 4 + 2, z0, z0 + 4, TROUSER)       # thighs
@@ -143,7 +144,7 @@ def person(m, x, step, arms_to=None, seated=False, z0=0):
             m.box(x - 2 + dx, x + 2 + dx, s * 3 - 2, s * 3 + 2, z0 + 2, z0 + 11, TROUSER)
             m.box(x - 2 + dx, x + 3 + dx, s * 3 - 2, s * 3 + 2, z0, z0 + 2, SHOE)
         hip = z0 + 11
-    m.box(x - 3, x + 3, -6, 6, hip, hip + 12, SHIRT)
+    m.box(x - 4, x + 4, -6, 6, hip, hip + 12, shirt)
     for s, fwd in ((-1, -3), (1, 3)):
         sh = (x, s * 7, hip + 10)
         if arms_to:
@@ -151,14 +152,38 @@ def person(m, x, step, arms_to=None, seated=False, z0=0):
         else:
             dx = 0 if step is None else (fwd if step == 0 else -fwd)
             hand = (x + dx, s * 7.5, hip + 3)
-        m.line(sh, hand, 1.3, SHIRT)
-        m.ellipsoid(hand[0], hand[1], hand[2], 1.4, 1.4, 1.4, SKIN)
+        m.line(sh, hand, 1.3, shirt)
+        m.ellipsoid(hand[0], hand[1], hand[2], 1.4, 1.4, 1.4, skin)
     hz = hip + 17
-    m.ellipsoid(x, 0, hz, 4.6, 4.6, 4.6, SKIN)
-    m.ellipsoid(x - 0.3, 0, hz + 1.5, 5, 5, 3.4, CAP, zmin=hz + 1)
-    m.box(x + 3, x + 7, -3, 3, hz + 1, hz + 2, CAP[:2])                          # the peak
+    m.ellipsoid(x, 0, hz, 4.6, 4.6, 4.6, skin)
+    if hair:
+        m.ellipsoid(x - 1.6, 0, hz + 1.6, 4.6, 5, 3.6, hair, zmin=hz + 2)
+        m.ellipsoid(x - 1.8, 0, hz, 3.6, 4.9, 4.4, hair, zmin=hz - 3)          # the back of the head
+    else:
+        m.ellipsoid(x - 0.3, 0, hz + 1.5, 5, 5, 3.4, CAP, zmin=hz + 1)
+        m.box(x + 3, x + 7, -3, 3, hz + 1, hz + 2, CAP[:2])                      # the peak
     for s in (-2, 1):
         m.put(math.floor(x + 4), s, math.floor(hz), EYE)
+
+
+def client(frame):
+    """The customer, in the portrait's key colours (Face.swapped recolours them).
+    Frames: 0 standing, 1 arms up in outrage, 2 knocked flat, seeing stars."""
+    m = Model()
+    if frame == 2:
+        for s in (-3, 3):
+            m.box(-14, -3, s - 2, s + 2, 0, 3, TROUSER)
+        m.box(-3, 9, -6, 6, 0, 4, K_SHIRT)
+        for s in (-8, 8):
+            m.box(-1, 7, s - 1, s + 1, 0, 2, K_SHIRT)
+        m.ellipsoid(13, 0, 3, 4.4, 4.4, 3.4, K_SKIN)
+        m.ellipsoid(15.5, 0, 3, 2.4, 4.6, 3.2, K_HAIR)
+        for sx, sy, sz in ((10, -6, 11), (14, 5, 12), (18, -1, 13)):
+            m.box(sx, sx + 2, sy, sy + 2, sz, sz + 2, YELLOW[3:])
+        return m
+    up = ((0, -8, 34), (0, 8, 34)) if frame == 1 else None
+    person(m, 0, None, arms_to=up, shirt=K_SHIRT, skin=K_SKIN, hair=K_HAIR)
+    return m
 
 
 # ---------------------------------------------------------------- mowers

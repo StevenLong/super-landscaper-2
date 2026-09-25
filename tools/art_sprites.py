@@ -1,11 +1,11 @@
 """Sprite drawings for make_art.py for things that don't turn: vehicles, flowers,
-house, borders, pond, props and the customer, drawn 3/4. Things that turn (mowers,
-the player on foot, critters) are voxel models in voxel.py."""
+house, borders, pond and props, drawn 3/4. Things that turn (mowers, the player on
+foot, critters, the customer) are voxel models in voxel.py."""
 import random
 
 from canvas import Canvas, hexc
 from make_art import (INK, STEEL, RED, YELLOW, BLUE, GLASS, WOOD, BRICK, CREAM, ROOF, STONE, LEAF,
-                      K_SKIN, K_HAIR, K_SHIRT, lit, shaded_ellipse, shaded_rect)
+                      lit, shaded_ellipse, shaded_rect)
 
 
 # ---------------------------------------------------------------- vehicles
@@ -356,66 +356,5 @@ def jerrycan():
     c.rect(8, 1, 2, 3, STEEL[3])
     c.rect(3, 6, 6, 1, RED[4])
     c.rect(3, 9, 6, 1, RED[1])
-    c.outline(INK)
-    return c
-
-
-# ---------------------------------------------------------------- the customer, standing
-
-def client(frame):
-    """The customer on their patio, facing us (3/4 SNES RPG view). Key-coloured
-    skin/hair/shirt so client.gd can swap them to match the portrait.
-    Frames: 0 idle, 1 arms up in outrage, 2 knocked flat."""
-    if frame == 2:
-        return client_flat()
-    c = Canvas(30, 30)
-    c.blit(client_upright(frame), 6, 0)
-    return c
-
-
-def client_flat():
-    c = Canvas(30, 30)
-    TROUSER = [hexc(h) for h in ("1c1c28", "2c2c40", "40405a")]
-    c.rect(2, 22, 9, 3, TROUSER[1])
-    c.rect(2, 26, 9, 3, TROUSER[1])
-    c.ellipse(15, 24, 6.5, 5, None, lambda nx, ny: K_SHIRT[1] if ny < 0.3 else K_SHIRT[0])
-    c.ellipse(24, 24, 4.5, 4.5, None, lambda nx, ny: K_SKIN[1] if ny < 0.4 else K_SKIN[0])
-    c.ellipse(26, 22, 3, 4, None, lambda nx, ny: K_HAIR[1])
-    c.stamp(21, 23, ["x.x", ".x.", "x.x"], {"x": INK})
-    for x, y in ((18, 13), (24, 11), (29, 15)):
-        c.stamp(x - 1, y - 1, [".y.", "yyy", ".y."], {"y": hexc("f8e070")})
-    c.outline(INK)
-    return c
-
-
-def client_upright(frame):
-    c = Canvas(18, 30)
-    TROUSER = [hexc(h) for h in ("1c1c28", "2c2c40", "40405a")]
-    c.rect(5, 21, 3, 7, TROUSER[1])
-    c.rect(10, 21, 3, 7, TROUSER[1])
-    c.rect(5, 21, 1, 7, TROUSER[2])
-    c.rect(4, 28, 4, 2, INK)
-    c.rect(10, 28, 4, 2, INK)
-    c.ellipse(9, 16, 5.5, 6.5, None, lambda nx, ny: K_SHIRT[1] if nx < 0.4 else K_SHIRT[0])
-    if frame == 0:
-        c.rect(2, 12, 2, 8, K_SHIRT[0])
-        c.rect(14, 12, 2, 8, K_SHIRT[0])
-        c.rect(2, 20, 2, 2, K_SKIN[1])
-        c.rect(14, 20, 2, 2, K_SKIN[1])
-    else:
-        c.rect(1, 4, 2, 8, K_SHIRT[0])
-        c.rect(15, 4, 2, 8, K_SHIRT[0])
-        c.rect(1, 2, 2, 2, K_SKIN[1])
-        c.rect(15, 2, 2, 2, K_SKIN[1])
-    c.ellipse(9, 6.5, 5, 5.5, None,
-              lambda nx, ny: K_SKIN[2] if nx < -0.2 and ny < 0 else (K_SKIN[0] if nx > 0.5 else K_SKIN[1]))
-    c.ellipse(9, 3.5, 5.2, 3.2, None,
-              lambda nx, ny: K_HAIR[2] if nx < -0.3 else (K_HAIR[0] if nx > 0.4 else K_HAIR[1]))
-    c.set(7, 7, INK)
-    c.set(11, 7, INK)
-    if frame == 1:
-        c.rect(8, 9, 3, 2, hexc("6e1e28"))
-    else:
-        c.rect(8, 9, 3, 1, K_SKIN[0])
     c.outline(INK)
     return c
