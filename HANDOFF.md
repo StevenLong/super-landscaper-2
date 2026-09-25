@@ -6,6 +6,42 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 6 (2026-09-25): the visual session, full 3/4, and the world past the garden
+- Your calls: full 3/4 (you and your partner picked (c) from three mocked-up styles, over
+  pure top-down and a tilt on fixed things); trees go 3/4 with the rest (replaces the
+  top-down tree call); the house set into the plot with its ridge on the back fence ("if
+  you can't see there, you can't go there"), which made the drive 40% shorter; 8 facings
+  for things that turn. The voxel look is provisional until you've seen it in motion. All
+  in the design doc's "Look and Sound" (game-dev aed9362, a234275, b147e5e, 4adb3de).
+  Parked there: front and back yards.
+- Built, NOTES 57 in five steps: a two-storey 3/4 house and garage (7f69cc8, e94e12f);
+  fences, hedges, truck and trailer 3/4, the road-side run fading while you're behind it
+  (2d67f27, covers 54); Y-sorting, house and garage sorting at their wall foot (a20aa1b);
+  trees with a round trunk and roots (6794c1c); mowers, you on foot, critters, the dog and
+  then the customer as voxel models at 8 facings from tools/voxel.py (9fe4c35, 33bf79f).
+- Built, rough versions of 55 and most of 46: beyond.gd puts neighbours (house, woods or an
+  empty lot), a treeline and houses across the road round every job (ff68092); detached
+  garages and the customer's car in the drive (93ff326).
+- My calls, flagged for your veto: a car dent costs $40 and -20 mood ("My CAR!"); the car
+  is in half the generated jobs, never the first; a third of garages stand 80 px apart.
+- Balance: the house footprint change cost about 9% of mowable area with patience
+  unchanged; the bot's times moved within noise (push 278 to 261 s, petrol 189 to 180,
+  ride-on 130 to 154 to 85%), so no retune.
+- The 49 FPS was the laptop's hybrid-GPU present, not the game (da715d3, 7450952, TRIBAL).
+- Tools: tools/shot.gd saves screenshots of the default job (in CLAUDE.md).
+- Verified: run_all green (17 tests; test_street gained the car and detached garage, with a
+  mutation check that its assert fires). Everything was eyeballed in screenshots; none of
+  it was played.
+
+OWED CHECKS: CHECKS.txt (16 checks, four loads, about 30 min). The six S5 checks have now
+rolled twice.
+
+NEXT:
+1. Play CHECKS.txt, especially S6-LOOK and S6-FACINGS, and live with the voxel look.
+2. A `/grill` on 21 (escalation, the biggest), 22, 25, 26, 27, 29, 38, 40 and 56 (the
+   obstacle rules: what's solid, mowable, throwable, costly).
+3. Leftovers buildable any time: 46 (drive shape), 55 (a park or playground, a better lot).
+
 ## Session 5 (2026-09-25): your session-4 answers, five small fixes, pad prompts
 - Your session-4 answers: 11 of 15 were yes (settings, ads, squash, dog, tally, fired,
   splash, throws, talking, tells, pad menus mostly), several with notes; audio, street,

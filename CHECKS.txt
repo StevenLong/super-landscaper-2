@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (17 checks, 4 loads, about 30 minutes)
+PLAY CHECKS OWED  (16 checks, 4 loads, about 30 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.

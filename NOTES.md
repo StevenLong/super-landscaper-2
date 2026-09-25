@@ -12,10 +12,9 @@ BLOCKS = spoils the next playtest.
 
 **Build (no design call needed)**
 
-46. [FEATURE, moderate] MOSTLY DONE (S6): a third of garages stand 80 px off the house;
-   half the generated jobs park the customer's car up the drive (solid; a stone dents it:
-   $40 and -20 mood, "My CAR!", the dev's veto); houses across the road came with 55.
-   Left: the drive's shape (a bend or a wider mouth needs non-rectangle drives).
+46. [FEATURE, small] Layout variety, what's left: the drive's shape (a bend or a wider
+   mouth needs non-rectangle drives). Detached garages, the car and houses across the road
+   shipped in S6.
 
 **Needs a grill (design calls, queued for one session)**
 
@@ -60,23 +59,8 @@ BLOCKS = spoils the next playtest.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
-PROPOSED ORDER: a grill session on 21, 22, 25, 26, 27, 29, 38, 40 (eight waiting, and 21 is
-the biggest open question); 46 is buildable any time.
-
-### Notes 2026-09-25 (session 3 play checks, answered in session 4's S4-VIEW / S4-AUDIO)
-
-44. DONE as a call (visual session, S6): full 3/4, trees included, scale fixed, drive left
-   long; in the design doc's "Look and Sound". The build is 57.
-
-57. [VISUAL, large] The 3/4 conversion, in steps, each playable on its own:
-   (1) DONE (S6): the house and garage stand up 3/4, the house's ridge on the back fence
-   (the drive is 40% shorter; lawn behind the lower garage), only ground-floor windows
-   smashable; (2) DONE (S6): fences, hedges, truck and trailer 3/4 (54 went with it), the
-   front run fades while you're behind it; (3) DONE (S6): depth sorting, checked in
-   screenshots behind/in front of a trunk, the garage, the truck and the customer; (4) DONE (S6): trees 3/4, a round shaded trunk
-   with roots, canopies lit from above; (5) DONE (S6): mowers, the player on foot, critters
-   and the dog are voxel models rendered at 8 facings (tools/voxel.py), the sprite
-   upright. 57 is done; what's left is the dev's eye on it (and any hand pixel art).
+PROPOSED ORDER: a grill session on 21, 22, 25, 26, 27, 29, 38, 40 and 56 (21 is the biggest
+open question); 46 and 55's leftovers are buildable any time.
 
 ### Notes 2026-09-25b (session 4 play checks)
 
@@ -86,16 +70,15 @@ the biggest open question); 46 is buildable any time.
    (S4-PAD-MENUS). Home: `board.gd` `_mower_row`, Godot's default focus neighbours. The dev
    says it may not need a fix if 27's shop replaces this menu.
 
-**Needs the visual session (44) or a design call**
+**Leftovers and a design call**
 
-55. [FEATURE, large] ROUGH VERSION DONE (S6, beyond.gd): next door on each side is
-   another house and garden (tidy stripes or long grass), woods, or an empty lot, per job;
-   a treeline behind the back fence; houses across the road. Left for later: a park or
-   playground, and anything nicer than rectangles of earth in the empty lot.
+55. [FEATURE, small] The world past the garden, what's left: a park or playground as a
+   neighbour type, and something nicer than rectangles of earth in the empty lot. The rough
+   version (neighbours, woods, lot, treeline, houses across the road) shipped in S6.
 56. [DESIGN, moderate] More obstacles and trees (S4-TREES): much smaller and larger trees,
    bushes out in the lawn, lawn games, litter, traffic cones, garden gnomes, plastic pink
    flamingos (the "lawn pelicans"). Each needs a call: solid, mowable, throwable, a rep
-   cost if broken?
+   cost if broken? For the grill. Draw them 3/4 (voxel models if the voxel look stays).
 
-PROPOSED ORDER: 57 in its steps (55 and 56 follow it so new props are
-drawn 3/4 from the start); the grill queue (21...) is unchanged; 47 waits on 27.
+PROPOSED ORDER: the dev lives with the voxel look first; then the grill (56 joins it); 47
+waits on 27.
