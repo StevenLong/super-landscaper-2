@@ -16,6 +16,7 @@ const GLASS := Rect2(0, -62, 30, 36) ## a ground-floor window's glass, from its 
 
 var size := Vector2(440, WALL_H + 24.0) ## the house and its patio
 var garage := 1 ## which side it's on: -1 left, 1 right
+var gap := 0.0 ## a detached garage stands this far off the house, lawn between
 var broken: Array[int] = [] ## x of each smashed window (main.gd WINDOWS)
 
 
@@ -24,7 +25,7 @@ func rect() -> Rect2:
 
 
 func garage_rect() -> Rect2:
-	return Rect2(position + Vector2(-GARAGE_W if garage < 0 else size.x, WALL_H - GARAGE_H), Vector2(GARAGE_W, GARAGE_H))
+	return Rect2(position + Vector2(-GARAGE_W - gap if garage < 0 else size.x + gap, WALL_H - GARAGE_H), Vector2(GARAGE_W, GARAGE_H))
 
 
 ## The house and garage together, for keeping other things clear of them.
@@ -56,7 +57,7 @@ func _ready() -> void:
 	var g := Sprite2D.new()
 	g.texture = preload("res://art/garage.png")
 	g.centered = false
-	g.position = Vector2(-GARAGE_W if garage < 0 else size.x, WALL_H)
+	g.position = Vector2(garage_rect().position.x - position.x, WALL_H)
 	g.offset = Vector2(0, -GARAGE_FOOT)
 	add_child(g)
 

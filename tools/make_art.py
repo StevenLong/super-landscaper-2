@@ -193,7 +193,8 @@ def main(only=None):
             save("mower_push", v.sheet([v.push(0), v.push(1), v.push(0, False)]), 2),
             save("mower_rideon", v.sheet([v.rideon(0), v.rideon(1), v.rideon(0, False)]), 2),
         ],
-        "vehicles": lambda: [save("truck", a.truck(), 3), save("trailer", a.trailer(), 3)],
+        "vehicles": lambda: [save("truck", a.truck(), 3), save("trailer", a.trailer(), 3),
+                             save("car", v.sheet([v.car(p) for p in v.CAR_PAINTS]), 2)],  # a column per paint
         "flowers": lambda: [save("flowers", a.flowers(), 6)],
         "house": lambda: [save("house", a.house(), 2), save("garage", a.garage(), 2)],
         "animals": lambda: [

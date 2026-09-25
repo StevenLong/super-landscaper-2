@@ -104,6 +104,9 @@ func on_stone(target: String) -> bool:
 		"window":
 			_change(-25.0)
 			_react("horrified", 2.5, "My WINDOW!")
+		"car":
+			_change(-20.0)
+			_react("horrified", 2.5, "My CAR!")
 		"wall":
 			_change(-5.0)
 			_react("annoyed", 1.5, "Careful!")

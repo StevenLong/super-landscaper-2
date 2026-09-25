@@ -11,7 +11,7 @@ import math
 import random
 
 from canvas import Canvas, hexc
-from make_art import INK, STEEL, RED, YELLOW, BLUE, WOOD, LEAF, P_SKIN, P_SHIRT, P_CAP, K_SKIN, K_HAIR, K_SHIRT
+from make_art import INK, STEEL, RED, YELLOW, BLUE, WOOD, LEAF, GLASS, P_SKIN, P_SHIRT, P_CAP, K_SKIN, K_HAIR, K_SHIRT
 
 F, G = 0.9, 0.6          # height -> screen px, depth -> screen px (as the house art)
 LIGHT = (-0.45, 0.35, 0.82)
@@ -301,4 +301,28 @@ def dog(step):
         m.box(7, 9, s * 4 - 1, s * 4 + 1, 10, 15, FUR[:3])                     # floppy ears
     m.box(5, 7, -4, 4, 10, 12, RED[1:4])                                       # collar
     m.line((-9, 0, 11), (-13, 3 if step == 0 else -3, 14), 1, FUR[1:])         # wagging
+    return m
+
+
+# ---------------------------------------------------------------- the customer's car
+
+CAR_PAINTS = [RED, BLUE[1:], STEEL[2:], [hexc(h) for h in ("123a1c", "1e5a2a", "2c7a38", "44a050", "68c070")]]
+
+
+def car(paint):
+    """A small hatchback, nose to +x: 110 long, 52 wide."""
+    m = Model()
+    for x in (-36, 36):
+        for s in (-1, 1):
+            m.wheel(x, 0, 7, 7, s * 26 - 3, s * 26 + 3, STEEL[:3], STEEL[3:], 0)
+    m.box(-55, 55, -25, 25, 4, 18, paint)                                      # body
+    m.box(-56, -53, -24, 24, 6, 9, STEEL[1:4])                                 # bumpers
+    m.box(53, 56, -24, 24, 6, 9, STEEL[1:4])
+    m.box(-40, 22, -22, 22, 18, 32, GLASS[1:])                                 # glasshouse
+    m.box(-36, 18, -21, 21, 32, 34, paint)                                     # roof
+    for x in (-10, -38):
+        m.box(x, x + 3, -23, 23, 18, 32, paint)                                # pillars
+    for s in (-17, 13):
+        m.box(54, 56, s, s + 4, 12, 16, [hexc("fff8c0")])                      # headlights
+        m.box(-56, -54, s, s + 4, 12, 15, RED[2:])                             # tail lights
     return m

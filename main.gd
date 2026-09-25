@@ -13,6 +13,8 @@ const WINDOWS := [40, 120, 290, 370] ## x of each ground-floor window in the hou
 const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
+const CAR_BILL := 40.0 ## a dent in the customer's car
+const CAR_SIZE := Vector2(52, 110) ## parked along the drive
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
@@ -39,6 +41,7 @@ var _next_hedgehog := 3.0
 var _next_squirrel := 8.0
 var _dog_in := -1.0
 var _house: Node2D
+var _car: StaticBody2D ## the customer's, up the drive; not every job
 var _shake := 0.0
 var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
 var _tells: Array[Dictionary] = [] ## critters about to come out: {kind, at, grace, left}
@@ -106,12 +109,16 @@ func _build_layout() -> void:
 	var fixed: bool = job.get("fixed_layout", false)
 	var r := RandomNumberGenerator.new()
 	r.seed = job.seed
+	var rv := RandomNumberGenerator.new() # later variety draws from its own, so layouts stay put
+	rv.seed = job.seed + 2
 
 	_house = HouseScript.new()
 	_house.name = "House"
 	_house.garage = 1 if fixed else [-1, 1][r.randi() % 2]
+	_house.gap = 0.0 if fixed else [0.0, 0.0, 80.0][rv.randi() % 3]
 	# Centre the house and garage together.
-	_house.position = Vector2(size.x * 0.5 - (_house.size.x + _house.GARAGE_W) * 0.5 + (_house.GARAGE_W if _house.garage < 0 else 0.0), 0)
+	var span: float = _house.GARAGE_W + _house.gap
+	_house.position = Vector2(size.x * 0.5 - (_house.size.x + span) * 0.5 + (span if _house.garage < 0 else 0.0), 0)
 	var wall := StaticBody2D.new() # the house and garage are solid; the patio in front isn't
 	for box: Rect2 in [_house.rect(), _house.garage_rect()]:
 		var wall_shape := CollisionShape2D.new()
@@ -137,6 +144,8 @@ func _build_layout() -> void:
 	# Parked along the kerb: the zone reaches back up the drive mouth to where you pull in.
 	$Truck/RefuelZone/Shape.position = Vector2(0, -80)
 	($Truck/RefuelZone/Shape.shape as RectangleShape2D).size = Vector2(180, 150)
+	if not fixed and rv.randf() < 0.5:
+		_park_car(Vector2(drive.position.x + drive.size.x * 0.5, g.end.y + 72.0), rv)
 	mower.position = truck_spot()
 	mower.rotation = -PI / 2.0 # facing up the drive
 	$Truck/Trailer.visible = Game.in_run and "rideon" in Game.owned
@@ -207,6 +216,28 @@ func _build_layout() -> void:
 	lawn.exclude_rect(_house.garage_rect())
 	lawn.exclude_rect(Rect2(drive.position, drive.size))
 	_build_borders(r, drive)
+
+
+## The customer's car, parked up the drive nose-in or reversed in: solid, and dents.
+func _park_car(at: Vector2, rv: RandomNumberGenerator) -> void:
+	_car = StaticBody2D.new()
+	_car.name = "Car"
+	_car.position = at
+	var cs := CollisionShape2D.new()
+	cs.shape = RectangleShape2D.new()
+	cs.shape.size = CAR_SIZE
+	_car.add_child(cs)
+	var spr := Sprite2D.new()
+	spr.texture = preload("res://art/car.png")
+	spr.hframes = 4 # the paints
+	spr.vframes = 8
+	spr.frame = [6, 2][rv.randi() % 2] * 4 + rv.randi() % 4
+	_car.add_child(spr)
+	$Scenery.add_child(_car)
+
+
+func _car_rect() -> Rect2:
+	return Rect2(_car.position - CAR_SIZE / 2.0, CAR_SIZE) if _car else Rect2()
 
 
 ## Where to pull up in front of the truck: the drive's mouth, on the pavement.
@@ -294,7 +325,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 
 ## Is p inside something a critter can't walk through?
 func _blocked(p: Vector2) -> bool:
-	if _house.rect().has_point(p) or _house.garage_rect().has_point(p):
+	if _house.rect().has_point(p) or _house.garage_rect().has_point(p) or _car_rect().has_point(p):
 		return true
 	if Rect2($Truck.position - Vector2(64, 32), Vector2(128, 64)).has_point(p):
 		return true
@@ -773,6 +804,8 @@ func _stone_hit_test(p: Vector2) -> String:
 		return "truck" # parked on the road, just past the garden
 	if lawn.keep_in(p, 0.0) != p:
 		return "gone" # over the fence
+	if _car_rect().has_point(p):
+		return "car"
 	if _house.garage_rect().has_point(p):
 		return "wall"
 	if not customer.knocked_out and p.distance_to($Client.position + Vector2(0, -14)) < 11.0:
@@ -817,6 +850,14 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"wall":
 			Sfx.play("thud")
 			customer.on_stone("wall")
+			_react()
+		"car":
+			Sfx.play("clonk")
+			_count("car_dents", CAR_BILL)
+			bills += CAR_BILL
+			pop_text("-$%d" % CAR_BILL, p, Color("f07060"))
+			shake(3.0)
+			customer.on_stone("car")
 			_react()
 		"truck":
 			Sfx.play("clonk")

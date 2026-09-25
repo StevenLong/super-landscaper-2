@@ -12,9 +12,10 @@ BLOCKS = spoils the next playtest.
 
 **Build (no design call needed)**
 
-46. [FEATURE, moderate] More layout variety (after 12/39's attached garage, left or right):
-   a detached garage, the drive's shape, the customer's car in the drive (one more thing
-   to hit), houses across the road. Not formulaic, but not drastically different.
+46. [FEATURE, moderate] MOSTLY DONE (S6): a third of garages stand 80 px off the house;
+   half the generated jobs park the customer's car up the drive (solid; a stone dents it:
+   $40 and -20 mood, "My CAR!", the dev's veto); houses across the road came with 55.
+   Left: the drive's shape (a bend or a wider mouth needs non-rectangle drives).
 
 **Needs a grill (design calls, queued for one session)**
 

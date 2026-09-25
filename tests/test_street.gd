@@ -6,6 +6,8 @@ extends SceneTree
 var m: Node
 var _frame := 0
 var _sides := {}
+var _cars := 0
+var _gaps := 0
 
 
 func _initialize() -> void:
@@ -15,8 +17,9 @@ func _initialize() -> void:
 	root.add_child(m)
 
 
-## A few generated jobs: the garage lands on either side, and the drive always runs
-## from it to the front of the garden.
+## A few generated jobs: the garage lands on either side (sometimes standing apart),
+## the drive always runs from it to the front of the garden, and sometimes the
+## customer's car is parked on it.
 func _layouts() -> void:
 	var game: Node = root.get_node("Game")
 	for s in range(1, 13):
@@ -30,6 +33,15 @@ func _layouts() -> void:
 		assert(drive.position.x > g.position.x and drive.position.x + drive.size.x < g.end.x, "the drive leads up to the garage door")
 		assert(drive.position.y + drive.size.y == job.lawn.size_px.y, "and runs to the front of the garden")
 		assert(house.footprint().position.x >= 0.0 and house.footprint().end.x <= job.lawn.size_px.x, "house and garage fit the plot")
+		if house.gap > 0.0:
+			_gaps += 1
+			assert(not house.rect().intersects(g), "a detached garage stands apart from the house")
+		var car: Node2D = job.get_node_or_null("Scenery/Car")
+		if car:
+			_cars += 1
+			assert(Rect2(drive.position, drive.size).has_point(car.position), "the customer's car is parked on the drive")
+			assert(job._stone_hit_test(car.position) == "car", "a stone dents it")
+			assert(job._blocked(car.position), "and critters walk round it")
 		job.free()
 	game.current_job = {}
 
@@ -39,6 +51,9 @@ func _physics_process(_delta: float) -> bool:
 	if _frame == 2:
 		_layouts()
 		assert(_sides.size() == 2, "garages come on both sides across jobs")
+		assert(_cars > 0 and _cars < 12, "some jobs have the customer's car in the drive, not all")
+		assert(_gaps > 0, "and some garages stand apart")
+		assert(m.get_node_or_null("Scenery/Car") == null, "the first job keeps its drive clear")
 		var h := float(m.lawn.size_px.y)
 		var spot: Vector2 = m.truck_spot()
 		assert(spot.y > h, "which is out past the hedge, on the pavement")
