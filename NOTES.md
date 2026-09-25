@@ -69,7 +69,7 @@ BLOCKS = spoils the next playtest.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
-PROPOSED ORDER: 12 with 39 (both reshape the garden edge), then 11, 13, 14. A grill session
+PROPOSED ORDER: 12 with 39 (both reshape the garden edge), then 36, 28. A grill session
 on 21, 22, 25, 26, 27, 29, 38, 40 before any of those are built.
 
 ### Notes 2026-09-25 (session 3 play checks)
