@@ -197,7 +197,7 @@ def main(only=None):
         ],
         "vehicles": lambda: [save("truck", a.truck(), 3), save("trailer", a.trailer(), 3)],
         "flowers": lambda: [save("flowers", a.flowers(), 6)],
-        "house": lambda: [save("house", a.house(), 2)],
+        "house": lambda: [save("house", a.house(), 2), save("garage", a.garage(), 2)],
         "animals": lambda: [
             save("hedgehog", sheet([a.hedgehog(0), a.hedgehog(1)]), 6),
             save("squirrel", sheet([a.squirrel(0), a.squirrel(1)]), 6),

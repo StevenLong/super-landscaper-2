@@ -31,6 +31,7 @@ if a session changes the design, edit the vault doc and push game-dev too.
 - New test: a `tests/test_<name>.gd` extending SceneTree that prints `PASS ...` and calls `quit()`.
   Autoload names (`Game`, `Sfx`) don't compile inside a -s script: use `root.get_node("Game")`.
   Set `save_path` to a test file before anything records a result.
+- Screenshots (needs a window): `SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot.gd`.
 - Balance: `"$GODOT" --headless --fixed-fps 60 --path . -s tests/sim_balance.gd` (a bot mows
   with each mower and prints times to 50/70/85/95%; deterministic, not part of run_all).
 

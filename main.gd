@@ -9,7 +9,7 @@ const BedScript := preload("res://flowerbed.gd")
 const HouseScript := preload("res://house.gd")
 const WalkerScript := preload("res://walker.gd")
 
-const WINDOWS := [40, 120, 290, 370] ## x of each window in the house art (30 wide, y 69..93)
+const WINDOWS := [40, 120, 290, 370] ## x of each ground-floor window in the house art (30 wide)
 const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0

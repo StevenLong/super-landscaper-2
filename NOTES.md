@@ -64,15 +64,16 @@ the biggest open question); 46 is buildable any time.
 
 ### Notes 2026-09-25 (session 3 play checks, answered in session 4's S4-VIEW / S4-AUDIO)
 
-44. [DESIGN, large] Perspective and scale: the visual design session, NEXT (S4-VIEW).
-   Decided and in the design doc: trees go top-down, the house keeps its face. Open: the
-   dev finds the perspective and the scale all over the place (the house is a small
-   rectangle, the drive is miles long). FIX: mock up the same garden in a few matching
-   styles, with the house/drive/lawn scale corrected, and the dev picks: (a) pure
-   top-down, the house's face a thin strip; (b) a shallow tilt on tall things only (house,
-   garage, fences, truck); (c) full 3/4 like A Link to the Past / Stardew. Proposed: (b),
-   since it keeps the mower and lawn art and still shows the windows. The tree redraw and
-   54, 55, 56 wait on it. The dev may take over some pixel art later (not decided).
+44. DONE as a call (visual session, S6): full 3/4, trees included, scale fixed, drive left
+   long; in the design doc's "Look and Sound". The build is 57.
+
+57. [VISUAL, large] The 3/4 conversion, in steps, each playable on its own:
+   (1) DONE (S6): the house and garage stand up 3/4 from the old wall line, same ground
+   footprint, only ground-floor windows smashable; (2) fences, hedges and the truck with fronts, which
+   also covers 54; (3) Y-sorting so the mower goes behind trunks, the truck and the
+   customer; (4) trees with trunks; (5) mowers, the player on foot and critters drawn per
+   facing direction, the sprite no longer rotated. QUESTION for (5): 8 facings (proposed,
+   the mower turns smoothly and 4 would snap hard) or 4.
 
 ### Notes 2026-09-25b (session 4 play checks)
 
@@ -94,5 +95,5 @@ the biggest open question); 46 is buildable any time.
    flamingos (the "lawn pelicans"). Each needs a call: solid, mowable, throwable, a rep
    cost if broken?
 
-PROPOSED ORDER: the visual session (44), which unblocks the tree redraw and 54-56; the grill
-queue (21...) is unchanged; 47 waits on 27.
+PROPOSED ORDER: 57 in its steps (step 2 covers 54; 55 and 56 follow it so new props are
+drawn 3/4 from the start); the grill queue (21...) is unchanged; 47 waits on 27.

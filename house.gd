@@ -1,10 +1,14 @@
 extends Node2D
 ## The customer's house along the top of the garden, with a patio they watch from,
-## and a garage attached on one side that the drive leads up to. Not lawn. Fixed size
-## to match art/house.png; the garage is built from slices of the same art.
+## and a garage attached on one side that the drive leads up to. Not lawn. Seen 3/4:
+## the ground footprint is `size` (the wall's foot at WALL_H, the patio below it) and
+## the art stands up from the foot, over the neighbour's lawn behind.
 
 const GARAGE_W := 120.0
-const WALL_H := 106.0 ## the solid part, down to the bottom of the brick course
+const WALL_H := 106.0 ## the solid part, down to the foot of the front wall
+const ART_FOOT := 348.0 ## y of the wall's foot in art/house.png (tools/art_sprites.py HOUSE_BASE)
+const GARAGE_FOOT := 150.0 ## the same in art/garage.png
+const GLASS := Rect2(0, 44, 30, 36) ## a ground-floor window's glass, from its x (main.gd WINDOWS)
 
 var size := Vector2(440, 130)
 var garage := 1 ## which side it's on: -1 left, 1 right
@@ -35,31 +39,21 @@ func smash(window_x: int) -> void:
 
 
 func _draw() -> void:
-	var art := preload("res://art/house.png")
-	draw_texture(art, Vector2.ZERO)
-	# The garage: the house's roof and plain wall carried on, with an up-and-over door.
-	var gx := -GARAGE_W if garage < 0 else size.x
-	draw_texture_rect_region(art, Rect2(gx, 0, GARAGE_W, 62), Rect2(4, 0, GARAGE_W, 62))
-	for i in ceili(GARAGE_W / 32.0):
-		var w := minf(32.0, GARAGE_W - i * 32.0)
-		draw_texture_rect_region(art, Rect2(gx + i * 32.0, 62, w, WALL_H - 62), Rect2(4, 62, w, WALL_H - 62))
-	var door := Rect2(gx + 12, 68, GARAGE_W - 24, WALL_H - 68)
-	draw_rect(door.grow(2), Color("4a3a2e"))
-	draw_rect(door, Color("d8d2c2"))
-	for y in range(int(door.position.y) + 5, int(door.end.y), 6):
-		draw_line(Vector2(door.position.x, y), Vector2(door.end.x, y), Color("aaa498"))
+	draw_texture(preload("res://art/house.png"), Vector2(0, WALL_H - ART_FOOT))
+	draw_texture(preload("res://art/garage.png"), Vector2(-GARAGE_W if garage < 0 else size.x, WALL_H - GARAGE_FOOT))
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
 	for x in broken:
-		var o := Vector2(x + 3, 72)
-		draw_rect(Rect2(o, Vector2(24, 18)), Color("1a1820"))
+		var o := GLASS.position + Vector2(x, 0)
+		var s := GLASS.size
+		draw_rect(Rect2(o, s), Color("1a1820"))
 		for shard: PackedVector2Array in [
-			[Vector2(0, 0), Vector2(9, 0), Vector2(2, 7)],
-			[Vector2(24, 0), Vector2(24, 11), Vector2(17, 0)],
-			[Vector2(0, 18), Vector2(0, 10), Vector2(6, 18)],
-			[Vector2(24, 18), Vector2(13, 18), Vector2(21, 13)],
+			[Vector2(0, 0), Vector2(0.4, 0), Vector2(0.08, 0.35)],
+			[Vector2(1, 0), Vector2(1, 0.55), Vector2(0.7, 0)],
+			[Vector2(0, 1), Vector2(0, 0.55), Vector2(0.25, 1)],
+			[Vector2(1, 1), Vector2(0.55, 1), Vector2(0.88, 0.7)],
 		]:
 			var pts := PackedVector2Array()
 			for v in shard:
-				pts.append(o + v)
+				pts.append(o + v * s)
 			draw_colored_polygon(pts, glass)

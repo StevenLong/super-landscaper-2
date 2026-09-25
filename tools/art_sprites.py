@@ -193,51 +193,110 @@ def flowers():
 
 # ---------------------------------------------------------------- house
 
+HOUSE_BASE = 348   # art y of the house's front wall foot; house.gd draws it at WALL_H
+GARAGE_BASE = 150  # the same for the garage art
+WINDOWS = (40, 120, 290, 370)  # window x, 30 wide; main.gd WINDOWS matches
+
+
+def roof(c, x, y0, w, h, rng):
+    """A tiled roof slope from y0 (ridge) down h rows to the gutter, seen 3/4."""
+    for y in range(y0, y0 + h):
+        row = (y - y0) // 7
+        for x_ in range(x, x + w):
+            col = ROOF[2] if (y - y0) < h * 0.35 else ROOF[3]
+            if (y - y0) % 7 == 6:
+                col = ROOF[1]
+            elif (x_ + row * 6) % 12 == 0:
+                col = ROOF[1]
+            elif rng.random() < 0.03:
+                col = ROOF[4]
+            c.px[y][x_] = col
+    c.rect(x, y0, w, 3, ROOF[0])                         # ridge tiles
+    c.rect(x, y0 + 1, w, 1, ROOF[1])
+    c.rect(x, y0 + h, w, 4, STONE[1])                    # gutter and fascia
+    c.rect(x, y0 + h, w, 1, STONE[3])
+
+
+def facade(c, x, y0, w, h):
+    """Cream render with faint courses and a brick plinth, y0 top to y0 + h foot."""
+    for y in range(y0, y0 + h):
+        for x_ in range(x, x + w):
+            c.px[y][x_] = CREAM[2] if (y - y0) % 9 == 8 else (CREAM[3] if (x_ + y) % 17 else CREAM[2])
+    for y in range(y0 + h - 10, y0 + h):
+        for x_ in range(x, x + w):
+            c.px[y][x_] = BRICK[2] if ((x_ + (4 if (y // 3) % 2 else 0)) % 8) and y % 3 else BRICK[1]
+
+
+def window(c, wx, top, h):
+    c.rect(wx - 3, top - 3, 36, h + 6, CREAM[0])          # frame
+    c.rect(wx, top, 30, h, GLASS[2])
+    c.rect(wx, top, 30, 4, GLASS[4])
+    c.rect(wx + 2, top + 4, 3, h - 8, GLASS[3])
+    c.rect(wx + 14, top, 2, h, CREAM[4])
+    c.rect(wx, top + h // 2 - 1, 30, 2, CREAM[4])
+    c.rect(wx - 8, top, 6, h, hexc("c86070"))           # shutters
+    c.rect(wx + 32, top, 6, h, hexc("c86070"))
+    c.rect(wx - 8, top, 6, 1, hexc("e08898"))
+    c.rect(wx + 32, top, 6, 1, hexc("e08898"))
+    c.rect(wx - 5, top + h + 3, 40, 4, STONE[3])          # sill
+    c.rect(wx - 5, top + h + 6, 40, 1, STONE[1])
+
+
 def house():
-    W, H = 440, 130
-    c = Canvas(W, H)
+    """Two storeys seen 3/4: roof, upstairs, ground floor, then the patio. The front
+    wall's foot is HOUSE_BASE; only ground-floor windows are low enough to hit."""
+    W, B = 440, HOUSE_BASE
+    c = Canvas(W, B + 24)
     r = random.Random(7)
-    for y in range(0, 62):
-        ramp_i = 3 if y < 30 else 2
+    wall_top = B - 158
+    shaded_rect(c, 332, wall_top - 158 - 22, 24, 44, BRICK)   # chimney, behind the ridge
+    c.rect(329, wall_top - 158 - 26, 30, 5, STONE[2])
+    c.rect(329, wall_top - 158 - 26, 30, 1, STONE[4])
+    roof(c, 0, wall_top - 154, W, 154, r)
+    facade(c, 0, wall_top + 4, W, 154)
+    for wx in WINDOWS:
+        window(c, wx, B - 141, 36)                       # upstairs
+        window(c, wx, B - 62, 36)                        # ground floor
+    window(c, 205, B - 141, 36)                          # over the door
+    c.rect(196, B - 76, 48, 8, ROOF[2])                  # porch hood
+    c.rect(196, B - 76, 48, 2, ROOF[4])
+    c.rect(196, B - 69, 48, 1, ROOF[0])
+    c.rect(203, B - 66, 34, 66, CREAM[0])                # the door
+    shaded_rect(c, 205, B - 64, 30, 64, WOOD)
+    for py in (B - 58, B - 30):
+        c.rect(209, py, 22, 22, WOOD[2])
+        c.rect(209, py, 22, 1, WOOD[1])
+    c.rect(229, B - 34, 3, 3, YELLOW[3])
+    c.rect(213, B - 56, 14, 10, GLASS[2])
+    c.rect(213, B - 56, 14, 2, GLASS[4])
+    c.rect(196, B - 1, 48, 5, STONE[3])                  # step
+    c.rect(0, B - 1, W, 1, INK)
+    for y in range(B, B + 24):                           # patio slabs
         for x in range(W):
-            col = ROOF[ramp_i]
-            if y % 6 == 5 or (x + (y // 6) * 5) % 10 == 0:
-                col = ROOF[ramp_i - 1]
-            c.px[y][x] = col
-    c.rect(0, 29, W, 2, ROOF[4])
-    c.rect(0, 0, W, 1, ROOF[0])
-    shaded_rect(c, 332, 6, 22, 26, BRICK)         # chimney
-    c.rect(330, 4, 26, 4, STONE[2])
-    c.rect(0, 60, W, 3, STONE[1])                 # gutter
-    c.rect(0, 60, W, 1, STONE[3])
-    for y in range(63, 106):
-        for x in range(W):
-            c.px[y][x] = CREAM[3] if (x + y) % 17 else CREAM[2]
-    for y in range(98, 106):
-        for x in range(W):
-            c.px[y][x] = BRICK[2] if ((x + (4 if (y // 4) % 2 else 0)) % 8) else BRICK[1]
-    for wx in (40, 120, 290, 370):
-        c.rect(wx - 2, 69, 34, 26, CREAM[0])
-        c.rect(wx, 71, 30, 22, GLASS[2])
-        c.rect(wx, 71, 30, 3, GLASS[4])
-        c.rect(wx + 14, 71, 2, 22, CREAM[4])
-        c.rect(wx, 81, 30, 2, CREAM[4])
-        c.rect(wx, 71, 5, 22, hexc("c86070"))
-        c.rect(wx + 25, 71, 5, 22, hexc("c86070"))
-        c.rect(wx - 4, 94, 38, 3, STONE[3])
-    c.rect(204, 66, 32, 34, CREAM[0])             # door
-    shaded_rect(c, 206, 68, 28, 32, WOOD)
-    c.rect(228, 84, 3, 3, YELLOW[3])
-    c.rect(214, 72, 12, 8, GLASS[2])
-    c.rect(214, 72, 12, 2, GLASS[4])
-    c.rect(196, 100, 48, 6, STONE[3])
-    for y in range(106, H):                       # patio slabs
-        for x in range(W):
-            edge = (y - 106) % 12 == 0 or (x + (6 if ((y - 106) // 12) % 2 else 0)) % 24 == 0
+            edge = (y - B) % 12 == 0 or (x + (6 if ((y - B) // 12) % 2 else 0)) % 24 == 0
             c.px[y][x] = STONE[1] if edge else (STONE[3] if r.random() > 0.08 else STONE[2])
-    for px_ in (182, 250):                        # pots by the door
-        shaded_rect(c, px_, 104, 10, 10, BRICK)
-        shaded_ellipse(c, px_ + 5, 101, 7, 6, LEAF)
+    for px_ in (176, 254):                               # pots by the door
+        shaded_rect(c, px_, B - 8, 12, 12, BRICK)
+        shaded_ellipse(c, px_ + 6, B - 14, 9, 9, LEAF)
+    return c
+
+
+def garage():
+    """One storey with an up-and-over door; its foot is GARAGE_BASE."""
+    W, B = 120, GARAGE_BASE
+    c = Canvas(W, B)
+    r = random.Random(8)
+    wall_top = B - 80
+    roof(c, 0, wall_top - 66, W, 66, r)
+    facade(c, 0, wall_top + 4, W, 76)
+    door = (12, B - 62, W - 24, 62)
+    c.rect(door[0] - 3, door[1] - 3, door[2] + 6, door[3] + 3, CREAM[0])
+    c.rect(*door, hexc("d8d2c2"))
+    for y in range(door[1] + 5, B, 7):
+        c.rect(door[0], y, door[2], 1, hexc("aaa498"))
+        c.rect(door[0], y + 1, door[2], 1, hexc("ece6d8"))
+    c.rect(W // 2 - 6, B - 12, 12, 3, STEEL[2])          # handle
+    c.rect(0, B - 1, W, 1, INK)
     return c
 
 
