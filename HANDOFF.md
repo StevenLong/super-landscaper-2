@@ -6,6 +6,35 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 5 (2026-09-25): your session-4 answers, five small fixes, pad prompts
+- Your session-4 answers: 12 of 15 signed off as they were (settings, ads, squash, dog,
+  tally, fired, splash, throws, talking, tells, pad menus mostly). The rest became NOTES
+  47-56 (46e2220); 47 (board left/right) waits on the shop (27).
+- Your calls: my 3/4 trees are vetoed (the flat trunk reads as cardboard): trees go back
+  top-down, the house keeps its face. Audio is yours, in Ableton, later; the generated
+  sounds are placeholders. Promoted to the design doc as "Look and Sound" (game-dev
+  339e539), veto any. Perspective and scale overall go to a visual design session (44).
+- Built (c6db936): one scream per burst of flowers (1.5 s cooldown, rep still counts every
+  flower); the engine starts silent (its loops start at sample -2017/2250, so full volume
+  at play() would click; the likely cause of the job-start pop, not heard); splashes fit
+  inside the pond's water; a stoned tree's canopy sways and drops the leaves; talk is
+  slower (0.18 s a word) with talk mouths that flip open/shut against the resting face.
+- Built (e95a237): prompts follow the last device, [E] on keys, (A) on a pad, in hints,
+  the first briefing and the title help. Text, not drawn icons, until the visual session.
+- My call, flagged for your veto: Xbox button names.
+- Verified: run_all green (17 checks; new test_prompts, and test_hazards gained the splash
+  fit and the scream cooldown). The face sheet was eyeballed. None of it played or heard.
+
+OWED CHECKS: CHECKS.txt (6 checks, two loads, about 10 min).
+
+NEXT:
+1. The visual design session (NOTES 44): the same garden mocked up (a) pure top-down,
+   (b) a shallow tilt on tall things only, (c) full 3/4, with the house/drive/lawn scale
+   fixed. I lean (b). The tree redraw and 54-56 wait on it.
+2. Play CHECKS.txt whenever.
+3. A `/grill` on the queued design items: 21 (escalation, the biggest), 22, 25, 26, 27,
+   29, 38, 40, plus 56 (obstacle rules).
+
 ## Session 4 (2026-09-25): every buildable NOTES item, the street, the tally, classifieds
 - Your session-3 answers: 9 of 12 signed off (title flip, WASD, stamina, face duck, paid
   menu, cheats, spite, glug, stones). Three became NOTES 41-43 and are now built: pad A in
