@@ -87,9 +87,10 @@ the biggest open question); 46 is buildable any time.
 
 **Needs the visual session (44) or a design call**
 
-55. [FEATURE, large] The plots around the garden are a green void (S4-STREET), a missed
-   chance for variety: forest, a park, a playground, other houses, an abandoned empty lot,
-   varying per job. Goes with 46.
+55. [FEATURE, large] ROUGH VERSION DONE (S6, beyond.gd): next door on each side is
+   another house and garden (tidy stripes or long grass), woods, or an empty lot, per job;
+   a treeline behind the back fence; houses across the road. Left for later: a park or
+   playground, and anything nicer than rectangles of earth in the empty lot.
 56. [DESIGN, moderate] More obstacles and trees (S4-TREES): much smaller and larger trees,
    bushes out in the lawn, lawn games, litter, traffic cones, garden gnomes, plastic pink
    flamingos (the "lawn pelicans"). Each needs a call: solid, mowable, throwable, a rep

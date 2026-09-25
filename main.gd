@@ -141,6 +141,12 @@ func _build_layout() -> void:
 	mower.rotation = -PI / 2.0 # facing up the drive
 	$Truck/Trailer.visible = Game.in_run and "rideon" in Game.owned
 	_build_street()
+	var beyond := preload("res://beyond.gd").new()
+	beyond.name = "Beyond"
+	add_child(beyond)
+	var rb := RandomNumberGenerator.new() # its own, so the garden's layout stays as it was
+	rb.seed = job.seed + 1
+	beyond.build(size.x, size.y, BORDER, size.y + BORDER + FOOTPATH * 2 + ROAD, BORDER_UP, rb)
 
 	var taken: Array[Rect2] = [_house.footprint().grow(50), Rect2(drive.position, drive.size).grow(30)]
 	var trees: Array = []
