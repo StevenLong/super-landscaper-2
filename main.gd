@@ -17,6 +17,7 @@ const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
 const ROAD := 150
+const BORDER_UP := 29.0 ## how far a hedge or fence rises in the 3/4 view (art/hedge_h.png face)
 const GRAVEL := Color(1.0, 0.88, 0.68) ## tints the grey gravel tile for the drive
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
@@ -41,6 +42,7 @@ var _house: Node2D
 var _shake := 0.0
 var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
 var _tells: Array[Dictionary] = [] ## critters about to come out: {kind, at, grace, left}
+var _front: Array[TextureRect] = [] ## the hedge or fence along the road, drawn over the lawn's edge
 var _splats: Array[Vector2] = [] ## squashed critters: they stay for the whole job
 var _tracks: Array = [] ## red wheel marks: [position, sideways unit, strength 0..1]
 var _blood := 0.0 ## px of red trail the mower has left to lay after running something over
@@ -265,13 +267,20 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		var s: Array = sides[key]
 		var vertical: bool = key == "left" or key == "right"
 		var strip := TextureRect.new()
-		if s[0] == "hedge":
-			strip.texture = preload("res://art/hedge.png")
-		else:
-			strip.texture = preload("res://art/fence_v.png") if vertical else preload("res://art/fence_h.png")
+		var box: Rect2 = s[1]
+		if vertical: # seen from above, lifted by its height like everything that stands up
+			strip.texture = preload("res://art/hedge_v.png") if s[0] == "hedge" else preload("res://art/fence_v.png")
+			box = Rect2(box.position.x, -BORDER_UP, box.size.x, h + b) # from the top run's line to the road
+		else: # its front face, standing on the run's outer edge (the lawn edge at the top)
+			strip.texture = preload("res://art/hedge_h.png") if s[0] == "hedge" else preload("res://art/fence_h.png")
+			var foot := box.end.y if key.begins_with("bottom") else 0.0
+			box = Rect2(box.position.x, foot - strip.texture.get_height(), box.size.x, strip.texture.get_height())
 		strip.stretch_mode = TextureRect.STRETCH_TILE
-		strip.position = (s[1] as Rect2).position
-		strip.size = (s[1] as Rect2).size
+		strip.position = box.position
+		strip.size = box.size
+		if key.begins_with("bottom"): # in front of the lawn: drawn over the mower
+			strip.z_index = 1
+			_front.append(strip)
 		$Borders.add_child(strip)
 		if (s[2][0] as Vector2).distance_to(s[2][1]) > 40.0: # too short to come out of
 			_edges.append({"kind": s[0], "from": s[2][0], "to": s[2][1], "inward": s[3]})
@@ -333,6 +342,10 @@ func _process(delta: float) -> void:
 	for t in $Scenery.get_children():
 		if "canopy" in t:
 			t.near = t.crown_rect().grow(20.0).has_point(me) or me.distance_to(t.position) < t.radius + 30.0
+	# So does the front hedge or fence while you're behind it.
+	for strip in _front:
+		var behind := Rect2(strip.position - Vector2(0, 40), strip.size + Vector2(0, 40)).has_point(me)
+		strip.modulate.a = move_toward(strip.modulate.a, 0.45 if behind else 1.0, delta * 4.0)
 
 
 const TRAIL := 140.0 ## how far the mower trails red after running a critter over

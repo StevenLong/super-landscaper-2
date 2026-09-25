@@ -70,11 +70,10 @@ the biggest open question); 46 is buildable any time.
 57. [VISUAL, large] The 3/4 conversion, in steps, each playable on its own:
    (1) DONE (S6): the house and garage stand up 3/4, the house's ridge on the back fence
    (the drive is 40% shorter; lawn behind the lower garage), only ground-floor windows
-   smashable; (2) fences, hedges and the truck with fronts, which
-   also covers 54; (3) Y-sorting so the mower goes behind trunks, the truck and the
+   smashable; (2) DONE (S6): fences, hedges, truck and trailer 3/4
+   (54 went with it), the front run fades while you're behind it; (3) Y-sorting so the mower goes behind trunks, the truck and the
    customer; (4) trees with trunks; (5) mowers, the player on foot and critters drawn per
-   facing direction, the sprite no longer rotated. QUESTION for (5): 8 facings (proposed,
-   the mower turns smoothly and 4 would snap hard) or 4.
+   facing direction, the sprite no longer rotated: 8 facings (the dev's call, S6).
 
 ### Notes 2026-09-25b (session 4 play checks)
 
@@ -86,8 +85,6 @@ the biggest open question); 46 is buildable any time.
 
 **Needs the visual session (44) or a design call**
 
-54. [VISUAL, moderate] Hedges need a rework now they sit off the world's edge (S4-TELLS):
-   they read as border strips that lost their border.
 55. [FEATURE, large] The plots around the garden are a green void (S4-STREET), a missed
    chance for variety: forest, a park, a playground, other houses, an abandoned empty lot,
    varying per job. Goes with 46.
@@ -96,5 +93,5 @@ the biggest open question); 46 is buildable any time.
    flamingos (the "lawn pelicans"). Each needs a call: solid, mowable, throwable, a rep
    cost if broken?
 
-PROPOSED ORDER: 57 in its steps (step 2 covers 54; 55 and 56 follow it so new props are
+PROPOSED ORDER: 57 in its steps (55 and 56 follow it so new props are
 drawn 3/4 from the start); the grill queue (21...) is unchanged; 47 waits on 27.

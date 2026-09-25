@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxmo1i7syhsvp"
-path="res://.godot/imported/hedge.png-38c684efe892958638cd54b7f94e5044.ctex"
+uid="uid://1f18toao17jp"
+path="res://.godot/imported/hedge_h.png-fe203cb48effe217617c3f7b1b19b938.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/hedge.png"
-dest_files=["res://.godot/imported/hedge.png-38c684efe892958638cd54b7f94e5044.ctex"]
+source_file="res://art/hedge_h.png"
+dest_files=["res://.godot/imported/hedge_h.png-fe203cb48effe217617c3f7b1b19b938.ctex"]
 
 [params]
 

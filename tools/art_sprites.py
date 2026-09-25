@@ -116,42 +116,62 @@ def rideon(step, rider=True):
 
 # ---------------------------------------------------------------- vehicles
 
+TRUCK_FOOT = 90  # art y of the truck's near side at ground; main.tscn offsets the sprite to it
+
+
+def box34(c, x, foot, w, depth, height, ramp, top=None):
+    """A box seen 3/4: its near side (height tall, standing on foot) under its top
+    (depth tall). Returns the top's y."""
+    side_top = foot - height
+    shaded_rect(c, x, foot - height, w, height, ramp)
+    shaded_rect(c, x, side_top - depth, w, depth, top or ramp[1:])
+    return side_top - depth
+
+
 def truck():
-    W, H = 132, 68
+    """The pickup parked facing right, seen 3/4: the open bed with the fuel can in
+    it, the cab, the bonnet, wheels on the near side."""
+    W, H = 132, 96
     c = Canvas(W, H)
-    x0, y0 = 6, 6                     # body 120x56
-    for wx in (x0 + 12, x0 + 84):
-        wheel(c, wx, y0 - 3, 16, 5)
-        wheel(c, wx, y0 + 54, 16, 5)
-    shaded_rect(c, x0, y0, 120, 56, BLUE)
-    c.rect(x0 + 3, y0 + 4, 70, 48, BLUE[1])
+    F = TRUCK_FOOT - 4                                       # bottom of the body, above the wheels
+    D = 34                                                   # 56 px deep, seen at 0.6
+    box34(c, 4, F, 78, D, 24, BLUE[1:5], BLUE[2:])           # the bed
+    c.rect(8, F - 24 - D + 4, 70, D - 7, BLUE[0])            # inside it
     for i in range(6):
-        c.rect(x0 + 6 + i * 11, y0 + 5, 1, 46, BLUE[0])
-    shaded_rect(c, x0 + 62, y0 + 5, 10, 46, STEEL[1:5])
-    shaded_rect(c, x0 + 8, y0 + 18, 16, 20, YELLOW)      # the fuel can
-    c.rect(x0 + 12, y0 + 16, 8, 3, YELLOW[1])
-    c.rect(x0 + 22, y0 + 20, 3, 4, STEEL[1])
-    shaded_rect(c, x0 + 76, y0 + 5, 26, 46, BLUE[2:])
-    c.rect(x0 + 100, y0 + 7, 5, 42, GLASS[3])
-    c.rect(x0 + 101, y0 + 9, 1, 12, GLASS[4])
-    shaded_rect(c, x0 + 105, y0 + 6, 14, 44, BLUE[1:5])
-    c.rect(x0 + 117, y0 + 8, 2, 6, hexc("fff8c0"))
-    c.rect(x0 + 117, y0 + 42, 2, 6, hexc("fff8c0"))
-    c.rect(x0 + 96, y0 - 2, 4, 2, STEEL[2])
-    c.rect(x0 + 96, y0 + 56, 4, 2, STEEL[2])
+        c.rect(12 + i * 11, F - 24 - D + 5, 1, D - 9, BLUE[1])
+    shaded_rect(c, 16, F - 24 - 24, 16, 20, YELLOW)          # the fuel can
+    c.rect(20, F - 24 - 26, 8, 3, YELLOW[1])
+    c.rect(30, F - 24 - 22, 3, 4, STEEL[1])
+    box34(c, 80, F, 34, D, 50, BLUE[2:5], BLUE[4:])          # the cab
+    c.rect(86, F - 44, 24, 18, GLASS[2])                     # side window
+    c.rect(86, F - 44, 24, 3, GLASS[4])
+    c.rect(88, F - 41, 2, 12, GLASS[3])
+    c.rect(104, F - 50 - D + 2, 9, D - 3, GLASS[3])         # the windscreen, sloping to the bonnet
+    c.rect(104, F - 50 - D + 2, 2, D - 3, GLASS[4])
+    c.rect(96, F - 22, 6, 2, STEEL[2])                       # door handle
+    c.rect(96, F - 50, 1, 50, BLUE[1])                       # door seam
+    box34(c, 114, F, 16, D, 28, BLUE[2:5], BLUE[4:])         # the bonnet
+    c.rect(126, F - 22, 3, 6, hexc("fff8c0"))                # headlight
+    c.rect(4, F - 2, 126, 3, STEEL[1])                       # sill
+    for wx in (22, 106):
+        c.ellipse(wx, F + 1, 10, 9, STEEL[0])
+        c.ellipse(wx, F + 1, 4.5, 4, STEEL[3])
+        c.ellipse(wx - 1, F, 1.5, 1.5, STEEL[5])
     c.outline(INK)
     return c
 
 
 def trailer():
-    W, H = 70, 50
+    """The flatbed trailer hitched behind, seen 3/4, drawbar to the right."""
+    W, H = 70, 48
     c = Canvas(W, H)
-    wheel(c, 24, 1, 14, 5)
-    wheel(c, 24, 44, 14, 5)
-    shaded_rect(c, 4, 5, 56, 40, STEEL[1:5])
+    F = 40
+    box34(c, 4, F, 56, 24, 8, STEEL[1:5])
     for i in range(7):
-        c.rect(7 + i * 7, 7, 2, 36, STEEL[2])
-    c.rect(60, 23, 10, 4, STEEL[2])
+        c.rect(8 + i * 7, F - 8 - 22, 2, 20, STEEL[2])
+    c.rect(60, F - 8, 10, 3, STEEL[2])                       # drawbar
+    c.ellipse(26, F + 1, 7, 6.5, STEEL[0])
+    c.ellipse(26, F + 1, 3, 2.5, STEEL[3])
     c.outline(INK)
     return c
 
@@ -361,49 +381,74 @@ def splat():
 
 # ---------------------------------------------------------------- borders
 
-def hedge_tile():
-    """24x24 tileable hedge top: packed leaf clumps, lit from the top-left."""
-    r = random.Random(31)
-    c = Canvas(24, 24, LEAF[1])
-    for _ in range(40):
-        x, y = r.uniform(0, 24), r.uniform(0, 24)
+PALE = [hexc(h) for h in ("6a5a44", "9a8870", "c8b898", "e8dcc0", "fcf4e0")]
+
+
+def leaves(c, n, x0, y0, w, h, ramp, seed, wrap):
+    """Leaf clumps over a box, lit from the top-left, wrapping every `wrap` px in x."""
+    r = random.Random(seed)
+    for _ in range(n):
+        x, y = r.uniform(x0, x0 + w), r.uniform(y0, y0 + h)
         rr = r.uniform(2.5, 4.5)
-        for ox in (-24, 0, 24):  # wrap so the tile repeats seamlessly
-            for oy in (-24, 0, 24):
-                shaded_ellipse(c, x + ox, y + oy, rr, rr, LEAF[1:], bias=r.uniform(-0.15, 0.1))
+        for ox in (-wrap, 0, wrap):
+            shaded_ellipse(c, x + ox, y, rr, rr, ramp, bias=r.uniform(-0.15, 0.1))
+
+
+def hedge_h():
+    """A 24x44 run of hedge for the top and bottom edges, seen 3/4: a bumpy top
+    (y 2..16) over a darker front face (y 15..43). The ground line is the bottom row."""
+    c = Canvas(24, 44)
+    c.rect(0, 16, 24, 28, LEAF[1])
+    leaves(c, 26, 0, 17, 24, 25, LEAF[0:4], 32, 24)          # the face, in shade
+    c.rect(0, 8, 24, 9, LEAF[2])
+    leaves(c, 30, 0, 5, 24, 11, LEAF[2:], 31, 24)            # the top, in the light
+    c.rect(0, 42, 24, 2, LEAF[0])
+    return c
+
+
+def hedge_v():
+    """A 24x24 run of hedge for the side edges: its top from above, with bumpy
+    edges so it doesn't read as a strip. Tiles vertically."""
+    c = Canvas(24, 24)
+    c.rect(4, 0, 16, 24, LEAF[2])
+    r = random.Random(33)
+    for _ in range(34):
+        x, y = r.uniform(4, 20), r.uniform(0, 24)
+        rr = r.uniform(2.5, 4.5)
+        for oy in (-24, 0, 24):
+            shaded_ellipse(c, x, y + oy, rr, rr, LEAF[1:], bias=r.uniform(-0.15, 0.1))
     return c
 
 
 def fence_h():
-    """A 16x24 run of picket fence seen from above-front, for top and bottom edges:
-    a pale rail with pickets and their shadow on the grass."""
-    c = Canvas(16, 24)
-    PALE = [hexc(h) for h in ("6a5a44", "9a8870", "c8b898", "e8dcc0", "fcf4e0")]
-    c.rect(0, 16, 16, 4, hexc("0c200c", 90))                 # shadow
-    c.rect(0, 7, 16, 3, PALE[2])                             # rail
-    c.rect(0, 7, 16, 1, PALE[3])
-    for x in (2, 10):
-        c.rect(x, 2, 4, 16, PALE[3])
-        c.rect(x, 2, 1, 16, PALE[4])
-        c.rect(x + 3, 2, 1, 16, PALE[1])
-        c.set(x + 1, 1, PALE[3])
-        c.set(x + 2, 1, PALE[3])
-        c.rect(x, 17, 4, 1, PALE[0])
+    """A 16x32 run of picket fence for the top and bottom edges, seen 3/4: pickets
+    29 px tall in front of two rails. The ground line is the bottom row."""
+    c = Canvas(16, 32)
+    for y in (9, 22):                                        # rails, behind the pickets
+        c.rect(0, y, 16, 3, PALE[1])
+        c.rect(0, y, 16, 1, PALE[2])
+    for x in (1, 5, 9, 13):
+        c.rect(x, 3, 3, 28, PALE[3])
+        c.rect(x, 3, 1, 28, PALE[4])
+        c.rect(x + 2, 3, 1, 28, PALE[2])
+        c.set(x + 1, 2, PALE[4])                             # pointed top
+        c.rect(x, 30, 3, 1, PALE[1])
+    c.rect(0, 31, 16, 1, hexc("0c200c", 110))                # the foot on the grass
     return c
 
 
 def fence_v():
-    """A 24x16 run of fence for the side edges: the rail seen end-on from above,
-    posts every tile."""
-    c = Canvas(24, 16)
-    PALE = [hexc(h) for h in ("6a5a44", "9a8870", "c8b898", "e8dcc0", "fcf4e0")]
-    c.rect(14, 0, 5, 16, hexc("0c200c", 90))                 # shadow
-    c.rect(9, 0, 5, 16, PALE[2])
-    c.rect(9, 0, 1, 16, PALE[4])
-    c.rect(13, 0, 1, 16, PALE[1])
-    c.rect(7, 5, 9, 6, PALE[3])                              # post cap
-    c.rect(7, 5, 9, 1, PALE[4])
-    c.rect(7, 10, 9, 1, PALE[0])
+    """A 24x32 run of fence for the side edges: seen 3/4, pickets running away from
+    us stack into a thin wall; a post every tile."""
+    c = Canvas(24, 32)
+    c.rect(10, 0, 4, 32, PALE[3])
+    c.rect(10, 0, 1, 32, PALE[4])
+    c.rect(13, 0, 1, 32, PALE[1])
+    c.rect(14, 0, 3, 32, hexc("0c200c", 80))                 # shadow on the grass
+    c.rect(9, 12, 6, 20, PALE[2])                            # post
+    c.rect(9, 12, 6, 2, PALE[4])
+    c.rect(9, 12, 1, 20, PALE[3])
+    c.rect(14, 12, 1, 20, PALE[0])
     return c
 
 

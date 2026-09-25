@@ -56,9 +56,11 @@ shape = SubResource("RectangleShape2D_truck")
 visible = false
 position = Vector2(-92, 0)
 texture = ExtResource("9_trailer")
+offset = Vector2(0, 4)
 
 [node name="Sprite" type="Sprite2D" parent="Truck"]
 texture = ExtResource("10_truck")
+offset = Vector2(0, -14)
 
 [node name="RefuelZone" type="Area2D" parent="Truck"]
 
