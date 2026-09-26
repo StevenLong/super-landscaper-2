@@ -18,11 +18,6 @@ BLOCKS = spoils the next playtest.
 
 **Needs a grill (design calls, queued for one session)**
 
-21. [DESIGN, large] Escalation (S1-WINNABLE). Right now only patience can end a run, so there
-   is no real pressure. Ideas: job types with harder layouts, mini golf (mow between holes,
-   greens are off-limits, awkward trips to the truck), farm or botanical garden (lots of
-   no-go beds, precision plus time), infestation jobs (don't squash any, or squash them all).
-   The biggest open question.
 22. [DESIGN, moderate] Soft and hard impatience (S1-NAG). Soft: annoyed, leave now and lose
    the tip/bonus. Hard: told to leave, no pay, big rep hit, but you can stay and misbehave
    (same shape as being fired, now built). More than one nag, plus a watch-glance on the
@@ -50,12 +45,18 @@ BLOCKS = spoils the next playtest.
 
 **Parked**
 
+21b. [PARKED since 2026-09-26] Job types for variety, not pressure (21's leftovers, the
+   season now supplies the pressure): mini golf (mow between holes, greens off-limits,
+   awkward trips to the truck), farm or botanical garden (lots of no-go beds), infestation
+   jobs (don't squash any, or squash them all). Add when 12 jobs of one lawn kind feel samey.
 19. [PARKED since 2026-09-24] Stripe shade blends with heading instead of snapping light/
    dark (S1-STRIPES). You'd keep the current look; only if cheap. Home: `lawn.gdshader`.
 30. [PARKED since 2026-09-24] Stamina progression (S1-PUSH): level it up, better push mowers,
    drug or cybernetic enhancements.
 30b. [PARKED since 2026-09-24] A dark path: jobs for people who are themselves wanted.
-   Mowing a mob boss's lawn, or mowing up a mob boss's enemies. Throwaway.
+   Mowing a mob boss's lawn, or mowing up a mob boss's enemies. Grown up 2026-09-26: a
+   menace gets a seedy board (mafia dons, chasing enemies round a warehouse), a
+   negative-reputation run, with the loan shark as the way in (design doc, The Run).
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
@@ -85,6 +86,12 @@ waits on 27.
 ### Notes 2026-09-26 (session 6 play checks)
 
 **Bugs (build, no call needed)**
+
+72. [FEATURE, moderate] The season (decided in the 2026-09-26 grill, design doc The Run):
+   4 weeks x 3 jobs, the loan shark's payment after each week ($120, $250, $450, $750 as
+   one tunable table), the heavies repossess kit at a resale rate on a miss, selling kit in
+   the shop, the dregs board at zero rep replacing "File for bankruptcy", a season-end win
+   screen. Home: `game.gd` (new_run, offer_count, record_result), `board.gd`.
 
 58. [BUG, small, BLOCKS] On foot, the sprite flips upside down and is hard to face where you
    want (S6-FOOT). Diagnosed from code, not reproduced: `walker.gd` sets `rotation` every
