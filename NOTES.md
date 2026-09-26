@@ -94,7 +94,12 @@ waits on 27.
    enough mowers, RigidBody2D), big (solid). The petrol can becomes throwable; mowed, it
    spills and browns the lawn. First batch: gnome, flamingo, cone, decorative rocks, hose
    (the spill, water), tennis ball with fetch. Later: sandbox, paddling pool, more critters
-   and their interactions, fish, fire.
+   and their interactions, fish, fire. Lawn darts on the throwable list.
+80. [FEATURE, small] Charged throws, step 1 (64, decided 2026-09-26): hold to wind up,
+   locked in place, left/right rotate the aim (~90 deg/s), power fills to max, a landing
+   marker, release throws, hop cancels; today's flat flight. Home: `main.gd` throw input,
+   `walker.gd`. Step 2 (moderate): up/down set the vertical angle, flights become arcs with
+   a shadow and every target gets a height.
 75. [FEATURE, large] Venues by reputation band (40, decided 2026-09-26, design doc Levels):
    first the mansion (top band: a big house, loop drive, expensive breakables, its own
    persona) and the graveyard (bottom band: gravestones as solid obstacles, flowers on
@@ -121,7 +126,7 @@ waits on 27.
 
 **Needs a call (small ones can be settled in the grill's first minutes)**
 
-62. [DESIGN, small] Ramming the car with the mower has no reaction (S6-CAR). The mower takes
+62. [FEATURE, small] Ramming the car with the mower has no reaction (S6-CAR). The mower takes
    bump damage (`mower.gd` `_check_impacts`) but nothing else knows. DECIDED 2026-09-26: over
    the bump threshold it dents like a stone, $40 and "My CAR!"; a harder hit (a ride-on at
    full speed) costs more. Thoughts, not yet decided: a direct hit shoves the car a little,
@@ -135,11 +140,6 @@ waits on 27.
    not going north"); (c) 16 facings, twice the sheet rows, halves both errors. Snapping the
    heading itself to 8 ways: agreed, no (it would fight mowing lines). DECIDED 2026-09-26:
    (a), leave it and let it soak.
-64. [DESIGN, moderate] Charged throws with a trajectory guide (S6-WINDOW): hold to build
-   power, a guide shows where it lands. Home: `main.gd` `throw_stone` already takes speed and
-   distance. QUESTIONS: range min/max; does the guide show the landing spot only or the arc;
-   does holding slow you down; pad button.
-**3/4 visuals (S6-LOOK, S6-BEYOND, S6-GARAGE, S6-DEPTH)**
 
 66. [VISUAL, moderate] The pond and flower beds don't read as 3/4. Both are still drawn flat.
    FIX sketch: rim stones with a visible front face and a darker inner bank on the pond;
