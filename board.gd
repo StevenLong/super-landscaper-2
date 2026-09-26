@@ -1,6 +1,6 @@
 extends Control
 ## Between jobs: the job board (offers depend on reputation), the shop, and your
-## van's mower rack. At zero reputation the only thing left is bankruptcy.
+## van's mower rack. At each week's end, payday: the loan shark's man comes to collect.
 
 var offers: Array[Dictionary] = []
 
@@ -10,6 +10,9 @@ func _ready() -> void:
 	Sfx.music("music_menu")
 	if Game.run_over_reason == "arrested":
 		_run_over("ARRESTED")
+		return
+	if Game.payday_due():
+		_payday()
 		return
 	offers = Game.make_offers()
 	_build()
@@ -32,8 +35,9 @@ func _build() -> void:
 	margin.add_child(root)
 
 	# Header: day, money, reputation.
-	var head := UI.hbox(40)
-	head.add_child(UI.label("Day %d" % Game.day, 30, UI.GOLD))
+	var head := UI.hbox(26)
+	head.add_child(UI.label("Week %d, job %d of %d" % [Game.week, Game.job_of_week(), Game.JOBS_PER_WEEK], 30, UI.GOLD))
+	head.add_child(UI.label("Owed Friday: $%d" % Game.payment(), 22, UI.BAD if Game.money < Game.payment() else UI.TEXT))
 	head.add_child(UI.label("Money: $%d" % Game.money, 26))
 	head.add_child(UI.label("Earned this run: $%d" % Game.total_earned, 22, UI.DIM))
 	var trend := Game.rep_trend - Game.reputation
@@ -56,11 +60,8 @@ func _build() -> void:
 		jobs.add_child(_rundown(Game.last_result))
 	jobs.add_child(UI.label("Classifieds: gardens & grounds", 26))
 	var first: Control = null
-	if offers.is_empty():
-		jobs.add_child(UI.label("Nobody's calling. Word has got around.", 22, UI.BAD))
-		var b := UI.button("File for bankruptcy", func() -> void: _run_over("BANKRUPT"), 22)
-		jobs.add_child(b)
-		first = b
+	if Game.reputation <= 0.0:
+		jobs.add_child(UI.label("Nobody decent's calling. Word has got around.", 22, UI.BAD))
 	for o in offers:
 		var card := _offer_card(o)
 		jobs.add_child(card)
@@ -169,6 +170,8 @@ func _mower_row(key: String) -> Control:
 			_build(), 18)
 		use.disabled = Game.equipped == key
 		row.add_child(use)
+		if key != "push":
+			row.add_child(_sell_button(key, _build))
 	else:
 		var buy := UI.button("Buy $%d" % m.price, func() -> void:
 			Game.buy(key)
@@ -187,7 +190,7 @@ func _upgrade_row(key: String) -> Control:
 	info.add_child(UI.label(u.blurb, 20, UI.DIM))
 	row.add_child(info)
 	if key in Game.upgrades:
-		row.add_child(UI.label("Owned", 18, UI.GOOD))
+		row.add_child(_sell_button(key, _build))
 	else:
 		var buy := UI.button("Buy $%d" % u.price, func() -> void:
 			Game.buy(key)
@@ -205,6 +208,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if event.keycode == KEY_1:
 		Game.money += 500
 		_build()
+	elif event.keycode == KEY_3: # skip to the week's end
+		Game.jobs_done = Game.week * Game.JOBS_PER_WEEK
+		_ready()
 	elif event.keycode == KEY_2:
 		Game.reputation = minf(100.0, Game.reputation + 20.0)
 		Game.rep_trend = minf(100.0, Game.rep_trend + 20.0)
@@ -212,12 +218,19 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_build()
 
 
+func _sell_button(key: String, then: Callable) -> Button:
+	return UI.button("Sell $%d" % Game.resale(key), func() -> void:
+		Game.sell(key)
+		then.call(), 18)
+
+
 func _take(o: Dictionary) -> void:
 	Game.current_job = o
 	get_tree().change_scene_to_file("res://main.tscn")
 
 
-func _run_over(title: String) -> void:
+## A fresh screen with a centred column, for payday and the run's end.
+func _screen() -> VBoxContainer:
 	for c in get_children():
 		c.queue_free()
 	var bg := ColorRect.new()
@@ -228,17 +241,80 @@ func _run_over(title: String) -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(col)
-	for l: Array in [[title, 64, UI.BAD], ["You lasted %d days." % Game.day, 26, UI.TEXT],
-			["Total earned: $%d" % Game.total_earned, 30, UI.GOLD], ["Best ever: $%d" % Game.best_score, 22, UI.DIM]]:
-		var lab := UI.label(l[0], l[1], l[2])
-		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		col.add_child(lab)
+	return col
+
+
+func _centred(col: VBoxContainer, text: String, size: int, color := UI.TEXT) -> void:
+	var lab := UI.label(text, size, color)
+	lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(lab)
+
+
+func _centred_button(col: VBoxContainer, text: String, on_press: Callable) -> Button:
+	var holder := CenterContainer.new()
+	var b := UI.button(text, on_press, 24)
+	holder.add_child(b)
+	col.add_child(holder)
+	return b
+
+
+## The week's end: the loan shark's man wants his money. Short, you can sell kit first
+## (you choose what goes), or let his heavies take what they like.
+func _payday() -> void:
+	var col := _screen()
+	var due := Game.payment()
+	_centred(col, "FRIDAY. PAYDAY.", 56, UI.GOLD)
+	_centred(col, "The shark's man is leaning on your van. Week %d: he wants $%d." % [Game.week, due], 24)
+	_centred(col, "You have $%d." % Game.money, 26, UI.GOOD if Game.money >= due else UI.BAD)
+	var go: Button
+	if Game.money >= due:
+		go = _centred_button(col, "Hand over $%d" % due, _collect)
+	else:
+		_centred(col, "Short by $%d. Sell something, or his heavies take what they like, your best first." % (due - Game.money), 20, UI.DIM)
+		for k in Game.sellable():
+			var name: String = Game.MOWERS[k].name if Game.MOWERS.has(k) else Game.UPGRADES[k].name
+			var row := UI.hbox(12)
+			row.add_child(UI.label(name, 20))
+			row.add_child(_sell_button(k, _payday))
+			var holder := CenterContainer.new()
+			holder.add_child(row)
+			col.add_child(holder)
+		go = _centred_button(col, "Let them take it" if Game.sellable() else "Turn out your pockets", _collect)
+	UI.focus(go)
+
+
+func _collect() -> void:
+	var r := Game.settle_payday()
+	match r.outcome:
+		"won":
+			_run_over("SEASON WON")
+		"bankrupt":
+			_run_over("BANKRUPT")
+		_:
+			var col := _screen()
+			_centred(col, "He counts it twice.", 40, UI.GOLD)
+			if r.taken:
+				var names: Array = r.taken.map(func(k: String) -> String:
+					return Game.MOWERS[k].name if Game.MOWERS.has(k) else Game.UPGRADES[k].name)
+				_centred(col, "His heavies load up your %s." % ", ".join(names), 24, UI.BAD)
+			_centred(col, "\"See you next Friday. $%d.\"" % Game.payment(), 24)
+			_centred(col, "You have $%d left." % Game.money, 22, UI.DIM)
+			UI.focus(_centred_button(col, "Back to the classifieds", func() -> void:
+				offers = Game.make_offers()
+				_build()))
+
+
+func _run_over(title: String) -> void:
+	var col := _screen()
+	var won := title == "SEASON WON"
+	_centred(col, title, 64, UI.GOOD if won else UI.BAD)
+	_centred(col, "The shark's paid off. See you next season." if won else "You made it to week %d." % Game.week, 26)
+	_centred(col, "Total earned: $%d" % Game.total_earned, 30, UI.GOLD)
+	_centred(col, "Best ever: $%d" % Game.best_score, 22, UI.DIM)
 	var tally := Game.tally_lines(Game.run_tally, Game.run_tally_cost)
 	if not tally.is_empty():
 		col.add_child(Control.new())
-		var head := UI.label("The tally", 22, UI.GOLD)
-		head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		col.add_child(head)
+		_centred(col, "The tally", 22, UI.GOLD)
 		var grid := GridContainer.new() # two columns once it's long, so it fits the screen
 		grid.columns = 2 if tally.size() > 6 else 1
 		grid.add_theme_constant_override("h_separation", 40)
@@ -247,10 +323,6 @@ func _run_over(title: String) -> void:
 		col.add_child(centre)
 		for line in tally:
 			grid.add_child(UI.label(line, 20))
-	var holder := CenterContainer.new()
-	var again := UI.button("Back to the title", func() -> void:
+	UI.focus(_centred_button(col, "Back to the title", func() -> void:
 		Game.in_run = false
-		get_tree().change_scene_to_file("res://title.tscn"), 24)
-	holder.add_child(again)
-	col.add_child(holder)
-	UI.focus(again)
+		get_tree().change_scene_to_file("res://title.tscn")))

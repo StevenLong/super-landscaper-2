@@ -1,6 +1,8 @@
 extends Node
-## Run state (autoload "Game"). A run is a chain of jobs picked from a job board;
-## it ends when reputation runs out (bankruptcy). Score = total earned this run.
+## Run state (autoload "Game"). A run is a season: WEEKS weeks of JOBS_PER_WEEK jobs
+## picked from a job board, with the loan shark's payment due at each week's end. Pay the
+## last one and you've won; miss one and his heavies repossess kit; bankrupt only when
+## nothing left covers it. Score = total earned this run.
 
 var save_path := "user://best.cfg" ## tests point this elsewhere so they never touch the real save
 
@@ -81,6 +83,10 @@ const PERSONAS := {
 	},
 }
 
+const PAYMENTS := [120, 250, 450, 750] ## the shark's payment due at the end of each week (tuning, not measured)
+const JOBS_PER_WEEK := 3
+const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share of its price
+
 const LAWN_SIZES := [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]
 
 var money := 0
@@ -90,7 +96,7 @@ var rep_trend := 50.0 ## where behaviour is pushing reputation; reputation lags 
 var owned: Array[String] = ["push"]
 var equipped := "push"
 var upgrades: Array[String] = []
-var day := 1
+var week := 1 ## the week whose payment is next due
 var jobs_done := 0
 var in_run := false
 var current_job := {}
@@ -169,7 +175,7 @@ func new_run(seed_value := 0) -> void:
 	owned = ["push"]
 	equipped = "push"
 	upgrades = []
-	day = 1
+	week = 1
 	jobs_done = 0
 	in_run = true
 	current_job = {}
@@ -206,10 +212,9 @@ func ad_text(job: Dictionary) -> String:
 	return "[color=#7a1c14]%s[/color] %s" % [ad[0], " ".join(parts)]
 
 
-## How many offers the board shows at this reputation. Zero means bankrupt.
+## How many offers the board shows at this reputation. At the bottom it's one job,
+## the dregs (see make_job), never none.
 func offer_count() -> int:
-	if reputation <= 0.0:
-		return 0
 	if reputation < 20.0:
 		return 1
 	if reputation < 45.0:
@@ -229,6 +234,9 @@ func make_job(seed_value: int) -> Dictionary:
 	var r := RandomNumberGenerator.new()
 	r.seed = seed_value
 	var persona_key: String = PERSONAS.keys()[r.randi() % PERSONAS.size()]
+	var dregs := reputation <= 0.0 # nobody decent will have you: cheap and hostile
+	if dregs:
+		persona_key = "grump"
 	var p: Dictionary = PERSONAS[persona_key]
 	# Better reputation unlocks bigger, better-paying lawns.
 	var max_size := 0 if reputation < 55.0 else (1 if reputation < 75.0 else 2)
@@ -248,7 +256,7 @@ func make_job(seed_value: int) -> Dictionary:
 		"target": target,
 		# Seconds they'll happily wait: scales with lawn area and their patience.
 		"patience": 300.0 * area * p.patience, # tools: tests/sim_balance.gd measures mowing times
-		"pay": int(round((70.0 + 50.0 * size_i) * area * (1.0 + (target - 0.8)) / 5.0) * 5),
+		"pay": int(round((70.0 + 50.0 * size_i) * area * (1.0 + (target - 0.8)) * (0.5 if dregs else 1.0) / 5.0) * 5),
 		"hedgehog_every": 7.0 / (1.0 + 0.25 * size_i),
 		"squirrel_every": 13.0 / (1.0 + 0.25 * size_i),
 		"stones": 4 + size_i * 2 + r.randi_range(0, 2),
@@ -303,7 +311,6 @@ func record_result(result: Dictionary) -> void:
 	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
 	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
 	jobs_done += 1
-	day += 1
 	if result.outcome == "ko":
 		heat += 1.0
 	elif result.outcome == "paid":
@@ -337,3 +344,65 @@ func buy(key: String) -> bool:
 		upgrades.append(key)
 	money -= price
 	return true
+
+
+## Which job of the week is next, 1 to JOBS_PER_WEEK.
+func job_of_week() -> int:
+	return jobs_done - (week - 1) * JOBS_PER_WEEK + 1
+
+
+## The week's jobs are done and the shark's man is due.
+func payday_due() -> bool:
+	return in_run and jobs_done >= week * JOBS_PER_WEEK
+
+
+func payment() -> int:
+	return PAYMENTS[mini(week, PAYMENTS.size()) - 1]
+
+
+## What kit fetches sold: everything but the push mower.
+func resale(key: String) -> int:
+	return int((MOWERS[key].price if MOWERS.has(key) else UPGRADES[key].price) * RESALE)
+
+
+## Kit that can be sold or taken, dearest first (the heavies take your best).
+func sellable() -> Array[String]:
+	var out: Array[String] = []
+	out.assign(owned.filter(func(k: String) -> bool: return k != "push") + upgrades)
+	out.sort_custom(func(a: String, b: String) -> bool: return resale(a) > resale(b))
+	return out
+
+
+func sell(key: String) -> void:
+	money += resale(key)
+	if MOWERS.has(key):
+		owned.erase(key)
+		if equipped == key: # onto the best you have left
+			for k in owned:
+				if equipped not in owned or MOWERS[k].price > MOWERS[equipped].price:
+					equipped = k
+	else:
+		upgrades.erase(key)
+
+
+## The week's end: pay the shark. Short, the heavies take kit, dearest first, until its
+## resale covers it (you keep the change). Returns {paid, taken, outcome}, outcome one of
+## "paid", "repossessed", "bankrupt" (nothing left covers it) or "won" (the last payment).
+func settle_payday() -> Dictionary:
+	var due := payment()
+	var taken: Array[String] = []
+	for k in sellable():
+		if money >= due:
+			break
+		sell(k)
+		taken.append(k)
+	if money < due:
+		money = 0
+		run_over_reason = "bankrupt"
+		return {"paid": due, "taken": taken, "outcome": "bankrupt"}
+	money -= due
+	week += 1
+	var outcome := "won" if week > PAYMENTS.size() else ("repossessed" if taken else "paid")
+	if outcome == "won":
+		run_over_reason = "won"
+	return {"paid": due, "taken": taken, "outcome": outcome}

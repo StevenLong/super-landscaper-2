@@ -1,5 +1,5 @@
 # A whole run through the real scenes: title -> board -> job -> pay -> board,
-# then the shop, then bankruptcy when reputation is gone.
+# then the shop, the dregs when reputation is gone, and payday at the week's end.
 extends SceneTree
 
 var game: Node
@@ -23,7 +23,7 @@ func _process(_delta: float) -> bool:
 			current_scene._start()
 		1:
 			assert(current_scene.name == "Board", "new run goes to the board")
-			assert(game.in_run and game.day == 1 and game.owned == ["push"], "fresh run state")
+			assert(game.in_run and game.week == 1 and game.job_of_week() == 1 and game.owned == ["push"], "fresh run state")
 			assert(current_scene.offers.size() == 3, "fair reputation shows 3 offers")
 			for o: Dictionary in current_scene.offers:
 				var ad: String = game.ad_text(o)
@@ -49,7 +49,7 @@ func _process(_delta: float) -> bool:
 			assert(game.last_result.outcome == "paid", "a mowed lawn is accepted and you drive off (the scene is already on its way out)")
 		4:
 			assert(current_scene.name == "Board", "back to the board after a job")
-			assert(game.day == 2 and game.jobs_done == 1, "the day advanced")
+			assert(game.job_of_week() == 2 and game.jobs_done == 1 and not game.payday_due(), "on to the week's second job")
 			assert(game.money > 0, "the job paid")
 			var rundown := current_scene.find_children("*", "Label", true, false).filter(
 				func(l: Label) -> bool: return l.text.begins_with("Last job: Job done"))
@@ -68,7 +68,14 @@ func _process(_delta: float) -> bool:
 			game.reputation = 0.0
 			current_scene._ready()
 		5:
-			assert(current_scene.offers.is_empty(), "no reputation, no offers")
+			assert(current_scene.offers.size() == 1 and current_scene.offers[0].persona == "grump", "no reputation: the dregs, one hostile job")
+			assert(current_scene.find_children("Take", "Button", true, false).size() == 1, "and it can be taken")
+			game.jobs_done = 3
+			game.money = 40 # plus the petrol mower's resale covers week 1
+			current_scene._ready()
+			assert(current_scene.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return l.text == "FRIDAY. PAYDAY."), "the week's end brings payday")
+			current_scene._collect()
+			assert(game.run_over_reason == "" and game.week == 2 and "petrol" not in game.owned, "short, the heavies took the petrol mower and it covered it")
 			current_scene._run_over("BANKRUPT")
 			var lines := current_scene.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
 			assert("The tally" in lines and "Windows put through 1 (-$40)" in lines, "the run-over screen shows the run's tally")
