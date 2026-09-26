@@ -26,11 +26,6 @@ BLOCKS = spoils the next playtest.
 29. [DESIGN, moderate-large] Pick up more than stones (S1-DOG): the dog wriggles free after
    a while, a hedgehog stuns you, a squirrel holds for a few seconds; hedgehog-proof gloves
    from the shop; throwing hedgehogs at things.
-38. [DESIGN, large] Punishment needs a witness. Some customers stand on the patio watching the
-   whole job, some go inside and don't care, some watch from the windows. What nobody saw
-   doesn't cost you, but the aftermath can (a lawn left a bloody mess gets opinions).
-   Ideation. Note the design doc currently says unseen mischief is always discovered when
-   you leave; this would change that.
 **Parked**
 
 21b. [PARKED since 2026-09-26] Job types for variety, not pressure (21's leftovers, the
@@ -92,6 +87,10 @@ waits on 27.
 76. [FEATURE, small] Rifle a knocked-out customer's pockets (25, decided 2026-09-26): hold
    to rifle, cash trickles out a few dollars a second from a wallet of 20 to 60% of the pay;
    +1 heat, the police always called, the worst rep hit. Needs 74's countdown.
+77. [FEATURE, moderate] Seen versus evidence (38, decided 2026-09-26, design doc The
+   Customer): the customer moves between patio, inside and a window by persona; unseen acts
+   judged by their evidence when they come out; noise brings them out; the portrait greys
+   out or shows a window pane. Home: `customer.gd`, `client.gd`, `face.gd`, `main.gd`.
 75. [FEATURE, large] Venues by reputation band (40, decided 2026-09-26, design doc Levels):
    first the mansion (top band: a big house, loop drive, expensive breakables, its own
    persona) and the graveyard (bottom band: gravestones as solid obstacles, flowers on
