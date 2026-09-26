@@ -8,6 +8,7 @@ extends Node2D
 signal landed(stone: FlyingStone, target: String)
 
 var velocity := Vector2.ZERO
+var thrown := false ## by hand, on purpose: what it hits can be a crime (a flung one is an accident)
 var range_left := 200.0
 var hit_test: Callable
 var _travelled := 0.0

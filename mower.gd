@@ -9,6 +9,7 @@ extends CharacterBody2D
 
 signal fuel_changed(fraction: float)
 signal condition_changed(fraction: float)
+signal bumped(what: Object, impact: float) ## a hard knock into something solid
 
 @export var lawn: Lawn
 @export var power := "fuel"
@@ -135,9 +136,14 @@ func _check_impacts(velocity_before: Vector2) -> void:
 	if not fresh:
 		return
 	var impact := 0.0
+	var what: Object = null
 	for i in get_slide_collision_count():
-		impact = maxf(impact, -velocity_before.dot(get_slide_collision(i).get_normal()))
+		var into := -velocity_before.dot(get_slide_collision(i).get_normal())
+		if into > impact:
+			impact = into
+			what = get_slide_collision(i).get_collider()
 	if impact > 60.0 and _bump_cooldown <= 0.0:
+		bumped.emit(what, impact)
 		_bump_cooldown = 0.4
 		Sfx.play("bump")
 		damage(impact / 25.0)

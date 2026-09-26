@@ -39,6 +39,8 @@ var walker: CharacterBody2D = null ## the player on foot, or null while mowing
 var dog: Dog = null
 var settled := {} ## the job's outcome once paid or fired; you stay until you drive off
 var mischief := 0.0 ## reputation owed for what you did after it was settled
+var police_left := -1.0 ## seconds until the police arrive once called; below zero, nobody's called
+var worst_crime := 0 ## the worst tier on the crime ladder this job (Game.HEAT)
 
 var _next_hedgehog := 3.0
 var _next_squirrel := 8.0
@@ -54,6 +56,9 @@ var _tracks: Array = [] ## red wheel marks: [position, sideways unit, strength 0
 var _blood := 0.0 ## px of red trail the mower has left to lay after running something over
 var _blood_from := Vector2.ZERO
 var _flowers_quiet_until := 0 ## msec: one scream per burst of flowers, not one per flower
+var _heat0 := 0.0 ## your record as the job starts: it sets how fast the police come
+var _vandal := false ## wrecking things after being fired: trespass, one charge a job
+var _siren: AudioStreamPlayer
 
 @onready var lawn: Lawn = $Lawn
 @onready var mower: CharacterBody2D = $Mower
@@ -83,13 +88,9 @@ func _ready() -> void:
 	hud.choice.connect(_on_choice)
 
 	Sfx.music("music_mowing")
-	if Game.arrested_on_arrival():
-		Game.run_over_reason = "arrested"
-		get_tree().paused = true
-		hud.open("ARRESTED", ["The police were waiting on the patio.", "Someone recognised your mower.", "",
-			"That's the end of your landscaping career."], [["continue", "Continue"]], job.look, "neutral")
-		over = true
-	elif Game.in_run:
+	_heat0 = Game.heat
+	mower.bumped.connect(_on_mower_bumped)
+	if Game.in_run:
 		get_tree().paused = true
 		var lines: Array = job.brief.duplicate()
 		if job.get("dog", false):
@@ -451,11 +452,17 @@ func _physics_process(delta: float) -> void:
 	if customer.fired and settled.is_empty():
 		_fired()
 	hud.set_hint(_hint())
+	if police_left >= 0.0:
+		police_left = maxf(0.0, police_left - delta)
+		hud.set_police(police_left)
+		_siren.volume_db = lerpf(-6.0, -26.0, police_left / Game.police_time(_heat0)) # louder as they close in
+		if police_left <= 0.0:
+			_nicked()
+			return
 
 	# Running over the customer on their patio. Don't.
 	if not customer.knocked_out and mower.velocity.length() > 40.0 \
 			and mower.global_position.distance_to($Client.position + Vector2(0, -10)) < 22.0:
-		Game.heat += 1.0
 		_knock_out()
 
 	if _dog_in > 0.0:
@@ -543,7 +550,7 @@ func _on_thrown(dir: Vector2, power: float) -> void:
 		return
 	walker.carrying = ""
 	walker.queue_redraw()
-	throw_stone(walker.global_position + dir * THROW_FROM, dir, 460.0, _throw_reach(power) - THROW_FROM)
+	throw_stone(walker.global_position + dir * THROW_FROM, dir, 460.0, _throw_reach(power) - THROW_FROM).thrown = true
 	_count("stones_thrown")
 	Sfx.play("ui_move")
 
@@ -649,6 +656,8 @@ func open_truck_menu() -> void:
 		"Mower condition: %d%%" % roundi(mower.condition)]
 	if customer.knocked_out:
 		lines.append("The customer is out cold on the patio.")
+	if police_left >= 0.0:
+		lines.append("Sirens. The police are %d seconds out." % ceili(police_left))
 	if settled.is_empty():
 		hud.open("At the truck", lines, buttons)
 	else:
@@ -676,9 +685,8 @@ func _on_choice(id: String) -> void:
 			walker.queue_redraw()
 			hud.close()
 			get_tree().paused = false
-		"continue": # after ARRESTED: the board shows the run is over
-			get_tree().paused = false
-			get_tree().change_scene_to_file("res://board.tscn")
+		"nicked":
+			_finish_nicked()
 		"quit":
 			get_tree().paused = false
 			Game.in_run = false
@@ -743,6 +751,9 @@ func _drive_off() -> void:
 
 ## Wreck something once paid or fired and it lands on your reputation, not your pay.
 func _mischief(points: float) -> void:
+	if settled.get("outcome") == "fired" and not _vandal:
+		_vandal = true
+		_crime(1) # trespass and vandalism
 	if not settled.is_empty():
 		mischief += points
 		pop_text("Rep -%d" % roundi(points), $Client.position + Vector2(0, -40), Color("f07060"))
@@ -767,6 +778,7 @@ func _finish(result: Dictionary) -> void:
 	result.tally_cost = tally_cost
 	get_tree().paused = true
 	result.customer = job.get("customer", "")
+	result.heat_up = Game.heat > _heat0
 	result.look = job.look
 	result.face = customer.face() if result.outcome != "walked" else "furious"
 	Game.record_result(result)
@@ -782,6 +794,71 @@ func _finish(result: Dictionary) -> void:
 		get_tree().change_scene_to_file("res://board.tscn")
 	elif get_tree().current_scene == self: # a lone job (dev play): go again
 		get_tree().reload_current_scene()
+
+
+# ---------------------------------------------------------------- crime
+
+## A crime on the ladder (Game.HEAT): heat now, and the police called for assault, or
+## for anything once your record is bad enough.
+func _crime(tier: int) -> void:
+	Game.heat += Game.HEAT[tier]
+	worst_crime = maxi(worst_crime, tier)
+	hud.pop("WANTED +%d" % Game.HEAT[tier])
+	if police_left < 0.0 and (tier >= 2 or _heat0 >= Game.HIGH_HEAT):
+		_call_police()
+
+
+## Someone's rung the police: a visible countdown with sirens. Drive off before it runs out.
+func _call_police() -> void:
+	police_left = Game.police_time(_heat0)
+	_siren = AudioStreamPlayer.new()
+	_siren.bus = "SFX"
+	_siren.stream = preload("res://audio/siren.wav")
+	_siren.volume_db = -26.0
+	add_child(_siren)
+	_siren.play()
+	hud.banner("POLICE CALLED")
+
+
+## The police got here first.
+func _nicked() -> void:
+	over = true
+	_siren.stop()
+	get_tree().paused = true
+	var fine := Game.fine(worst_crime, Game.heat)
+	var lines := ["The police caught you at the scene.", "Fine: $%d, on top of the damages." % fine]
+	if worst_crime >= 2:
+		lines.append("And a night in the cells: you lose your next job.")
+	hud.open("NICKED", lines, [["nicked", "Continue"]])
+
+
+func _finish_nicked() -> void:
+	var c := _costs()
+	var r := settled.duplicate() if not settled.is_empty() else (customer.ko_result(c) if customer.knocked_out else customer.walked_result(c))
+	r.outcome = "nicked"
+	r.fine = Game.fine(worst_crime, Game.heat)
+	r.cells = worst_crime >= 2
+	r.fuel_cost = c
+	r.net = r.paid - c - r.fine
+	r.rep -= mischief
+	r.mischief = mischief
+	r.comment = "(Led away in handcuffs.)"
+	hud.close()
+	_finish(r)
+
+
+## Ramming the customer's car dents it like a stone, and harder hits cost more.
+func _on_mower_bumped(what: Object, impact: float) -> void:
+	if what != _car or _car == null:
+		return
+	var bill := roundf(CAR_BILL * maxf(1.0, impact / 150.0))
+	Sfx.play("clonk")
+	_count("car_dents", bill)
+	bills += bill
+	pop_text("-$%d" % bill, mower.global_position, Color("f07060"))
+	customer.on_stone("car")
+	_crime(1)
+	_react()
 
 
 # ---------------------------------------------------------------- stones
@@ -862,6 +939,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			if customer.on_stone("customer"):
 				_knock_out()
 			else:
+				if f.thrown:
+					_crime(2) # assault
 				_react()
 			_drop_bounced(f)
 		"window":
@@ -873,6 +952,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
 			shake(4.0)
 			customer.on_stone("window")
+			if f.thrown:
+				_crime(1)
 			_react()
 		"wall":
 			Sfx.play("thud")
@@ -886,6 +967,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			pop_text("-$%d" % CAR_BILL, p, Color("f07060"))
 			shake(3.0)
 			customer.on_stone("car")
+			if f.thrown:
+				_crime(1)
 			_react()
 			_drop_bounced(f)
 		"truck":
@@ -901,8 +984,10 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 					break
 		"dog":
 			Sfx.play("yelp")
-			dog.bowl()
+			dog.bowl("stone")
 			customer.on_stone("dog")
+			if f.thrown:
+				_crime(1)
 			_react()
 			_drop_bounced(f)
 		"gone":
@@ -980,6 +1065,7 @@ func _splash(p: Vector2, size := 1.0) -> void:
 
 
 func _knock_out() -> void:
+	_crime(2)
 	_count("knockouts")
 	customer.knock_out()
 	$Client.knock_out()
@@ -995,12 +1081,14 @@ func _release_dog() -> void:
 	dog.position = $Client.position + Vector2(0, 16)
 	dog.home_point = $Client.position
 	dog.lawn_rect = Rect2(Vector2(0, _house.size.y), Vector2(lawn.size_px) - Vector2(0, _house.size.y))
-	dog.bowled.connect(func(_d: Dog) -> void:
+	dog.bowled.connect(func(_d: Dog, by: String) -> void:
 		_count("dog_bowled")
 		Sfx.play("yelp")
-		customer.on_dog_hit()
-		_mischief(8.0)
-		_react())
+		if by == "mower": # a stone's reaction is the stone's (see _on_stone_landed)
+			customer.on_dog_hit()
+			_mischief(8.0)
+			_crime(2)
+			_react())
 	dog.caught.connect(func(d: Dog) -> void:
 		Sfx.play("ui_select", 0.0)
 		pop_text("On the lead!", d.position + Vector2(0, -10), UI.GOOD))

@@ -8,9 +8,6 @@ var offers: Array[Dictionary] = []
 func _ready() -> void:
 	theme = UI.theme()
 	Sfx.music("music_menu")
-	if Game.run_over_reason == "arrested":
-		_run_over("ARRESTED")
-		return
 	if Game.payday_due():
 		_payday()
 		return
@@ -96,7 +93,7 @@ func _rundown(r: Dictionary) -> Control:
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(info)
 	var title: String = {"fired": "FIRED!", "walked": "You drove off unpaid",
-		"ko": "Well, that happened"}.get(r.outcome, "Job done")
+		"ko": "Well, that happened", "nicked": "Nicked!"}.get(r.outcome, "Job done")
 	info.add_child(UI.label("Last job: %s   %s" % [title, r.get("customer", "")], 22,
 		UI.GOOD if r.outcome == "paid" else UI.BAD))
 	info.add_child(UI.label(r.comment if r.outcome == "ko" else "\"%s\"" % r.comment, 18, UI.DIM))
@@ -105,6 +102,8 @@ func _rundown(r: Dictionary) -> Control:
 		money += " (incl. $%d tip)" % r.tip
 	if r.fuel_cost > 0.0:
 		money += "   Costs -$%d" % roundi(r.fuel_cost)
+	if r.get("fine", 0) > 0:
+		money += "   Fine -$%d" % r.fine
 	money += "   Net %s$%d" % ["+" if r.net >= 0.0 else "-", absi(roundi(r.net))]
 	info.add_child(UI.label(money, 20))
 	var d: float = r.get("rep_after", 0.0) - r.get("rep_before", 0.0)
@@ -115,6 +114,8 @@ func _rundown(r: Dictionary) -> Control:
 		rep += "   (mischief after payment: -%d)" % roundi(r.mischief)
 	if r.get("heat_up", false):
 		rep += "   Wanted level up"
+	if r.get("cells", false):
+		rep += "   A night in the cells: next job lost"
 	info.add_child(UI.label(rep, 20, UI.GOOD if d >= 0.0 and r.outcome == "paid" else UI.BAD))
 	var tally := Game.tally_lines(r.get("tally", {}), r.get("tally_cost", {}))
 	if not tally.is_empty():

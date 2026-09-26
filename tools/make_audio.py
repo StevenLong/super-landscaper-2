@@ -178,6 +178,18 @@ def sigh():
     write("sigh", lowpass(out, 0.35))
 
 
+def siren():
+    """A two-tone police siren, one hi-lo cycle, looped: the police are on their way."""
+    total = n(1.2)
+    out = []
+    ph = 0.0
+    for i in range(total):
+        t = i / RATE
+        ph += (960 if t < 0.6 else 770) / RATE
+        out.append((tri(ph) * 0.7 + square(ph, 0.5) * 0.15) * 0.8)
+    write("siren", lowpass(out, 0.5), loop=True)
+
+
 def cash():
     total = n(0.9)
     out = []
@@ -359,6 +371,7 @@ def main():
     menu_song()
     splash()  # last, so its noise doesn't shift the sounds made before it
     sigh()
+    siren()
 
 
 if __name__ == "__main__":

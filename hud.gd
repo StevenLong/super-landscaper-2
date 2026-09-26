@@ -32,6 +32,20 @@ func set_clock(seconds: float) -> void:
 	$Clock.text = "%d:%02d" % [floori(seconds / 60.0), int(seconds) % 60]
 
 
+## The police countdown, top centre, flashing red and blue: visible on purpose.
+func set_police(seconds: float) -> void:
+	var l: Label = get_node_or_null("Police")
+	if l == null:
+		l = UI.label("", 30, UI.BAD)
+		l.name = "Police"
+		UI.shadow(l, 3)
+		add_child(l)
+	var left := ceili(seconds)
+	l.text = "POLICE %d:%02d" % [left / 60, left % 60]
+	l.position = Vector2((get_viewport().get_visible_rect().size.x - l.get_minimum_size().x) / 2.0, 12.0)
+	l.modulate = Color("f07060") if fmod(seconds, 0.6) < 0.3 else Color("70a0f0")
+
+
 func set_hint(text: String) -> void:
 	$Hint.text = text
 	$Hint.visible = text != ""

@@ -87,6 +87,12 @@ const PAYMENTS := [120, 250, 450, 750] ## the shark's payment due at the end of 
 const JOBS_PER_WEEK := 3
 const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share of its price
 
+## The crime ladder (design doc, The Run): heat added by tier. 0 isn't a crime (rep only),
+## 1 a nuisance (fined if caught), 2 assault (fined, and a night in the cells costs your
+## next job), 3 the worst (not built: nothing can kill a customer yet).
+const HEAT := [0.0, 1.0, 2.0, 5.0]
+const HIGH_HEAT := 3.0 ## from here, a nuisance gets the police called too
+
 const LAWN_SIZES := [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]
 
 var money := 0
@@ -123,8 +129,8 @@ const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "X"], "throw": ["Q", "B"]
 var pad := false
 
 var best_score := 0
-var run_over_reason := "" ## "" while running; "arrested" ends the run at the next board
-var heat := 0.0 ## the wanted level: each knocked-out customer adds one; the police may be waiting
+var run_over_reason := "" ## "" while running; "bankrupt" or "won" once it's over
+var heat := 0.0 ## the wanted level: only crimes add it (HEAT), a week paid on time cools it one
 
 var _rng := RandomNumberGenerator.new()
 
@@ -305,18 +311,14 @@ func record_result(result: Dictionary) -> void:
 		run_tally[k] = run_tally.get(k, 0) + result.tally[k]
 	for k: String in result.get("tally_cost", {}):
 		run_tally_cost[k] = run_tally_cost.get(k, 0.0) + result.tally_cost[k]
-	var heat_before := heat
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
 	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
 	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
 	jobs_done += 1
-	if result.outcome == "ko":
-		heat += 1.0
-	elif result.outcome == "paid":
-		heat = maxf(0.0, heat - 0.34)
+	if result.get("cells", false):
+		jobs_done += 1 # a night in the cells: the next job slot is gone
 	result.rep_after = reputation
-	result.heat_up = heat > heat_before
 	if total_earned > best_score:
 		best_score = total_earned
 		var cfg := ConfigFile.new()
@@ -324,9 +326,15 @@ func record_result(result: Dictionary) -> void:
 		cfg.save(save_path)
 
 
-## Are the police waiting at this job? The more customers you've flattened, the likelier.
-func arrested_on_arrival() -> bool:
-	return in_run and heat > 0.0 and _rng.randf() < heat * 0.12
+## Seconds from the police being called to them arriving: your record shortens it.
+func police_time(at_heat: float) -> float:
+	return maxf(20.0, 60.0 - 8.0 * at_heat)
+
+
+## Caught for a crime of this tier: damages are billed separately, this is the charge,
+## and your record raises it.
+func fine(tier: int, at_heat: float) -> int:
+	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_heat))
 
 
 func buy(key: String) -> bool:
@@ -402,6 +410,7 @@ func settle_payday() -> Dictionary:
 		return {"paid": due, "taken": taken, "outcome": "bankrupt"}
 	money -= due
 	week += 1
+	heat = maxf(0.0, heat - 1.0) # paid on time: things cool off
 	var outcome := "won" if week > PAYMENTS.size() else ("repossessed" if taken else "paid")
 	if outcome == "won":
 		run_over_reason = "won"

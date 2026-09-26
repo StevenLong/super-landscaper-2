@@ -4,7 +4,7 @@ extends Area2D
 ## bowls it over (it yelps and limps home). On foot, walk into it and it follows
 ## you; bring it back to its owner.
 
-signal bowled(dog: Dog)
+signal bowled(dog: Dog, by: String) ## by "mower" (run over) or "stone"
 signal home(dog: Dog)
 signal caught(dog: Dog)
 
@@ -54,12 +54,12 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-func bowl() -> void:
+func bowl(by := "mower") -> void:
 	if limping:
 		return
 	limping = true
 	following = null
-	bowled.emit(self)
+	bowled.emit(self, by)
 
 
 func _on_body_entered(body: Node2D) -> void:
