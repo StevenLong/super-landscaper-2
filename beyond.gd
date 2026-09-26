@@ -51,7 +51,9 @@ func _neighbour(plot: Rect2, side: int, h: float, border: float, up: float) -> v
 			_ground(tex, Rect2(plot.position.x + i * 40.0, 0, minf(40.0, plot.end.x - plot.position.x - i * 40.0), h))
 	else:
 		_ground(preload("res://art/grass_long.png"), Rect2(plot.position, plot.size))
-	var hs := _house(Vector2(plot.position.x + (PLOT - 560.0) * 0.5 + (120.0 if side < 0 else 0.0), 0))
+	# House and garage (560 wide) centred in the plot, so neither runs into a fence.
+	var garage: int = [-1, 1][_r.randi() % 2]
+	var hs := _house(Vector2(plot.position.x + (PLOT - 560.0) * 0.5 + (HouseScript.GARAGE_W if garage < 0 else 0.0), 0), garage)
 	var g: Rect2 = hs.garage_rect()
 	var drive := Rect2(g.position.x + 10, g.end.y, g.size.x - 20, h + border + 40.0 - g.end.y)
 	_ground(preload("res://art/gravel.png"), drive, Color(1.0, 0.88, 0.68))
@@ -91,9 +93,9 @@ func _lot(plot: Rect2, h: float, border: float, up: float) -> void:
 	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, h + border - 32, plot.size.x, 32), 0, Color(0.8, 0.72, 0.6))
 
 
-func _house(at: Vector2) -> Node2D:
+func _house(at: Vector2, garage := 0) -> Node2D:
 	var hs: Node2D = HouseScript.new()
-	hs.garage = [-1, 1][_r.randi() % 2]
+	hs.garage = garage if garage != 0 else [-1, 1][_r.randi() % 2]
 	hs.position = at
 	hs.modulate = TINTS[_r.randi() % TINTS.size()]
 	add_child(hs)

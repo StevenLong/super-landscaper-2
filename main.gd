@@ -310,18 +310,23 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	var h := float(lawn.size_px.y)
 	var b := float(BORDER)
 	var top: String = ["hedge", "fence"][r.randi() % 2]
+	# The sides and the road-side run are one boundary, so one style; the back can differ.
+	var edge: String = ["hedge", "fence"][r.randi() % 2]
 	# name: [kind, outer rect, the lawn-side line critters come in along, inward direction]
 	var fp: Rect2 = _house.rect()
-	var front: String = ["hedge", "fence"][r.randi() % 2]
 	var d0 := drive.position.x
 	var d1 := drive.position.x + drive.size.x
 	var sides := {
-		"top_l": [top, Rect2(-b, -b, fp.position.x + b, b), [Vector2(0, 0), Vector2(fp.position.x, 0)], Vector2.DOWN],
-		"top_r": [top, Rect2(fp.end.x, -b, w - fp.end.x + b, b), [Vector2(fp.end.x, 0), Vector2(w, 0)], Vector2.DOWN],
-		"left": [["hedge", "fence"][r.randi() % 2], Rect2(-b, -b, b, h + 2.0 * b), [Vector2(0, 0), Vector2(0, h)], Vector2.RIGHT],
-		"right": [["hedge", "fence"][r.randi() % 2], Rect2(w, -b, b, h + 2.0 * b), [Vector2(w, 0), Vector2(w, h)], Vector2.LEFT],
-		"bottom_l": [front, Rect2(-b, h, d0 + b, b), [Vector2(0, h), Vector2(d0, h)], Vector2.UP],
-		"bottom_r": [front, Rect2(d1, h, w - d1 + b, b), [Vector2(d1, h), Vector2(w, h)], Vector2.UP],
+		# The back run is one strip the garden's full width, behind the house: where it's
+		# taller than the roof's overhang its top shows over the ridge. Critters come in
+		# only either side of the house.
+		"top": [top, Rect2(-b, -b, w + 2.0 * b, b), [], Vector2.DOWN],
+		"top_l": [top, Rect2(), [Vector2(0, 0), Vector2(fp.position.x, 0)], Vector2.DOWN],
+		"top_r": [top, Rect2(), [Vector2(fp.end.x, 0), Vector2(w, 0)], Vector2.DOWN],
+		"left": [edge, Rect2(-b, -b, b, h + 2.0 * b), [Vector2(0, 0), Vector2(0, h)], Vector2.RIGHT],
+		"right": [edge, Rect2(w, -b, b, h + 2.0 * b), [Vector2(w, 0), Vector2(w, h)], Vector2.LEFT],
+		"bottom_l": [edge, Rect2(-b, h, d0 + b, b), [Vector2(0, h), Vector2(d0, h)], Vector2.UP],
+		"bottom_r": [edge, Rect2(d1, h, w - d1 + b, b), [Vector2(d1, h), Vector2(w, h)], Vector2.UP],
 	}
 	var mouth := TextureRect.new() # the drive carries on across the pavement to the road
 	mouth.texture = preload("res://art/gravel.png")
@@ -332,6 +337,10 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	$Borders.add_child(mouth)
 	for key: String in sides:
 		var s: Array = sides[key]
+		if not s[2].is_empty() and (s[2][0] as Vector2).distance_to(s[2][1]) > 40.0: # too short to come out of
+			_edges.append({"kind": s[0], "from": s[2][0], "to": s[2][1], "inward": s[3]})
+		if not (s[1] as Rect2).has_area():
+			continue # a critter entrance only; the strip is "top"
 		var vertical: bool = key == "left" or key == "right"
 		var strip := TextureRect.new()
 		var box: Rect2 = s[1]
@@ -349,8 +358,6 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			strip.z_index = 1
 			_front.append(strip)
 		$Borders.add_child(strip)
-		if (s[2][0] as Vector2).distance_to(s[2][1]) > 40.0: # too short to come out of
-			_edges.append({"kind": s[0], "from": s[2][0], "to": s[2][1], "inward": s[3]})
 
 
 ## Is p inside something a critter can't walk through?
