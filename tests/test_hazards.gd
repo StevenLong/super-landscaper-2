@@ -12,6 +12,7 @@ var _cut0 := -1.0
 var _mood := 0.0
 var _thrown: FlyingStone
 var _bills0 := 0.0
+var _bounced := Vector2.ZERO
 
 
 func _initialize() -> void:
@@ -39,6 +40,13 @@ func _physics_process(_delta: float) -> bool:
 		1:
 			Input.action_release("move_forward")
 			assert(m._stone_near(Vector2(700, 500)) == null, "a mowed-over stone leaves the ground")
+			var turned: float = mower.rotation
+			mower.rotation = -PI / 2.0
+			mower._fit_shape()
+			var pts: PackedVector2Array = mower.get_node("Shape").shape.points
+			assert(is_equal_approx(absf(pts[0].y), mower.body.x * 0.3), "heading north, the mower's footprint is foreshortened")
+			mower.rotation = turned
+			mower._fit_shape()
 			assert(mower.condition < 100.0, "and hurts the mower")
 			# What a flung stone can hit.
 			var house: Node2D = m.get_node("Scenery/House")
@@ -71,6 +79,11 @@ func _physics_process(_delta: float) -> bool:
 			m._on_stone_landed(f, "window")
 			assert(m.bills >= m.WINDOW_BILL and m.customer.mood < mood, "a broken window costs money and mood")
 			assert(house.broken == [40], "and stays smashed")
+			# A stone that hits a wall bounces back off it and lands.
+			f.position = house.position + Vector2(95, house.WALL_H - 26.0)
+			f.velocity = Vector2.UP * 400.0
+			m._on_stone_landed(f, "wall")
+			_bounced = f.position + Vector2(0, 12)
 			f.free()
 			# A broken mower cuts nothing; parking at the truck repairs it.
 			mower.condition = 0.0
@@ -80,6 +93,7 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 30
 		2:
 			Input.action_release("move_forward")
+			assert(m._stone_near(_bounced) != null, "a stone off a wall drops in front of it")
 			assert(lawn.cut_fraction() == _cut0, "a broken mower cuts nothing")
 			mower.global_position = m.truck_spot()
 			_wait = 60

@@ -25,6 +25,7 @@ signal condition_changed(fraction: float)
 @export var empty_speed_scale := 0.35 ## pushing a dead mower
 @export var sprite_kind := "petrol" ## art/mower_<kind>.png: two frames of motion, then empty; a row per facing
 @export var toughness := 1.0 ## damage taken is divided by this
+@export var body := Vector2(36, 28) ## length x width, as the voxel model is built
 
 @onready var fuel := max_fuel
 var fuel_used := 0.0
@@ -63,6 +64,7 @@ func _ready() -> void:
 	ramp.set_color(1, Color(0.3, 0.55, 0.2, 0.0))
 	_clippings.color_ramp = ramp
 	add_child(_clippings)
+	$Shape.shape = ConvexPolygonShape2D.new()
 	_apply_visual()
 
 
@@ -74,6 +76,20 @@ func _show() -> void:
 	var spr: Sprite2D = $Sprite
 	spr.global_rotation = 0.0
 	spr.frame = Facing.of(rotation) * 3 + _anim
+	_fit_shape()
+
+
+## The collision is the body's footprint as the 3/4 view draws it: depth is foreshortened
+## (tools/voxel.py G = 0.6), so heading north the mower is shorter on screen than east.
+func _fit_shape() -> void:
+	var cs: CollisionShape2D = $Shape
+	if not cs.shape is ConvexPolygonShape2D:
+		return # before _ready
+	var pts := PackedVector2Array()
+	for c: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(-1, -1), Vector2(1, -1)]:
+		pts.append((c * body / 2.0).rotated(rotation) * Vector2(1.0, 0.6))
+	cs.shape.points = pts
+	cs.global_rotation = 0.0
 
 
 func _apply_visual() -> void:
@@ -132,9 +148,7 @@ func apply_spec(spec: Dictionary) -> void:
 			"max_fuel", "fuel_burn", "regen", "empty_speed_scale", "toughness"]:
 		set(k, spec[k])
 	sprite_kind = spec.sprite
-	var shape := RectangleShape2D.new()
-	shape.size = spec.body
-	$Shape.shape = shape
+	body = spec.body
 	_apply_visual()
 	fuel = max_fuel
 	edge_margin = minf(edge_margin, cut_radius * 0.75)

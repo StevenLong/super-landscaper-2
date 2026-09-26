@@ -7,6 +7,7 @@ var watch: Node2D
 var _hop := 0.0
 var _tex: Texture2D
 var _out := false
+var _toward := PI / 2.0 ## facing out over the garden until there's a mower to watch
 
 
 func set_look(look: Dictionary) -> void:
@@ -34,8 +35,7 @@ func _draw() -> void:
 	if _tex == null:
 		return
 	var y := -absf(sin(_hop * 16.0)) * 5.0 if _hop > 0.0 else 0.0
-	var toward := PI / 2.0 # facing out over the garden until there's a mower to watch
-	if watch != null and is_instance_valid(watch):
-		toward = (watch.global_position - global_position).angle()
+	if not _out and watch != null and is_instance_valid(watch):
+		_toward = (watch.global_position - global_position).angle() # knocked out, they lie as they fell
 	var frame := 2 if _out else (1 if _hop > 0.0 else 0)
-	Facing.draw(self, _tex, 3, frame, toward, Vector2(0, y))
+	Facing.draw(self, _tex, 3, frame, _toward, Vector2(0, y))

@@ -14,7 +14,7 @@ const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
 const CAR_BILL := 40.0 ## a dent in the customer's car
-const CAR_SIZE := Vector2(52, 110) ## parked along the drive
+const CAR_SIZE := Vector2(52, 66) ## parked along the drive: 110 long, foreshortened by 0.6 (tools/voxel.py G)
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
@@ -837,6 +837,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_knock_out()
 			else:
 				_react()
+			_drop_bounced(f)
 		"window":
 			Sfx.play("glass", 0.0)
 			_house.smash(_window_at(p))
@@ -851,6 +852,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			Sfx.play("thud")
 			customer.on_stone("wall")
 			_react()
+			_drop_bounced(f)
 		"car":
 			Sfx.play("clonk")
 			_count("car_dents", CAR_BILL)
@@ -859,11 +861,13 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			shake(3.0)
 			customer.on_stone("car")
 			_react()
+			_drop_bounced(f)
 		"truck":
 			Sfx.play("clonk")
 			_count("dents", DENT_BILL)
 			bills += DENT_BILL
 			pop_text("-$%d" % DENT_BILL, p, Color("f07060"))
+			_drop_bounced(f)
 		"animal":
 			for a in $Animals.get_children():
 				if a is Animal and not a.dead and a.position.distance_to(p) <= CRITTER_HIT:
@@ -874,6 +878,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			dog.bowl()
 			customer.on_stone("dog")
 			_react()
+			_drop_bounced(f)
 		"gone":
 			pass # over the fence and into next door's garden
 		"mower":
@@ -881,7 +886,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			mower.damage(8.0)
 			_count("own_goals")
 			shake(2.0)
-			add_stone.call_deferred(p)
+			_drop_bounced(f)
 		"tree":
 			Sfx.play("thud")
 			for t in $Scenery.get_children():
@@ -889,7 +894,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 					t.shake() # the canopy sways and drops leaves
 					_rustle(t.position + t.crown_centre(), Vector2.DOWN)
 			_count("trees_hit")
-			add_stone.call_deferred(p - f.velocity.normalized() * 8.0) # drops just outside the trunk
+			_drop_bounced(f) # drops just outside the trunk
 		_:
 			var pond := _pond_at(p)
 			if pond:
@@ -903,6 +908,11 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 					if b.has_method("flattened_count") and b.rect().has_point(p):
 						b._trample(b.to_local(p), 12.0) # flattens a flower or two where it lands
 				add_stone.call_deferred(p)
+
+
+## A stone that struck something solid bounces back off it and lands on the lawn.
+func _drop_bounced(f: FlyingStone) -> void:
+	add_stone.call_deferred(lawn.keep_in(f.position - f.velocity.normalized() * 12.0, 4.0))
 
 
 func _pond_at(p: Vector2) -> Pond:

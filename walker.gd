@@ -26,8 +26,9 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	var dir := Input.get_vector("turn_left", "turn_right", "move_forward", "move_back")
 	velocity = dir * speed * (0.8 if carrying != "" else 1.0)
-	if dir != Vector2.ZERO:
+	if dir != Vector2.ZERO and not is_equal_approx(rotation, dir.angle()):
 		rotation = dir.angle()
+		queue_redraw() # the cached drawing is counter-rotated for the old heading
 	var before := global_position
 	move_and_slide()
 	global_position = keep_in.call(global_position)
