@@ -15,6 +15,9 @@ const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
 const CAR_BILL := 40.0 ## a dent in the customer's car
 const CAR_SIZE := Vector2(52, 66) ## parked along the drive: 110 long, foreshortened by 0.6 (tools/voxel.py G)
+const THROW_MIN := 40.0 ## how far a tap throws
+const THROW_MAX := 300.0 ## how far a full wind-up throws
+const THROW_FROM := 12.0 ## the stone leaves your hand this far in front
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
@@ -373,6 +376,10 @@ func _process(delta: float) -> void:
 	cam.zoom = cam.zoom.lerp(Vector2(want, want), minf(1.0, delta * 8.0))
 	_shake = maxf(0.0, _shake - delta * 18.0)
 	cam.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
+	# Winding up a throw, the camera leads halfway to the landing marker so it stays on screen.
+	if walker:
+		var lead := Vector2(_throw_reach(walker.power) / 2.0, 0.0) if walker.aiming else Vector2.ZERO
+		cam.position = cam.position.lerp(lead, minf(1.0, delta * 6.0))
 	_lay_track()
 	# A canopy fades while you're under it or close, so nothing hides there.
 	var me := actor().global_position
@@ -486,7 +493,9 @@ func _hint() -> String:
 	if walker:
 		match walker.carrying:
 			"stone":
-				return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   %s throw it" % Game.key("throw")
+				if walker.aiming:
+					return "Let go to throw   %s cancel" % Game.key("hop")
+				return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   hold %s throw it" % Game.key("throw")
 			"jerrycan":
 				return Game.key("interact") + " fill up the mower" if walker.global_position.distance_to(mower.global_position) < 44.0 else "Take the can to the mower"
 		if _stone_near(walker.global_position):
@@ -513,6 +522,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_cheat_win()
 	elif event.is_action_pressed("pause"):
 		open_pause()
+	elif event.is_action_pressed("hop") and walker and walker.aiming:
+		walker.cancel_aim()
 	elif event.is_action_pressed("hop"):
 		if walker == null:
 			hop_off()
@@ -521,12 +532,23 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("interact"):
 		interact()
 	elif event.is_action_pressed("throw") and walker and walker.carrying == "stone":
-		walker.carrying = ""
-		walker.queue_redraw()
-		var dir := Vector2.RIGHT.rotated(walker.rotation)
-		throw_stone(walker.global_position + dir * 12.0, dir, 460.0, 260.0)
-		_count("stones_thrown")
-		Sfx.play("ui_move")
+		walker.aim()
+
+
+## Let go of a wound-up throw.
+func _on_thrown(dir: Vector2, power: float) -> void:
+	if walker.carrying != "stone":
+		return
+	walker.carrying = ""
+	walker.queue_redraw()
+	throw_stone(walker.global_position + dir * THROW_FROM, dir, 460.0, _throw_reach(power) - THROW_FROM)
+	_count("stones_thrown")
+	Sfx.play("ui_move")
+
+
+## How far from you a throw at this power lands.
+func _throw_reach(power: float) -> float:
+	return lerpf(THROW_MIN, THROW_MAX, power)
 
 
 # ---------------------------------------------------------------- on foot
@@ -536,6 +558,8 @@ func hop_off() -> void:
 	var side := Vector2(0, 26).rotated(mower.rotation)
 	walker.position = lawn.keep_in(mower.global_position + side, 12.0)
 	walker.keep_in = lawn.keep_in.bind(8.0)
+	walker.reach = _throw_reach
+	walker.thrown.connect(_on_thrown)
 	add_child(walker)
 	mower.occupied = false
 	cam.reparent(walker, false)
