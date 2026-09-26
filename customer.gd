@@ -221,6 +221,18 @@ func on_stone(target: String) -> bool:
 	return false
 
 
+## Something of theirs wrecked (a gnome, the hose, a spill on the lawn). Returns true if
+## they saw it; unseen, what's left of it waits for them.
+func on_property(what: String, d: float) -> bool:
+	if not sees():
+		_unseen.append(on_property.bind(what, d))
+		_unseen_what.append("my " + what)
+		return false
+	_change(d)
+	_react("horrified", 2.0, "My %s!" % what.to_upper())
+	return true
+
+
 func knock_out() -> void:
 	knocked_out = true
 	last_line = "..."

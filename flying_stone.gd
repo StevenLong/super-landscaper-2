@@ -8,6 +8,7 @@ extends Node2D
 signal landed(stone: FlyingStone, target: String)
 
 var velocity := Vector2.ZERO
+var kind := "stone" ## what's flying (Stone.KINDS): it lands as one
 var thrown := false ## by hand, on purpose: what it hits can be a crime (a flung one is an accident)
 var range_left := 200.0
 var hit_test: Callable
@@ -37,7 +38,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var t := preload("res://art/stone.png")
+	var t := Stone.texture(kind)
 	var h := sin(clampf(_travelled / _total, 0.0, 1.0) * PI) * 26.0
 	draw_circle(Vector2(0, 2), 4.0, Color(0, 0, 0, 0.35))
 	draw_texture(t, -t.get_size() / 2.0 - Vector2(0, h))

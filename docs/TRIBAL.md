@@ -13,3 +13,6 @@ Traps and "we tried X, it failed because Y". Current rules live in CLAUDE.md.
   present, and Vulkan on the AMD iGPU (which drives the panel) ran the job at 1785 FPS
   uncapped. Fix: OMEN Gaming Hub GPU mode "Discrete" (60.0 FPS after). Check `tools/fps.gd`
   (and `EMPTY=1`) before hunting game code for frame rate.
+- A texture `load()`ed inside `_draw` and not kept anywhere draws as a solid white box: the
+  resource is freed once `_draw` returns while the canvas still points at it. `stone.png`
+  hid this for a while because other scripts preload it. Keep a reference (`Stone.texture`).

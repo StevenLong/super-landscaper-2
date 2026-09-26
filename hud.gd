@@ -41,6 +41,7 @@ func set_police(seconds: float) -> void:
 		UI.shadow(l, 3)
 		add_child(l)
 	var left := ceili(seconds)
+	@warning_ignore("integer_division")
 	l.text = "POLICE %d:%02d" % [left / 60, left % 60]
 	l.position = Vector2((get_viewport().get_visible_rect().size.x - l.get_minimum_size().x) / 2.0, 12.0)
 	l.modulate = Color("f07060") if fmod(seconds, 0.6) < 0.3 else Color("70a0f0")

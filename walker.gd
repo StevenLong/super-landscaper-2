@@ -10,7 +10,7 @@ const CHARGE_TIME := 1.0 ## seconds held to reach full power
 
 @export var speed := 140.0
 
-var carrying := "" ## "", "stone" or "jerrycan"
+var carrying := "" ## "", or the kind of small thing in your hands (Stone.KINDS)
 var keep_in := func(p: Vector2) -> Vector2: return p ## main: the garden, you don't wander off the property
 var _stride := 0.0
 var _frame := 0
@@ -95,5 +95,5 @@ func _draw_marker() -> void:
 
 func _draw_held(at: Vector2) -> void:
 	if carrying != "":
-		var c: Texture2D = preload("res://art/stone.png") if carrying == "stone" else preload("res://art/jerrycan.png")
+		var c := Stone.texture(carrying)
 		draw_texture(c, at - c.get_size() / 2.0)

@@ -209,6 +209,12 @@ def main(only=None):
         "props": lambda: [
             save("stone", a.stone(), 6),
             save("jerrycan", a.jerrycan(), 6),
+            save("gnome", a.gnome(), 6),
+            save("flamingo", a.flamingo(), 6),
+            save("cone", a.cone(), 6),
+            save("hose", a.hose(), 6),
+            save("ball", a.ball(), 6),
+            save("rock", a.rock(), 4),
             save("walker", v.sheet([v.walker(0), v.walker(1)]), 4),
             save("dog", v.sheet([v.dog(0), v.dog(1)]), 4),
         ],

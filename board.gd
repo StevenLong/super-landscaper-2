@@ -275,9 +275,9 @@ func _payday() -> void:
 	else:
 		_centred(col, "Short by $%d. Sell something, or his heavies take what they like, your best first." % (due - Game.money), 20, UI.DIM)
 		for k in Game.sellable():
-			var name: String = Game.MOWERS[k].name if Game.MOWERS.has(k) else Game.UPGRADES[k].name
+			var kit: String = Game.MOWERS[k].name if Game.MOWERS.has(k) else Game.UPGRADES[k].name
 			var row := UI.hbox(12)
-			row.add_child(UI.label(name, 20))
+			row.add_child(UI.label(kit, 20))
 			row.add_child(_sell_button(k, _payday))
 			var holder := CenterContainer.new()
 			holder.add_child(row)

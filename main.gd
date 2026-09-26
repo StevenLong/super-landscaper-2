@@ -8,6 +8,7 @@ const TreeScript := preload("res://tree.gd")
 const BedScript := preload("res://flowerbed.gd")
 const HouseScript := preload("res://house.gd")
 const WalkerScript := preload("res://walker.gd")
+const RockScript := preload("res://rock.gd")
 
 const WINDOWS := [40, 120, 290, 370] ## x of each ground-floor window in the house art (30 wide)
 const REPAIR_PRICE := 0.5 ## per condition point repaired
@@ -54,6 +55,7 @@ var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, i
 var _tells: Array[Dictionary] = [] ## critters about to come out: {kind, at, grace, left}
 var _front: Array[TextureRect] = [] ## the hedge or fence along the road, drawn over the lawn's edge
 var _splats: Array[Vector2] = [] ## squashed critters: they stay for the whole job
+var _spills: Array = [] ## [position, colour]: petrol browning the lawn, a cut hose's puddle
 var _tracks: Array = [] ## red wheel marks: [position, sideways unit, strength 0..1]
 var _blood := 0.0 ## px of red trail the mower has left to lay after running something over
 var _blood_from := Vector2.ZERO
@@ -221,6 +223,21 @@ func _build_layout() -> void:
 		lawn.exclude_ellipse(p, Pond.RX, Pond.RY)
 	for p: Vector2 in stones:
 		add_stone(p)
+	if not fixed:
+		var rp := RandomNumberGenerator.new() # its own, so everything above stays put
+		rp.seed = job.seed + 4
+		var props: Array = job.get("props", []) + (["ball"] if job.get("dog", false) else [])
+		for kind: String in props:
+			var pr := _place(rp, taken, Vector2(14, 14), size)
+			if pr.has_area():
+				add_stone(pr.get_center(), kind)
+		for i in job.get("rocks", 0):
+			var rr := _place(rp, taken, Vector2(30, 24), size)
+			if rr.has_area():
+				var rock := RockScript.new()
+				rock.position = rr.get_center()
+				$Scenery.add_child(rock)
+				lawn.exclude_circle(rock.position, rock.radius)
 	lawn.exclude_rect(_house.rect())
 	lawn.exclude_rect(_house.garage_rect())
 	lawn.exclude_rect(Rect2(drive.position, drive.size))
@@ -366,8 +383,9 @@ func _place(r: RandomNumberGenerator, taken: Array[Rect2], sz: Vector2, lawn_siz
 	return Rect2()
 
 
-func add_stone(p: Vector2) -> Stone:
+func add_stone(p: Vector2, kind := "stone") -> Stone:
 	var s := Stone.new()
+	s.kind = kind
 	s.position = p
 	s.mowed_over.connect(_on_stone_mowed)
 	$Stones.add_child(s)
@@ -414,6 +432,11 @@ func _lay_track() -> void:
 
 func _draw_decals() -> void:
 	var d: Node2D = $Decals
+	for s: Array in _spills: # a browned patch of lawn, or a puddle
+		d.draw_set_transform(s[0], 0.0, Vector2(1.0, 0.6))
+		d.draw_circle(Vector2.ZERO, 22.0, s[1])
+		d.draw_circle(Vector2(8, 4), 12.0, s[1])
+	d.draw_set_transform(Vector2.ZERO)
 	var splat := preload("res://art/splat.png")
 	for p in _splats:
 		d.draw_texture(splat, p - splat.get_size() / 2.0)
@@ -510,15 +533,15 @@ func at_truck() -> bool:
 
 func _hint() -> String:
 	if walker:
-		match walker.carrying:
-			"stone":
-				if walker.aiming:
-					return "Let go to throw   %s cancel" % Game.key("hop")
-				return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   hold %s throw it" % Game.key("throw")
-			"jerrycan":
-				return Game.key("interact") + " fill up the mower" if walker.global_position.distance_to(mower.global_position) < 44.0 else "Take the can to the mower"
-		if _stone_near(walker.global_position):
-			return Game.key("interact") + " pick up the stone"
+		if walker.aiming:
+			return "Let go to throw   %s cancel" % Game.key("hop")
+		if walker.carrying == "jerrycan" and walker.global_position.distance_to(mower.global_position) < 44.0:
+			return Game.key("interact") + " fill up the mower"
+		if walker.carrying != "":
+			return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   hold %s throw it" % Game.key("throw")
+		var near := _stone_near(walker.global_position)
+		if near:
+			return Game.key("interact") + " pick up the " + _thing(near.kind)
 		if _can_rifle():
 			if Input.is_action_pressed("interact") and robbed > 0.0:
 				return "Rifling... $%d" % floori(robbed)
@@ -554,17 +577,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			hop_on()
 	elif event.is_action_pressed("interact"):
 		interact()
-	elif event.is_action_pressed("throw") and walker and walker.carrying == "stone":
+	elif event.is_action_pressed("throw") and walker and walker.carrying != "":
 		walker.aim()
 
 
 ## Let go of a wound-up throw.
 func _on_thrown(dir: Vector2, power: float) -> void:
-	if walker.carrying != "stone":
+	if walker.carrying == "":
 		return
+	var f := throw_stone(walker.global_position + dir * THROW_FROM, dir, 460.0, _throw_reach(power) - THROW_FROM, walker.carrying)
+	f.thrown = true
 	walker.carrying = ""
 	walker.queue_redraw()
-	throw_stone(walker.global_position + dir * THROW_FROM, dir, 460.0, _throw_reach(power) - THROW_FROM).thrown = true
 	_count("stones_thrown")
 	Sfx.play("ui_move")
 
@@ -602,32 +626,36 @@ func interact() -> void:
 		if at_truck():
 			open_truck_menu()
 		return
-	match walker.carrying:
-		"stone":
-			if not at_truck():
-				add_stone(walker.global_position + Vector2(14, 0).rotated(walker.rotation))
-			else:
-				_count("stones_binned")
-			Sfx.play("bump")
-			walker.carrying = ""
-			walker.queue_redraw()
-		"jerrycan":
-			if walker.global_position.distance_to(mower.global_position) < 44.0:
-				mower.add_fuel(mower.max_fuel)
-				_count("cans")
-				walker.carrying = ""
-				walker.queue_redraw()
-				Sfx.play("glug", 0.0)
-		_:
-			var s := _stone_near(walker.global_position)
-			if s:
-				s.queue_free()
+	if walker.carrying == "jerrycan" and walker.global_position.distance_to(mower.global_position) < 44.0:
+		mower.add_fuel(mower.max_fuel)
+		_count("cans")
+		walker.carrying = ""
+		walker.queue_redraw()
+		Sfx.play("glug", 0.0)
+	elif walker.carrying != "": # set it down, or in the truck
+		if not at_truck():
+			add_stone(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying)
+		elif walker.carrying == "stone":
+			_count("stones_binned")
+		Sfx.play("bump")
+		walker.carrying = ""
+		walker.queue_redraw()
+	else:
+		var s := _stone_near(walker.global_position)
+		if s:
+			s.queue_free()
+			if s.kind == "stone":
 				_count("stones_picked")
-				walker.carrying = "stone"
-				walker.queue_redraw()
-				Sfx.play("ui_move", 0.0)
-			elif at_truck():
-				open_truck_menu()
+			walker.carrying = s.kind
+			walker.queue_redraw()
+			Sfx.play("ui_move", 0.0)
+		elif at_truck():
+			open_truck_menu()
+
+
+## What a small thing's called in a hint.
+func _thing(kind: String) -> String:
+	return {"jerrycan": "petrol can", "ball": "tennis ball"}.get(kind, kind)
 
 
 func _stone_near(p: Vector2) -> Stone:
@@ -906,17 +934,62 @@ func _on_mower_bumped(what: Object, impact: float) -> void:
 
 # ---------------------------------------------------------------- stones
 
+## A small thing under the blades: what happens depends on what it is (Stone.KINDS).
 func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 	if s.is_queued_for_deletion():
 		return
 	s.queue_free()
-	_count("stones_mowed")
-	m.damage(12.0)
-	Sfx.play("clonk")
-	shake(3.0)
-	if randf() < Stone.LAUNCH_CHANCE:
-		var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
-		throw_stone(s.position, dir, randf_range(380.0, 560.0), randf_range(140.0, 380.0))
+	var k: Dictionary = Stone.KINDS[s.kind]
+	_count(s.kind + "s_mowed")
+	m.damage(k.get("damage", 0.0))
+	match k.mowed:
+		"fling":
+			Sfx.play("clonk" if s.kind == "stone" else "bump")
+			shake(3.0)
+			if k.get("always", false) or randf() < Stone.LAUNCH_CHANCE:
+				var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
+				throw_stone(s.position, dir, randf_range(380.0, 560.0), randf_range(140.0, 380.0), s.kind)
+		"shatter":
+			Sfx.play("crunch")
+			shake(2.0)
+			_burst(s.position, k.bits)
+		"spill":
+			Sfx.play("splash" if s.kind == "hose" else "glug")
+			_spills.append([s.position, k.spill])
+			$Decals.queue_redraw()
+	if s.kind == "ball" and dog and is_instance_valid(dog) and not dog.limping and dog.position.distance_to(s.position) < 200.0:
+		dog.grieve() # right in front of it
+	if k.has("theirs"):
+		_mischief(3.0)
+		if customer.on_property(k.theirs, k.mood):
+			_react()
+
+
+## Bits flying off something mowed to pieces: a one-shot spray in its colours.
+func _burst(at: Vector2, colours: Array) -> void:
+	var p := CPUParticles2D.new()
+	p.position = at
+	p.z_index = 2
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.amount = 18
+	p.lifetime = 0.7
+	p.direction = Vector2.UP
+	p.spread = 80.0
+	p.initial_velocity_min = 60.0
+	p.initial_velocity_max = 140.0
+	p.gravity = Vector2(0, 260)
+	p.scale_amount_min = 1.5
+	p.scale_amount_max = 2.5
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 1.0])
+	g.colors = PackedColorArray([Color(colours[0]), Color(colours[1])])
+	for i in range(2, colours.size()):
+		g.add_point(float(i) / colours.size(), Color(colours[i]))
+	p.color_initial_ramp = g
+	add_child(p)
+	p.emitting = true
+	p.finished.connect(p.queue_free)
 
 
 ## Count something for the job's tally (shown on the board if it isn't zero).
@@ -927,8 +1000,9 @@ func _count(key: String, cost := 0.0) -> void:
 
 
 ## Send a stone flying along the ground (flung by blades or thrown by hand).
-func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float) -> FlyingStone:
+func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float, kind := "stone") -> FlyingStone:
 	var f := FlyingStone.new()
+	f.kind = kind
 	f.launch(from, dir, speed, distance, _stone_hit_test)
 	f.landed.connect(_on_stone_landed)
 	$Stones.add_child.call_deferred(f)
@@ -968,7 +1042,7 @@ func _stone_hit_test(p: Vector2) -> String:
 		return "dog"
 	for t in $Scenery.get_children():
 		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius:
-			return "tree"
+			return "tree" if t.has_method("shake") else "rock"
 	return "" # a pond is flat: the stone flies over it, see _pond_at on landing
 
 
@@ -1057,6 +1131,9 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 					_rustle(t.position + t.crown_centre(), Vector2.DOWN)
 			_count("trees_hit")
 			_drop_bounced(f) # drops just outside the trunk
+		"rock":
+			Sfx.play("clonk")
+			_drop_bounced(f)
 		_:
 			var pond := _pond_at(p)
 			if pond:
@@ -1069,12 +1146,20 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				for b in $Scenery.get_children():
 					if b.has_method("flattened_count") and b.rect().has_point(p):
 						b._trample(b.to_local(p), 12.0) # flattens a flower or two where it lands
-				add_stone.call_deferred(p)
+				_land(p, f.kind)
 
 
 ## A stone that struck something solid bounces back off it and lands on the lawn.
 func _drop_bounced(f: FlyingStone) -> void:
-	add_stone.call_deferred(lawn.keep_in(f.position - f.velocity.normalized() * 12.0, 4.0))
+	_land(lawn.keep_in(f.position - f.velocity.normalized() * 12.0, 4.0), f.kind)
+
+
+## Something thrown or flung comes down on the lawn. A ball, the dog goes after.
+func _land(at: Vector2, kind: String) -> void:
+	(func() -> void:
+		var s := add_stone(at, kind)
+		if kind == "ball" and dog and is_instance_valid(dog):
+			dog.fetch(s, walker if walker else $Client)).call_deferred()
 
 
 func _pond_at(p: Vector2) -> Pond:
@@ -1144,6 +1229,9 @@ func _release_dog() -> void:
 	dog.caught.connect(func(d: Dog) -> void:
 		Sfx.play("ui_select", 0.0)
 		pop_text("On the lead!", d.position + Vector2(0, -10), UI.GOOD))
+	dog.dropped_ball.connect(func(at: Vector2) -> void:
+		_count("fetches")
+		add_stone.call_deferred(at, "ball"))
 	dog.home.connect(func(_d: Dog) -> void:
 		_count("dog_returned")
 		if customer.on_dog_returned():

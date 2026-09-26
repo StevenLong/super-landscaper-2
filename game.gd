@@ -121,7 +121,10 @@ const TALLY := {
 	"robberies": "Pockets rifled",
 	"windows": "Windows put through", "car_dents": "Dents in the customer's car", "dents": "Dents in your own truck",
 	"own_goals": "Stones at your own mower", "flowers": "Flowers flattened",
-	"stones_mowed": "Stones through the blades", "stones_thrown": "Stones thrown",
+	"stones_mowed": "Stones through the blades", "stones_thrown": "Things thrown",
+	"gnomes_mowed": "Gnomes shattered", "flamingos_mowed": "Flamingos shredded", "cones_mowed": "Cones sent flying",
+	"hoses_mowed": "Hoses cut", "balls_mowed": "Tennis balls shredded", "jerrycans_mowed": "Petrol cans mowed",
+	"fetches": "Balls fetched",
 	"trees_hit": "Trees stoned", "splashes": "Stones fed to the pond",
 	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
 	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",
@@ -271,7 +274,26 @@ func make_job(seed_value: int) -> Dictionary:
 		"ponds": 1 if (size_i > 0 and r.randf() < 0.6) else 0,
 		"dog": r.randf() < 0.4,
 		"dog_name": ["Biscuit", "Rolo", "Duchess", "Pickle", "Monty", "Waffles", "Sir Barkley"][r.randi() % 7],
+		"props": _props(seed_value, persona_key, size_i),
+		"rocks": (seed_value >> 3) % (2 + size_i),
 	}
+
+
+## The small things lying about a garden (Stone.KINDS). Its own draws, so the rest of
+## the job stays as it was for a given seed.
+func _props(seed_value: int, persona_key: String, size_i: int) -> Array[String]:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed_value + 3
+	var out: Array[String] = []
+	for i in r.randi_range(0, 1 + size_i) + (1 if persona_key == "gardener" else 0):
+		out.append("gnome")
+	if r.randf() < 0.3:
+		out.append("flamingo")
+	if r.randf() < 0.2:
+		out.append("cone") # not theirs: nobody minds
+	if r.randf() < 0.6:
+		out.append("hose")
+	return out
 
 
 ## The slice's hand-made lawn, used when no run is active (tests, editor play).

@@ -74,6 +74,7 @@ offset = Vector2(0, -14)
 shape = SubResource("RectangleShape2D_refuel")
 
 [node name="Stones" type="Node2D" parent="."]
+y_sort_enabled = true
 
 [node name="Animals" type="Node2D" parent="."]
 y_sort_enabled = true

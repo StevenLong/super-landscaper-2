@@ -348,6 +348,89 @@ def stone():
     return c
 
 
+PINK = [hexc(h) for h in ("5a1830", "983058", "d05888", "f088b0", "f8c0d8")]
+ORANGE = [hexc(h) for h in ("5a2008", "a04010", "e06820", "f89040", "f8c080")]
+HOSE = [hexc(h) for h in ("12301a", "1e5a2a", "2c7a38", "44a050", "68c070")]
+FUZZ = [hexc(h) for h in ("6a7a10", "a8c020", "d0e040", "e8f070")]
+
+
+def gnome():
+    """A garden gnome: red pointed hat, white beard, blue coat. Small: carry it, throw it,
+    or mow it to bits."""
+    c = Canvas(12, 18)
+    shaded_ellipse(c, 6, 15, 4.5, 2.5, STEEL[:3])         # boots on the ground
+    shaded_ellipse(c, 6, 12, 4.5, 4, BLUE)                # coat
+    shaded_ellipse(c, 6, 8, 3, 2.5, [hexc("c08060"), hexc("e8b088"), hexc("f8d0a8")])  # face
+    for y in range(9, 13):
+        c.rect(6 - (13 - y) // 2 - 1, y, (13 - y) + 2, 1, [hexc("d8d8d0"), hexc("f4f0e6")][y % 2])  # beard
+    for y in range(0, 7):                                 # the hat, a tall cone
+        w = 1 + y
+        c.rect(6 - w // 2, y, w, 1, RED[2] if y > 1 else RED[3])
+    c.rect(6 - 4, 6, 8, 1, RED[1])
+    c.outline(INK)
+    return c
+
+
+def flamingo():
+    """A plastic lawn flamingo on wire legs."""
+    c = Canvas(14, 22)
+    for x in (5, 8):
+        c.rect(x, 13, 1, 9, STEEL[3])                     # wire legs, pushed into the lawn
+    shaded_ellipse(c, 7, 11, 5, 3, PINK)                  # body
+    for i, (x, y) in enumerate(((10, 8), (11, 6), (11, 4), (10, 3), (9, 2))):
+        c.rect(x, y, 2, 2, PINK[3 if i % 2 else 2])        # the S of its neck
+    c.rect(7, 2, 2, 1, PINK[4])                           # head
+    c.rect(6, 3, 2, 1, INK)                               # black-tipped beak
+    c.outline(INK)
+    return c
+
+
+def cone():
+    """A traffic cone: not theirs, nobody minds where it ends up."""
+    c = Canvas(12, 16)
+    c.rect(0, 13, 12, 3, STEEL[1])                        # the square foot
+    for y in range(1, 13):
+        w = 2 + (y * 8) // 12
+        col = [hexc("e8e8e0"), hexc("f8f8f0")][y % 2] if 5 <= y <= 7 else ORANGE[2 if y % 3 else 3]
+        c.rect(6 - w // 2, y, w, 1, col)
+    c.outline(INK)
+    return c
+
+
+def hose():
+    """A coiled garden hose with a brass nozzle. Mowed, it leaks."""
+    c = Canvas(18, 12)
+    for r in (7.5, 5.5, 3.5):
+        shaded_ellipse(c, 9, 6, r, r * 0.62, HOSE)
+        shaded_ellipse(c, 9, 6, r - 1.2, (r - 1.2) * 0.62, HOSE[:2])
+    c.rect(14, 2, 3, 2, YELLOW[3])                        # nozzle
+    c.outline(INK)
+    return c
+
+
+def ball():
+    """A tennis ball: the dog fetches it."""
+    c = Canvas(7, 7)
+    shaded_ellipse(c, 3.5, 3.5, 3, 3, FUZZ)
+    c.set(2, 2, hexc("f8f8f0"))
+    c.set(3, 3, hexc("f8f8f0"))
+    c.set(4, 4, hexc("f8f8f0"))
+    c.outline(INK)
+    return c
+
+
+def rock():
+    """A decorative boulder, big and solid, standing up from the lawn in 3/4."""
+    c = Canvas(34, 26)
+    shaded_ellipse(c, 17, 17, 15, 8, STONE[:3])           # its near face, in shadow
+    shaded_ellipse(c, 16, 12, 14, 10, STONE)              # the lit top
+    c.set(10, 8, STONE[4])
+    c.set(22, 14, STONE[1])
+    c.set(20, 9, STONE[3])
+    c.outline(INK)
+    return c
+
+
 def jerrycan():
     c = Canvas(12, 14)
     shaded_rect(c, 1, 3, 10, 11, RED)
