@@ -82,3 +82,76 @@ open question); 46 and 55's leftovers are buildable any time.
 
 PROPOSED ORDER: the dev lives with the voxel look first; then the grill (56 joins it); 47
 waits on 27.
+### Notes 2026-09-26 (session 6 play checks)
+
+**Bugs (build, no call needed)**
+
+58. [BUG, small, BLOCKS] On foot, the sprite flips upside down and is hard to face where you
+   want (S6-FOOT). Diagnosed from code, not reproduced: `walker.gd` sets `rotation` every
+   frame but only redraws every 9 px of stride (the `queue_redraw()` inside `_draw_held` runs
+   during `_draw`, where Godot ignores it). Between redraws the cached drawing, counter-
+   rotated for the old heading, turns with the new one; walk west and it's upside down.
+   FIX: redraw whenever the heading changes (or every frame), drop the dead call.
+59. [BUG, small] A knocked-out customer keeps turning to face you (S6-CUSTOMER). Home:
+   `client.gd` `_draw` picks `toward` from `watch` even when `_out`. FIX: freeze the facing
+   at knockout.
+60. [BUG, small] The car's hitbox runs too far south of its sprite (S6-CAR). Root cause: the
+   car model is 110 long, but ground depth projects at G = 0.6 (`tools/voxel.py`), so its
+   footprint is 66 px deep on screen while `CAR_SIZE` (`main.gd`) is 52 x 110. FIX: size the
+   collision from the projected footprint. Check the other voxel things' shapes for the same
+   slip.
+61. [FEATURE, small] A stone that hits a wall just vanishes (S6-WINDOW); it should bounce off
+   and land. Home: `main.gd` `_on_stone_landed`: only "tree" and "mower" drop the stone. FIX:
+   the same drop for wall, car, truck, customer and dog, bounced back off the surface.
+
+**Needs a call (small ones can be settled in the grill's first minutes)**
+
+62. [DESIGN, small] Ramming the car with the mower has no reaction (S6-CAR). The mower takes
+   bump damage (`mower.gd` `_check_impacts`) but nothing else knows. Suggest: over the bump
+   threshold it dents like a stone, $40 and "My CAR!". QUESTION: same bill, or bigger for a
+   ride-on at speed?
+63. [QUESTION, small] The 8 facings feel a touch late and point off-course (S6-FACINGS). Not
+   a timing bug: `Facing.of` switches at the exact midpoint every frame. Likely the
+   unconscious thing: the voxel sheets squash depth by 0.6, so a diagonal sprite points
+   about 31 deg while you travel 45 deg, and flat-ish turns switch late relative to what the
+   sprite shows. Options: (a) leave it and let it soak; (b) pick the row from the projected
+   angle, which makes diagonals match but widens the N/S sectors (more "facing north while
+   not going north"); (c) 16 facings, twice the sheet rows, halves both errors. Snapping the
+   heading itself to 8 ways: agreed, no (it would fight mowing lines).
+64. [DESIGN, moderate] Charged throws with a trajectory guide (S6-WINDOW): hold to build
+   power, a guide shows where it lands. Home: `main.gd` `throw_stone` already takes speed and
+   distance. QUESTIONS: range min/max; does the guide show the landing spot only or the arc;
+   does holding slow you down; pad button.
+65. [DESIGN, moderate] Anything you can hold is throwable (S6-WINDOW), the petrol can
+   through a window included. Joins 29 (pick up more than stones) and 56 (what's throwable).
+   QUESTION: what does a thrown can do: spill, dent, burst into flame?
+
+**3/4 visuals (S6-LOOK, S6-BEYOND, S6-GARAGE, S6-DEPTH)**
+
+66. [VISUAL, moderate] The pond and flower beds don't read as 3/4. Both are still drawn flat.
+   FIX sketch: rim stones with a visible front face and a darker inner bank on the pond;
+   flowers standing up in the beds (voxel or hand-drawn). QUESTION: what jars most, the
+   shapes or the flatness?
+67. [VISUAL, small] Trees still read as cardboard cutouts: the trunk meets the ground in a
+   flat line. FIX: a rounded, elliptical base (and a ground shadow ellipse). Home:
+   `tree.gd`.
+68. [VISUAL, small] Fences: the road-side run doesn't join the side runs well and differs in
+   style; the back fence stops instead of running on behind the house; next door's fences
+   sometimes overlap, poke into a neighbour's drive, or run past a corner and stop. Home:
+   `main.gd` fences, `beyond.gd`. QUESTION: the back fence gap, is it seen past the garage
+   or above the house roof? A screenshot would settle it.
+69. [VISUAL, small] The chimney looks wrong and in the wrong place. Home:
+   `tools/art_sprites.py` `house()` (it sits behind the ridge at x 332). QUESTION: where do
+   you want it: up a gable end, or through the roof near the ridge?
+70. [VISUAL, moderate] Garages are too shallow to hold the car in the drive. Deepening
+   `house.gd` GARAGE_* and `art_sprites.py` `garage()` eats lawn (rerun sim_balance).
+   Ties to S6-DEPTH: the strip behind a garage is never covered by it, which matches the
+   "can't see it, can't go there" rule. QUESTION: keep that rule, or allow hidden strips
+   (the mower silhouetted or the garage fading, as the road hedge does)?
+71. [VISUAL, moderate] Next door and past the fences can still feel like a void: sparse trees
+   on flat, featureless grass. FIX sketch: ground texture and variation (mow stripes, darker
+   patches, paths, flower borders) on neighbour lots. Pairs with 55.
+
+PROPOSED ORDER: 58 first (blocks the next playtest, one line), then 59 to 61 as one bug
+batch; the grill takes 62 to 65 alongside 21, 22, 25, 26, 27, 29, 38, 40 and 56; 66 to 71
+are a 3/4 art pass once the questions are answered.

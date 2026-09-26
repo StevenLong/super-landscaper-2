@@ -11,21 +11,21 @@ LOAD 1 of 4: A JOB, PAD IN HAND      (about 6 min, a gardener job is best)
 
 S5-POP
 Listen to the first second of a job as it loads. Is the pop gone?
->
+>yes
 
 S5-SCREAM
 Mow straight through a flower bed. The customer screams once for the burst, not once per
 flower, and speaks up again if you keep at it a couple of seconds later.
->
+>yes
 
 S5-TALK
 Any customer line: the words come out slower, and the mouth visibly opens and shuts.
->
+>yes
 
 S5-PROMPTS
 Press anything on the pad: the hints switch to (A) / (X) / (B). Touch the keyboard: back to
 [E] / [F] / [Q]. The first job's briefing and the title's help follow it too.
->
+>yes
 
 
 ================================================================================
@@ -35,12 +35,12 @@ LOAD 2 of 4: STONES      (about 4 min, [2] a few times for a lawn with a pond)
 S5-POND-EDGE
 Throw a stone at the very edge of the pond, onto the rim stones. A smaller splash, and the
 rings stay on the water.
->
+>Yes
 
 S5-TREE-SHAKE
 Throw a stone at a tree trunk: the whole canopy sways and settles, and the leaves fall from
 the canopy, not from a tuft at the trunk.
->
+>Yes
 
 
 ================================================================================
@@ -50,32 +50,47 @@ LOAD 3 of 4: THE 3/4 LOOK      (about 8 min, any job; [1] for cash to try other 
 S6-LOOK
 Look around the whole garden (hold the look key too). Does it read as one 3/4 world: the
 house, garage, fences or hedges, truck, trees and mower? Say what jars, if anything.
->
+>So the things that stand out to me immediately are:
+
+• The pond and the flower bed don't quite read right.
+• The fence at the bottom doesn't attach well to the fence at the sides, and they kind of have a slightly different style to them.
+• The fence at the back stops instead of going completely across behind the house.
+• The garage is a little bit short to fit the car that's in the driveway into it.
+• The chimney is weird and kind of in the wrong place.
+• The trees still kind of look like cardboard cutouts. Where they attach to the ground is a flat line; it should be rounded to give the illusion of depth.
 
 S6-FACINGS
 Drive the mower round in a slow full circle. It turns through 8 facings with the operator
 always behind the handle, and no step between facings jars. Same with another mower if you
 can buy one.
->
+>The lag between switching from one facing direction to an adjacent one is a little jarring at first, but I think it might be okay. I'll need to let this one soak a bit more, I think. Maybe have a look in case I'm unconsciously noticing something that's a bug.They transition smoothly, but slightly later than I would expect. 
+
+I don't know if it's just slightly odd that there are eight different facing directions, and you can be facing perfectly north or south without actually traveling directly north or south. I imagine the real solution would be to snap the moving direction to these eight points as well, but I'm not sure if that's a good idea.In fact, I think it's probably a bad idea.
 
 S6-DEPTH
 Drive behind a tree trunk and into the strip of lawn behind the garage: you go behind them.
 Come back out in front: you're drawn over them.
->
+>Yes. Though you can't actually go behind the garage in a way that you would actually be covered by the building.
 
 S6-HEDGE
 Mow along the fence or hedge by the road: it fades while you're behind it, so you can still
 see the lawn's edge.
->
+>yes
 
 S6-FOOT
 Hop off and walk about carrying a stone, then let a hedgehog and a squirrel cross. You, the
 stone and the critters face where you're going; the stone goes behind you as you walk away.
->
+>This one in particular is a problem. Something is broken with the way the on-foot player character sprite rotates. Sometimes, while moving through different directions, the whole sprite will flip upside down. It's very hard to get it actually facing in a desired direction. I think there's a bug here. I can screenshot if needed.
 
 S6-WINDOW
 Throw a stone at a ground-floor window: the glass smashes where the window is.
->
+>It does, but I have a few thoughts on stones and throwing in general here.
+
+If a stone hits the house (not the window), it just vanishes. I think stones should have a bit more persistence: they should bounce off the wall and land on the ground.
+
+Also, the actual throwing makes it quite difficult and kind of unsatisfying to use because it's a fixed power or distance that you throw at. It would be better if the throw button charged the throw distance or power (or whatever), and maybe we could also have a guideline to show the stone's trajectory as you increase in power.
+
+I also think once there are other objects in the game, things you can hold should maybe always be throwable. I'm including stuff like the petrol can in that, and there may be a situation where that gets thrown through a window.
 
 
 ================================================================================
@@ -85,19 +100,21 @@ LOAD 4 of 4: A FEW RUN JOBS      (about 10 min, start a run and take 3 or 4 jobs
 S6-CUSTOMER
 Drive round the customer on the patio: they turn to keep facing you, throw their arms up
 when they react, and lie flat seeing stars if you knock them out.
->
+>I think this mostly works. The only problem I've encountered with it is a knocked-out customer will continue turning to face your direction. That probably shouldn't happen.
 
 S6-BEYOND
 Across a few jobs, look past the fences (the look key helps): next door is another house
 and garden, woods or an empty lot, varying; trees behind the back fence; houses across
 the road. Does it make the street feel real, or is anything distracting?
->
+>The adjacent lots are much better. There's still an element of things feeling like a void sometimes, especially when it's just a few trees sparsely plopped around. I think the issue stems from when it's mostly just a grass surface; it looks like a somewhat untextured, flat, or featureless surface. 
+
+The only things I noticed that were slightly off were that the fences sometimes overlap incorrectly or stick out where they shouldn't. A fence going into a neighbor's driveway, for example, or extending too far on one corner and then stopping abruptly just after.
 
 S6-CAR
 In a job with the customer's car up the drive: it's solid, and a stone dents it for $40
 with a "My CAR!".
->
+>Ramming the car with the lawnmower doesn't seem to have any reaction attached to it. Additionally, the hitbox of the car, at least the one I'm testing on, extends too far south for it to match the sprite it has. Throwing a stone does dent it for $40, and it is solid.
 
 S6-GARAGE
 In a job where the garage stands apart from the house, mow the lawn between and behind it.
->
+>Yeah, this works. My only thought about it is related to the thing I said above, where the garages are very small (not necessarily width-wise, but depth-wise).
