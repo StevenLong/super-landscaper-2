@@ -18,9 +18,6 @@ BLOCKS = spoils the next playtest.
 
 **Needs a grill (design calls, queued for one session)**
 
-29. [DESIGN, moderate-large] Pick up more than stones (S1-DOG): the dog wriggles free after
-   a while, a hedgehog stuns you, a squirrel holds for a few seconds; hedgehog-proof gloves
-   from the shop; throwing hedgehogs at things.
 **Parked**
 
 27b. [PARKED since 2026-09-26] A drive between jobs as its own segment (traffic, the police
@@ -41,8 +38,8 @@ BLOCKS = spoils the next playtest.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
    black-market hedgehog dealer turns up. Needs 29 first.
 
-PROPOSED ORDER: a grill session on 21, 22, 25, 26, 27, 29, 38, 40 and 56 (21 is the biggest
-open question); 46 and 55's leftovers are buildable any time.
+PROPOSED ORDER: grilled 2026-09-26 (see 72 to 81); 46 and 55's leftovers are buildable any
+time.
 
 ### Notes 2026-09-25b (session 4 play checks)
 
@@ -100,6 +97,15 @@ waits on 27.
    marker, release throws, hop cancels; today's flat flight. Home: `main.gd` throw input,
    `walker.gd`. Step 2 (moderate): up/down set the vertical angle, flights become arcs with
    a shadow and every target gets a height.
+81. [FEATURE, moderate] Critters in hand (29, decided 2026-09-26, design doc Mowers and
+   Equipment): carry and throw the dog (wriggles free ~5 s), hedgehog (stuns bare-handed,
+   gloves from the shop; thrown, a spiky stone), squirrel (bites free in a few seconds);
+   animals as projectiles tier the crime up (+1 above the worse of target and animal, cap
+   2, +1 heat). The crime half needs 74.
+
+PROPOSED ORDER (2026-09-26 grill): 58 first (blocks), 59 to 61 as a bug batch, then 80
+(charged throws, small, fixes a play complaint), then 72 with 78 (the season, the spine),
+73, 74, 76, 77, 79, 81, 75 (venues, large) last. 62 rides with 74.
 75. [FEATURE, large] Venues by reputation band (40, decided 2026-09-26, design doc Levels):
    first the mansion (top band: a big house, loop drive, expensive breakables, its own
    persona) and the graveyard (bottom band: gravestones as solid obstacles, flowers on
