@@ -33,9 +33,6 @@ BLOCKS = spoils the next playtest.
    doesn't cost you, but the aftermath can (a lawn left a bloody mess gets opinions).
    Ideation. Note the design doc currently says unseen mischief is always discovered when
    you leave; this would change that.
-40. [DESIGN, large] High-end jobs: a mansion with a loop driveway and a golf course out back.
-   Golf balls act like stones; sinking one in a hole is a secret achievement. Goes with 21.
-
 **Parked**
 
 21b. [PARKED since 2026-09-26] Job types for variety, not pressure (21's leftovers, the
@@ -94,6 +91,11 @@ waits on 27.
    cooling a level per week paid; delete the job-start arrest roll (`game.gd`
    `arrested_on_arrival`). Tier 3 waits until a customer can actually be killed. Needs 72
    for job slots and weeks.
+75. [FEATURE, large] Venues by reputation band (40, decided 2026-09-26, design doc Levels):
+   first the mansion (top band: a big house, loop drive, expensive breakables, its own
+   persona) and the graveyard (bottom band: gravestones as solid obstacles, flowers on
+   graves, the vicar). Then the golf course. Community service (forced unpaid job after a
+   tier 2 arrest, repairs rep) once a litter-pick or prison venue exists; needs 74.
 
 58. [BUG, small, BLOCKS] On foot, the sprite flips upside down and is hard to face where you
    want (S6-FOOT). Diagnosed from code, not reproduced: `walker.gd` sets `rotation` every
