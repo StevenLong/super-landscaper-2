@@ -444,6 +444,8 @@ func _physics_process(delta: float) -> void:
 	var nag := customer.tick(delta)
 	if nag != "":
 		_react()
+		if customer.nags == 1:
+			Sfx.play("sigh", 0.0) # the tip just went
 	hud.set_clock(customer.elapsed)
 	$HUD/Face.expression = customer.face()
 	if customer.fired and settled.is_empty():

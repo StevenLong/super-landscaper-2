@@ -29,7 +29,7 @@ STEAM_SH = hexc("b8b8c0", 230)
 VEIN = hexc("c01830")
 
 W = H = 40
-FRAMES = ["delighted", "happy", "neutral", "annoyed", "furious", "horrified", "laughing", "fired", "hurt", "ko"]
+FRAMES = ["delighted", "happy", "neutral", "annoyed", "furious", "horrified", "laughing", "fired", "hurt", "ko", "watch"]
 
 
 def base(hair_style, angry=False):
@@ -90,6 +90,7 @@ EYE_WIDE = ["kkkk", "wwww", "wwpw", "wwww", "kkkk"]
 EYE_HALF = ["kkkk", "wwpk", ".kk."]
 EYE_ARC = [".kk.", "k..k"]            # ^ closed happy
 EYE_SQUINT = ["kkkk", ".kk."]         # closed, laughing / furious
+EYE_DOWN = ["kkkk", "wwwk", "ppwk", ".kk."]  # glancing down and left, at the watch
 
 
 def eyes(c, rows, y, mirror_pupil=True):
@@ -116,6 +117,7 @@ MOUTH_ROWS = {
     "laughing": (14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmggmmmmk", ".kmmmmmmmmk.", "..kkkkkkkk.."]),
     "hurt": (14, 25, ["kkkkkkkkkkkk", "ktktktktktkk", "kkkkkkkkkkkk"]),
     "ko": (16, 25, [".kkkkk.", "kgggggk", ".kkkkk."]),
+    "watch": (16, 26, ["kkkkk."]),
 }
 TALK_ROWS = {  # open where the resting mouth is shut and shut where it's open, so it reads
     "delighted": (15, 26, ["k........k", ".kkkkkkkk."]),
@@ -128,6 +130,7 @@ TALK_ROWS = {  # open where the resting mouth is shut and shut where it's open, 
     "laughing": (14, 26, ["kkkkkkkkkkkk", "kttttttttttk", "kkkkkkkkkkkk"]),
     "hurt": (14, 24, ["kkkkkkkkkkkk", "kttttttttttk", "kmmmmmmmmmmk", "kmmmggggmmmk", "kkkkkkkkkkkk"]),
     "ko": (16, 25, [".kkkkk.", "kgggggk", ".kkkkk."]),  # out cold: no talking
+    "watch": (16, 24, [".kkkk.", "kmmmmk", "kmggmk", ".kkkk."]),
 }
 
 
@@ -188,6 +191,17 @@ def draw(name, style, talk=False):
         c.stamp(22, 12, ["vvv", "v.v"], PAL)
         for (x, y) in ((5, 5), (17, 1), (31, 4)):
             c.stamp(x, y, [".y.", "yyy", ".y."], {"y": hexc("f8e070")})
+    elif name == "watch":
+        # Patience running low: a glance down at the watch on a raised wrist.
+        brows(c, ["bbbb"], ["bbbb"], 16)
+        eyes(c, EYE_DOWN, 18, mirror_pupil=False)
+        c.ellipse(3, 38, 7, 6, None, lambda nx, ny: SHIRT_SH if ny > 0.4 else SHIRT)  # sleeve
+        for i in range(10):                                                        # forearm, raised
+            c.rect(3 + i, 33 - i, 4, 4, SKIN_SH if i < 2 else SKIN)
+        c.ellipse(15, 24, 3, 2.8, None, lambda nx, ny: SKIN_SH if ny > 0.3 else SKIN)  # fist
+        c.rect(7, 25, 6, 6, INK)                                                   # strap
+        c.rect(7, 26, 5, 4, hexc("d8b048"))                                        # the watch
+        c.rect(8, 27, 3, 2, WHITE)
     mx, my, rows = (TALK_ROWS if talk else MOUTH_ROWS)[name]
     c.stamp(mx, my, rows, PAL)
     c.outline(INK)

@@ -31,11 +31,19 @@ func _initialize() -> void:
 
 	var p: Customer = Customer.new(Game.default_job())
 	var mood_before: float = p.mood
-	p.tick(p.job.patience)
+	assert(p.tick(p.job.patience * 0.75) == "" and p.face() == "watch", "at 75% of their patience they glance at their watch, silently")
+	p.tick(2.0)
+	assert(p.face() != "watch", "just a glance")
+	p.tick(p.job.patience * 0.9 - p.elapsed)
+	assert(p.face() == "watch", "and again at 90%")
+	p.tick(p.job.patience - p.elapsed)
 	var nag: String = p.tick(1.0)
 	assert(p.mood < mood_before, "waiting past their patience costs mood")
-	assert(nag == "Are you nearly done?", "and they say so, which is your only clue to the hidden time")
+	assert(nag == "Are you nearly done?" and p.nags == 1, "the first nag comes as the tip goes (with a sigh)")
 	assert(p.tick(1.0) == "", "but they don't nag every frame")
+	p.mood = 10.0
+	p.tick(25.0)
+	assert(p.last_line.begins_with("Last warning") and p.face() == "furious", "nags escalate as mood falls, to a final warning")
 
 	var q: Customer = Customer.new(Game.default_job())
 	assert(not q.accepts(0.3), "a barely-mowed lawn is sent back")

@@ -3,6 +3,11 @@ extends RefCounted
 ## The customer's hidden mood for one job, and how they pay. Pure logic: the job
 ## scene feeds it events and reads face() and evaluate().
 
+const GLANCES := [0.75, 0.9] ## shares of their patience at which they glance at their watch
+## Nags past their patience escalate with their mood: [mood at or above, face, lines].
+const NAGS := [[40.0, "annoyed", ["Any time now...", "Are we nearly there?"]],
+	[20.0, "annoyed", ["Tick tock!", "I haven't got all day!"]],
+	[0.0, "furious", ["Last warning. Finish up or you're done."]]]
 const TIERS := [[80.0, "delighted"], [60.0, "happy"], [40.0, "neutral"], [20.0, "annoyed"], [0.0, "furious"]]
 
 var job: Dictionary
@@ -17,7 +22,9 @@ var elapsed := 0.0
 var last_line := ""
 var paid := false ## once paid they stop watching the clock
 
+var nags := 0 ## the first comes as the tip goes, with a sigh
 var _nag_at := 0.0
+var _glances := 0
 
 var _react_face := ""
 var _react_left := 0.0
@@ -47,12 +54,25 @@ func face() -> String:
 func tick(delta: float) -> String:
 	elapsed += delta
 	_react_left -= delta
-	if elapsed > job.patience and not fired and not knocked_out and not paid:
+	if fired or knocked_out or paid:
+		return ""
+	# Patience running low: a glance at the watch, no words (waits out any reaction).
+	if _glances < GLANCES.size() and elapsed >= job.patience * GLANCES[_glances] and _react_left <= 0.0:
+		_glances += 1
+		_react_face = "watch"
+		_react_left = 1.5
+	if elapsed > job.patience:
 		_change(-0.35 * delta) # waiting past their patience wears them down, slowly
 		if elapsed >= _nag_at:
-			var first := _nag_at == 0.0
 			_nag_at = elapsed + 25.0
-			_react("annoyed", 1.5, "Are you nearly done?" if first else ["Tick tock!", "I haven't got all day!", "Any time now..."][randi() % 3])
+			nags += 1
+			if nags == 1:
+				_react("annoyed", 1.5, "Are you nearly done?")
+			else:
+				for n: Array in NAGS:
+					if mood >= n[0]:
+						_react(n[1], 1.5, n[2][randi() % n[2].size()])
+						break
 			return last_line
 	return ""
 

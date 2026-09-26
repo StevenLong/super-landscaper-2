@@ -162,6 +162,22 @@ def splash():
     write("splash", lowpass(out, 0.5))
 
 
+def sigh():
+    """A long, put-upon breath out: filtered noise with a falling hum under it."""
+    r = random.Random(7)  # its own noise, so adding it shifts nothing else
+    total = n(0.8)
+    out = []
+    ph = 0.0
+    y = 0.0
+    for i in range(total):
+        t = i / RATE
+        e = min(1.0, t / 0.12) * math.exp(-max(0.0, t - 0.12) * 4.0)
+        y += 0.12 * (r.uniform(-1, 1) - y)
+        ph += (210 - 70 * t) / RATE
+        out.append((y * 1.6 + math.sin(ph * 6.283) * 0.12) * e)
+    write("sigh", lowpass(out, 0.35))
+
+
 def cash():
     total = n(0.9)
     out = []
@@ -342,6 +358,7 @@ def main():
     mowing_song()
     menu_song()
     splash()  # last, so its noise doesn't shift the sounds made before it
+    sigh()
 
 
 if __name__ == "__main__":
