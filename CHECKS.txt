@@ -1,3 +1,140 @@
-PLAY CHECKS OWED
+PLAY CHECKS OWED  (21 checks, 5 loads, about 35 minutes)
 
-Nothing owed.
+Answer on the line that starts with ">". Leave it blank if you didn't try that one.
+Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
+Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
+[3] skips to the week's end (payday); in a job [0] finishes it perfectly.
+
+
+================================================================================
+LOAD 1 of 5: A JOB ON FOOT      (about 9 min, a garden with a dog is best)
+================================================================================
+
+S8-FOOT
+Hop off and walk every direction, west especially. The walker never draws upside down and
+faces the way you walk.
+>
+
+S8-THROW
+Pick up a stone and HOLD throw. You stand still, left/right swing the aim, a white ring
+slides out as power builds and the camera leads toward it. Let go: it lands on the ring.
+Hold again and press hop: cancelled, stone still in hand. Does the aim speed feel right?
+>
+
+S8-BOUNCE
+Throw stones at the house wall, the car and your truck. Each bounces back and lands on the
+lawn instead of vanishing.
+>
+
+S8-PROPS
+Find the gnome, flamingo, cone and hose on the lawn and mow each. Gnome: bits fly and the
+customer shouts about it. Cone: sent flying. Hose: a blue puddle. Also grab the petrol can
+at the truck, drop it on the lawn with E and mow it: a brown patch.
+>
+
+S8-FETCH
+With the dog out, throw the tennis ball: the dog runs for it and drops it at your feet.
+Then mow the ball near the dog: it sits under a little rain cloud.
+>
+
+S8-CRITTERS
+Press E on a hedgehog bare-handed: OW, stars, can't move for a moment. Buy gardening gloves
+([1] for money), pick one up and throw it. Hold a squirrel: it bites free after a few
+seconds. Pick up the dog and carry it to the patio.
+>
+
+S8-ROCKS
+Some gardens have grey boulders: solid to the mower, stones clonk off them.
+>
+
+
+================================================================================
+LOAD 2 of 5: CRIME      (about 7 min, two jobs)
+================================================================================
+
+S8-POLICE
+Knock the customer out. They stay facing the way they fell. POLICE CALLED, a flashing
+countdown top centre, a siren getting louder. Drive off in time: the board shows WANTED.
+>
+
+S8-RIFLE
+Knock one out again, get off, HOLD E over them: "Rifling... $n" counts up. Then let the
+countdown run out: NICKED, a fine, a night in the cells; the board's rundown shows the fine
+and "next job lost", and the job counter skips one.
+>
+
+S8-CAR
+Ram the customer's car: "My CAR!", a dent bill; harder on a ride-on at full speed.
+>
+
+S8-HITBOX
+The car and your mower bump into things where their sprites are, not short of them
+(the car used to stop you well south of its bumper).
+>
+
+
+================================================================================
+LOAD 3 of 5: THE CUSTOMER      (about 7 min, the "quick mow" busy customer is best)
+================================================================================
+
+S8-WATCH
+Dawdle. Around three quarters of their patience the portrait glances at a watch (no
+words), again later; the first nag comes with a sigh; later nags get sharper, the last a
+final warning.
+>
+
+S8-INSIDE
+They go indoors now and then: the portrait greys out. Squash a hedgehog while they're in:
+no reaction until they come out, then "What happened to the hedgehog?!". At a window their
+head shows at the glass and the portrait gets a pane; a stone through that window hits them.
+>
+
+
+================================================================================
+LOAD 4 of 5: A SEASON      (about 6 min, cheats)
+================================================================================
+
+S8-SEASON
+The board header shows the week, the job and what's owed Friday. Press [3]: FRIDAY. PAYDAY.
+Short of cash, sell buttons appear, or "Let them take it" loses your dearest kit. Paid,
+back to the classifieds. Kit can also be sold from the board any time.
+>
+
+S8-WIN
+[1] a few times and [3] through all four Fridays: SEASON WON with the tally.
+>
+
+S8-DREGS
+New run, [4] until reputation hits bottom: one grumpy half-pay job, no bankruptcy button.
+>
+
+
+================================================================================
+LOAD 5 of 5: VENUES AND LOOKS      (about 6 min)
+================================================================================
+
+S8-MANSION
+[2] to the top band until a "Country estate" ad shows. A big pale house with a portico, a
+gravel loop round a flower island, urns on the lawn (mowing one costs $120).
+>
+
+S8-CHURCH
+[4] down under "Poor" until a "Churchyard" ad shows. A church, the vicar at the door, rows
+of headstones (solid) with flowers laid at some.
+>
+
+S8-TREES-CHIMNEY-GARAGE
+Tree trunks meet the ground in a rounded foot with a shadow; the chimney stands up through
+the roof; the garage looks deep enough for the car.
+>
+
+S8-FENCES
+The sides and road-side run are one style and join at the corners; the back run goes the
+full width (a hedge shows over the roof); next door's garage and drive stay off your fence.
+>
+
+S8-BEDS-POND
+Beds are ovals, kidneys and long beans with flowers standing up, sunk slightly into the
+lawn. The pond's rim stones stand up and the water sits below a dark bank. Next door has
+paths and beds too.
+>

@@ -203,8 +203,8 @@ func _upgrade_row(key: String) -> Control:
 	return UI.panel(row)
 
 
-## Playtest cheats, debug builds only: [1] adds $500, [2] adds 20 reputation (and
-## redeals the offers, so bigger lawns show up). No function keys: the editor owns them.
+## Playtest cheats, debug builds only: [1] adds $500, [2] adds 20 reputation and [4]
+## takes 20 off (both redeal the offers), [3] skips to the week's end. No function keys: the editor owns them.
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not (OS.is_debug_build() and event is InputEventKey and event.pressed):
 		return
@@ -214,6 +214,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	elif event.keycode == KEY_3: # skip to the week's end
 		Game.jobs_done = Game.week * Game.JOBS_PER_WEEK
 		_ready()
+	elif event.keycode == KEY_4: # down the ladder, for the churchyard
+		Game.reputation = maxf(1.0, Game.reputation - 20.0)
+		Game.rep_trend = maxf(1.0, Game.rep_trend - 20.0)
+		offers = Game.make_offers()
+		_build()
 	elif event.keycode == KEY_2:
 		Game.reputation = minf(100.0, Game.reputation + 20.0)
 		Game.rep_trend = minf(100.0, Game.rep_trend + 20.0)

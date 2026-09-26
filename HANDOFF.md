@@ -6,6 +6,41 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 8 (2026-09-26): the whole grill order built (season, crime, objects, venues, art)
+- Built, all unplayed: bug batch 58 to 61, charged throws step 1 (80), the season and
+  payday (72, 78), impatience signals (73), heat and the police (74, with 62's car ram),
+  rifling pockets (76), seen versus evidence (77), objects by size (79), critters in hand
+  (81), the mansion and churchyard (75 first cut), and the 3/4 art pass (66 to 71).
+- Verified: run_all green (exit 0) with new tests: throw, season, police, seen, objects,
+  critters, venues. Every feature was also screenshotted headful and looked at. Nothing
+  play-checked yet: 21 checks in CHECKS.txt.
+- Calls I made while building (vetoable, not in the design doc):
+  - Police are called for tier 2, or tier 1 once the job started at heat 3+, and only if
+    the customer can see (robbery always). Countdown 60 s, 8 s less per heat level, floor
+    20. Fines $50 (tier 1) / $150 (tier 2), x(1 + 0.25 per heat). A fine can put money
+    negative. Vandalism after being fired counts once a job.
+  - Only thrown stones are crimes; blade-flung ones are accidents (rep only).
+  - Short on payday, the heavies take dearest kit first until covered and you keep the
+    change; kit resells at half price. Heat cools a level per week paid.
+  - Customer indoors share by persona: perfectionist 0.1, gardener 0.25, nature 0.3, grump
+    0.35, squirrel hater 0.4, toff 0.5, busy 0.7.
+  - Venues: 40% of offers at 75+ rep are a mansion (1.8x pay); 50% under 20 rep (not the
+    dregs) are the churchyard (0.7x). Mansion windows cost 3x, urns $120.
+  - Props per garden: gnomes (more for the gardener), 30% flamingo, 20% cone, 60% hose,
+    a ball if there's a dog, 0 to 2 boulders.
+- Side effects: the mower's collision is now its foreshortened footprint, so the ride-on
+  got quicker in sim_balance (50% at 86 s, was 99 s). audio/splash.wav no longer matches
+  tools/make_audio.py exactly; left as committed. Trap noted in docs/TRIBAL.md: a texture
+  load()ed in _draw draws as a white box.
+- New cheat: [4] on the board takes 20 rep off (to reach the churchyard).
+
+OWED CHECKS: 21, in CHECKS.txt (5 loads, about 35 minutes).
+
+NEXT:
+1. Play the checks; triage what they turn up.
+2. 80b, throwing step 2 (arcs), once S8-THROW has been played.
+3. 75b (the loop drive joining the road, the golf course), 46, 55.
+
 ## Session 7 (2026-09-26): check triage and the big grill (the season, crime, venues, throwing)
 - Checks: all 16 answered, CHECKS.txt cleared. Passed: the six S5 checks, S6-DEPTH, HEDGE,
   GARAGE, WINDOW, CUSTOMER, CAR (mostly). Problems triaged into NOTES 58 to 71: the on-foot
