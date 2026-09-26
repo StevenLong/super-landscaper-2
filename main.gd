@@ -140,6 +140,7 @@ func _build_layout() -> void:
 	$Client.position = _house.patio_point()
 	$Client.watch = mower
 	$Client.set_look(job.look)
+	_house.peek_tex = $Client._tex
 
 	# The drive runs from the garage door to the road; its mouth crosses the pavement.
 	var drive: Control = $Driveway
@@ -453,6 +454,10 @@ func _physics_process(delta: float) -> void:
 			Sfx.play("sigh", 0.0) # the tip just went
 	hud.set_clock(customer.elapsed)
 	$HUD/Face.expression = customer.face()
+	# Where they are: on the patio, at a window (the house draws them at the glass), or in.
+	$Client.visible = customer.where == "patio"
+	_house.peek_x = customer.window_x if customer.where == "window" and not customer.knocked_out else -1
+	$HUD/Face.view = customer.where
 	if customer.fired and settled.is_empty():
 		_fired()
 	hud.set_hint(_hint())
@@ -466,7 +471,7 @@ func _physics_process(delta: float) -> void:
 			return
 
 	# Running over the customer on their patio. Don't.
-	if not customer.knocked_out and mower.velocity.length() > 40.0 \
+	if customer.where == "patio" and not customer.knocked_out and mower.velocity.length() > 40.0 \
 			and mower.global_position.distance_to($Client.position + Vector2(0, -10)) < 22.0:
 		_knock_out()
 
@@ -812,7 +817,7 @@ func _finish(result: Dictionary) -> void:
 # ---------------------------------------------------------------- crime
 
 func _can_rifle() -> bool:
-	return walker != null and walker.carrying == "" and customer.knocked_out and _wallet >= 1.0 \
+	return walker != null and walker.carrying == "" and customer.knocked_out and customer.where == "patio" and _wallet >= 1.0 \
 		and walker.global_position.distance_to($Client.position) < 30.0
 
 
@@ -841,7 +846,7 @@ func _crime(tier: int) -> void:
 	Game.heat += Game.HEAT[tier]
 	worst_crime = maxi(worst_crime, tier)
 	hud.pop("WANTED +%d" % Game.HEAT[tier])
-	if police_left < 0.0 and (tier >= 2 or _heat0 >= Game.HIGH_HEAT):
+	if police_left < 0.0 and customer.sees() and (tier >= 2 or _heat0 >= Game.HIGH_HEAT): # no witness, no call
 		_call_police()
 
 
@@ -949,7 +954,7 @@ func _stone_hit_test(p: Vector2) -> String:
 		return "car"
 	if _house.garage_rect().has_point(p):
 		return "wall"
-	if not customer.knocked_out and p.distance_to($Client.position + Vector2(0, -14)) < 11.0:
+	if customer.where == "patio" and not customer.knocked_out and p.distance_to($Client.position + Vector2(0, -14)) < 11.0:
 		return "customer"
 	var h: Rect2 = _house.rect()
 	if h.has_point(p) and p.y < h.position.y + _house.WALL_H:
@@ -989,9 +994,17 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			bills += WINDOW_BILL
 			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
 			shake(4.0)
-			customer.on_stone("window")
-			if f.thrown:
-				_crime(1)
+			if customer.where == "window" and customer.window_x == _window_at(p) and not customer.knocked_out:
+				_count("customer_hits") # through the glass and into them
+				if customer.on_stone("customer"):
+					_knock_out()
+					return
+				if f.thrown:
+					_crime(2)
+			else:
+				customer.on_stone("window")
+				if f.thrown:
+					_crime(1)
 			_react()
 		"wall":
 			Sfx.play("thud")
@@ -1133,8 +1146,8 @@ func _release_dog() -> void:
 		pop_text("On the lead!", d.position + Vector2(0, -10), UI.GOOD))
 	dog.home.connect(func(_d: Dog) -> void:
 		_count("dog_returned")
-		customer.on_dog_returned()
-		_react())
+		if customer.on_dog_returned():
+			_react())
 	$Animals.add_child(dog)
 	customer.last_line = "Oh no, %s's got out!" % job.dog_name
 	hud.say(customer.last_line)
@@ -1245,9 +1258,9 @@ func _on_squashed(a: Animal) -> void:
 	Sfx.play("squash")
 	shake(3.0)
 	Sfx.play("squeak_" + a.kind)
-	customer.on_squash(a.kind)
 	_mischief(3.0)
-	_react()
+	if customer.on_squash(a.kind):
+		_react()
 
 
 ## The customer's visible reaction: speech, a hop on the patio, and their voice.

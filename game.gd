@@ -43,43 +43,44 @@ const LAST := ["Pemberton", "Figgis", "Oakley", "Thistlewood", "Grubb", "Hedges"
 	"Featherstone", "Bramble", "Nettlefold", "Pratt", "Ashdown", "Gubbins", "Crumb"]
 
 ## Customer personalities. Mood effects are hidden from the player; the brief hints.
+## "indoors": how much of the job they spend inside or at a window, not on the patio.
 ## An "instant" line is stated plainly: breaking it fires you on the spot.
 const PERSONAS := {
 	"nature": {
 		"brief": ["I do love the hedgehogs that visit.", "Please be gentle with the little ones."],
 		"ads": [["LAWN MOWING.", "Wildlife-friendly garden; hedgehogs visit nightly. Gentle hands only."],
 			["CAREFUL MOWER SOUGHT", "by nature lover. The little ones must come to no harm."]],
-		"hedgehog": -40.0, "squirrel": -30.0, "flower": -2.0, "patience": 1.3, "target": 0.8,
+		"hedgehog": -40.0, "squirrel": -30.0, "flower": -2.0, "patience": 1.3, "target": 0.8, "indoors": 0.3,
 	},
 	"squirrel_hater": {
 		"brief": ["The squirrels have dug up every bulb I own.", "I shan't be sad if one has an... accident."],
 		"ads": [["GARDENER WANTED.", "Squirrel problem: every bulb dug up. Accidents happen."],
 			["LAWN MOWN,", "squirrels discouraged by any means. No questions asked."]],
-		"hedgehog": -20.0, "squirrel": 14.0, "flower": -2.0, "patience": 1.0, "target": 0.8,
+		"hedgehog": -20.0, "squirrel": 14.0, "flower": -2.0, "patience": 1.0, "target": 0.8, "indoors": 0.4,
 	},
 	"gardener": {
 		"brief": ["DO NOT touch my prize flowerbeds.", "Tread on more than a couple of my flowers and you're finished."],
 		"ads": [["MOWING AROUND PRIZE BORDERS.", "Careful applicants only. Beds strictly out of bounds."],
 			["EXPERIENCED MOWER WANTED.", "Award-winning flowerbeds: tread on them and you're finished."]],
-		"hedgehog": -20.0, "squirrel": -10.0, "flower": -6.0, "instant_flowers": 3, "patience": 1.1, "target": 0.85,
+		"hedgehog": -20.0, "squirrel": -10.0, "flower": -6.0, "instant_flowers": 3, "patience": 1.1, "target": 0.85, "indoors": 0.25,
 	},
 	"busy": {
 		"brief": ["I'm on a call. Just get it done, quickly.", "I'm paying for speed, not a masterpiece."],
 		"ads": [["LAWN MOWED ASAP.", "Speed over finesse. Owner on calls, do not disturb."],
 			["QUICK MOW WANTED,", "today if possible. Not fussy, just fast."]],
-		"hedgehog": -15.0, "squirrel": -5.0, "flower": -1.0, "patience": 0.7, "target": 0.7,
+		"hedgehog": -15.0, "squirrel": -5.0, "flower": -1.0, "patience": 0.7, "target": 0.7, "indoors": 0.7,
 	},
 	"perfectionist": {
 		"brief": ["Every blade, please. I will be checking.", "Take the time you need to do it properly."],
 		"ads": [["METICULOUS MOWER WANTED.", "Every blade. Work will be inspected. Take your time."],
 			["LAWN TO BOWLING-GREEN STANDARD.", "No stripe missed, no corner cut. No rush."]],
-		"hedgehog": -25.0, "squirrel": -15.0, "flower": -4.0, "patience": 1.6, "target": 0.96,
+		"hedgehog": -25.0, "squirrel": -15.0, "flower": -4.0, "patience": 1.6, "target": 0.96, "indoors": 0.1,
 	},
 	"grump": {
 		"brief": ["Last lad was useless.", "Don't make me regret calling you."],
 		"ads": [["MOWER WANTED.", "Last one was useless. Don't waste my time."],
 			["LAWN. NEEDS CUTTING.", "Previous contractor dismissed. Prove me wrong."]],
-		"hedgehog": -30.0, "squirrel": -20.0, "flower": -3.0, "patience": 0.9, "target": 0.85, "start_mood": 45.0,
+		"hedgehog": -30.0, "squirrel": -20.0, "flower": -3.0, "patience": 0.9, "target": 0.85, "start_mood": 45.0, "indoors": 0.35,
 	},
 }
 
@@ -280,7 +281,7 @@ func default_job() -> Dictionary:
 		"brief": PERSONAS.gardener.brief,
 		"look": {"hair_style": 3, "skin": 0, "hair": 4, "shirt": 1},
 		"size": Vector2i(1280, 720), "fixed_layout": true,
-		"target": 0.85, "patience": 165.0, "pay": 80,
+		"target": 0.85, "patience": 165.0, "pay": 80, "indoors": 0.0, # always watching: tests rely on it
 		"hedgehog_every": 7.0, "squirrel_every": 13.0,
 	}
 

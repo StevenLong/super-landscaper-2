@@ -29,6 +29,12 @@ var talking := false: ## flaps the mouth between the two frames
 		_mouth_open = false
 		queue_redraw()
 
+var view := "patio": ## where they are (Customer.where): greyed indoors, behind glass at a window
+	set(v):
+		if v != view:
+			view = v
+			queue_redraw()
+
 var _tex: Texture2D
 var _style := 0
 var _shake := 0.0
@@ -90,5 +96,12 @@ func _draw() -> void:
 		return
 	var jitter := Vector2(randf_range(-2, 2), randf_range(-2, 2)) if _shake > 0.0 else Vector2.ZERO
 	var i := FRAMES.find(expression) + (FRAMES.size() if _mouth_open else 0)
+	var tint := Color(0.4, 0.4, 0.45) if view == "inside" else Color.WHITE # can't see you, you can't see them
 	draw_texture_rect_region(_tex, Rect2(Vector2(6, 6) + jitter, Vector2(s, s)),
-		Rect2(i * CELL, _style * CELL, CELL, CELL))
+		Rect2(i * CELL, _style * CELL, CELL, CELL), tint)
+	if view == "window": # a pane of glass between you: a sheen and the glazing bars
+		var pane := Rect2(6, 6, s, s)
+		draw_rect(pane, Color(0.7, 0.85, 1.0, 0.18))
+		draw_line(Vector2(6 + s / 2.0, 6), Vector2(6 + s / 2.0, 6 + s), Color("e8e0d0"), 4.0)
+		draw_line(Vector2(6, 6 + s / 2.0), Vector2(6 + s, 6 + s / 2.0), Color("e8e0d0"), 4.0)
+		draw_rect(pane, Color("e8e0d0"), false, 4.0)

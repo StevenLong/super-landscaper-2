@@ -18,6 +18,13 @@ var size := Vector2(440, WALL_H + 24.0) ## the house and its patio
 var garage := 1 ## which side it's on: -1 left, 1 right
 var gap := 0.0 ## a detached garage stands this far off the house, lawn between
 var broken: Array[int] = [] ## x of each smashed window (main.gd WINDOWS)
+var peek_x := -1: ## the window the customer is watching from, or -1
+	set(v):
+		if v != peek_x:
+			peek_x = v
+			if _front:
+				_front.queue_redraw()
+var peek_tex: Texture2D ## the customer's sprite sheet (client.gd), for their head and shoulders at the glass
 
 
 func rect() -> Rect2:
@@ -64,6 +71,10 @@ func _ready() -> void:
 
 func _draw_house() -> void:
 	_front.draw_texture(preload("res://art/house.png"), Vector2(0, -ART_FOOT))
+	if peek_x >= 0 and peek_tex:
+		# Head and shoulders at the glass, facing out (the sheet's south row), cut off by the sill.
+		var head := Rect2(9, 2 * 94 + 12, 30, 24) # tools/voxel.py client(): 48 x 94 cells
+		_front.draw_texture_rect_region(peek_tex, Rect2(GLASS.position + Vector2(peek_x, GLASS.size.y - head.size.y), head.size), head)
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
 	for x in broken:

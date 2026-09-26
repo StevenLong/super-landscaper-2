@@ -22,9 +22,15 @@ var elapsed := 0.0
 var last_line := ""
 var paid := false ## once paid they stop watching the clock
 
+var where := "patio" ## "patio" watching, "inside" (sees nothing), or at a "window" (sees it all)
+var window_x := -1 ## which window (main.gd WINDOWS) while at one
 var nags := 0 ## the first comes as the tip goes, with a sigh
 var _nag_at := 0.0
 var _glances := 0
+var _stint := 0.0 ## seconds until they move
+var _unseen: Array[Callable] = [] ## what they missed, replayed when they come out and see what's left
+var _unseen_what: Array[String] = []
+var _unseen_flowers := 0
 
 var _react_face := ""
 var _react_left := 0.0
@@ -34,7 +40,49 @@ func _init(job_data: Dictionary) -> void:
 	job = job_data
 	persona = Game.PERSONAS[job.persona]
 	mood = persona.get("start_mood", 60.0)
+	_stint = randf_range(20.0, 35.0)
 
+
+## Can they see the garden right now? From the patio or a window, yes; indoors, no.
+func sees() -> bool:
+	return where != "inside" and not knocked_out
+
+
+## Share of the job they spend indoors or at a window: the fusspot hardly goes in.
+func indoors() -> float:
+	return job.get("indoors", persona.get("indoors", 0.3))
+
+
+## Out onto the patio, and a look at what's left: anything they missed gets an itemised
+## meltdown (or, for the squirrel hater, delight). Returns true if they had something to say.
+func come_out() -> bool:
+	if where == "patio":
+		return false
+	where = "patio"
+	window_x = -1
+	_stint = randf_range(15.0, 30.0)
+	return _look_around()
+
+
+func _look_around() -> bool:
+	if _unseen.is_empty() and _unseen_flowers <= flowers_flat:
+		return false
+	var before := mood
+	var what := _unseen_what.duplicate()
+	for f in _unseen:
+		f.call()
+	_unseen.clear()
+	_unseen_what.clear()
+	if _unseen_flowers > flowers_flat:
+		on_flowers(_unseen_flowers)
+		what.append("my flowers")
+	if fired:
+		return true # the evidence finished it: on_flowers or the mood said so
+	if mood >= before:
+		_react("laughing", 2.0, "Ha! Somebody got %s!" % " and ".join(what))
+	else:
+		_react("horrified", 3.0, "What happened to %s?!" % ", ".join(what))
+	return true
 
 ## The expression to show right now: a short reaction if one is playing, else the mood tier.
 func face() -> String:
@@ -54,8 +102,13 @@ func face() -> String:
 func tick(delta: float) -> String:
 	elapsed += delta
 	_react_left -= delta
-	if fired or knocked_out or paid:
+	if knocked_out:
 		return ""
+	if fired or paid: # settled: they come out and watch you leave
+		return last_line if come_out() else ""
+	_stint -= delta
+	if _stint <= 0.0 and _move():
+		return last_line
 	# Patience running low: a glance at the watch, no words (waits out any reaction).
 	if _glances < GLANCES.size() and elapsed >= job.patience * GLANCES[_glances] and _react_left <= 0.0:
 		_glances += 1
@@ -77,13 +130,37 @@ func tick(delta: float) -> String:
 	return ""
 
 
+## Time for a change of scene: in for a cup of tea, back out, or peering from a window.
+## Returns true if they came out to something worth a word.
+func _move() -> bool:
+	var going_in := randf() < indoors()
+	if where == "patio":
+		if not going_in:
+			_stint = randf_range(15.0, 30.0)
+			return false
+		where = "inside"
+		_stint = randf_range(10.0, 25.0)
+		return false
+	if going_in and randf() < 0.5:
+		where = "window" if where == "inside" else "inside"
+		window_x = [40, 120, 290, 370][randi() % 4] if where == "window" else -1 # main.gd WINDOWS
+		_stint = randf_range(8.0, 15.0)
+		return where == "window" and _look_around()
+	return come_out()
+
+
 func on_progress(new_coverage: float) -> void:
 	if new_coverage > coverage:
 		_change((new_coverage - coverage) * 30.0)
 		coverage = new_coverage
 
 
-func on_squash(kind: String) -> void:
+## Returns true if they saw it (the scene reacts); unseen, the splat waits for them.
+func on_squash(kind: String) -> bool:
+	if not sees():
+		_unseen.append(on_squash.bind(kind))
+		_unseen_what.append("the " + kind)
+		return false
 	var d: float = persona.get(kind, -20.0)
 	_change(d)
 	if d > 0.0:
@@ -92,10 +169,14 @@ func on_squash(kind: String) -> void:
 		_react("horrified", 2.5, "NO! Not the %s!" % kind)
 	else:
 		_react("annoyed", 1.5, "Oi! Watch it!")
+	return true
 
 
 ## Returns true if this was news (newly flattened flowers), so the scene can react.
 func on_flowers(total_flat: int) -> bool:
+	if not sees():
+		_unseen_flowers = maxi(_unseen_flowers, total_flat)
+		return false
 	var fresh := total_flat - flowers_flat
 	if fresh <= 0:
 		return false
@@ -114,6 +195,10 @@ func on_flowers(total_flat: int) -> bool:
 
 ## A flung stone (or worse) lands on something of theirs. Returns true if it knocked them out.
 func on_stone(target: String) -> bool:
+	if not sees():
+		if target == "wall":
+			return false # a thud, nothing to see
+		come_out() # glass breaking, a clonk on the car, the dog yelping: they're out at once
 	match target:
 		"customer":
 			_change(-35.0)
@@ -142,13 +227,19 @@ func knock_out() -> void:
 
 
 func on_dog_hit() -> void:
+	if not sees():
+		come_out() # the yelp brings them out
 	_change(-60.0)
 	_react("horrified", 3.0, "%s! NO!" % job.get("dog_name", "My dog"))
 
 
-func on_dog_returned() -> void:
+## Returns true if they saw it.
+func on_dog_returned() -> bool:
+	if not sees():
+		return false
 	_change(10.0)
 	_react("delighted", 2.0, "Oh, thank you! Bad %s!" % job.get("dog_name", "dog"))
+	return true
 
 
 func fire(line: String) -> void:

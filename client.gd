@@ -5,7 +5,7 @@ extends Node2D
 
 var watch: Node2D
 var _hop := 0.0
-var _tex: Texture2D
+var _tex: Texture2D ## the palette-swapped sheet (house.gd borrows it for the window)
 var _out := false
 var _toward := PI / 2.0 ## facing out over the garden until there's a mower to watch
 
