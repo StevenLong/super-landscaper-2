@@ -79,6 +79,8 @@ func flattened_count() -> int:
 
 
 func _physics_process(_delta: float) -> void:
+	if not $Area.monitoring:
+		return # a bed next door: scenery
 	for body in $Area.get_overlapping_bodies():
 		if "cut_radius" in body:
 			_trample(to_local(body.global_position), body.cut_radius)

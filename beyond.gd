@@ -6,6 +6,7 @@ extends Node2D
 
 const HouseScript := preload("res://house.gd")
 const TreeScript := preload("res://tree.gd")
+const BedScript := preload("res://flowerbed.gd")
 const PLOT := 760.0 ## how wide each neighbour's plot is
 const TINTS := [Color(1, 1, 1), Color(1, 0.92, 0.84), Color(0.86, 0.94, 1.0), Color(1, 1, 0.88), Color(0.96, 0.88, 0.92)]
 
@@ -66,6 +67,17 @@ func _neighbour(plot: Rect2, side: int, h: float, border: float, up: float) -> v
 		_strip(preload("res://art/fence_h.png"), Rect2(run.x, -32, run.y - run.x, 32), 0)
 	var edge := plot.position.x - border if side < 0 else plot.end.x
 	_strip(preload("res://art/fence_v.png"), Rect2(edge, -up, border, h + border), 0)
+	# Their garden: stepping stones off the patio, and beds if they're tidy, dug-over
+	# patches if not; a tree maybe. Kept clear of the drive.
+	var p: Vector2 = hs.patio_point()
+	for i in 5:
+		_ground(preload("res://art/paving.png"), Rect2(p + Vector2(_r.randf_range(-3, 3) - 8.0, 14.0 + i * 24.0), Vector2(16, 10)))
+	var yard := Rect2(plot.position.x + 40, hs.rect().end.y + 30, PLOT - 80, h - hs.rect().end.y - 90)
+	for i in (_r.randi_range(1, 2) if tidy else _r.randi_range(2, 4)):
+		var sz := Vector2(_r.randf_range(120, 220), _r.randf_range(60, 90)) if tidy else Vector2(_r.randf_range(50, 110), _r.randf_range(30, 50))
+		var at := Vector2(_r.randf_range(yard.position.x, yard.end.x - sz.x), _r.randf_range(yard.position.y, yard.end.y - sz.y))
+		if not Rect2(at, sz).grow(20).intersects(drive):
+			_bed(Rect2(at, sz), tidy)
 	if _r.randf() < 0.7:
 		_tree(Vector2(plot.position.x + _r.randf_range(80, PLOT - 80), _r.randf_range(420, h - 60)), 42.0)
 
@@ -81,16 +93,35 @@ func _woods(plot: Rect2, side: int) -> void:
 ## An empty lot: patchy long grass and bare earth, a few stones, a sagging fence.
 func _lot(plot: Rect2, h: float, border: float, up: float) -> void:
 	_ground(preload("res://art/grass_long.png"), Rect2(plot.position, plot.size), Color(1.0, 0.95, 0.72))
-	for i in 7:
+	for i in 7: # churned-up earth in rough curves, and weeds
 		var sz := Vector2(_r.randf_range(60, 200), _r.randf_range(40, 120))
 		var at := Vector2(_r.randf_range(plot.position.x, plot.end.x - sz.x), _r.randf_range(20, h - sz.y))
-		_ground(preload("res://art/soil.png"), Rect2(at, sz))
+		_bed(Rect2(at, sz), false)
 	for i in 10:
 		var s := Sprite2D.new()
 		s.texture = preload("res://art/stone.png")
 		s.position = Vector2(_r.randf_range(plot.position.x, plot.end.x), _r.randf_range(20, h - 20))
 		add_child(s)
 	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, h + border - 32, plot.size.x, 32), 0, Color(0.8, 0.72, 0.6))
+
+
+## A curved bed (flowerbed.gd's shapes): in flower, or bare dug earth.
+func _bed(box: Rect2, flowers: bool) -> void:
+	var b: Node2D = BedScript.new()
+	b.position = box.position
+	b.size = box.size
+	b.shape = ["oval", "kidney", "bean"][_r.randi() % 3]
+	if not flowers:
+		b.spacing = 10000.0
+	var a := Area2D.new() # flowerbed.gd tramples through it; nothing reaches next door
+	a.name = "Area"
+	a.monitoring = false
+	a.monitorable = false
+	var cs := CollisionShape2D.new()
+	cs.name = "Shape"
+	a.add_child(cs)
+	b.add_child(a)
+	add_child(b)
 
 
 func _house(at: Vector2, garage := 0) -> Node2D:
