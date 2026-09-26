@@ -6,6 +6,46 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 7 (2026-09-26): check triage and the big grill (the season, crime, venues, throwing)
+- Checks: all 16 answered, CHECKS.txt cleared. Passed: the six S5 checks, S6-DEPTH, HEDGE,
+  GARAGE, WINDOW, CUSTOMER, CAR (mostly). Problems triaged into NOTES 58 to 71: the on-foot
+  sprite flips upside down (58, BLOCKS; diagnosed from code, not reproduced: walker.gd
+  rotates every frame but redraws only every 9 px of stride), the knocked-out customer
+  still turns (59), the car hitbox is 110 tall where the sprite's footprint is 66 (60),
+  stones vanish on walls (61), and a 3/4 art pass (66 to 71: pond and beds, tree bases,
+  fences, chimney, garage depth, featureless ground next door).
+- Your calls (vetoable, all in the design doc, game-dev 948250a onward):
+  - The run is a 4-week season, 3 jobs a week, a loan shark's payment each week ($120,
+    $250, $450, $750, a guess); a miss sends his heavies to repossess kit; you can sell kit;
+    zero rep gives the dregs, not "File for bankruptcy"; paying week 4 wins. Runs are years
+    (leaning: the 1980s, starting 1980). Only the payments ramp: the rep tiers are the
+    difficulty curve, unchecked.
+  - Impatience keeps its rules, gains signals (watch glance, sigh, escalating nags).
+  - Heat is separate from rep, only for crimes; a four-tier crime ladder with
+    proportional punishment (fines, a lost job slot, season over only for killing); heat
+    shortens a visible police countdown and cools a level per week paid; no job-start
+    arrest roll. Rifling pockets trickles cash while held. Animals thrown into things tier
+    the crime up.
+  - Seen versus evidence: the customer moves between patio, inside and windows; unseen
+    acts are judged by what's left; the portrait greys out.
+  - Venues by rep band (mansion and graveyard first), community service later.
+  - Between jobs: a walkable hub is the destination; a menu plus a payday scene for now.
+  - Objects: small (carry, throw, mow), medium (shoved), big (solid); charged throws
+    locked in place with a landing marker, vertical angle as step 2.
+  - 8 facings left to soak (a diagonal sprite points about 31 deg while you travel 45).
+  - The car: mower ramming dents it too, harder hits cost more.
+- Promoted from NOTES to the design doc: 21, 22, 25, 26, 27, 29, 38, 40, 56, 63, 64, 65.
+  Build items 72 to 81 replace them. Parked: 21b (job types), 27b (the drive), 30b grown
+  into the menace board.
+- No code changed. Verified: run_all green (exit 0).
+
+OWED CHECKS: none (CHECKS.txt says nothing owed).
+
+NEXT (NOTES has the full order):
+1. 58, the on-foot sprite flip, then 59 to 61 as a bug batch.
+2. 80, charged throws step 1.
+3. 72 with 78, the season and the payday scene: the new spine.
+
 ## Session 6 (2026-09-25): the visual session, full 3/4, and the world past the garden
 - Your calls: full 3/4 (you and your partner picked (c) from three mocked-up styles, over
   pure top-down and a tilt on fixed things); trees go 3/4 with the rest (replaces the

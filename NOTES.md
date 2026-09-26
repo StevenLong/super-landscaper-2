@@ -56,8 +56,8 @@ time.
    version (neighbours, woods, lot, treeline, houses across the road) shipped in S6.
 (56 and 65 grilled 2026-09-26 into 79.)
 
-PROPOSED ORDER: the dev lives with the voxel look first; then the grill (56 joins it); 47
-waits on 27.
+PROPOSED ORDER: 56 was grilled 2026-09-26 (79); 47 waits on the walkable hub (27, now a
+destination in the design doc).
 ### Notes 2026-09-26 (session 6 play checks)
 
 **Bugs (build, no call needed)**
@@ -137,16 +137,6 @@ PROPOSED ORDER (2026-09-26 grill): 58 first (blocks), 59 to 61 as a bug batch, t
    the bump threshold it dents like a stone, $40 and "My CAR!"; a harder hit (a ride-on at
    full speed) costs more. Thoughts, not yet decided: a direct hit shoves the car a little,
    and dents show on the sprite.
-63. [QUESTION, small] The 8 facings feel a touch late and point off-course (S6-FACINGS). Not
-   a timing bug: `Facing.of` switches at the exact midpoint every frame. Likely the
-   unconscious thing: the voxel sheets squash depth by 0.6, so a diagonal sprite points
-   about 31 deg while you travel 45 deg, and flat-ish turns switch late relative to what the
-   sprite shows. Options: (a) leave it and let it soak; (b) pick the row from the projected
-   angle, which makes diagonals match but widens the N/S sectors (more "facing north while
-   not going north"); (c) 16 facings, twice the sheet rows, halves both errors. Snapping the
-   heading itself to 8 ways: agreed, no (it would fight mowing lines). DECIDED 2026-09-26:
-   (a), leave it and let it soak.
-
 66. [VISUAL, moderate] The pond and flower beds don't read as 3/4. Both are still drawn flat.
    FIX sketch: rim stones with a visible front face and a darker inner bank on the pond;
    flowers standing up in the beds. Both read as flat drawings on the ground. Fake a bit of
@@ -175,5 +165,5 @@ PROPOSED ORDER (2026-09-26 grill): 58 first (blocks), 59 to 61 as a bug batch, t
    patches, paths, flower borders) on neighbour lots. Pairs with 55.
 
 PROPOSED ORDER: 58 first (blocks the next playtest, one line), then 59 to 61 as one bug
-batch; the grill takes 62 to 65 alongside 21, 22, 25, 26, 27, 29, 38, 40 and 56; 66 to 71
-are a 3/4 art pass once the questions are answered.
+batch; 66 to 71 are a 3/4 art pass (the dev's answers are in the items). The full order is
+the 2026-09-26 grill's, above.
