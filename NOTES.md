@@ -18,8 +18,6 @@ BLOCKS = spoils the next playtest.
 
 **Needs a grill (design calls, queued for one session)**
 
-25. [DESIGN, moderate] Rifle the pockets of a downed customer for the pay (S1-STONES):
-   money now, WANTED and a terrible rep after.
 27. [DESIGN, large] The between-jobs loop is seconds long and one-sided: no consequence after
    a job and no journey from one to the next; you pick from a short list you already know.
    Ideas (S1-BOARD): a walkable shop/showroom with kit on shelves, random stock per run
@@ -90,7 +88,10 @@ waits on 27.
    countdown shortened by heat, proportional punishment (fines, a lost job slot), heat
    cooling a level per week paid; delete the job-start arrest roll (`game.gd`
    `arrested_on_arrival`). Tier 3 waits until a customer can actually be killed. Needs 72
-   for job slots and weeks.
+   for job slots and weeks. The police countdown is visible, with sirens.
+76. [FEATURE, small] Rifle a knocked-out customer's pockets (25, decided 2026-09-26): hold
+   to rifle, cash trickles out a few dollars a second from a wallet of 20 to 60% of the pay;
+   +1 heat, the police always called, the worst rep hit. Needs 74's countdown.
 75. [FEATURE, large] Venues by reputation band (40, decided 2026-09-26, design doc Levels):
    first the mansion (top band: a big house, loop drive, expensive breakables, its own
    persona) and the graveyard (bottom band: gravestones as solid obstacles, flowers on
