@@ -18,15 +18,13 @@ BLOCKS = spoils the next playtest.
 
 **Needs a grill (design calls, queued for one session)**
 
-27. [DESIGN, large] The between-jobs loop is seconds long and one-sided: no consequence after
-   a job and no journey from one to the next; you pick from a short list you already know.
-   Ideas (S1-BOARD): a walkable shop/showroom with kit on shelves, random stock per run
-   (small early), investing in the shop between runs, a garage for upgrades. That part is
-   the outside-the-run track the design doc defers.
 29. [DESIGN, moderate-large] Pick up more than stones (S1-DOG): the dog wriggles free after
    a while, a hedgehog stuns you, a squirrel holds for a few seconds; hedgehog-proof gloves
    from the shop; throwing hedgehogs at things.
 **Parked**
+
+27b. [PARKED since 2026-09-26] A drive between jobs as its own segment (traffic, the police
+   at high heat).
 
 21b. [PARKED since 2026-09-26] Job types for variety, not pressure (21's leftovers, the
    season now supplies the pressure): mini golf (mow between holes, greens off-limits,
@@ -91,6 +89,9 @@ waits on 27.
    Customer): the customer moves between patio, inside and a window by persona; unseen acts
    judged by their evidence when they come out; noise brings them out; the portrait greys
    out or shows a window pane. Home: `customer.gd`, `client.gd`, `face.gd`, `main.gd`.
+78. [FEATURE, small] The payday scene (27, decided 2026-09-26): at each week's end the
+   shark's man takes the payment or repossesses kit in front of you. Part of 72. The
+   walkable hub is the destination (design doc Outside the Run), after its own grill.
 75. [FEATURE, large] Venues by reputation band (40, decided 2026-09-26, design doc Levels):
    first the mansion (top band: a big house, loop drive, expensive breakables, its own
    persona) and the graveyard (bottom band: gravestones as solid obstacles, flowers on
