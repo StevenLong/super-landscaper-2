@@ -14,6 +14,8 @@ const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
 const CAR_BILL := 40.0 ## a dent in the customer's car
+const RIFLE_RATE := 4.0 ## dollars a second out of a knocked-out customer's pockets
+const ROB_REP := 30.0 ## the worst reputation hit in the game
 const CAR_SIZE := Vector2(52, 66) ## parked along the drive: 110 long, foreshortened by 0.6 (tools/voxel.py G)
 const THROW_MIN := 40.0 ## how far a tap throws
 const THROW_MAX := 300.0 ## how far a full wind-up throws
@@ -59,6 +61,8 @@ var _flowers_quiet_until := 0 ## msec: one scream per burst of flowers, not one 
 var _heat0 := 0.0 ## your record as the job starts: it sets how fast the police come
 var _vandal := false ## wrecking things after being fired: trespass, one charge a job
 var _siren: AudioStreamPlayer
+var _wallet := 0.0 ## what's left in the customer's pockets
+var robbed := 0.0 ## what you've lifted from them
 
 @onready var lawn: Lawn = $Lawn
 @onready var mower: CharacterBody2D = $Mower
@@ -452,6 +456,7 @@ func _physics_process(delta: float) -> void:
 	if customer.fired and settled.is_empty():
 		_fired()
 	hud.set_hint(_hint())
+	_rifle(delta)
 	if police_left >= 0.0:
 		police_left = maxf(0.0, police_left - delta)
 		hud.set_police(police_left)
@@ -509,6 +514,8 @@ func _hint() -> String:
 				return Game.key("interact") + " fill up the mower" if walker.global_position.distance_to(mower.global_position) < 44.0 else "Take the can to the mower"
 		if _stone_near(walker.global_position):
 			return Game.key("interact") + " pick up the stone"
+		if _can_rifle():
+			return "Rifling... $%d" % floori(robbed) if Input.is_action_pressed("interact") and robbed > 0.0 				else "Hold %s rifle their pockets" % Game.key("interact")
 		if dog and is_instance_valid(dog):
 			if dog.following == walker:
 				return "Walk %s back to the patio" % job.dog_name
@@ -779,6 +786,10 @@ func _finish(result: Dictionary) -> void:
 	get_tree().paused = true
 	result.customer = job.get("customer", "")
 	result.heat_up = Game.heat > _heat0
+	if robbed > 0.0:
+		result.robbed = floori(robbed)
+		result.net += result.robbed
+		result.rep -= ROB_REP
 	result.look = job.look
 	result.face = customer.face() if result.outcome != "walked" else "furious"
 	Game.record_result(result)
@@ -797,6 +808,29 @@ func _finish(result: Dictionary) -> void:
 
 
 # ---------------------------------------------------------------- crime
+
+func _can_rifle() -> bool:
+	return walker != null and walker.carrying == "" and customer.knocked_out and _wallet >= 1.0 		and walker.global_position.distance_to($Client.position) < 30.0
+
+
+## Hold interact over a knocked-out customer: their cash trickles out, so every second
+## robbing is a second not running. Robbery is its own crime, and a neighbour always sees.
+func _rifle(delta: float) -> void:
+	if not (_can_rifle() and Input.is_action_pressed("interact")):
+		return
+	if robbed == 0.0:
+		_count("robberies")
+		_crime(1)
+		if police_left < 0.0:
+			_call_police()
+	var take := minf(_wallet, RIFLE_RATE * delta)
+	_wallet -= take
+	if floori(robbed + take) > floori(robbed):
+		Sfx.play("ui_move", 0.2)
+		if floori(robbed + take) % 5 == 0:
+			pop_text("+$5", $Client.position + Vector2(0, -24))
+	robbed += take
+
 
 ## A crime on the ladder (Game.HEAT): heat now, and the police called for assault, or
 ## for anything once your record is bad enough.
@@ -843,6 +877,7 @@ func _finish_nicked() -> void:
 	r.rep -= mischief
 	r.mischief = mischief
 	r.comment = "(Led away in handcuffs.)"
+	robbed = 0.0 # and they take back what you lifted
 	hud.close()
 	_finish(r)
 
@@ -1065,6 +1100,7 @@ func _splash(p: Vector2, size := 1.0) -> void:
 
 
 func _knock_out() -> void:
+	_wallet = job.pay * randf_range(0.2, 0.6)
 	_crime(2)
 	_count("knockouts")
 	customer.knock_out()

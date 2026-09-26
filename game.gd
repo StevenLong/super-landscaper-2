@@ -117,6 +117,7 @@ const TALLY := {
 	"stoned_hedgehog": "Hedgehogs stoned", "stoned_squirrel": "Squirrels sniped",
 	"dog_bowled": "Dogs bowled over", "dog_returned": "Dogs walked home",
 	"customer_hits": "Customers hit with a stone", "knockouts": "Customers knocked out cold",
+	"robberies": "Pockets rifled",
 	"windows": "Windows put through", "car_dents": "Dents in the customer's car", "dents": "Dents in your own truck",
 	"own_goals": "Stones at your own mower", "flowers": "Flowers flattened",
 	"stones_mowed": "Stones through the blades", "stones_thrown": "Stones thrown",

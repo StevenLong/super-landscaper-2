@@ -102,6 +102,8 @@ func _rundown(r: Dictionary) -> Control:
 		money += " (incl. $%d tip)" % r.tip
 	if r.fuel_cost > 0.0:
 		money += "   Costs -$%d" % roundi(r.fuel_cost)
+	if r.get("robbed", 0) > 0:
+		money += "   Lifted $%d" % r.robbed
 	if r.get("fine", 0) > 0:
 		money += "   Fine -$%d" % r.fine
 	money += "   Net %s$%d" % ["+" if r.net >= 0.0 else "-", absi(roundi(r.net))]

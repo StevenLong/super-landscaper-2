@@ -41,14 +41,28 @@ func _physics_process(_delta: float) -> bool:
 		1:
 			assert(m.police_left < g.police_time(0.0), "the countdown runs")
 			assert(m.hud.get_node("Police").text == "POLICE 1:00", "and shows (59.5 s rounds up)")
+			# Rifle their pockets: hold interact over them.
+			m.hop_off()
+			m.walker.global_position = m.get_node("Client").position + Vector2(0, 10)
+			Input.action_press("interact")
+			_wait = 60
+		2:
+			Input.action_release("interact")
+			assert(absf(m.robbed - m.RIFLE_RATE) < 0.5, "a second's rifling lifts a few dollars")
+			assert(g.heat == 4.0 and m.tally.get("robberies", 0) == 1, "robbery is its own crime: +1 heat, once")
 			m.police_left = 0.01
 			_wait = 2
-		2:
+		3:
 			assert(m.over and paused, "caught")
 			m._on_choice("nicked")
 			var r: Dictionary = g.last_result
-			assert(r.outcome == "nicked" and r.fine == g.fine(2, 3.0) and r.cells, "a fine for assault and a night in the cells")
+			assert(r.outcome == "nicked" and r.fine == g.fine(2, 4.0) and r.cells and not r.has("robbed"), "a fine for assault, a night in the cells, and the cash taken back")
 			assert(r.net == -r.fine - r.fuel_cost, "the fine comes off, and nobody paid")
+			# Get away with it and the cash is yours, at the worst rep hit in the game.
+			m.robbed = 12.0
+			m._finish(m.customer.ko_result(0.0))
+			r = g.last_result
+			assert(r.robbed == 12 and r.net == 12.0 and r.rep == -m.ROB_REP, "escaped: the lifted cash is yours, the rep hit is huge")
 			# Ramming the customer's car dents it, harder hits cost more, and it's a nuisance.
 			var car := StaticBody2D.new()
 			m._car = car
