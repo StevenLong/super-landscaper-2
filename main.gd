@@ -205,10 +205,12 @@ func _build_layout() -> void:
 		b.name = "Flowerbed" if i == 0 else "Flowerbed%d" % (i + 1)
 		b.position = beds[i].position
 		b.size = beds[i].size
+		if not fixed: # by where it is, so the layout's own draws stay put
+			b.shape = ["oval", "kidney", "bean"][int(beds[i].position.x * 7.0 + beds[i].position.y * 13.0) % 3]
 		_add_area(b)
 		b.trampled.connect(_on_trampled)
 		$Scenery.add_child(b)
-		lawn.exclude_rect(beds[i])
+		b.exclude_from(lawn)
 	for i in trees.size():
 		var t: StaticBody2D = TreeScript.new()
 		t.name = "Tree" if i == 0 else "Tree%d" % (i + 1)

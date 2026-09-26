@@ -330,15 +330,27 @@ def pond(frame):
     c = Canvas(W, H)
     cx, cy = W / 2, H / 2
     WATER = [hexc(h) for h in ("10283e", "183a58", "225070", "30688c", "5890b8", "a0d0f0")]
-    # Rim stones.
+    # Rim stones, each with a darker front face so it stands up in 3/4. The far ones sit
+    # behind the water, the near ones in front of its edge.
     r = random.Random(21)
+    stones = []
     for i in range(34):
         a = i / 34 * 6.283
         x = cx + math.cos(a) * 60 + r.uniform(-1.5, 1.5)
         y = cy + math.sin(a) * 40 + r.uniform(-1.5, 1.5)
-        shaded_ellipse(c, x, y, r.uniform(4.5, 6.5), r.uniform(3.5, 5), STONE)
+        stones.append((y, x, r.uniform(4.5, 6.5), r.uniform(3.5, 5)))
+    stones.sort()
+
+    def rim(front):
+        for y, x, rx, ry in stones:
+            if (y > cy) == front:
+                shaded_ellipse(c, x, y + 2, rx, ry, STONE[:3])  # its face
+                shaded_ellipse(c, x, y, rx, ry, STONE[1:])      # its top
+    rim(False)
+    # The bank: the water sits below the rim, so its far side shows as a dark earth wall.
+    c.ellipse(cx, cy, 56, 36, hexc("2a2014"))
     # Water: darker in the middle (deeper), lighter at the edges.
-    c.ellipse(cx, cy, 56, 36, None, lambda nx, ny: WATER[max(0, min(3, int((nx * nx + ny * ny) * 4)))])
+    c.ellipse(cx, cy + 3, 55, 33, None, lambda nx, ny: WATER[max(0, min(3, int((nx * nx + ny * ny) * 4)))])
     # Ripples.
     for (rx, ry, rr) in ((cx - 18, cy - 8, 9), (cx + 16, cy + 6, 12), (cx + 2, cy - 14, 6)):
         rr2 = rr + frame * 3
@@ -352,6 +364,7 @@ def pond(frame):
         c.set(int(x) + 3, int(y), WATER[1])
         c.set(int(x) + 4, int(y), WATER[1])
     c.stamp(int(cx - 32), int(cy + 9), [".a.", "aya", ".a."], {"a": hexc("f8b8d0"), "y": YELLOW[4]})
+    rim(True)
     c.outline(INK)
     return c
 
