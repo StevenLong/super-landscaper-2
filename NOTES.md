@@ -18,15 +18,8 @@ BLOCKS = spoils the next playtest.
 
 **Needs a grill (design calls, queued for one session)**
 
-22. [DESIGN, moderate] Soft and hard impatience (S1-NAG). Soft: annoyed, leave now and lose
-   the tip/bonus. Hard: told to leave, no pay, big rep hit, but you can stay and misbehave
-   (same shape as being fired, now built). More than one nag, plus a watch-glance on the
-   face, without a visible countdown. The dev is still finding the balance.
 25. [DESIGN, moderate] Rifle the pockets of a downed customer for the pay (S1-STONES):
    money now, WANTED and a terrible rep after.
-26. [DESIGN, moderate] What the wanted level does between jobs (S1-WANTED). The in-job cop
-   call is decided (design doc, The Run); today's 12%-per-level arrest roll at job start
-   never fired in play and may not fit.
 27. [DESIGN, large] The between-jobs loop is seconds long and one-sided: no consequence after
    a job and no journey from one to the next; you pick from a short list you already know.
    Ideas (S1-BOARD): a walkable shop/showroom with kit on shelves, random stock per run
@@ -92,6 +85,15 @@ waits on 27.
    one tunable table), the heavies repossess kit at a resale rate on a miss, selling kit in
    the shop, the dregs board at zero rep replacing "File for bankruptcy", a season-end win
    screen. Home: `game.gd` (new_run, offer_count, record_result), `board.gd`.
+73. [FEATURE, small] Impatience signals (22, decided 2026-09-26): the watch glance on the
+   face at 75% and 90% of patience, a sigh with the first nag when the tip goes, nags in
+   three escalating steps as mood falls. Home: `customer.gd` `tick`, `face.gd`.
+74. [FEATURE, moderate] Heat and the police (26, decided 2026-09-26, design doc The Run):
+   the crime ladder (tiers 0 to 3), heat only from crimes, the in-job police call with a
+   countdown shortened by heat, proportional punishment (fines, a lost job slot), heat
+   cooling a level per week paid; delete the job-start arrest roll (`game.gd`
+   `arrested_on_arrival`). Tier 3 waits until a customer can actually be killed. Needs 72
+   for job slots and weeks.
 
 58. [BUG, small, BLOCKS] On foot, the sprite flips upside down and is hard to face where you
    want (S6-FOOT). Diagnosed from code, not reproduced: `walker.gd` sets `rotation` every
