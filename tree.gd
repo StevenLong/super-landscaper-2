@@ -65,6 +65,21 @@ func _draw() -> void:
 		grooves.append(Vector3(rng.randf_range(-0.6, 0.6), a, a + rng.randf_range(6.0, -top * 0.6)))
 	# (edge of the band across the trunk, colour): rim, highlight, mid, shade, rim
 	var bands := [[-0.7, BARK[2]], [-0.25, BARK[4]], [0.2, BARK[3]], [0.7, BARK[2]], [1.0, BARK[1]]]
+	# The foot is round, not a flat line: the near half of the trunk's footprint ellipse
+	# (squashed like the ground), over a dark contact shadow.
+	var foot := radius + 4.0
+	draw_set_transform(Vector2(0, 1), 0.0, Vector2(1.0, 0.4))
+	draw_circle(Vector2.ZERO, foot + 4.0, Color(0.03, 0.08, 0.03, 0.45))
+	draw_set_transform(Vector2.ZERO)
+	for xi in range(-int(foot), int(foot) + 1):
+		var depth := foot * 0.4 * sqrt(maxf(0.0, 1.0 - pow(xi / foot, 2.0)))
+		var col: Color = bands[-1][1]
+		for b: Array in bands:
+			if xi <= foot * b[0]:
+				col = b[1]
+				break
+		draw_rect(Rect2(xi, -1.0, 1.0, depth + 1.0), col.darkened(0.15)) # the underside's in shade
+		draw_rect(Rect2(xi, roundf(depth), 1.0, 1.0), BARK[0])
 	for h in int(-top):
 		var hw := radius * (1.0 - 0.12 * h / -top) + 4.0 * pow(maxf(0.0, 1.0 - h / 7.0), 2.0)
 		var y := -1.0 - h

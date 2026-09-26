@@ -108,7 +108,8 @@ def flowers():
 # ---------------------------------------------------------------- house
 
 HOUSE_BASE = 348   # art y of the house's front wall foot; house.gd draws it at WALL_H
-GARAGE_BASE = 150  # the same for the garage art
+GARAGE_ROOF = 100  # the garage roof's depth: a car (66 deep on screen) fits under it with room
+GARAGE_BASE = 80 + GARAGE_ROOF + 4  # the same for the garage art (wall, roof, ridge)
 WINDOWS = (40, 120, 290, 370)  # window x, 30 wide; main.gd WINDOWS matches
 
 
@@ -163,10 +164,28 @@ def house():
     c = Canvas(W, B + 24)
     r = random.Random(7)
     wall_top = B - 158
-    shaded_rect(c, 332, wall_top - 158 - 22, 24, 44, BRICK)   # chimney, behind the ridge
-    c.rect(329, wall_top - 158 - 26, 30, 5, STONE[2])
-    c.rect(329, wall_top - 158 - 26, 30, 1, STONE[4])
-    roof(c, 0, wall_top - 154, W, 154, r)
+    ridge = wall_top - 154
+    roof(c, 0, ridge, W, 154, r)
+    # The chimney stands up through the slope just in front of the ridge: a brick front
+    # face, the top of its stack seen from above, a stone cap and two pots, and its
+    # shadow falling down the tiles to the right.
+    cx, foot = 330, ridge + 34
+    for y in range(foot - 30, foot + 6):
+        for x in range(cx + 24, cx + 30):
+            if y - (foot - 30) > (x - cx - 24) * 2:
+                c.px[y][x] = ROOF[1]
+    top = box34(c, cx, foot, 24, 8, 34, BRICK, BRICK[2:])
+    for y in range(foot - 32, foot, 4):                    # brick courses
+        c.rect(cx + 1, y, 22, 1, BRICK[1])
+        for x in range(cx + (3 if (y // 4) % 2 else 7), cx + 23, 8):
+            c.rect(x, y - 3, 1, 3, BRICK[1])
+    c.rect(cx - 2, top - 2, 28, 4, STONE[3])               # the cap
+    c.rect(cx - 2, top - 2, 28, 1, STONE[4])
+    c.rect(cx - 2, top + 2, 28, 1, STONE[1])
+    for px_ in (cx + 4, cx + 14):                          # chimney pots
+        shaded_rect(c, px_, top - 9, 6, 8, BRICK[1:])
+        c.rect(px_ - 1, top - 10, 8, 2, BRICK[3])
+        c.rect(px_ + 1, top - 10, 4, 1, INK)
     facade(c, 0, wall_top + 4, W, 154)
     for wx in WINDOWS:
         window(c, wx, B - 141, 36)                       # upstairs
@@ -201,7 +220,7 @@ def garage():
     c = Canvas(W, B)
     r = random.Random(8)
     wall_top = B - 80
-    roof(c, 0, wall_top - 66, W, 66, r)
+    roof(c, 0, wall_top - GARAGE_ROOF, W, GARAGE_ROOF, r)  # deep enough to hold the car
     facade(c, 0, wall_top + 4, W, 76)
     door = (12, B - 62, W - 24, 62)
     c.rect(door[0] - 3, door[1] - 3, door[2] + 6, door[3] + 3, CREAM[0])

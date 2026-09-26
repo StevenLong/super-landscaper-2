@@ -10,7 +10,7 @@ const GARAGE_W := 120.0
 const ART_FOOT := 348.0 ## y of the wall's foot in art/house.png (tools/art_sprites.py HOUSE_BASE)
 const ART_RIDGE := 36.0 ## y of its ridge
 const WALL_H := ART_FOOT - ART_RIDGE ## back fence to the foot of the front wall: all solid
-const GARAGE_FOOT := 150.0 ## the foot in art/garage.png
+const GARAGE_FOOT := 184.0 ## the foot in art/garage.png (tools/art_sprites.py GARAGE_BASE)
 const GARAGE_H := GARAGE_FOOT - 4.0 ## its roof's top to its foot: the solid part
 const GLASS := Rect2(0, -62, 30, 36) ## a ground-floor window's glass, from its x (main.gd WINDOWS) and the foot
 
