@@ -57,10 +57,7 @@ open question); 46 and 55's leftovers are buildable any time.
 55. [FEATURE, small] The world past the garden, what's left: a park or playground as a
    neighbour type, and something nicer than rectangles of earth in the empty lot. The rough
    version (neighbours, woods, lot, treeline, houses across the road) shipped in S6.
-56. [DESIGN, moderate] More obstacles and trees (S4-TREES): much smaller and larger trees,
-   bushes out in the lawn, lawn games, litter, traffic cones, garden gnomes, plastic pink
-   flamingos (the "lawn pelicans"). Each needs a call: solid, mowable, throwable, a rep
-   cost if broken? For the grill. Draw them 3/4 (voxel models if the voxel look stays).
+(56 and 65 grilled 2026-09-26 into 79.)
 
 PROPOSED ORDER: the dev lives with the voxel look first; then the grill (56 joins it); 47
 waits on 27.
@@ -92,6 +89,12 @@ waits on 27.
 78. [FEATURE, small] The payday scene (27, decided 2026-09-26): at each week's end the
    shark's man takes the payment or repossesses kit in front of you. Part of 72. The
    walkable hub is the destination (design doc Outside the Run), after its own grill.
+79. [FEATURE, moderate] Objects by size (56 and 65, decided 2026-09-26, design doc Mowers
+   and Equipment): small (carry, throw, mow with a consequence), medium (shoved by heavy
+   enough mowers, RigidBody2D), big (solid). The petrol can becomes throwable; mowed, it
+   spills and browns the lawn. First batch: gnome, flamingo, cone, decorative rocks, hose
+   (the spill, water), tennis ball with fetch. Later: sandbox, paddling pool, more critters
+   and their interactions, fish, fire.
 75. [FEATURE, large] Venues by reputation band (40, decided 2026-09-26, design doc Levels):
    first the mansion (top band: a big house, loop drive, expensive breakables, its own
    persona) and the graveyard (bottom band: gravestones as solid obstacles, flowers on
@@ -136,10 +139,6 @@ waits on 27.
    power, a guide shows where it lands. Home: `main.gd` `throw_stone` already takes speed and
    distance. QUESTIONS: range min/max; does the guide show the landing spot only or the arc;
    does holding slow you down; pad button.
-65. [DESIGN, moderate] Anything you can hold is throwable (S6-WINDOW), the petrol can
-   through a window included. Joins 29 (pick up more than stones) and 56 (what's throwable).
-   QUESTION: what does a thrown can do: spill, dent, burst into flame?
-
 **3/4 visuals (S6-LOOK, S6-BEYOND, S6-GARAGE, S6-DEPTH)**
 
 66. [VISUAL, moderate] The pond and flower beds don't read as 3/4. Both are still drawn flat.
