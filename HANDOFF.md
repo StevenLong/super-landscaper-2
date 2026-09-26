@@ -33,6 +33,8 @@ Notepad whenever an answer is still blank.
   tools/make_audio.py exactly; left as committed. Trap noted in docs/TRIBAL.md: a texture
   load()ed in _draw draws as a white box.
 - New cheat: [4] on the board takes 20 rep off (to reach the churchyard).
+- Parked items reviewed (parked about 6 sessions): 19 (stripe blending) dropped; 30, 30b
+  and 37 kept, still parked.
 
 OWED CHECKS: 21, in CHECKS.txt (5 loads, about 35 minutes).
 

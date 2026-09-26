@@ -37,8 +37,6 @@ BLOCKS = spoils the next playtest.
    at high heat).
 21b. [PARKED since 2026-09-26] Job types for variety, not pressure: mini golf, farm or
    botanical garden, infestation jobs. Add when 12 jobs of one lawn kind feel samey.
-19. [PARKED since 2026-09-24] Stripe shade blends with heading instead of snapping light/
-   dark (S1-STRIPES). Only if cheap. Home: `lawn.gdshader`.
 30. [PARKED since 2026-09-24] Stamina progression (S1-PUSH): level it up, better push mowers,
    drug or cybernetic enhancements.
 30b. [PARKED since 2026-09-24] A dark path: the menace board (mafia dons, chasing enemies
