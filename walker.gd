@@ -15,6 +15,7 @@ var keep_in := func(p: Vector2) -> Vector2: return p ## main: the garden, you do
 var _stride := 0.0
 var _frame := 0
 var aiming := false
+var dazed := 0.0 ## seconds left seeing stars (a hedgehog grabbed bare-handed)
 var power := 0.0 ## 0 to 1 while aiming
 var reach := func(_power: float) -> float: return 0.0 ## main: how far a throw at this power lands
 var _marker: Node2D
@@ -48,6 +49,10 @@ func cancel_aim() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if dazed > 0.0:
+		dazed -= delta
+		queue_redraw()
+		return
 	if aiming:
 		rotation += Input.get_axis("turn_left", "turn_right") * AIM_RATE * delta
 		power = minf(1.0, power + delta / CHARGE_TIME)
@@ -94,6 +99,14 @@ func _draw_marker() -> void:
 
 
 func _draw_held(at: Vector2) -> void:
-	if carrying != "":
-		var c := Stone.texture(carrying)
+	if dazed > 0.0:
+		for i in 3:
+			var a := dazed * 6.0 + i * TAU / 3.0
+			draw_circle(Vector2(cos(a) * 9.0, -30.0 + sin(a) * 3.0), 1.5, Color("f8e070"))
+	if carrying == "":
+		return
+	var c := Stone.texture(carrying)
+	if carrying in ["dog", "hedgehog", "squirrel"]: # an 8-facing sheet: held facing the way you do
+		Facing.draw(self, c, 2, 0, rotation, at)
+	else:
 		draw_texture(c, at - c.get_size() / 2.0)

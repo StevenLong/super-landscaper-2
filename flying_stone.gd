@@ -40,5 +40,9 @@ func _physics_process(delta: float) -> void:
 func _draw() -> void:
 	var t := Stone.texture(kind)
 	var h := sin(clampf(_travelled / _total, 0.0, 1.0) * PI) * 26.0
+	if kind in ["dog", "hedgehog", "squirrel"]: # a live animal, tumbling
+		draw_circle(Vector2(0, 2), 6.0, Color(0, 0, 0, 0.35))
+		Facing.draw(self, t, 2, 0, velocity.angle() + _travelled * 0.05, Vector2(0, -h))
+		return
 	draw_circle(Vector2(0, 2), 4.0, Color(0, 0, 0, 0.35))
 	draw_texture(t, -t.get_size() / 2.0 - Vector2(0, h))

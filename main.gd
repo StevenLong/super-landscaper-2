@@ -21,6 +21,9 @@ const CAR_SIZE := Vector2(52, 66) ## parked along the drive: 110 long, foreshort
 const THROW_MIN := 40.0 ## how far a tap throws
 const THROW_MAX := 300.0 ## how far a full wind-up throws
 const THROW_FROM := 12.0 ## the stone leaves your hand this far in front
+## Animals you can pick up: "tier" on the crime ladder for throwing one, "hold" seconds
+## before it wriggles or bites free. A hedgehog bare-handed stuns you instead (gloves fix it).
+const CRITTERS := {"dog": {"tier": 1, "hold": 5.0}, "hedgehog": {"tier": 0, "hold": INF}, "squirrel": {"tier": 0, "hold": 3.0}}
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
@@ -65,6 +68,7 @@ var _vandal := false ## wrecking things after being fired: trespass, one charge 
 var _siren: AudioStreamPlayer
 var _wallet := 0.0 ## what's left in the customer's pockets
 var robbed := 0.0 ## what you've lifted from them
+var _held := 0.0 ## seconds you've held the animal in your hands
 
 @onready var lawn: Lawn = $Lawn
 @onready var mower: CharacterBody2D = $Mower
@@ -485,6 +489,7 @@ func _physics_process(delta: float) -> void:
 		_fired()
 	hud.set_hint(_hint())
 	_rifle(delta)
+	_hold_critter(delta)
 	if police_left >= 0.0:
 		police_left = maxf(0.0, police_left - delta)
 		hud.set_police(police_left)
@@ -542,6 +547,8 @@ func _hint() -> String:
 		var near := _stone_near(walker.global_position)
 		if near:
 			return Game.key("interact") + " pick up the " + _thing(near.kind)
+		if _critter_near(walker.global_position):
+			return Game.key("interact") + " pick up the " + _critter_near(walker.global_position).kind
 		if _can_rifle():
 			if Input.is_action_pressed("interact") and robbed > 0.0:
 				return "Rifling... $%d" % floori(robbed)
@@ -549,8 +556,8 @@ func _hint() -> String:
 		if dog and is_instance_valid(dog):
 			if dog.following == walker:
 				return "Walk %s back to the patio" % job.dog_name
-			if not dog.limping and walker.global_position.distance_to(dog.position) < 80.0:
-				return "Walk into %s to put them on the lead" % job.dog_name
+			if not dog.limping and not dog.held and walker.global_position.distance_to(dog.position) < 80.0:
+				return "Walk into %s to put them on the lead, or %s pick them up" % [job.dog_name, Game.key("interact")]
 		if at_truck():
 			return Game.key("interact") + " truck"
 		if walker.global_position.distance_to(mower.global_position) < 44.0:
@@ -587,6 +594,8 @@ func _on_thrown(dir: Vector2, power: float) -> void:
 		return
 	var f := throw_stone(walker.global_position + dir * THROW_FROM, dir, 460.0, _throw_reach(power) - THROW_FROM, walker.carrying)
 	f.thrown = true
+	if CRITTERS.has(walker.carrying):
+		_count("animals_thrown")
 	walker.carrying = ""
 	walker.queue_redraw()
 	_count("stones_thrown")
@@ -632,6 +641,10 @@ func interact() -> void:
 		walker.carrying = ""
 		walker.queue_redraw()
 		Sfx.play("glug", 0.0)
+	elif CRITTERS.has(walker.carrying): # put it down and it's off
+		_land(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying)
+		walker.carrying = ""
+		walker.queue_redraw()
 	elif walker.carrying != "": # set it down, or in the truck
 		if not at_truck():
 			add_stone(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying)
@@ -649,8 +662,65 @@ func interact() -> void:
 			walker.carrying = s.kind
 			walker.queue_redraw()
 			Sfx.play("ui_move", 0.0)
+		elif _pick_up_critter():
+			pass
 		elif at_truck():
 			open_truck_menu()
+
+
+## Grab a nearby animal. A hedgehog bare-handed: you yelp, drop it, and stand there dazed.
+func _pick_up_critter() -> bool:
+	var at := walker.global_position
+	if dog and is_instance_valid(dog) and not dog.limping and not dog.held and dog.position.distance_to(at) < 22.0:
+		dog.hold()
+		walker.carrying = "dog"
+	else:
+		var a := _critter_near(at)
+		if a == null:
+			return false
+		if a.kind == "hedgehog" and "gloves" not in Game.upgrades:
+			walker.dazed = 1.5
+			_count("prickled")
+			Sfx.play("squeak_hedgehog")
+			pop_text("OW!", at + Vector2(0, -24), Color("f07060"))
+			return true
+		a.queue_free()
+		walker.carrying = a.kind
+	_held = 0.0
+	walker.queue_redraw()
+	Sfx.play("ui_move", 0.0)
+	return true
+
+
+func _critter_near(p: Vector2) -> Animal:
+	for a in $Animals.get_children():
+		if a is Animal and not a.dead and not a.is_queued_for_deletion() and a.position.distance_to(p) < 20.0:
+			return a
+	return null
+
+
+## Holding an animal: the dog wriggles free, a squirrel bites; carry the dog to its owner.
+func _hold_critter(delta: float) -> void:
+	if walker == null or not CRITTERS.has(walker.carrying) or walker.aiming:
+		return
+	_held += delta
+	var kind: String = walker.carrying
+	if kind == "dog" and walker.global_position.distance_to(dog.home_point) < 60.0:
+		walker.carrying = ""
+		walker.queue_redraw()
+		dog.let_go(dog.home_point)
+		dog.home.emit(dog) # handed back to its owner
+		dog.queue_free()
+		return
+	if _held < CRITTERS[kind].hold:
+		return
+	walker.carrying = ""
+	walker.queue_redraw()
+	if kind == "squirrel":
+		_count("bitten")
+		Sfx.play("squeak_squirrel")
+		pop_text("OW!", walker.global_position + Vector2(0, -24), Color("f07060"))
+	_land(walker.global_position + Vector2(10, 0).rotated(walker.rotation), kind)
 
 
 ## What a small thing's called in a hint.
@@ -1038,7 +1108,7 @@ func _stone_hit_test(p: Vector2) -> String:
 	for a in $Animals.get_children():
 		if a is Animal and not a.dead and a.position.distance_to(p) < CRITTER_HIT:
 			return "animal"
-	if dog and is_instance_valid(dog) and dog.position.distance_to(p) < 12.0:
+	if dog and is_instance_valid(dog) and not dog.held and dog.position.distance_to(p) < 12.0:
 		return "dog"
 	for t in $Scenery.get_children():
 		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius:
@@ -1048,16 +1118,18 @@ func _stone_hit_test(p: Vector2) -> String:
 
 func _on_stone_landed(f: FlyingStone, target: String) -> void:
 	var p := f.position
+	var alive := CRITTERS.has(f.kind) # a live animal: it lands on its feet, whatever it hit
+	var tier := 0 # what hitting this is on the crime ladder, if it was thrown on purpose
 	match target:
 		"customer":
 			Sfx.play("thud")
 			_count("customer_hits")
 			_mischief(8.0)
+			tier = 2 # assault
 			if customer.on_stone("customer"):
-				_knock_out()
+				_knock_out() # a crime of its own
+				tier = -1
 			else:
-				if f.thrown:
-					_crime(2) # assault
 				_react()
 			_drop_bounced(f)
 		"window":
@@ -1068,18 +1140,19 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			bills += WINDOW_BILL
 			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
 			shake(4.0)
+			tier = 1
 			if customer.where == "window" and customer.window_x == _window_at(p) and not customer.knocked_out:
 				_count("customer_hits") # through the glass and into them
+				tier = 2
 				if customer.on_stone("customer"):
 					_knock_out()
-					return
-				if f.thrown:
-					_crime(2)
+					tier = -1
 			else:
 				customer.on_stone("window")
-				if f.thrown:
-					_crime(1)
-			_react()
+			if not customer.knocked_out:
+				_react()
+			if alive:
+				_drop_bounced(f) # it scrambles back out
 		"wall":
 			Sfx.play("thud")
 			customer.on_stone("wall")
@@ -1092,8 +1165,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			pop_text("-$%d" % CAR_BILL, p, Color("f07060"))
 			shake(3.0)
 			customer.on_stone("car")
-			if f.thrown:
-				_crime(1)
+			tier = 1
 			_react()
 			_drop_bounced(f)
 		"truck":
@@ -1107,16 +1179,18 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				if a is Animal and not a.dead and a.position.distance_to(p) <= CRITTER_HIT:
 					a.squash()
 					break
+			if alive:
+				_drop_bounced(f)
 		"dog":
 			Sfx.play("yelp")
 			dog.bowl("stone")
 			customer.on_stone("dog")
-			if f.thrown:
-				_crime(1)
+			tier = 1
 			_react()
 			_drop_bounced(f)
 		"gone":
-			pass # over the fence and into next door's garden
+			if f.kind == "dog":
+				_land(lawn.keep_in(p, 8.0), "dog") # it scrabbles at the fence instead
 		"mower":
 			Sfx.play("clonk")
 			mower.damage(8.0)
@@ -1141,12 +1215,24 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				var fit := pond.splash_fit(p)
 				_splash(fit[0], fit[1])
 				_count("splashes")
+				target = "pond"
+				if alive: # it swims for the bank
+					_land(pond.position + (p - pond.position).normalized() * Vector2(Pond.RX + 10.0, Pond.RY + 10.0), f.kind)
 			else:
 				Sfx.play("thud")
 				for b in $Scenery.get_children():
 					if b.has_method("flattened_count") and b.rect().has_point(p):
 						b._trample(b.to_local(p), 12.0) # flattens a flower or two where it lands
 				_land(p, f.kind)
+	if f.thrown and tier >= 0:
+		if alive:
+			if target == "": # just thrown across the lawn: the animal's own tier
+				tier = CRITTERS[f.kind].tier
+			elif target != "gone": # into something: one above the worse of the two, and heat for the method
+				tier = mini(2, maxi(tier, CRITTERS[f.kind].tier) + 1)
+				Game.heat += 1.0
+		if tier > 0:
+			_crime(tier)
 
 
 ## A stone that struck something solid bounces back off it and lands on the lawn.
@@ -1156,6 +1242,15 @@ func _drop_bounced(f: FlyingStone) -> void:
 
 ## Something thrown or flung comes down on the lawn. A ball, the dog goes after.
 func _land(at: Vector2, kind: String) -> void:
+	if kind == "dog":
+		if dog and is_instance_valid(dog):
+			dog.let_go(at)
+			Sfx.play("yelp")
+		return
+	if CRITTERS.has(kind): # on its feet and off, away from you
+		var away := (at - actor().global_position).normalized().rotated(randf_range(-0.6, 0.6))
+		(func() -> void: spawn_animal(kind, at, at + away * 400.0, 0.4)).call_deferred()
+		return
 	(func() -> void:
 		var s := add_stone(at, kind)
 		if kind == "ball" and dog and is_instance_valid(dog):

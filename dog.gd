@@ -20,6 +20,7 @@ var fetching: Node2D = null ## a ball on the lawn it's gone after
 var bring_to: Node2D = null ## who it takes the ball back to
 var has_ball := false
 var _grief := 0.0 ## seconds left sulking after watching its ball get mowed
+var held := false ## in your arms (or in the air): the walker draws it, it does nothing
 
 
 func _ready() -> void:
@@ -34,6 +35,8 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_t += delta
 	var speed := 0.0
+	if held:
+		return
 	if _grief > 0.0 and not limping:
 		_grief -= delta
 		queue_redraw()
@@ -81,6 +84,23 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
+## Picked up: it vanishes into your arms until let go.
+func hold() -> void:
+	held = true
+	following = null
+	fetching = null
+	visible = false
+
+
+## Back on the ground at `at`, and off at a run.
+func let_go(at: Vector2) -> void:
+	held = false
+	visible = true
+	position = at
+	heading = Vector2.RIGHT.rotated(randf() * TAU)
+	_dash = 1.2
+
+
 ## Off after a thrown ball, to bring it back to `to`.
 func fetch(ball: Node2D, to: Node2D) -> void:
 	if not limping and not following and not has_ball:
@@ -104,7 +124,7 @@ func bowl(by := "mower") -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if limping:
+	if limping or held:
 		return
 	if "cut_radius" in body:
 		if (body.velocity as Vector2).length() > 15.0:

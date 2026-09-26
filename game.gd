@@ -34,6 +34,7 @@ const MOWERS := {
 
 const UPGRADES := {
 	"tank": {"name": "Bigger tank", "price": 120, "blurb": "+50% fuel or stamina."},
+	"gloves": {"name": "Gardening gloves", "price": 40, "blurb": "Pick up a hedgehog without the prickles."},
 	"blades": {"name": "Sharp blades", "price": 150, "blurb": "+15% cutting width."},
 }
 
@@ -124,7 +125,8 @@ const TALLY := {
 	"stones_mowed": "Stones through the blades", "stones_thrown": "Things thrown",
 	"gnomes_mowed": "Gnomes shattered", "flamingos_mowed": "Flamingos shredded", "cones_mowed": "Cones sent flying",
 	"hoses_mowed": "Hoses cut", "balls_mowed": "Tennis balls shredded", "jerrycans_mowed": "Petrol cans mowed",
-	"fetches": "Balls fetched",
+	"fetches": "Balls fetched", "animals_thrown": "Animals thrown", "prickled": "Hedgehogs grabbed bare-handed",
+	"bitten": "Bitten by squirrels",
 	"trees_hit": "Trees stoned", "splashes": "Stones fed to the pond",
 	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
 	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",
