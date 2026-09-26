@@ -515,7 +515,9 @@ func _hint() -> String:
 		if _stone_near(walker.global_position):
 			return Game.key("interact") + " pick up the stone"
 		if _can_rifle():
-			return "Rifling... $%d" % floori(robbed) if Input.is_action_pressed("interact") and robbed > 0.0 				else "Hold %s rifle their pockets" % Game.key("interact")
+			if Input.is_action_pressed("interact") and robbed > 0.0:
+				return "Rifling... $%d" % floori(robbed)
+			return "Hold %s rifle their pockets" % Game.key("interact")
 		if dog and is_instance_valid(dog):
 			if dog.following == walker:
 				return "Walk %s back to the patio" % job.dog_name
@@ -810,7 +812,8 @@ func _finish(result: Dictionary) -> void:
 # ---------------------------------------------------------------- crime
 
 func _can_rifle() -> bool:
-	return walker != null and walker.carrying == "" and customer.knocked_out and _wallet >= 1.0 		and walker.global_position.distance_to($Client.position) < 30.0
+	return walker != null and walker.carrying == "" and customer.knocked_out and _wallet >= 1.0 \
+		and walker.global_position.distance_to($Client.position) < 30.0
 
 
 ## Hold interact over a knocked-out customer: their cash trickles out, so every second
