@@ -107,9 +107,10 @@ waits on 27.
 **Needs a call (small ones can be settled in the grill's first minutes)**
 
 62. [DESIGN, small] Ramming the car with the mower has no reaction (S6-CAR). The mower takes
-   bump damage (`mower.gd` `_check_impacts`) but nothing else knows. Suggest: over the bump
-   threshold it dents like a stone, $40 and "My CAR!". QUESTION: same bill, or bigger for a
-   ride-on at speed?
+   bump damage (`mower.gd` `_check_impacts`) but nothing else knows. DECIDED 2026-09-26: over
+   the bump threshold it dents like a stone, $40 and "My CAR!"; a harder hit (a ride-on at
+   full speed) costs more. Thoughts, not yet decided: a direct hit shoves the car a little,
+   and dents show on the sprite.
 63. [QUESTION, small] The 8 facings feel a touch late and point off-course (S6-FACINGS). Not
    a timing bug: `Facing.of` switches at the exact midpoint every frame. Likely the
    unconscious thing: the voxel sheets squash depth by 0.6, so a diagonal sprite points
@@ -117,7 +118,8 @@ waits on 27.
    sprite shows. Options: (a) leave it and let it soak; (b) pick the row from the projected
    angle, which makes diagonals match but widens the N/S sectors (more "facing north while
    not going north"); (c) 16 facings, twice the sheet rows, halves both errors. Snapping the
-   heading itself to 8 ways: agreed, no (it would fight mowing lines).
+   heading itself to 8 ways: agreed, no (it would fight mowing lines). DECIDED 2026-09-26:
+   (a), leave it and let it soak.
 64. [DESIGN, moderate] Charged throws with a trajectory guide (S6-WINDOW): hold to build
    power, a guide shows where it lands. Home: `main.gd` `throw_stone` already takes speed and
    distance. QUESTIONS: range min/max; does the guide show the landing spot only or the arc;
@@ -130,24 +132,27 @@ waits on 27.
 
 66. [VISUAL, moderate] The pond and flower beds don't read as 3/4. Both are still drawn flat.
    FIX sketch: rim stones with a visible front face and a darker inner bank on the pond;
-   flowers standing up in the beds (voxel or hand-drawn). QUESTION: what jars most, the
-   shapes or the flatness?
+   flowers standing up in the beds. Both read as flat drawings on the ground. Fake a bit of
+   perspective; no planter box (it would stop you driving over the bed). Change the beds from
+   solid rectangles to more usual flower-bed shapes (curved borders, kidney shapes).
 67. [VISUAL, small] Trees still read as cardboard cutouts: the trunk meets the ground in a
    flat line. FIX: a rounded, elliptical base (and a ground shadow ellipse). Home:
    `tree.gd`.
 68. [VISUAL, small] Fences: the road-side run doesn't join the side runs well and differs in
    style; the back fence stops instead of running on behind the house; next door's fences
    sometimes overlap, poke into a neighbour's drive, or run past a corner and stop. Home:
-   `main.gd` fences, `beyond.gd`. QUESTION: the back fence gap, is it seen past the garage
-   or above the house roof? A screenshot would settle it.
+   `main.gd` fences, `beyond.gd`. The back fence vanishes once it reaches the house: it
+   should run the garden's full width, its top showing above the house sprite where it
+   pokes out.
 69. [VISUAL, small] The chimney looks wrong and in the wrong place. Home:
-   `tools/art_sprites.py` `house()` (it sits behind the ridge at x 332). QUESTION: where do
-   you want it: up a gable end, or through the roof near the ridge?
+   `tools/art_sprites.py` `house()` (it sits behind the ridge at x 332). Right now it reads
+   as a flat thing hanging off the back. Either placement is fine: up a gable end, or
+   through the roof near the ridge; it just needs to read as 3/4.
 70. [VISUAL, moderate] Garages are too shallow to hold the car in the drive. Deepening
    `house.gd` GARAGE_* and `art_sprites.py` `garage()` eats lawn (rerun sim_balance).
    Ties to S6-DEPTH: the strip behind a garage is never covered by it, which matches the
-   "can't see it, can't go there" rule. QUESTION: keep that rule, or allow hidden strips
-   (the mower silhouetted or the garage fading, as the road hedge does)?
+   "can't see it, can't go there" rule. DECIDED 2026-09-26: keep the rule (no fading
+   garage roof); just deepen the garage.
 71. [VISUAL, moderate] Next door and past the fences can still feel like a void: sparse trees
    on flat, featureless grass. FIX sketch: ground texture and variation (mow stripes, darker
    patches, paths, flower borders) on neighbour lots. Pairs with 55.
