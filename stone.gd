@@ -9,12 +9,13 @@ signal mowed_over(stone: Stone, mower: Node2D)
 const LAUNCH_CHANCE := 0.7
 ## What mowing each kind does: "fling" launches it (sometimes, or "always"), "shatter"
 ## bursts it into "bits", "spill" leaves a stain. "damage" hurts the mower; "theirs" names
-## it to the customer, who takes "mood" off for it.
+## it to the customer, who takes "mood" off for it; "bill" is what it costs you.
 const KINDS := {
 	"stone": {"mowed": "fling", "damage": 12.0},
 	"cone": {"mowed": "fling", "always": true},
 	"gnome": {"mowed": "shatter", "damage": 8.0, "theirs": "gnome", "mood": -15.0, "bits": ["d04430", "f4f0e6", "4070b8", "e8b088"]},
 	"flamingo": {"mowed": "shatter", "bits": ["f088b0", "d05888", "f8c0d8"]},
+	"urn": {"mowed": "shatter", "damage": 14.0, "theirs": "urn", "mood": -30.0, "bill": 120.0, "bits": ["b4b4b8", "92929a", "4e9448"]},
 	"ball": {"mowed": "shatter", "bits": ["d0e040", "a8c020", "f8f8f0"]},
 	"hose": {"mowed": "spill", "damage": 2.0, "theirs": "hose", "mood": -8.0, "spill": Color(0.4, 0.6, 0.9, 0.45)},
 	"jerrycan": {"mowed": "spill", "damage": 4.0, "theirs": "lawn", "mood": -12.0, "spill": Color(0.42, 0.33, 0.12, 0.8)},

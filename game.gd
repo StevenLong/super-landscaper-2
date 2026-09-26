@@ -83,6 +83,19 @@ const PERSONAS := {
 			["LAWN. NEEDS CUTTING.", "Previous contractor dismissed. Prove me wrong."]],
 		"hedgehog": -30.0, "squirrel": -20.0, "flower": -3.0, "patience": 0.9, "target": 0.85, "start_mood": 45.0, "indoors": 0.35,
 	},
+	# Venues (design doc, Levels): the mansion at the top of the ladder, the churchyard at the bottom.
+	"toff": {
+		"brief": ["The grounds must be immaculate. Every inch.", "Do mind the urns. They're older than you are."],
+		"ads": [["GROUNDSMAN REQUIRED", "for a country house. Discretion and precision essential."],
+			["ESTATE LAWNS", "want an experienced hand. Priceless urns on the terrace; do take care."]],
+		"hedgehog": -20.0, "squirrel": -5.0, "flower": -5.0, "patience": 1.2, "target": 0.92, "indoors": 0.5,
+	},
+	"vicar": {
+		"brief": ["Mind the graves, and the flowers on them.", "The Lord sees everything. So do I, mostly."],
+		"ads": [["CHURCHYARD", "grass wants cutting. Respect for the departed essential. Modest fee."],
+			["GRAVEYARD MOWING,", "St. Swithin's. Tread softly among the stones."]],
+		"hedgehog": -25.0, "squirrel": -10.0, "flower": -8.0, "patience": 1.3, "target": 0.75, "indoors": 0.4,
+	},
 }
 
 const PAYMENTS := [120, 250, 450, 750] ## the shark's payment due at the end of each week (tuning, not measured)
@@ -94,6 +107,9 @@ const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share
 ## next job), 3 the worst (not built: nothing can kill a customer yet).
 const HEAT := [0.0, 1.0, 2.0, 5.0]
 const HIGH_HEAT := 3.0 ## from here, a nuisance gets the police called too
+
+## The ordinary customers, in PERSONAS order (the venues bring their own).
+const SUBURBAN := ["nature", "squirrel_hater", "gardener", "busy", "perfectionist", "grump"]
 
 const LAWN_SIZES := [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]
 
@@ -124,7 +140,7 @@ const TALLY := {
 	"own_goals": "Stones at your own mower", "flowers": "Flowers flattened",
 	"stones_mowed": "Stones through the blades", "stones_thrown": "Things thrown",
 	"gnomes_mowed": "Gnomes shattered", "flamingos_mowed": "Flamingos shredded", "cones_mowed": "Cones sent flying",
-	"hoses_mowed": "Hoses cut", "balls_mowed": "Tennis balls shredded", "jerrycans_mowed": "Petrol cans mowed",
+	"hoses_mowed": "Hoses cut", "urns_mowed": "Urns smashed", "balls_mowed": "Tennis balls shredded", "jerrycans_mowed": "Petrol cans mowed",
 	"fetches": "Balls fetched", "animals_thrown": "Animals thrown", "prickled": "Hedgehogs grabbed bare-handed",
 	"bitten": "Bitten by squirrels",
 	"trees_hit": "Trees stoned", "splashes": "Stones fed to the pond",
@@ -215,7 +231,8 @@ func ad_text(job: Dictionary) -> String:
 	var ads: Array = PERSONAS[job.persona].ads
 	var ad: Array = ads[job.seed % ads.size()]
 	var parts: Array[String] = [ad[1]]
-	parts.append(["Small lawn.", "Good-sized garden.", "Extensive grounds."][LAWN_SIZES.find(job.size)])
+	parts.append({"mansion": "Country estate.", "graveyard": "Churchyard."}.get(job.get("venue", ""),
+		["Small lawn.", "Good-sized garden.", "Extensive grounds."][LAWN_SIZES.find(job.size)]))
 	if job.get("ponds", 0) > 0:
 		parts.append("Ornamental pond.")
 	if job.get("dog", false):
@@ -246,7 +263,7 @@ func make_offers() -> Array[Dictionary]:
 func make_job(seed_value: int) -> Dictionary:
 	var r := RandomNumberGenerator.new()
 	r.seed = seed_value
-	var persona_key: String = PERSONAS.keys()[r.randi() % PERSONAS.size()]
+	var persona_key: String = SUBURBAN[r.randi() % SUBURBAN.size()]
 	var dregs := reputation <= 0.0 # nobody decent will have you: cheap and hostile
 	if dregs:
 		persona_key = "grump"
@@ -257,7 +274,7 @@ func make_job(seed_value: int) -> Dictionary:
 	var size: Vector2i = LAWN_SIZES[size_i]
 	var area := float(size.x * size.y) / (1280.0 * 720.0)
 	var target: float = clampf(p.target + r.randf_range(-0.05, 0.04), 0.5, 1.0)
-	return {
+	var job := {
 		"seed": seed_value,
 		"customer": "%s %s" % [FIRST[r.randi() % FIRST.size()], LAST[r.randi() % LAST.size()]],
 		"persona": persona_key,
@@ -279,6 +296,32 @@ func make_job(seed_value: int) -> Dictionary:
 		"props": _props(seed_value, persona_key, size_i),
 		"rocks": (seed_value >> 3) % (2 + size_i),
 	}
+	# The venue, by reputation band, from its own draws so the rest stays put.
+	var rv := RandomNumberGenerator.new()
+	rv.seed = seed_value + 5
+	if not dregs and reputation >= 75.0 and rv.randf() < 0.4:
+		_venue(job, "mansion", "toff", 2, 1.8)
+		job.props = ["urn", "urn"] + (["urn"] if rv.randf() < 0.5 else []) + ["hose"]
+		job.ponds = 0 # the loop drive's island takes the middle
+		job.beds = rv.randi_range(1, 2)
+	elif not dregs and reputation < 20.0 and rv.randf() < 0.5:
+		_venue(job, "graveyard", "vicar", 1, 0.7)
+		job.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)
+	return job
+
+
+## Turn a job into a venue's: its persona, its lawn size, and its pay scaled.
+func _venue(job: Dictionary, venue: String, persona_key: String, size_i: int, pay_scale: float) -> void:
+	var p: Dictionary = PERSONAS[persona_key]
+	var size: Vector2i = LAWN_SIZES[size_i]
+	var area := float(size.x * size.y) / (1280.0 * 720.0)
+	job.venue = venue
+	job.persona = persona_key
+	job.brief = p.brief
+	job.size = size
+	job.target = p.target
+	job.patience = 300.0 * area * p.patience
+	job.pay = int(round((70.0 + 50.0 * size_i) * area * (1.0 + (p.target - 0.8)) * pay_scale / 5.0) * 5)
 
 
 ## The small things lying about a garden (Stone.KINDS). Its own draws, so the rest of

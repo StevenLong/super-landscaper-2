@@ -197,6 +197,9 @@ def main(only=None):
                              save("car", v.sheet([v.car(p) for p in v.CAR_PAINTS]), 2)],  # a column per paint
         "flowers": lambda: [save("flowers", a.flowers(), 6)],
         "house": lambda: [save("house", a.house(), 2), save("garage", a.garage(), 2)],
+        "venues": lambda: [save("mansion", a.mansion(), 2), save("church", a.church(), 2),
+                           save("vestry", a.vestry(), 2), save("gravestone", a.gravestone(), 6),
+                           save("coachhouse", a.garage(a.SLATE), 2)],
         "animals": lambda: [
             save("hedgehog", v.sheet([v.hedgehog(0), v.hedgehog(1)]), 4),
             save("squirrel", v.sheet([v.squirrel(0), v.squirrel(1)]), 4),
@@ -215,6 +218,7 @@ def main(only=None):
             save("hose", a.hose(), 6),
             save("ball", a.ball(), 6),
             save("rock", a.rock(), 4),
+            save("urn", a.urn(), 6),
             save("walker", v.sheet([v.walker(0), v.walker(1)]), 4),
             save("dog", v.sheet([v.dog(0), v.dog(1)]), 4),
         ],

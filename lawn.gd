@@ -91,6 +91,14 @@ func exclude_ellipse(center: Vector2, rx: float, ry: float) -> void:
 		return (d.x * d.x) / (rx * rx) + (d.y * d.y) / (ry * ry) <= 1.0)
 
 
+## Remove the ring between two ellipses (a loop drive round a lawn island).
+func exclude_ring(center: Vector2, outer: Vector2, inner: Vector2) -> void:
+	_exclude_where(Rect2(center - outer, outer * 2.0), func(p: Vector2) -> bool:
+		var o := (p - center) / outer
+		var i := (p - center) / inner
+		return o.length_squared() <= 1.0 and i.length_squared() > 1.0)
+
+
 func _exclude_where(bounds: Rect2, inside: Callable) -> void:
 	var w := _img.get_width()
 	var h := _img.get_height()

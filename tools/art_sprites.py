@@ -113,21 +113,24 @@ GARAGE_BASE = 80 + GARAGE_ROOF + 4  # the same for the garage art (wall, roof, r
 WINDOWS = (40, 120, 290, 370)  # window x, 30 wide; main.gd WINDOWS matches
 
 
-def roof(c, x, y0, w, h, rng):
+SLATE = [hexc(h) for h in ("1a1c24", "2a2e3a", "3a4050", "4c5466", "667088")]
+
+
+def roof(c, x, y0, w, h, rng, tiles=ROOF):
     """A tiled roof slope from y0 (ridge) down h rows to the gutter, seen 3/4."""
     for y in range(y0, y0 + h):
         row = (y - y0) // 7
         for x_ in range(x, x + w):
-            col = ROOF[2] if (y - y0) < h * 0.35 else ROOF[3]
+            col = tiles[2] if (y - y0) < h * 0.35 else tiles[3]
             if (y - y0) % 7 == 6:
-                col = ROOF[1]
+                col = tiles[1]
             elif (x_ + row * 6) % 12 == 0:
-                col = ROOF[1]
+                col = tiles[1]
             elif rng.random() < 0.03:
-                col = ROOF[4]
+                col = tiles[4]
             c.px[y][x_] = col
-    c.rect(x, y0, w, 3, ROOF[0])                         # ridge tiles
-    c.rect(x, y0 + 1, w, 1, ROOF[1])
+    c.rect(x, y0, w, 3, tiles[0])                        # ridge tiles
+    c.rect(x, y0 + 1, w, 1, tiles[1])
     c.rect(x, y0 + h, w, 4, STONE[1])                    # gutter and fascia
     c.rect(x, y0 + h, w, 1, STONE[3])
 
@@ -214,13 +217,183 @@ def house():
     return c
 
 
-def garage():
+def chimney(c, cx, ridge):
+    """A 3/4 chimney stack standing through the slope just in front of the ridge."""
+    foot = ridge + 34
+    for y in range(foot - 30, foot + 6):
+        for x in range(cx + 24, cx + 30):
+            if y - (foot - 30) > (x - cx - 24) * 2:
+                c.px[y][x] = SLATE[1]
+    top = box34(c, cx, foot, 24, 8, 34, BRICK, BRICK[2:])
+    for y in range(foot - 32, foot, 4):
+        c.rect(cx + 1, y, 22, 1, BRICK[1])
+    c.rect(cx - 2, top - 2, 28, 4, STONE[3])
+    c.rect(cx - 2, top - 2, 28, 1, STONE[4])
+    for px_ in (cx + 4, cx + 14):
+        shaded_rect(c, px_, top - 9, 6, 8, BRICK[1:])
+        c.rect(px_ - 1, top - 10, 8, 2, BRICK[3])
+
+
+def terrace(c, W, B, r):
+    """Stone slabs along the front: the customer's patio."""
+    for y in range(B, B + 24):
+        for x in range(W):
+            edge = (y - B) % 12 == 0 or (x + (6 if ((y - B) // 12) % 2 else 0)) % 24 == 0
+            c.px[y][x] = STONE[1] if edge else (STONE[3] if r.random() > 0.08 else STONE[2])
+
+
+def urn_on(c, x, y):
+    """A stone urn with a plant in it, foot at (x, y)."""
+    shaded_rect(c, x - 5, y - 6, 10, 6, STONE[1:])
+    shaded_ellipse(c, x, y - 11, 6, 5, STONE[1:])
+    shaded_ellipse(c, x, y - 17, 7, 5, LEAF)
+
+
+MANSION_WINDOWS = (40, 120, 200, 400, 480, 560)  # house.gd VENUES matches
+
+
+def mansion():
+    """A country house, 640 wide: slate roof with two stacks, pale stone, six bays and a
+    columned portico. Same wall foot and ridge as the house, so house.gd treats it alike."""
+    W, B = 640, HOUSE_BASE
+    c = Canvas(W, B + 24)
+    r = random.Random(17)
+    wall_top = B - 158
+    ridge = wall_top - 154
+    roof(c, 0, ridge, W, 154, r, SLATE)
+    for cx in (110, 500):
+        chimney(c, cx, ridge)
+    for y in range(wall_top + 4, B):                     # pale ashlar with fine courses
+        for x in range(W):
+            c.px[y][x] = CREAM[4] if (y - wall_top) % 12 else CREAM[3]
+            if (y - wall_top) % 12 and (x + (12 if ((y - wall_top) // 12) % 2 else 0)) % 24 == 0:
+                c.px[y][x] = CREAM[3]
+    for x in (0, W - 12):                                # quoins at the corners
+        for y in range(wall_top + 4, B, 12):
+            c.rect(x, y, 12, 6, CREAM[2])
+    c.rect(0, B - 8, W, 8, STONE[2])                     # plinth
+    c.rect(0, wall_top + 4, W, 5, CREAM[2])              # cornice
+    for wx in MANSION_WINDOWS:
+        window(c, wx, B - 141, 36)
+        window(c, wx, B - 62, 36)
+    # The portico: a pediment on four columns, double doors behind.
+    px, pw = 270, 100
+    for y in range(22):                                  # pediment
+        half = pw // 2 + 6 - y * (pw // 2 + 6) // 22
+        c.rect(px + pw // 2 - half, B - 92 - y, half * 2, 1, CREAM[3] if y else CREAM[1])
+    c.rect(px - 6, B - 92, pw + 12, 6, CREAM[2])
+    shaded_rect(c, px + 30, B - 70, 40, 70, WOOD)        # doors
+    c.rect(px + 49, B - 70, 2, 70, WOOD[0])
+    c.rect(px + 38, B - 38, 3, 3, YELLOW[3])
+    c.rect(px + 59, B - 38, 3, 3, YELLOW[3])
+    for cx in (px + 2, px + 20, px + 72, px + 90):        # columns
+        shaded_rect(c, cx, B - 86, 8, 86, CREAM[1:])
+        c.rect(cx - 2, B - 88, 12, 3, CREAM[4])
+    c.rect(0, B - 1, W, 1, INK)
+    terrace(c, W, B, r)
+    for ux in (px - 22, px + pw + 22):
+        urn_on(c, ux, B - 1)
+    return c
+
+
+CHURCH_WINDOWS = (50, 130, 280, 360)  # house.gd VENUES matches
+
+
+def church():
+    """A village church, 440 wide: steep slate roof with a bell-cote on the ridge, grey
+    stone with buttresses, tall arched windows (their lower panes low enough to hit)."""
+    W, B = 440, HOUSE_BASE
+    c = Canvas(W, B + 24)
+    r = random.Random(29)
+    wall_top = B - 158
+    ridge = wall_top - 154
+    roof(c, 0, ridge, W, 154, r, SLATE)
+    # The bell-cote: a little gabled box on the ridge, the bell showing.
+    bx = 196
+    top = box34(c, bx, ridge + 50, 48, 10, 44, STONE[1:], STONE[2:])
+    c.rect(bx + 16, top + 14, 16, 18, INK)
+    shaded_ellipse(c, bx + 24, top + 24, 5, 6, YELLOW[1:])
+    for y in range(14):                                  # its little gable roof
+        c.rect(bx + 24 - (y + 1) * 2, top - 14 + y, (y + 1) * 4, 1, SLATE[3] if y else SLATE[4])
+    for y in range(wall_top + 4, B):                     # rubble stone
+        for x in range(W):
+            n = (x * 7 + y * 13 + (x // 9) * 5) % 23
+            c.px[y][x] = STONE[3] if n > 6 else (STONE[2] if n > 1 else STONE[1])
+    for bx_ in (0, 96, 318, W - 14):                    # buttresses
+        shaded_rect(c, bx_, wall_top + 40, 14, B - wall_top - 40, STONE[1:])
+    for wx in CHURCH_WINDOWS:                            # tall arched lancets
+        top_y = B - 150
+        c.rect(wx - 3, top_y, 36, 150 - 20, STONE[1])
+        c.rect(wx, top_y + 6, 30, 150 - 29, GLASS[2])
+        for y in range(8):
+            w = 30 - int(((8 - y) / 8) ** 0.5 * 26)
+            c.rect(wx + 15 - w // 2, top_y - 2 + y, w, 1, GLASS[3])
+        for y in range(top_y + 12, B - 24, 10):          # leading
+            c.rect(wx, y, 30, 1, STONE[1])
+        c.rect(wx + 14, top_y + 6, 2, 150 - 29, STONE[1])
+        c.rect(wx - 5, B - 22, 40, 4, STONE[4])          # sill
+    # The door: a pointed arch at the centre.
+    c.rect(190, B - 80, 60, 80, STONE[1])
+    shaded_rect(c, 196, B - 72, 48, 72, WOOD)
+    c.rect(219, B - 72, 2, 72, WOOD[0])
+    for y in range(10):
+        w = 48 - int(((10 - y) / 10) ** 0.6 * 44)
+        c.rect(220 - w // 2, B - 82 + y, w, 1, WOOD[2])
+    c.rect(214, B - 38, 3, 3, STEEL[3])
+    c.rect(0, B - 1, W, 1, INK)
+    terrace(c, W, B, r)
+    return c
+
+
+def vestry():
+    """The church's side building where the house has a garage: stone, a slate roof as
+    deep as the garage's, a plain door."""
+    W, B = 120, GARAGE_BASE
+    c = Canvas(W, B)
+    r = random.Random(31)
+    wall_top = B - 80
+    roof(c, 0, wall_top - GARAGE_ROOF, W, GARAGE_ROOF, r, SLATE)
+    for y in range(wall_top, B):
+        for x in range(W):
+            n = (x * 7 + y * 13 + (x // 9) * 5) % 23
+            c.px[y][x] = STONE[3] if n > 6 else (STONE[2] if n > 1 else STONE[1])
+    shaded_rect(c, 44, B - 56, 32, 56, WOOD)
+    c.rect(70, B - 30, 3, 3, STEEL[3])
+    c.rect(0, B - 1, W, 1, INK)
+    return c
+
+
+def gravestone():
+    """Two headstones, 16x22 each: a round-topped slab and a cross, standing in 3/4
+    (a lit front face, the slab's thickness showing on top)."""
+    c = Canvas(32, 22)
+    shaded_rect(c, 2, 6, 12, 15, STONE[1:])
+    shaded_ellipse(c, 8, 6, 6, 5, STONE[2:])
+    c.rect(5, 10, 6, 1, STONE[1])
+    c.rect(5, 13, 6, 1, STONE[1])
+    c.rect(1, 20, 14, 2, LEAF[1])
+    shaded_rect(c, 22, 3, 4, 18, STONE[1:])              # the cross
+    shaded_rect(c, 18, 7, 12, 4, STONE[1:])
+    c.rect(17, 20, 14, 2, LEAF[1])
+    c.outline(INK)
+    return c
+
+
+def urn():
+    """A stone garden urn on a plinth, planted: small, heavy, dear."""
+    c = Canvas(16, 22)
+    urn_on(c, 8, 21)
+    c.outline(INK)
+    return c
+
+
+def garage(tiles=ROOF):
     """One storey with an up-and-over door; its foot is GARAGE_BASE."""
     W, B = 120, GARAGE_BASE
     c = Canvas(W, B)
     r = random.Random(8)
     wall_top = B - 80
-    roof(c, 0, wall_top - GARAGE_ROOF, W, GARAGE_ROOF, r)  # deep enough to hold the car
+    roof(c, 0, wall_top - GARAGE_ROOF, W, GARAGE_ROOF, r, tiles)  # deep enough to hold the car
     facade(c, 0, wall_top + 4, W, 76)
     door = (12, B - 62, W - 24, 62)
     c.rect(door[0] - 3, door[1] - 3, door[2] + 6, door[3] + 3, CREAM[0])

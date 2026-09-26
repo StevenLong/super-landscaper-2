@@ -10,7 +10,6 @@ const HouseScript := preload("res://house.gd")
 const WalkerScript := preload("res://walker.gd")
 const RockScript := preload("res://rock.gd")
 
-const WINDOWS := [40, 120, 290, 370] ## x of each ground-floor window in the house art (30 wide)
 const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
@@ -126,8 +125,10 @@ func _build_layout() -> void:
 	var rv := RandomNumberGenerator.new() # later variety draws from its own, so layouts stay put
 	rv.seed = job.seed + 2
 
+	var venue: String = job.get("venue", "house")
 	_house = HouseScript.new()
 	_house.name = "House"
+	_house.venue = venue
 	_house.garage = 1 if fixed else [-1, 1][r.randi() % 2]
 	_house.gap = 0.0 if fixed else [0.0, 0.0, 80.0][rv.randi() % 3]
 	# Centre the house and garage together.
@@ -147,6 +148,7 @@ func _build_layout() -> void:
 	$Client.watch = mower
 	$Client.set_look(job.look)
 	_house.peek_tex = $Client._tex
+	customer.windows = _house.windows()
 
 	# The drive runs from the garage door to the road; its mouth crosses the pavement.
 	var drive: Control = $Driveway
@@ -159,7 +161,7 @@ func _build_layout() -> void:
 	# Parked along the kerb: the zone reaches back up the drive mouth to where you pull in.
 	$Truck/RefuelZone/Shape.position = Vector2(0, -80)
 	($Truck/RefuelZone/Shape.shape as RectangleShape2D).size = Vector2(180, 150)
-	if not fixed and rv.randf() < 0.5:
+	if not fixed and venue != "graveyard" and rv.randf() < 0.5:
 		_park_car(Vector2(drive.position.x + drive.size.x * 0.5, g.end.y + 72.0), rv)
 	mower.position = truck_spot()
 	mower.rotation = -PI / 2.0 # facing up the drive
@@ -173,6 +175,8 @@ func _build_layout() -> void:
 	beyond.build(size.x, size.y, BORDER, size.y + BORDER + FOOTPATH * 2 + ROAD, BORDER_UP, rb)
 
 	var taken: Array[Rect2] = [_house.footprint().grow(50), Rect2(drive.position, drive.size).grow(30)]
+	if venue == "mansion":
+		taken.append(_loop_drive(Vector2(_house.rect().get_center().x, _house.size.y + 120.0)))
 	var trees: Array = []
 	var beds: Array = []
 	var stones: Array = []
@@ -237,6 +241,8 @@ func _build_layout() -> void:
 			var pr := _place(rp, taken, Vector2(14, 14), size)
 			if pr.has_area():
 				add_stone(pr.get_center(), kind)
+		if venue == "graveyard":
+			_graves(rp, taken, size)
 		for i in job.get("rocks", 0):
 			var rr := _place(rp, taken, Vector2(30, 24), size)
 			if rr.has_area():
@@ -251,6 +257,67 @@ func _build_layout() -> void:
 
 
 ## The customer's car, parked up the drive nose-in or reversed in: solid, and dents.
+func _add_bed(box: Rect2, shape: String, spacing := 16.0) -> Node2D:
+	var b: Node2D = BedScript.new()
+	b.position = box.position
+	b.size = box.size
+	b.shape = shape
+	b.spacing = spacing
+	_add_area(b)
+	b.trampled.connect(_on_trampled)
+	$Scenery.add_child(b)
+	b.exclude_from(lawn)
+	return b
+
+
+## The mansion's loop drive: a gravel ring in front of the house round an island with an
+## oval bed of flowers in it. Returns the space it takes.
+func _loop_drive(at: Vector2) -> Rect2:
+	var outer := Vector2(180, 92)
+	var inner := Vector2(118, 52)
+	var ring := Node2D.new()
+	ring.name = "LoopDrive"
+	ring.z_index = -1
+	ring.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	ring.draw.connect(func() -> void:
+		var tex := preload("res://art/gravel.png")
+		for i in 40: # quads round the ring (draw_colored_polygon takes no holes)
+			var a0 := TAU * i / 40.0
+			var a1 := TAU * (i + 1) / 40.0
+			var q := PackedVector2Array([at + Vector2(cos(a0), sin(a0)) * outer, at + Vector2(cos(a1), sin(a1)) * outer,
+				at + Vector2(cos(a1), sin(a1)) * inner, at + Vector2(cos(a0), sin(a0)) * inner])
+			var uv := PackedVector2Array()
+			for p in q:
+				uv.append(p / tex.get_size())
+			ring.draw_colored_polygon(q, GRAVEL, uv, tex))
+	$Scenery.add_child(ring)
+	lawn.exclude_ring(at, outer, inner)
+	_add_bed(Rect2(at - inner + Vector2(26, 16), (inner - Vector2(26, 16)) * 2.0), "oval")
+	return Rect2(at - outer, outer * 2.0).grow(10)
+
+
+## The churchyard: rows of headstones, solid, some with flowers laid in front, wherever
+## nothing else stands.
+func _graves(rp: RandomNumberGenerator, taken: Array[Rect2], size: Vector2i) -> void:
+	for y in range(int(_house.size.y) + 90, size.y - 70, 88):
+		for x in range(70, size.x - 60, 64):
+			var at := Vector2(x + rp.randf_range(-6, 6), y + rp.randf_range(-4, 4))
+			var spot := Rect2(at - Vector2(14, 24), Vector2(28, 44))
+			if rp.randf() < 0.25 or not taken.all(func(t: Rect2) -> bool: return not t.intersects(spot.grow(6))):
+				continue
+			var g := RockScript.new()
+			g.art = "gravestone"
+			g.frames = 2
+			g.frame = rp.randi() % 2
+			g.radius = 7.0
+			g.position = at
+			$Scenery.add_child(g)
+			lawn.exclude_circle(at, g.radius)
+			if rp.randf() < 0.5:
+				_add_bed(Rect2(at + Vector2(-12, 8), Vector2(24, 12)), "rect", 8.0)
+			taken.append(spot)
+
+
 func _park_car(at: Vector2, rv: RandomNumberGenerator) -> void:
 	_car = StaticBody2D.new()
 	_car.name = "Car"
@@ -1019,7 +1086,10 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 		return
 	s.queue_free()
 	var k: Dictionary = Stone.KINDS[s.kind]
-	_count(s.kind + "s_mowed")
+	_count(s.kind + "s_mowed", k.get("bill", 0.0))
+	if k.has("bill"):
+		bills += k.bill
+		pop_text("-$%d" % k.bill, s.position, Color("f07060"))
 	m.damage(k.get("damage", 0.0))
 	match k.mowed:
 		"fling":
@@ -1088,10 +1158,10 @@ func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float, kin
 	return f
 
 
-## The x of the house window at p (see WINDOWS), or -1.
+## The x of the house window at p (house.gd windows()), or -1.
 func _window_at(p: Vector2) -> int:
 	var h: Rect2 = _house.rect()
-	for wx: int in WINDOWS:
+	for wx: int in _house.windows():
 		if p.x - h.position.x >= wx and p.x - h.position.x <= wx + 30 and p.y > h.position.y + _house.WALL_H - 46.0:
 			return wx
 	return -1
@@ -1142,12 +1212,13 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_react()
 			_drop_bounced(f)
 		"window":
+			var bill := WINDOW_BILL * (3.0 if _house.venue == "mansion" else 1.0) # old glass, dear glass
 			Sfx.play("glass", 0.0)
 			_house.smash(_window_at(p))
-			_count("windows", WINDOW_BILL)
+			_count("windows", bill)
 			_mischief(5.0)
-			bills += WINDOW_BILL
-			pop_text("-$%d" % WINDOW_BILL, p, Color("f07060"))
+			bills += bill
+			pop_text("-$%d" % bill, p, Color("f07060"))
 			shake(4.0)
 			tier = 1
 			if customer.where == "window" and customer.window_x == _window_at(p) and not customer.knocked_out:

@@ -23,7 +23,8 @@ var last_line := ""
 var paid := false ## once paid they stop watching the clock
 
 var where := "patio" ## "patio" watching, "inside" (sees nothing), or at a "window" (sees it all)
-var window_x := -1 ## which window (main.gd WINDOWS) while at one
+var window_x := -1 ## which window (house.gd windows()) while at one
+var windows: Array = [40, 120, 290, 370] ## main sets the building's
 var nags := 0 ## the first comes as the tip goes, with a sigh
 var _nag_at := 0.0
 var _glances := 0
@@ -143,7 +144,7 @@ func _move() -> bool:
 		return false
 	if going_in and randf() < 0.5:
 		where = "window" if where == "inside" else "inside"
-		window_x = [40, 120, 290, 370][randi() % 4] if where == "window" else -1 # main.gd WINDOWS
+		window_x = windows[randi() % windows.size()] if where == "window" else -1
 		_stint = randf_range(8.0, 15.0)
 		return where == "window" and _look_around()
 	return come_out()
