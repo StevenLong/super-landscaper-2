@@ -155,11 +155,15 @@ const TALLY := {
 	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
 	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",
 }
+## The counts it's good to beat: a record in one of these is a personal best. A record
+## in anything else is a personal worst.
+const GOOD_TALLY := ["dog_returned", "fetches", "stones_picked", "stones_binned", "cans"]
 ## Button prompts follow what you last touched: keyboard keys, or an Xbox-style pad.
 const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "X"], "throw": ["Q", "B"], "look": ["Tab", "Y"], "pause": ["Esc", "Start"]}
 var pad := false
 
 var best_score := 0
+var records := {} ## the most of each TALLY key in any one job, ever (saved)
 var run_over_reason := "" ## "" while running; "bankrupt" or "won" once it's over
 var heat := 0.0 ## the wanted level: only crimes add it (HEAT), a week paid on time cools it one
 
@@ -186,6 +190,7 @@ func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(save_path) == OK:
 		best_score = cfg.get_value("best", "score", 0)
+		records = cfg.get_value("best", "records", {})
 
 
 func _input(event: InputEvent) -> void:
@@ -371,13 +376,15 @@ func job() -> Dictionary:
 
 
 ## The non-zero counts as "Name 3" (with "-$40" where it cost money), in TALLY order.
-func tally_lines(counts: Dictionary, costs: Dictionary) -> Array[String]:
+func tally_lines(counts: Dictionary, costs: Dictionary, beaten: Array = []) -> Array[String]:
 	var out: Array[String] = []
 	for k: String in TALLY:
 		if counts.get(k, 0) > 0:
 			var line := "%s %d" % [TALLY[k], counts[k]]
 			if costs.get(k, 0.0) > 0.0:
 				line += " (-$%d)" % roundi(costs[k])
+			if k in beaten:
+				line += " PERSONAL %s!" % ("BEST" if k in GOOD_TALLY else "WORST")
 			out.append(line)
 	return out
 
@@ -401,11 +408,17 @@ func record_result(result: Dictionary) -> void:
 	if result.get("cells", false):
 		jobs_done += 1 # a night in the cells: the next job slot is gone
 	result.rep_after = reputation
-	if total_earned > best_score:
-		best_score = total_earned
-		var cfg := ConfigFile.new()
-		cfg.set_value("best", "score", best_score)
-		cfg.save(save_path)
+	# Counts past your old record for a job (not firsts: everything's a first once).
+	result.records = []
+	for k: String in result.get("tally", {}):
+		if records.get(k, 0) > 0 and result.tally[k] > records[k]:
+			result.records.append(k)
+		records[k] = maxi(records.get(k, 0), result.tally[k])
+	best_score = maxi(best_score, total_earned)
+	var cfg := ConfigFile.new()
+	cfg.set_value("best", "score", best_score)
+	cfg.set_value("best", "records", records)
+	cfg.save(save_path)
 
 
 ## Seconds from the police being called to them arriving: your record shortens it.

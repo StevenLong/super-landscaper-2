@@ -121,16 +121,12 @@ func _rundown(r: Dictionary) -> Control:
 	if r.get("cells", false):
 		rep += "   A night in the cells: next job lost"
 	info.add_child(UI.label(rep, 20, UI.GOOD if d >= 0.0 and r.outcome == "paid" else UI.BAD))
-	var tally := Game.tally_lines(r.get("tally", {}), r.get("tally_cost", {}))
-	if not tally.is_empty():
-		var shown := tally.slice(0, 5) # the rest wait for the run's end, so the panel stays short
-		if tally.size() > 5:
-			shown.append("and %d more" % (tally.size() - 5))
-		var t := UI.label("Also counted: " + ",  ".join(shown), 18, UI.GOLD)
-		info.add_child(t)
 	for l: Label in info.get_children(): # long lines wrap, not shove the shop off the screen
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size.x = 560
+	var tally := Game.tally_lines(r.get("tally", {}), r.get("tally_cost", {}), r.get("records", []))
+	if not tally.is_empty(): # everything the job counted, going by like a news ticker
+		info.add_child(Ticker.new("   *   ".join(tally), 18, UI.GOLD, 560))
 	return UI.panel(row)
 
 

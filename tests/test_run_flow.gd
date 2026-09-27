@@ -55,8 +55,7 @@ func _process(_delta: float) -> bool:
 				func(l: Label) -> bool: return l.text.begins_with("Last job: Job done"))
 			assert(rundown.size() == 1, "the board shows the last job's rundown")
 			assert(game.last_result.has("rep_before") and game.last_result.has("rep_after"), "the rundown knows the rep change")
-			var tally := current_scene.find_children("*", "Label", true, false).filter(
-				func(l: Label) -> bool: return l.text.begins_with("Also counted:"))
+			var tally := current_scene.find_children("*", "Ticker", true, false)
 			assert(tally.size() == 1 and tally[0].text.contains("Windows put through 1 (-$40)") and tally[0].text.contains("sent back"),
 				"the rundown lists what the job counted, with what it cost")
 			assert(not tally[0].text.contains("Hedgehogs"), "and nothing that didn't happen")
