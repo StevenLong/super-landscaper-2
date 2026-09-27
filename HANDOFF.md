@@ -6,6 +6,56 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 10 (2026-09-27): grills on 88 and 91, plot shapes, the manor, churchyard, line of sight
+- No checks answered: all 16 S9 checks roll on (S9-BODY and S9-BOARD reworded for this
+  session's rule changes). 12 new, 28 owed.
+- Grill on 88 (the dev chose each; design doc Levels and The Customer): a layout per venue
+  (golf course to its own grill); a building off the back fence fades while you're behind
+  it, the churchyard walls that ground off instead; suburban shapes by neighbourhood
+  (terraces, semis set forward, an L; corner plot, wedge and bent drive parked); the manor
+  from the dev's references with the truck at the tradesmen's entrance, only the formal
+  gardens mowable, a ha-ha on the park sides, railings by the gates, parterre as beds,
+  topiary breakable, a fixed skeleton with details per job, loop or forecourt per job;
+  the churchyard's church to one side; a playground next to the terraces.
+- The dev reworked seen versus evidence mid-grill (their idea, better than my proposal):
+  during the job they only know what they see happen; line of sight (anything taller than
+  a person blocks it; a window is a cone with its ground faintly lit; upstairs windows
+  seeing over things parked); afterwards ownership decides what they notice, bodies in
+  view count, on a new post-job summary screen that moves reputation only; carried into
+  view counts at once, even after payment. Balancing evidence-hiding waits for play (first
+  lever: squashing costs a little mower damage). This reverses part of an older rejection
+  ("sight lines and neighbours as witnesses"): neighbours stay rejected.
+- Grill on 91 (design doc Mowers and Equipment): packing the truck as inventory Tetris
+  (cab: push mower free; bed; a trailer a ride-on fills, or 2 to 4 robot mowers; the
+  trailer bought, bundled with a ride-on), a packing screen before every job, swap
+  anywhere with the unused mower recalled to the truck, "Pack up and leave" brings it all
+  home unless the police were called; the robot mower (bounces, stops at bed edges, flings
+  stones as yours); push: hold to sprint; petrol: a timed ripcord, stalls on a knock below
+  about 40%; ride-on: four instant gears. "Best at a plot" is emergent, never a penalty.
+- Built, all unplayed: 101 (shapes), 55 (playground), 102 (the manor, new art: front,
+  coach house, topiary, railings, piers), 103 (churchyard, new art: walls, lychgate),
+  104 and 105 (line of sight, the cone, the greyed portrait, the aftermath list, the
+  summary screen; the board's rundown moved onto it). Fixed on the way: critters came out
+  of a wall a building stands against; mulched bodies counted as bodies for 12 s.
+- Calls I made (vetoable): terraces under reputation 40, semis 40 to 70, the L from 70, a
+  rectangle 30% of the time; terrace 560x1600 (about a small lawn's area), house 64 px off
+  the road, no car; the manor 1760x1340 (grass measured within 2% of the old mansion's),
+  topiary $60 a chunk; the window cone 100 degrees; a noticed item's reputation is its mood
+  hit over 5, "Every blade cut" +2; bodies they already saw aren't counted again.
+- Verified: run_all green (exit 0; parse, smoke, 27 tests), new test_shapes, extended
+  venues, seen, stunned, run flow, each checked failing without its fix where it guards a
+  bug. Every visual change screenshotted and looked at. Not measured: terrace mowing time
+  against patience (sim_balance only runs the default lawn, NOTES 112).
+- Promoted to the design doc this session (vetoable): everything above under the two
+  grills; also "a body is found after you've gone" replacing "when they come out".
+
+OWED CHECKS: 28, in CHECKS.txt (6 loads, about 60 minutes).
+
+NEXT:
+1. Play the checks; triage what they turn up.
+2. Build 108, 109, 110 (each mower's feel), then 106 and 107 (packing, the robot mower).
+3. /grill on 96 (subquests), then 94 (strimmer) with fire, and 100 (weeds).
+
 ## Session 9 (2026-09-27): S8 checks cleared, triage 82 to 100, fixes, throw arcs, talking
 - S8 checks: all 21 passed. Comments became NOTES 82 to 89; the dev's idea dump 90 to 100.
   The dev answered the triage questions: grit for stones the blades grind up, a car bump
@@ -258,26 +308,3 @@ NEXT:
    layout (truck on the street or in the drive, a drive and garage). Needs a few layout calls.
 3. A `/grill` session on the queued design items: 21, 22, 25, 26, 27, 29, 38, 40.
 4. Still open from session 1: sign off or change the rest of the MY CALLS list.
-
-## Session 2 (2026-09-24): checks file, merge, garden edges, throwing
-- Your first-play notes: critters walked over the house; the world just ended at the edge;
-  critters should come from hedges/trees/over fences; throwing a carried stone. All done.
-- CHECKS.txt now opens in Notepad at session start while any `>` answer is blank (ported
-  from cube). It is the ledger itself, not a copy of this file.
-- `long-horizon` fast-forwarded into `main` (`0911e57`); work continues on `main`. The
-  branch is still on GitHub; delete it whenever.
-- Built: hedge/fence borders outside the lawn with a road gap by the drive; hedgehogs from
-  hedges, squirrels from trees or over fences, none behind the house; critters steer round
-  the house, truck, trees and ponds; on foot you can't leave the garden; Q throws a stone.
-- Verified: run_all green (11 checks; new edges test, and it fails if critter avoidance is
-  switched off); screenshot of the borders. Not played.
-- Fixed in passing: tools/__pycache__ had been committed; now ignored.
-- Fixed the five editor warnings you pasted (two integer divisions, three shadowed names);
-  started docs/TRIBAL.md with the warning traps (headless can't see warnings).
-
-OWED CHECKS: CHECKS.txt (29 checks, six loads; load 6 is new).
-
-NEXT:
-1. Play CHECKS.txt (loads 1 to 6) and answer on the `>` lines.
-2. Sign off or change the MY CALLS list in session 1.
-3. Balance once felt (push mower first).

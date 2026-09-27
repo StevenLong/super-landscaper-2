@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (16 checks, 3 loads, about 30 minutes)
+PLAY CHECKS OWED  (28 checks, 6 loads, about 60 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -46,8 +46,9 @@ read as dead, and different from knocked out?
 
 S9-BODY
 Pick a body up. Lob it over the fence, or put it in the truck, or mow it (mulch, no
-splat). Kill one while the customer is inside and hide it: they come out and say nothing.
-Leave one lying there: they come out and notice it.
+splat). Kill one while the customer is inside and hide it: nothing is ever said. Leave
+one lying in view: they come out and still say nothing, but after you leave the summary
+screen lists "A dead hedgehog on the lawn".
 >
 
 S9-GRIT
@@ -73,8 +74,8 @@ they're indoors: they come out to the door.
 >
 
 S9-BOARD
-After a messy job: the header is on two rows and nothing runs off the right side. The
-counts scroll along as a ticker. Do more of something than your previous record (windows,
+After a messy job: the board's header is on two rows and nothing runs off the right side.
+On the summary screen before it, the counts scroll along as a ticker. Do more of something than your previous record (windows,
 flowers) and it says PERSONAL WORST (or BEST for dogs walked home, balls fetched).
 >
 
@@ -100,4 +101,85 @@ Walk under a tree so its canopy fades: the trunk forks into branches, no flat cu
 S9-PAD
 (If a pad is handy.) On the mower: right trigger drives, left trigger reverses, the stick
 steers.
+>
+
+
+================================================================================
+LOAD 4 of 6: THE NEW STREETS      (about 12 min, use [2] and [4] to move reputation)
+================================================================================
+
+S10-TERRACE
+Reputation under 40 ([4] a few times): a "Long garden, terraced house." ad. The house is
+at the road end with a gravel passage down its side, a long thin garden behind, and the
+customer on a patio out the back. Terraces either side, sometimes a council playground.
+Mow it: do the long garden and the walk back for fuel feel fair against their patience?
+>
+
+S10-SEMI
+Reputation 40 to 70: the house stands forward with its garage and drive, a back garden
+behind, the patio out back, the neighbours set forward too. Stand just behind the roof's
+ridge: the house fades.
+>
+
+S10-L
+Reputation 70 or more ([2] a few times): next door's back corner is cut into the garden,
+fenced on two sides, by the house. You can't get in. A stone thrown into it is gone.
+>
+
+
+================================================================================
+LOAD 5 of 6: THE MANOR AND THE CHURCHYARD      (about 12 min)
+================================================================================
+
+S10-MANOR
+Reputation 75 or more, a "Country estate" ad. First look: does it read as a stately
+home, not a McMansion? Railings and shut gates on the road, the approach up the middle,
+the truck at a side gate by the coach house, a loop drive or forecourt, box-edged beds,
+topiary in pairs, a back lawn, parkland with no neighbours.
+>
+
+S10-TOPIARY
+Knock into a topiary: a chunk comes out, -$60, "My TOPIARY!". Knock it again: nothing more.
+>
+
+S10-HAHA
+Throw a stone low at a side or back edge of the manor: it drops into the ditch and is
+gone, no bounce. Low at the road railings: it bounces back.
+>
+
+S10-CHURCH
+Reputation under 20, a churchyard: the church to one side, walled off behind, a lychgate
+over the path with the truck at it, headstones leaning more towards the edges.
+>
+
+
+================================================================================
+LOAD 6 of 6: WHO SEES WHAT      (about 12 min, any garden)
+================================================================================
+
+S10-SIGHT
+With the customer on the patio, go behind the house, the garage, the car or the truck:
+their portrait greys. Step back into view: it's normal again.
+>
+
+S10-CONE
+When they're at a window: a faint lit wedge on the ground in front of it. Outside the
+wedge their portrait greys. Is the wedge easy to see, without being loud?
+>
+
+S10-UNSEEN
+While their portrait is grey, flatten some flowers and mow a gnome: no reaction. They
+step outside: still nothing. Finish and leave: a summary screen lists "After you left,
+the customer noticed:" with the gnome and the flowers, a reputation for each and a total.
+>
+
+S10-CARRY
+Kill a critter while unseen, pick up the body and walk into their sight: they react at
+once.
+>
+
+S10-SUMMARY
+After any job, the summary screen: the job's card, the ticker, the noticed list (if
+anything), then "Back to the board". Does the card's "Reputation" line read as at odds with
+the list's "all told" total?
 >

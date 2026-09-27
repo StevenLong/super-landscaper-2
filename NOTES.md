@@ -13,12 +13,10 @@ BLOCKS = spoils the next playtest.
 47. [BUG, small] Board: pad (and arrows) left/right step up and down the mower list
    (S4-PAD-MENUS). Home: `board.gd` `_mower_row`. Waits on the walkable hub, which may
    replace this menu.
-55. [FEATURE, small] A council playground as a neighbour type (`beyond.gd`), next to the
-   terraces only (101). The empty lot's earth went curved in S8.
 62b. [FEATURE, small] Leftover thoughts from ramming the car (not decided): a direct hit
    shoves the car a little; dents show on the sprite.
-75b. [FEATURE, large] Venues, what's left after S8's mansion and churchyard (their relayout is
-   102 and 103): the golf course (its own grill: 18 holes as separate jobs?); community service
+75b. [FEATURE, large] Venues, what's left after the manor and churchyard: the golf course (its
+   own grill: 18 holes as separate jobs?); community service
    (a tier 2 arrest's lost slot becomes a forced unpaid job, needs a litter-pick or prison
    venue); the week-4 finale (open in the design doc).
 79b. [FEATURE, moderate] Objects, later batches (design doc Mowers and Equipment): medium
@@ -40,39 +38,15 @@ BLOCKS = spoils the next playtest.
 100. [DESIGN, moderate] Weeds: the mower only half kills one, pulling it by hand pleases the
    customer. Maybe overgrown grass that takes more cutting (the dev is unsure of that one).
 
-### Grilled 2026-09-27 (88: plot shapes, the manor, the churchyard, line of sight)
+### Session 10 loose ends
 
-Decided in the design doc (Levels: plot shapes; The Customer: seen versus evidence).
-Tech: plot outlines carve the grass grid with `lawn.gd` `_exclude_where` plus
-`Geometry2D.is_point_in_polygon`; walls are `CollisionPolygon2D`; `lawn.keep_in` only
-knows rectangles and needs the plot outline.
-
-101. [FEATURE, large] Suburban plot shapes by neighbourhood: terraces (long and narrow) at
-   the bottom band, semis with the house set forward (back garden) in the middle, the L at
-   the top, rectangles mixed in. A building off the back fence fades while you're behind
-   it (reuse the tree canopy fade). Homes: `main.gd` `_build_layout`, `_build_borders`,
-   `game.gd` `make_job`. Sizes are mine to fit per shape (long-and-narrow at 1920 wide
-   makes no sense).
-102. [FEATURE, large] The manor replaces the mansion: railings and gates, a central gravel
-   approach, loop drive or forecourt (per job), parterre as beds, breakable topiary, back
-   lawn, tradesmen's entrance for the truck, parkland past a ha-ha. New art: the manor front
-   (wide, symmetrical), ha-ha, railings and gates, topiary. Closes 75b's "loop drive
-   doesn't join the road".
-103. [FEATURE, moderate] The churchyard: church mid-plot and to one side, a wall behind it,
-   a lychgate and a path to the porch, headstones in rows either side.
-104. [FEATURE, moderate] Line of sight: `customer.sees()` becomes `sees(point)`, checked where
-   the thing happened; blocked by anything taller than a person (the 80b heights), via
-   `intersect_ray`. A window is a cone out from that window, with a faint highlight on the
-   ground it sees. Highlight: Godot's `PointLight2D` plus `LightOccluder2D` may do it free
-   (unverified: 2D shadows under the Compatibility renderer); else a cone polygon with
-   the buildings clipped out (`Geometry2D.clip_polygons`). Brought into view counts at
-   once, even after payment.
-105. [FEATURE, moderate] The post-job summary screen, "After you left, the customer
-   noticed:", replacing the small card (a new screen, space was the problem). Aftermath
-   by ownership (their things, their dog injured or missing, bodies in view), one list
-   with a plus or minus per entry and the total, reputation only. Replaces `customer.gd`
-   `come_out`'s replay of everything unseen. Lands with or after 104. Future dog deaths
-   (the mower, stoned and thrown over the fence) must leave evidence; a mulched dog always does.
+111. [VISUAL, small] The summary screen shows "Reputation -3" on the job's card (your actual,
+   lagged change) above "-9 all told" on the noticed list (what it adds to the trend): true,
+   but may read as a contradiction (S10-SUMMARY asks). FIX if it grates: say "trend" on the
+   list, or show both on one line. Home: `summary.gd`.
+112. [FEATURE, small] `tests/sim_balance.gd` only mows the default lawn: run it per plot shape
+   and venue (terrace, semi, L, manor, churchyard) for each mower, so "which mower is best
+   where" is measured, not hoped (the 91 grill's retune rule), and terrace patience is checked.
 
 ### Grilled 2026-09-27 (91: packing the truck, robot mowers, how each mower plays)
 
