@@ -10,17 +10,15 @@ BLOCKS = spoils the next playtest.
 
 ### Build (no design call needed)
 
-46. [FEATURE, small] Layout variety, what's left: the drive's shape (a bend or a wider
-   mouth needs non-rectangle drives).
 47. [BUG, small] Board: pad (and arrows) left/right step up and down the mower list
    (S4-PAD-MENUS). Home: `board.gd` `_mower_row`. Waits on the walkable hub, which may
    replace this menu.
-55. [FEATURE, small] A park or playground as a neighbour type (`beyond.gd`). The empty lot's
-   earth went curved in S8.
+55. [FEATURE, small] A council playground as a neighbour type (`beyond.gd`), next to the
+   terraces only (101). The empty lot's earth went curved in S8.
 62b. [FEATURE, small] Leftover thoughts from ramming the car (not decided): a direct hit
    shoves the car a little; dents show on the sprite.
-75b. [FEATURE, large] Venues, what's left after S8's mansion and churchyard: the loop drive
-   doesn't join the road yet (`main.gd` `_loop_drive`); the golf course; community service
+75b. [FEATURE, large] Venues, what's left after S8's mansion and churchyard (their relayout is
+   102 and 103): the golf course (its own grill: 18 holes as separate jobs?); community service
    (a tier 2 arrest's lost slot becomes a forced unpaid job, needs a litter-pick or prison
    venue); the week-4 finale (open in the design doc).
 79b. [FEATURE, moderate] Objects, later batches (design doc Mowers and Equipment): medium
@@ -30,15 +28,6 @@ BLOCKS = spoils the next playtest.
 
 ### Notes 2026-09-27 (S8 check fallout, and an idea dump; what's left after session 9)
 
-88. [DESIGN, large] Every venue is still a rectangle with a building top-middle, so the
-   ladder feels samey (a playtester said the same). The mansion reads as a McMansion: the
-   dev wants a stately manor (reference images shared in session 9: a long straight
-   approach down the middle through gates, lawn either side, gravel forecourt or loop in
-   front of a wide symmetrical front, formal parterre beds and clipped topiary, estate
-   parkland and woods around, no neighbouring plots, no picket fence or garage-and-drive).
-   Ideas: non-rectangular plots, buildings not at the back, the golf course as 18 separate
-   holes (a job each), mini golf (see 21b). Needs a grill; supersedes 46's drive shapes
-   and part of 75b.
 90. [PARKED since 2026-09-27] Character and company creation: pick the character's look,
    name the company, design a logo. QUESTION when unparked: where does it show (truck
    livery, board header, the ads)?
@@ -56,9 +45,42 @@ BLOCKS = spoils the next playtest.
 100. [DESIGN, moderate] Weeds: the mower only half kills one, pulling it by hand pleases the
    customer. Maybe overgrown grass that takes more cutting (the dev is unsure of that one).
 
-PROPOSED ORDER: play the S9 checks; a grill on 88 (venue shapes, the manor) before 75b or
-46; then a grill on 91 and 96. Rationale: 88 decides what 46, 55 and 75b even are, and
-it's the playtesters' main complaint.
+### Grilled 2026-09-27 (88: plot shapes, the manor, the churchyard, line of sight)
+
+Decided in the design doc (Levels: plot shapes; The Customer: seen versus evidence).
+Tech: plot outlines carve the grass grid with `lawn.gd` `_exclude_where` plus
+`Geometry2D.is_point_in_polygon`; walls are `CollisionPolygon2D`; `lawn.keep_in` only
+knows rectangles and needs the plot outline.
+
+101. [FEATURE, large] Suburban plot shapes by neighbourhood: terraces (long and narrow) at
+   the bottom band, semis with the house set forward (back garden) in the middle, the L at
+   the top, rectangles mixed in. A building off the back fence fades while you're behind
+   it (reuse the tree canopy fade). Homes: `main.gd` `_build_layout`, `_build_borders`,
+   `game.gd` `make_job`. Sizes are mine to fit per shape (long-and-narrow at 1920 wide
+   makes no sense).
+102. [FEATURE, large] The manor replaces the mansion: railings and gates, a central gravel
+   approach, loop drive or forecourt (per job), parterre as beds, breakable topiary, back
+   lawn, tradesmen's entrance for the truck, parkland past a ha-ha. New art: the manor front
+   (wide, symmetrical), ha-ha, railings and gates, topiary. Closes 75b's "loop drive
+   doesn't join the road".
+103. [FEATURE, moderate] The churchyard: church mid-plot and to one side, a wall behind it,
+   a lychgate and a path to the porch, headstones in rows either side.
+104. [FEATURE, moderate] Line of sight: `customer.sees()` becomes `sees(point)`, checked where
+   the thing happened; blocked by anything taller than a person (the 80b heights), via
+   `intersect_ray`. A window is a cone out from that window, with a faint highlight on the
+   ground it sees. Highlight: Godot's `PointLight2D` plus `LightOccluder2D` may do it free
+   (unverified: 2D shadows under the Compatibility renderer); else a cone polygon with
+   the buildings clipped out (`Geometry2D.clip_polygons`). Brought into view counts at
+   once, even after payment.
+105. [FEATURE, moderate] The post-job summary screen, "After you left, the customer
+   noticed:", replacing the small card (a new screen, space was the problem). Aftermath
+   by ownership (their things, their dog injured or missing, bodies in view), one list
+   with a plus or minus per entry and the total, reputation only. Replaces `customer.gd`
+   `come_out`'s replay of everything unseen. Lands with or after 104. Future dog deaths
+   (the mower, stoned and thrown over the fence) must leave evidence; a mulched dog always does.
+
+PROPOSED ORDER: play the S9 checks; 101, 102, 103 (the playtest complaint); then 104 and
+105 together (the witness rework); then a grill on 91 and 96.
 
 ### Parked
 
