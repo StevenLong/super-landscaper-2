@@ -24,6 +24,9 @@ func build(w: float, h: float, border: float, far: float, up: float, r: RandomNu
 	_r = r
 	_house_y = house_y
 	for side in [-1, 1]:
+		if shape == "park": # the manor's estate: parkland past the ha-ha, no neighbours
+			_park(Rect2(-border - PLOT * 2.0 if side < 0 else w + border, 0, PLOT * 2.0, h))
+			continue
 		if shape == "terrace":
 			var park := r.randf() < 0.35 # the council playground at the end of the row
 			for i in 3:
@@ -46,8 +49,12 @@ func build(w: float, h: float, border: float, far: float, up: float, r: RandomNu
 	while x < w + PLOT + 100.0:
 		_tree(Vector2(x + r.randf_range(-15, 15), r.randf_range(-75, -50)), [42.0, 50.0][r.randi() % 2])
 		x += r.randf_range(60.0, 95.0)
-	# Across the road: their front hedges, lawns, and the houses beyond.
+	# Across the road: their front hedges, lawns, and the houses beyond (fields, by the manor).
 	x = -PLOT - 280.0
+	if shape == "park":
+		_strip(preload("res://art/hedge_h.png"), Rect2(x, far, w + PLOT * 2.0 + 280.0, 44), 0)
+		_park(Rect2(x, far + 44, w + PLOT * 2.0 + 280.0, 420))
+		return
 	while x < w + PLOT:
 		_strip(preload("res://art/hedge_h.png"), Rect2(x, far, 700, 44), 0)
 		_ground(preload("res://art/gravel.png"), Rect2(x + 700, far, 60, 150), Color(1.0, 0.88, 0.68))
@@ -178,6 +185,13 @@ func corner(box: Rect2, tint: Color) -> void:
 	_ground(preload("res://art/grass_light.png"), box, tint)
 	if box.size.x > 140.0 and _r.randf() < 0.7:
 		_tree(Vector2(box.get_center().x + _r.randf_range(-30, 30), box.position.y + box.size.y * 0.5), 42.0)
+
+
+## Estate parkland: rough pasture with big trees standing well apart.
+func _park(box: Rect2) -> void:
+	_ground(preload("res://art/grass_long.png"), box, Color(0.95, 1.0, 0.8))
+	for i in int(box.size.x * box.size.y / 90000.0):
+		_tree(Vector2(_r.randf_range(box.position.x + 40, box.end.x - 40), _r.randf_range(box.position.y + 60, box.end.y - 20)), [50.0, 50.0, 42.0][_r.randi() % 3])
 
 
 ## A patch of woods: darker ground and trees packed in.

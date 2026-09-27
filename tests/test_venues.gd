@@ -45,8 +45,31 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 2
 		1:
 			var house: Node2D = m.get_node("Scenery/House")
-			assert(house.venue == "mansion" and house.windows().size() == 6, "the mansion's building")
-			assert(m.get_node_or_null("Scenery/LoopDrive") != null, "a loop drive")
+			assert(house.venue == "mansion" and house.windows().size() == 8, "the manor's building")
+			assert(m.get_node_or_null("Scenery/LoopDrive") != null or m.get_node_or_null("Forecourt") != null, "a loop drive or a forecourt")
+			var cx: float = house.rect().get_center().x
+			var approach: Control = m.get_node("Approach")
+			assert(absf(approach.position.x + approach.size.x * 0.5 - cx) < 1.0 and approach.position.y + approach.size.y == m.lawn.size_px.y,
+				"the approach runs up the middle from the gates")
+			assert(house.position.y > 200.0, "a back lawn behind the manor")
+			assert(absf(m.get_node("Truck").position.x - cx) > 300.0, "the truck's at the tradesmen's entrance, not the front gates")
+			var gates := Vector2(cx, m.lawn.size_px.y + 4.0)
+			assert(not m.lawn.exits.any(func(e: Rect2) -> bool: return e.has_point(gates)), "and the front gates are shut")
+			assert(m._stone_hit_test(gates, 5.0) == "fence", "railings along the road")
+			assert(m._stone_hit_test(Vector2(-10, 600), 5.0) == "gone", "a ha-ha on the park sides: into the ditch")
+			assert(m.get_node("Beyond").get_children().all(func(n: Node) -> bool: return not ("venue" in n)), "no neighbours, only parkland")
+			var beds := m.get_node("Scenery").get_children().filter(func(n: Node) -> bool: return "box" in n and n.box)
+			var ovals := m.get_node("Scenery").get_children().filter(func(n: Node) -> bool: return "shape" in n and n.shape == "oval")
+			assert(beds.size() >= 4 or ovals.size() >= 2, "the parterre, either side")
+			var tops := m.get_node("Scenery").get_children().filter(func(n: Node) -> bool: return "art" in n and n.art == "topiary")
+			assert(tops.size() >= 6 and tops.size() % 2 == 0, "topiary in pairs down the approach")
+			var t: Node2D = tops[0]
+			assert(m._stone_hit_test(t.position, 35.0) == "rock", "taller than you: a stone at head height hits it")
+			var was: float = m.bills
+			m._on_mower_bumped(t, 100.0)
+			assert(t.frame >= 3 and m.bills == was + m.TOPIARY_BILL, "a knock takes a chunk out of it, on the bill")
+			m._on_mower_bumped(t, 100.0)
+			assert(m.bills == was + m.TOPIARY_BILL, "once")
 			var f := FlyingStone.new()
 			f.position = house.position + Vector2(55, house.WALL_H - 26.0)
 			var bills: float = m.bills

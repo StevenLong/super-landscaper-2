@@ -42,6 +42,9 @@ const BORDER_UP := 29.0 ## how far a hedge or fence rises in the 3/4 view (art/h
 const GRAVEL := Color(1.0, 0.88, 0.68) ## tints the grey gravel tile for the drive
 const TERRACE_FRONT := 64.0 ## a terrace's scrap of front garden, between the house and the road
 const NEXT_DOOR := Color(0.72, 0.8, 0.7) ## next door's lawn, a touch duller than the one you mow
+const MANOR_BACK := 260.0 ## the manor's back lawn, between the ha-ha and its ridge
+const APPROACH_W := 96.0 ## the manor's approach, up the middle from the gates
+const TOPIARY_BILL := 60.0 ## a chunk out of a clipped peacock
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
 @export var squirrel_every := 13.0
@@ -67,6 +70,7 @@ var _house: Node2D
 var _car: StaticBody2D ## the customer's, up the drive; not every job
 var _hose: Hose ## on its tap by the house; not every job
 var _notch := Rect2() ## next door's corner of an L plot: not yours, fenced off
+var _haha := false ## the manor: its park sides drop into a ditch, nothing to bounce off
 var _shake := 0.0
 var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
 var _tells: Array[Dictionary] = [] ## critters about to come out: {kind, at, grace, left}
@@ -160,6 +164,9 @@ func _build_layout() -> void:
 	elif shape == "terrace":
 		house_y = size.y - _house.size.y - TERRACE_FRONT
 	_house.position = Vector2(size.x * 0.5 - (_house.size.x + span) * 0.5 + (span if _house.garage < 0 else 0.0), house_y)
+	if venue == "mansion": # centred on its approach, the coach house well off to one side
+		_house.gap = 200.0
+		_house.position = Vector2((size.x - _house.size.x) * 0.5, MANOR_BACK)
 	var wall := StaticBody2D.new() # the house and garage are solid; the patio in front isn't
 	for box: Rect2 in [_house.rect(), _house.garage_rect()]:
 		if not box.has_area():
@@ -190,7 +197,7 @@ func _build_layout() -> void:
 	# Parked along the kerb: the zone reaches back up the drive mouth to where you pull in.
 	$Truck/RefuelZone/Shape.position = Vector2(0, -80)
 	($Truck/RefuelZone/Shape.shape as RectangleShape2D).size = Vector2(180, 150)
-	if not fixed and venue != "graveyard" and not _house.passage and rv.randf() < 0.5:
+	if not fixed and venue == "house" and not _house.passage and rv.randf() < 0.5:
 		_park_car(Vector2(drive.position.x + drive.size.x * 0.5, g.end.y + 72.0), rv)
 	mower.position = truck_spot()
 	mower.rotation = -PI / 2.0 # facing up the drive
@@ -201,7 +208,7 @@ func _build_layout() -> void:
 	add_child(beyond)
 	var rb := RandomNumberGenerator.new() # its own, so the garden's layout stays as it was
 	rb.seed = job.seed + 1
-	beyond.build(size.x, size.y, BORDER, size.y + BORDER + FOOTPATH * 2 + ROAD, BORDER_UP, rb, shape, house_y)
+	beyond.build(size.x, size.y, BORDER, size.y + BORDER + FOOTPATH * 2 + ROAD, BORDER_UP, rb, "park" if venue == "mansion" else shape, house_y)
 
 	var taken: Array[Rect2] = [_house.footprint().grow(50), Rect2(drive.position, drive.size).grow(30)]
 	if _house.back_patio:
@@ -227,7 +234,9 @@ func _build_layout() -> void:
 		taken.append(_notch.grow(20))
 		beyond.corner(_notch, NEXT_DOOR)
 	if venue == "mansion":
-		taken.append(_loop_drive(Vector2(_house.rect().get_center().x, _house.size.y + 120.0)))
+		var rm := RandomNumberGenerator.new() # its own, so the rest stays put
+		rm.seed = job.seed + 7
+		_manor(rm, taken, size)
 	var trees: Array = []
 	var beds: Array = []
 	var stones: Array = []
@@ -350,6 +359,84 @@ func _loop_drive(at: Vector2) -> Rect2:
 	return Rect2(at - outer, outer * 2.0).grow(10)
 
 
+## The manor's formal gardens (design doc, Levels): the approach up the middle from the
+## gates, the loop drive or a forecourt before the portico, the parterre either side of
+## it, clipped topiary in pairs down the approach, and the stable yard by the coach house.
+## The skeleton is fixed; the forecourt, the parterre's pattern and the topiary are drawn.
+func _manor(r: RandomNumberGenerator, taken: Array[Rect2], size: Vector2i) -> void:
+	var cx: float = _house.rect().get_center().x
+	var foot: float = _house.rect().end.y
+	var top: float # where the approach starts
+	if r.randf() < 0.5:
+		var at := Vector2(cx, foot + 110.0)
+		taken.append(_loop_drive(at))
+		top = at.y + 80.0 # tucked under the ring's bottom, so they join
+	else:
+		var court := Rect2(cx - 300.0, foot, 600.0, 130.0)
+		_gravel(court, "Forecourt")
+		taken.append(court.grow(20))
+		top = court.end.y
+		if r.randf() < 0.6:
+			_park_car(Vector2(cx + 190.0, court.get_center().y), r)
+	var approach := Rect2(cx - APPROACH_W * 0.5, top, APPROACH_W, size.y - top)
+	_gravel(approach, "Approach")
+	taken.append(approach.grow(20))
+	var g: Rect2 = _house.garage_rect()
+	var yard := Rect2(g.position.x - 50.0, g.end.y, g.size.x + 100.0, 90.0)
+	_gravel(yard, "StableYard")
+	taken.append(yard.grow(20))
+	# The parterre: box-edged beds either side of the forecourt, one pattern of three.
+	var pattern: String = ["quad", "long", "round"][r.randi() % 3]
+	for side: float in [-1.0, 1.0]:
+		var inner: float = cx + side * 330.0
+		var boxes: Array[Rect2] = []
+		match pattern:
+			"quad":
+				for i in 4:
+					boxes.append(Rect2(Vector2(inner + side * (i % 2) * 145.0 - (115.0 if side < 0 else 0.0), foot + 40.0 + floori(i / 2.0) * 90.0), Vector2(115, 60)))
+			"long":
+				for i in 2:
+					boxes.append(Rect2(Vector2(inner - (260.0 if side < 0 else 0.0), foot + 40.0 + i * 80.0), Vector2(260, 48)))
+			"round":
+				boxes.append(Rect2(Vector2(inner - (250.0 if side < 0 else 0.0), foot + 50.0), Vector2(250, 120)))
+		for b in boxes:
+			var bed := _add_bed(b, "oval" if pattern == "round" else "rect", 14.0)
+			bed.box = pattern != "round"
+			taken.append(b.grow(24))
+	# Topiary in pairs down the approach, one kind a job.
+	var kind := r.randi() % 3
+	var pairs := r.randi_range(3, 6)
+	var y0: float = foot + 280.0
+	var step: float = (size.y - 70.0 - y0) / pairs
+	for i in pairs:
+		for side: float in [-1.0, 1.0]:
+			var t := RockScript.new()
+			t.name = "Topiary%d" % (i * 2 + (1 if side > 0 else 0))
+			t.art = "topiary"
+			t.frames = 6
+			t.frame = kind
+			t.radius = 10.0
+			t.height = 40.0 # taller than you
+			t.position = Vector2(cx + side * (APPROACH_W * 0.5 + 36.0), y0 + i * step)
+			$Scenery.add_child(t)
+			lawn.exclude_circle(t.position, t.radius)
+			taken.append(Rect2(t.position - Vector2(24, 24), Vector2(48, 48)))
+
+
+## A flat gravel area (the manor's approach, forecourt, stable yard): walkable, not lawn.
+func _gravel(box: Rect2, called: String) -> void:
+	var g := TextureRect.new()
+	g.name = called
+	g.texture = preload("res://art/gravel.png")
+	g.stretch_mode = TextureRect.STRETCH_TILE
+	g.position = box.position
+	g.size = box.size
+	g.self_modulate = GRAVEL
+	g.z_index = -2
+	add_child(g)
+	lawn.exclude_rect(box)
+
+
 ## The hose, off a tap on the side of the house away from the garage, wandering out
 ## across the lawn.
 func _lay_hose(rp: RandomNumberGenerator) -> void:
@@ -456,6 +543,12 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	var top: String = ["hedge", "fence"][r.randi() % 2]
 	# The sides and the road-side run are one boundary, so one style; the back can differ.
 	var edge: String = ["hedge", "fence"][r.randi() % 2]
+	var road := edge
+	if _house.venue == "mansion": # a ha-ha round the park sides, railings along the road
+		top = "haha"
+		edge = "haha"
+		road = "railings"
+		_haha = true
 	# name: [kind, outer rect, the lawn-side line critters come in along, inward direction]
 	var fp: Rect2 = _house.rect()
 	var d0 := drive.position.x
@@ -472,8 +565,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		"top_r": [top, Rect2(), [Vector2(fp.end.x, 0), Vector2(n.position.x if nr else w, 0)], Vector2.DOWN],
 		"left": [edge, Rect2(-b, -b, b, h + 2.0 * b), [Vector2(0, n.end.y if nl else 0.0), Vector2(0, h)], Vector2.RIGHT],
 		"right": [edge, Rect2(w, -b, b, h + 2.0 * b), [Vector2(w, n.end.y if nr else 0.0), Vector2(w, h)], Vector2.LEFT],
-		"bottom_l": [edge, Rect2(-b, h, d0 + b, b), [Vector2(0, h), Vector2(d0, h)], Vector2.UP],
-		"bottom_r": [edge, Rect2(d1, h, w - d1 + b, b), [Vector2(d1, h), Vector2(w, h)], Vector2.UP],
+		"bottom_l": [road, Rect2(-b, h, d0 + b, b), [Vector2(0, h), Vector2(d0, h)], Vector2.UP],
+		"bottom_r": [road, Rect2(d1, h, w - d1 + b, b), [Vector2(d1, h), Vector2(w, h)], Vector2.UP],
 	}
 	if fp.position.y > 0.0: # nothing on the back fence: critters come in all along it
 		sides.top_l[2] = [Vector2(n.end.x if nl else 0.0, 0), Vector2(n.position.x if nr else w, 0)]
@@ -498,6 +591,9 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		if not (s[1] as Rect2).has_area():
 			continue # a critter entrance only; the strip is "top"
 		var vertical: bool = key in ["left", "right", "notch_v"]
+		if s[0] == "haha":
+			_add_haha(s[1], vertical)
+			continue
 		var strip := TextureRect.new()
 		var box: Rect2 = s[1]
 		if vertical: # seen from above, lifted by its height like everything that stands up
@@ -508,7 +604,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			var to := n.end.y - BORDER_UP if key == "notch_v" else h + b - BORDER_UP
 			box = Rect2(box.position.x, from, box.size.x, to - from)
 		else: # its front face, standing on the run's outer edge (the lawn edge at the top)
-			strip.texture = preload("res://art/hedge_h.png") if s[0] == "hedge" else preload("res://art/fence_h.png")
+			strip.texture = {"hedge": preload("res://art/hedge_h.png"), "fence": preload("res://art/fence_h.png"),
+				"railings": preload("res://art/railings_h.png")}[s[0]]
 			var foot := box.end.y if key.begins_with("bottom") else (n.end.y if key == "notch_h" else 0.0)
 			box = Rect2(box.position.x, foot - strip.texture.get_height(), box.size.x, strip.texture.get_height())
 		strip.stretch_mode = TextureRect.STRETCH_TILE
@@ -518,6 +615,32 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			strip.z_index = 1
 			_front.append(strip)
 		$Borders.add_child(strip)
+	if road == "railings": # stone piers at the main gates (shut) and the tradesmen's (open)
+		var cx: float = _house.rect().get_center().x
+		for x: float in [cx - APPROACH_W * 0.5 - 6.0, cx + APPROACH_W * 0.5 + 6.0, d0 - 6.0, d1 + 6.0]:
+			var pier := Sprite2D.new()
+			pier.texture = preload("res://art/pier.png")
+			pier.position = Vector2(x, h + b + 2.0)
+			pier.offset = Vector2(0, -36)
+			pier.z_index = 1
+			$Borders.add_child(pier)
+
+
+## A ha-ha along the lawn's edge: a stone coping, then the drop into a shadowed ditch on
+## the park side, no fence in the view.
+func _add_haha(outer: Rect2, vertical: bool) -> void:
+	var d := Node2D.new()
+	d.z_index = -1
+	var lip := Rect2(outer.end.x - 6.0 if outer.position.x < 0.0 else outer.position.x, outer.position.y, 6.0, outer.size.y) if vertical \
+		else Rect2(outer.position.x, outer.end.y - 6.0, outer.size.x, 6.0)
+	d.draw.connect(func() -> void:
+		d.draw_rect(outer, Color("1f3a1c"))
+		var bank := outer.grow_individual(0, 0, 0, -outer.size.y * 0.5) if not vertical else outer
+		d.draw_rect(bank, Color("2a4a24"))
+		d.draw_rect(lip, Color("b4b4b8"))
+		d.draw_rect(Rect2(lip.position, Vector2(lip.size.x, 1) if not vertical else Vector2(1, lip.size.y)), Color("d8d8dc"))
+		d.draw_rect(Rect2(lip.end - Vector2(lip.size.x, 1) if not vertical else lip.end - Vector2(1, lip.size.y), Vector2(lip.size.x, 1) if not vertical else Vector2(1, lip.size.y)), Color("74747c")))
+	$Borders.add_child(d)
 
 
 ## Is p inside something a critter can't walk through?
@@ -1265,6 +1388,20 @@ func _finish_nicked() -> void:
 ## Ramming the customer's car dents it like a stone, and harder hits cost more. Only a
 ## ram at speed is a crime: a bump at a crawl is an accident, like a blade-flung stone.
 func _on_mower_bumped(what: Object, impact: float) -> void:
+	if what is StaticBody2D and "art" in what and what.art == "topiary":
+		if what.frame >= 3:
+			return # already bitten
+		what.frame += 3
+		Sfx.play("crunch")
+		_burst(what.position + Vector2(0, -24), ["2e6a2c", "4e9448", "6a4a2a"])
+		_count("topiary", TOPIARY_BILL)
+		bills += TOPIARY_BILL
+		pop_text("-$%d" % TOPIARY_BILL, what.position + Vector2(0, -40), Color("f07060"))
+		customer.on_property("topiary", -20.0)
+		if impact > RAM_SPEED:
+			_crime(1)
+		_react()
+		return
 	if what != _car or _car == null:
 		return
 	var bill := roundf(CAR_BILL * maxf(1.0, impact / 150.0))
@@ -1408,6 +1545,8 @@ func _fenced(p: Vector2) -> bool:
 	for e: Rect2 in lawn.exits:
 		if e.grow(4.0).has_point(p):
 			return false
+	if _haha and p.y < lawn.size_px.y:
+		return false # into the ditch
 	return p.distance_to(lawn.keep_in(p, 0.0)) <= BORDER # past that, it's over and gone
 
 
@@ -1437,8 +1576,8 @@ func _stone_hit_test(p: Vector2, z := 0.0, falling := false, kind := "stone") ->
 	for t in $Scenery.get_children():
 		if not (t is StaticBody2D and "radius" in t):
 			continue
-		if not t.has_method("shake"): # a boulder or a headstone
-			if p.distance_to(t.position) < t.radius and z < 24.0:
+		if not t.has_method("shake"): # a boulder, a headstone, topiary
+			if p.distance_to(t.position) < t.radius and z < t.height:
 				return "rock"
 		elif p.distance_to(t.position) < t.radius and z < -(t.crown_centre().y + t.canopy):
 			return "tree" # the trunk

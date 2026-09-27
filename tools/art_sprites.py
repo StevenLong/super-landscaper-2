@@ -249,50 +249,206 @@ def urn_on(c, x, y):
     shaded_ellipse(c, x, y - 17, 7, 5, LEAF)
 
 
-MANSION_WINDOWS = (40, 120, 200, 400, 480, 560)  # house.gd VENUES matches
+MANSION_WINDOWS = (40, 130, 220, 310, 620, 710, 800, 890)  # house.gd VENUES matches
+
+
+def sash(c, wx, top, h):
+    """A tall Georgian sash: stone surround, glazing bars, no shutters."""
+    c.rect(wx - 4, top - 4, 38, h + 8, CREAM[2])
+    c.rect(wx, top, 30, h, GLASS[2])
+    c.rect(wx, top, 30, 4, GLASS[4])
+    c.rect(wx + 2, top + 4, 3, h - 8, GLASS[3])
+    for x in (wx + 9, wx + 19):
+        c.rect(x, top, 2, h, CREAM[4])
+    for y in (top + h // 3, top + 2 * h // 3):
+        c.rect(wx, y, 30, 2, CREAM[4])
+    c.rect(wx - 6, top - 8, 42, 4, CREAM[3])             # a little cornice over it
+    c.rect(wx - 6, top + h + 4, 42, 4, CREAM[3])         # sill
+    c.rect(wx - 6, top + h + 7, 42, 1, CREAM[1])
 
 
 def mansion():
-    """A country house, 640 wide: slate roof with two stacks, pale stone, six bays and a
-    columned portico. Same wall foot and ridge as the house, so house.gd treats it alike."""
-    W, B = 640, HOUSE_BASE
+    """A stately manor, 960 wide and symmetrical: a hipped slate roof with four stacks,
+    pale ashlar with quoins and a string course, eight tall sashes a floor, a pediment
+    breaking the roofline over a columned portico. Same wall foot, ridge and window
+    heights as the house, so house.gd treats it alike."""
+    W, B = 960, HOUSE_BASE
     c = Canvas(W, B + 24)
     r = random.Random(17)
     wall_top = B - 158
     ridge = wall_top - 154
     roof(c, 0, ridge, W, 154, r, SLATE)
-    for cx in (110, 500):
+    for y in range(ridge, wall_top):                     # hipped: the ends slope back
+        cut = (wall_top - y) // 2 - 6
+        for x in list(range(0, max(0, cut))) + list(range(W - max(0, cut), W)):
+            c.px[y][x] = (0, 0, 0, 0)
+        if cut > 0:
+            c.rect(cut, y, 1, 1, SLATE[4])
+            c.rect(W - cut - 1, y, 1, 1, SLATE[0])
+    for cx in (170, 330, 606, 766):
         chimney(c, cx, ridge)
     for y in range(wall_top + 4, B):                     # pale ashlar with fine courses
         for x in range(W):
             c.px[y][x] = CREAM[4] if (y - wall_top) % 12 else CREAM[3]
             if (y - wall_top) % 12 and (x + (12 if ((y - wall_top) // 12) % 2 else 0)) % 24 == 0:
                 c.px[y][x] = CREAM[3]
-    for x in (0, W - 12):                                # quoins at the corners
+    for x in (0, W - 14, 360, W - 374):                  # quoins at the corners and the centre block
         for y in range(wall_top + 4, B, 12):
-            c.rect(x, y, 12, 6, CREAM[2])
-    c.rect(0, B - 8, W, 8, STONE[2])                     # plinth
-    c.rect(0, wall_top + 4, W, 5, CREAM[2])              # cornice
+            c.rect(x, y, 14, 6, CREAM[2])
+    c.rect(0, B - 10, W, 10, STONE[2])                   # plinth
+    c.rect(0, B - 10, W, 1, STONE[3])
+    c.rect(0, B - 76, W, 4, CREAM[2])                    # string course between the floors
+    c.rect(0, wall_top + 4, W, 7, CREAM[2])              # cornice
+    c.rect(0, wall_top + 10, W, 1, CREAM[1])
+    for x in range(4, W - 4, 10):                        # a balustrade along the top
+        c.rect(x, wall_top - 8, 4, 12, CREAM[3])
+        c.rect(x, wall_top - 8, 1, 12, CREAM[4])
+    c.rect(0, wall_top - 12, W, 4, CREAM[2])
     for wx in MANSION_WINDOWS:
-        window(c, wx, B - 141, 36)
-        window(c, wx, B - 62, 36)
-    # The portico: a pediment on four columns, double doors behind.
-    px, pw = 270, 100
-    for y in range(22):                                  # pediment
-        half = pw // 2 + 6 - y * (pw // 2 + 6) // 22
-        c.rect(px + pw // 2 - half, B - 92 - y, half * 2, 1, CREAM[3] if y else CREAM[1])
-    c.rect(px - 6, B - 92, pw + 12, 6, CREAM[2])
-    shaded_rect(c, px + 30, B - 70, 40, 70, WOOD)        # doors
-    c.rect(px + 49, B - 70, 2, 70, WOOD[0])
-    c.rect(px + 38, B - 38, 3, 3, YELLOW[3])
-    c.rect(px + 59, B - 38, 3, 3, YELLOW[3])
-    for cx in (px + 2, px + 20, px + 72, px + 90):        # columns
-        shaded_rect(c, cx, B - 86, 8, 86, CREAM[1:])
-        c.rect(cx - 2, B - 88, 12, 3, CREAM[4])
+        sash(c, wx, B - 146, 44)
+        sash(c, wx, B - 62, 44 - 8)
+    sash(c, 465, B - 146, 44)                            # over the portico
+    # The pediment: a stone triangle up into the roof over the centre block, an oculus in it.
+    pl, pr, ph = 360, W - 360, 70
+    for y in range(ph):
+        half = (pr - pl) // 2 - y * ((pr - pl) // 2) // ph
+        c.rect(W // 2 - half, wall_top - 12 - y, half * 2, 1, CREAM[3] if y > 3 else CREAM[1])
+        if half > 8:
+            c.rect(W // 2 - half, wall_top - 12 - y, 3, 1, CREAM[1])
+            c.rect(W // 2 + half - 3, wall_top - 12 - y, 3, 1, CREAM[1])
+    shaded_ellipse(c, W // 2, wall_top - 36, 12, 12, CREAM[:4])
+    shaded_ellipse(c, W // 2, wall_top - 36, 8, 8, GLASS[1:])
+    # The portico: four columns under its own little pediment, double doors, steps.
+    px, pw = 420, 120
+    for y in range(20):
+        half = pw // 2 + 8 - y * (pw // 2 + 8) // 20
+        c.rect(px + pw // 2 - half, B - 98 - y, half * 2, 1, CREAM[3] if y else CREAM[1])
+    c.rect(px - 8, B - 98, pw + 16, 6, CREAM[2])
+    shaded_rect(c, px + 38, B - 72, 44, 72, WOOD)        # doors, a fanlight over
+    c.rect(px + 59, B - 72, 2, 72, WOOD[0])
+    shaded_ellipse(c, px + 60, B - 76, 22, 8, GLASS[2:])
+    c.rect(px + 46, B - 40, 3, 3, YELLOW[3])
+    c.rect(px + 71, B - 40, 3, 3, YELLOW[3])
+    for cx in (px + 2, px + 22, px + 90, px + 110):      # columns
+        shaded_rect(c, cx, B - 92, 10, 92, CREAM[1:])
+        c.rect(cx - 2, B - 94, 14, 3, CREAM[4])
+        c.rect(cx - 2, B - 4, 14, 4, CREAM[3])
+    for i in range(3):                                   # steps down to the terrace
+        c.rect(px - 10 - i * 4, B - 3 + i, pw + 20 + i * 8, 1, STONE[4 - i])
     c.rect(0, B - 1, W, 1, INK)
     terrace(c, W, B, r)
-    for ux in (px - 22, px + pw + 22):
+    for ux in (px - 30, px + pw + 30):
         urn_on(c, ux, B - 1)
+    return c
+
+
+def coachhouse():
+    """The manor's coach house where the house has a garage: ashlar, a slate roof with a
+    little clock cupola, an arched carriage door."""
+    W, B = 120, GARAGE_BASE
+    c = Canvas(W, B)
+    r = random.Random(19)
+    wall_top = B - 80
+    roof(c, 0, wall_top - GARAGE_ROOF, W, GARAGE_ROOF, r, SLATE)
+    top = box34(c, 48, wall_top - GARAGE_ROOF + 30, 24, 8, 26, CREAM[1:], CREAM[2:])  # the cupola
+    shaded_ellipse(c, 60, top + 16, 7, 7, CREAM[3:])
+    c.rect(60, top + 11, 1, 5, INK)
+    c.rect(60, top + 15, 4, 1, INK)
+    for y in range(10):
+        c.rect(60 - (y + 1) * 2, top - 10 + y, (y + 1) * 4, 1, SLATE[3] if y else SLATE[4])
+    for y in range(wall_top, B):
+        for x in range(W):
+            c.px[y][x] = CREAM[4] if (y - wall_top) % 12 else CREAM[3]
+    c.rect(0, wall_top, W, 5, CREAM[2])
+    door = (18, B - 62, W - 36, 62)                      # the carriage arch and its doors
+    c.rect(door[0] - 4, door[1] - 4, door[2] + 8, door[3] + 4, CREAM[2])
+    shaded_rect(c, *door, WOOD)
+    for y in range(12):
+        w = door[2] - int(((12 - y) / 12) ** 0.5 * (door[2] - 8))
+        c.rect(W // 2 - w // 2, door[1] - 12 + y, w, 1, CREAM[2])
+    c.rect(W // 2 - 1, door[1], 2, door[3], WOOD[0])
+    for y in range(door[1] + 8, B, 10):
+        c.rect(door[0], y, door[2], 1, WOOD[1])
+    c.rect(0, B - 1, W, 1, INK)
+    return c
+
+
+def topiary():
+    """Clipped box in a row of 28x48 cells: a cone, a ball on a stem, a peacock; then
+    each again with a chunk bitten out by a mower (brown twigs showing)."""
+    c = Canvas(28 * 6, 48)
+    twig = hexc("6a4a2a")
+
+    def cone(ox):
+        for y in range(6, 44):
+            half = 1 + (y - 6) * 11 // 38
+            for x in range(14 - half, 14 + half):
+                nx = (x + 0.5 - 14) / max(1, half)
+                c.set(ox + x, y, lit(LEAF, nx, (y - 25) / 25.0))
+
+    def ball(ox):
+        shaded_rect(c, ox + 12, 28, 4, 16, WOOD[1:])
+        shaded_ellipse(c, ox + 14, 20, 12, 13, LEAF)
+
+    def peacock(ox):
+        for y in range(4, 30):                             # the tail, fanned up behind
+            for x in range(28):
+                nx, ny = (x + 0.5 - 14) / 14.0, (y + 0.5 - 30) / 26.0
+                if nx * nx + ny * ny <= 1.0:
+                    c.set(ox + x, y, LEAF[1] if (int(x * 0.7 + ny * 6)) % 4 else LEAF[2])
+        shaded_ellipse(c, ox + 14, 36, 8, 9, LEAF, 0.2)    # the body in front
+        shaded_rect(c, ox + 15, 18, 4, 14, LEAF[2:])       # the neck
+        shaded_ellipse(c, ox + 17, 16, 4, 4, LEAF, 0.25)   # the head, a crest on it
+        for x in (15, 17, 19):
+            c.set(ox + x, 10, LEAF[4])
+        c.set(ox + 20, 16, LEAF[0])
+
+    for i, fn in enumerate((cone, ball, peacock)):
+        fn(i * 28)
+        fn((i + 3) * 28)
+    for ox, (x0, y0, w, h) in ((84, (6, 2, 16, 16)), (112, (0, 8, 14, 14)), (140, (11, 8, 12, 14))):
+        for y in range(y0, y0 + h):                       # the bite: gone, bare twigs round its edge
+            for x in range(x0, x0 + w):
+                d = (x + 0.5 - x0 - w / 2) ** 2 / (w / 2) ** 2 + (y + 0.5 - y0 - h / 2) ** 2 / (h / 2) ** 2
+                if d <= 0.55:
+                    c.px[y][ox + x] = (0, 0, 0, 0)
+                elif d <= 1.0 and c.px[y][ox + x][3]:
+                    c.px[y][ox + x] = twig if (x * 3 + y) % 4 == 0 else LEAF[0]
+    c.outline(INK)
+    for ox in range(0, 28 * 6, 28):                       # clipped clean at the ground
+        c.rect(ox + 6, 45, 16, 2, LEAF[0])
+    return c
+
+
+def railings_h():
+    """Estate railings, a 16 wide repeating tile, 34 tall: black bars with spear tips on
+    a stone kerb."""
+    c = Canvas(16, 34)
+    for x in (2, 10):
+        c.rect(x, 6, 2, 22, STEEL[0])
+        c.set(x, 6, STEEL[3])
+        c.rect(x - 1, 4, 4, 2, STEEL[1])
+        c.set(x, 2, STEEL[1])
+        c.set(x + 1, 3, STEEL[1])
+        c.set(x, 3, STEEL[1])
+    c.rect(0, 10, 16, 2, STEEL[1])
+    c.rect(0, 22, 16, 2, STEEL[1])
+    shaded_rect(c, 0, 28, 16, 6, STONE[1:], rim=False)
+    c.rect(0, 28, 16, 1, STONE[4])
+    return c
+
+
+def pier():
+    """A gate pier: an ashlar post with a ball finial, 28x72."""
+    c = Canvas(28, 72)
+    shaded_rect(c, 4, 22, 20, 50, CREAM[1:])
+    for y in range(28, 70, 10):
+        c.rect(4, y, 20, 1, CREAM[1])
+    c.rect(2, 18, 24, 5, CREAM[3])
+    c.rect(2, 22, 24, 1, CREAM[1])
+    shaded_ellipse(c, 14, 10, 8, 8, CREAM[1:])
+    c.rect(10, 16, 8, 3, CREAM[2])
+    c.outline(INK)
     return c
 
 

@@ -10,6 +10,7 @@ signal trampled(flattened: int, total: int)
 @export var size := Vector2(200, 80)
 @export var spacing := 16.0
 @export var shape := "rect" ## "rect", "oval", "kidney" or "bean"
+@export var box := false ## a parterre bed: edged with low clipped box ("rect" only)
 
 const EDGE := Color("2e1c10")
 const WALL := Color("3a2616") ## the cut face of the lawn along the far edge
@@ -42,7 +43,7 @@ func _ready() -> void:
 	for y in range(int(spacing / 2), int(size.y), int(spacing)):
 		for x in range(int(spacing / 2), int(size.x), int(spacing)):
 			var at := Vector2(x, y) + Vector2(rng.randf_range(-4, 4), rng.randf_range(-4, 4))
-			if _inside(at, 5.0):
+			if _inside(at, 12.0 if box else 5.0):
 				_flowers.append(at)
 				_flat.append(false)
 	var shape := RectangleShape2D.new()
@@ -103,6 +104,12 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), WALL)
 		draw_texture_rect(soil, Rect2(Vector2(0, 3), size - Vector2(0, 3)), true)
 		draw_rect(Rect2(Vector2.ZERO, size), EDGE, false, 2.0)
+		if box: # the box edging: a clipped band round the bed, its near face darker
+			var leaf := Color("2e6a2c")
+			for r: Rect2 in [Rect2(0, -4, size.x, 8), Rect2(0, size.y - 6, size.x, 8), Rect2(0, -4, 7, size.y + 2), Rect2(size.x - 7, -4, 7, size.y + 2)]:
+				draw_rect(r, leaf)
+				draw_rect(Rect2(r.position.x, r.end.y - 2, r.size.x, 2), Color("1c4a24"))
+				draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 1), Color("4e9448"))
 	else:
 		# The union of the ellipses, three times: the edging, the cut face, then the soil
 		# floor lowered by 3 px, so only the far edge's face shows.

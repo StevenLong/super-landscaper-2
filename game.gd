@@ -119,6 +119,7 @@ const SUBURBAN := ["nature", "squirrel_hater", "gardener", "busy", "perfectionis
 
 const LAWN_SIZES := [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]
 const TERRACE := Vector2i(560, 1600) ## a terrace's long thin garden: about a small lawn's area
+const MANOR := Vector2i(1760, 1340) ## taller than the biggest lawn for the approach, about the old mansion's grass (measured)
 
 var money := 0
 var total_earned := 0
@@ -145,7 +146,7 @@ const TALLY := {
 	"dog_bowled": "Dogs bowled over", "dog_returned": "Dogs walked home",
 	"customer_hits": "Customers hit with a stone", "knockouts": "Customers knocked out cold",
 	"robberies": "Pockets rifled",
-	"windows": "Windows put through", "car_dents": "Dents in the customer's car", "dents": "Dents in your own truck",
+	"windows": "Windows put through", "car_dents": "Dents in the customer's car", "topiary": "Topiary clipped the hard way", "dents": "Dents in your own truck",
 	"own_goals": "Stones at your own mower", "flowers": "Flowers flattened",
 	"stones_mowed": "Stones through the blades", "stones_thrown": "Things thrown",
 	"gnomes_mowed": "Gnomes shattered", "flamingos_mowed": "Flamingos shredded", "cones_mowed": "Cones sent flying",
@@ -318,8 +319,10 @@ func make_job(seed_value: int) -> Dictionary:
 	if not dregs and reputation >= 75.0 and rv.randf() < 0.4:
 		_venue(job, "mansion", "toff", 2, 1.8)
 		job.props = ["urn", "urn"] + (["urn"] if rv.randf() < 0.5 else []) + ["hose"]
-		job.ponds = 0 # the loop drive's island takes the middle
-		job.beds = rv.randi_range(1, 2)
+		job.size = MANOR
+		job.ponds = 1 if rv.randf() < 0.5 else 0
+		job.beds = 0 # the parterre is the beds
+		job.trees = rv.randi_range(2, 3)
 	elif not dregs and reputation < 20.0 and rv.randf() < 0.5:
 		_venue(job, "graveyard", "vicar", 1, 0.7)
 		job.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)

@@ -21,7 +21,7 @@ const UPSTAIRS := 1000 ## added to a window's x (windows()) for the pane above i
 ## ground-floor window (tools/art_sprites.py draws them there).
 const VENUES := {
 	"house": {"art": "house", "side": "garage", "width": 440.0, "windows": [40, 120, 290, 370]},
-	"mansion": {"art": "mansion", "side": "coachhouse", "width": 640.0, "windows": [40, 120, 200, 400, 480, 560]},
+	"mansion": {"art": "mansion", "side": "coachhouse", "width": 960.0, "windows": [40, 130, 220, 310, 620, 710, 800, 890]},
 	"graveyard": {"art": "church", "side": "vestry", "width": 440.0, "windows": [50, 130, 280, 360]},
 }
 

@@ -1,10 +1,18 @@
 extends StaticBody2D
-## A decorative boulder, or a headstone: big, so solid. Stones bounce off it.
+## A decorative boulder, a headstone, or the manor's clipped topiary: big, so solid.
+## Stones bounce off it.
 
 var radius := 13.0
+var height := 24.0 ## a stone lower than this hits it
 var art := "rock"
-var frames := 1 ## the sheet's columns (the gravestones come in two)
-var frame := 0
+var frames := 1 ## the sheet's columns (the gravestones come in two, the topiary in six)
+var frame := 0:
+	set(v):
+		frame = v
+		if _sprite:
+			_sprite.frame = v
+
+var _sprite: Sprite2D
 
 
 func _ready() -> void:
@@ -19,3 +27,4 @@ func _ready() -> void:
 	s.frame = frame
 	s.offset = Vector2(0, 6 - s.texture.get_height() / 2.0) # its foot on the ground
 	add_child(s)
+	_sprite = s
