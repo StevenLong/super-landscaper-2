@@ -51,7 +51,7 @@ func _physics_process(_delta: float) -> bool:
 		f.position = near
 		_main._on_stone_landed(f, "animal")
 		f.free()
-		assert(_walker.dead, "and the critter it hit is the one knocked over")
+		assert(_walker.dead or _walker.out > 0.0, "and the critter it hit is the one hit (splatted, or now and then out cold)")
 		print("PASS animals")
 		quit()
 	return false

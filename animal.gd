@@ -3,7 +3,9 @@ extends Area2D
 ## Wildlife that wanders across the lawn. Hedgehogs trundle in a straight line;
 ## squirrels dart and pause. A moving mower that touches one squashes it.
 ## Leaves the lawn (and frees itself) once it walks off the far side. Turns away
-## from anything `blocked` says is solid (house, truck, trees, ponds).
+## from anything `blocked` says is solid (house, truck, trees, ponds). A stone can
+## knock one out (it lies on its side, then wakes and runs) or kill it outright, which
+## leaves a body, belly up, until someone moves it or mows it.
 
 signal squashed(animal: Animal)
 
@@ -15,7 +17,9 @@ var lawn_rect := Rect2()
 var blocked: Callable ## (position) -> bool
 var grace := 0.0 ## seconds before obstacles count (a squirrel climbing down a tree)
 var heading := Vector2.RIGHT
-var dead := false
+var dead := false ## squashed: the splat is main's, this node is on its way out
+var out := 0.0 ## seconds left knocked out
+var body := false ## killed by a stone, not the blades: intact, lying there
 var _pause := 0.0
 var _dart := 0.0
 var _t := 0.0
@@ -35,7 +39,13 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_t += delta
-	if dead:
+	if dead or body:
+		return
+	if out > 0.0:
+		out -= delta
+		if out <= 0.0: # comes round and bolts
+			heading = Vector2.RIGHT.rotated(randf() * TAU)
+		queue_redraw()
 		return
 	if kind == "squirrel":
 		if _pause > 0.0:
@@ -61,14 +71,29 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-func _on_body_entered(body: Node2D) -> void:
-	if dead or not ("cut_radius" in body):
+func _on_body_entered(b: Node2D) -> void:
+	if dead or not ("cut_radius" in b):
 		return # only mowers squash; people on foot just step round
-	if (body.velocity as Vector2).length() < 15.0:
+	if (b.velocity as Vector2).length() < 15.0:
+		if out > 0.0 or body:
+			return # lying there: it can't get out of the way, but a stopped mower can't hurt it
 		# A stopped mower is just an obstacle: turn back the way we came.
 		heading = -heading
 		return
 	squash()
+
+
+## Out cold for a few seconds, where it lies.
+func stun(seconds: float) -> void:
+	out = seconds
+	queue_redraw()
+
+
+## Dead, but in one piece.
+func kill() -> void:
+	body = true
+	out = 0.0
+	queue_redraw()
 
 
 func squash() -> void:
@@ -84,6 +109,28 @@ func squash() -> void:
 func _draw() -> void:
 	if dead:
 		return # main.gd's Decals draw the splat, which outlasts this node
-	var tex: Texture2D = preload("res://art/hedgehog.png") if kind == "hedgehog" else preload("res://art/squirrel.png")
+	if body:
+		Animal.draw_body(self, kind, Vector2.ZERO)
+		return
+	if out > 0.0: # on its side, seeing stars
+		draw_set_transform(Vector2(0, 2), PI / 2.0)
+		Facing.draw(self, sheet(kind), 2, 0, 0.0)
+		draw_set_transform(Vector2.ZERO)
+		for i in 3:
+			var a := _t * 6.0 + i * TAU / 3.0
+			draw_circle(Vector2(cos(a) * 8.0, -12.0 + sin(a) * 2.5), 1.5, Color("f8e070"))
+		return
 	var frame := int(_t * (8.0 if speed > 0.0 and _pause <= 0.0 else 0.0)) % 2
-	Facing.draw(self, tex, 2, frame, heading.angle())
+	Facing.draw(self, sheet(kind), 2, frame, heading.angle())
+
+
+static func sheet(of: String) -> Texture2D:
+	return preload("res://art/hedgehog.png") if of.ends_with("hedgehog") else preload("res://art/squirrel.png")
+
+
+## A body, belly up, drawn by whatever holds it (the lawn, your hands, the air). `base`
+## is the transform the caller was already drawing with.
+static func draw_body(ci: CanvasItem, of: String, at: Vector2, base := Transform2D.IDENTITY) -> void:
+	ci.draw_set_transform_matrix(base * Transform2D(PI / 2.0, Vector2(1, -1), 0.0, at)) # flat on its back
+	Facing.draw(ci, sheet(of), 2, 0, PI / 2.0) # facing you, upside down: feet in the air
+	ci.draw_set_transform_matrix(base)

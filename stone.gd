@@ -30,7 +30,7 @@ static var _textures := {}
 ## while the canvas still points at it, and draws as a white box.
 static func texture(of: String) -> Texture2D:
 	if not _textures.has(of):
-		_textures[of] = load("res://art/%s.png" % of)
+		_textures[of] = load("res://art/%s.png" % of.trim_prefix("body_")) # a body is the critter's sheet
 	return _textures[of]
 
 

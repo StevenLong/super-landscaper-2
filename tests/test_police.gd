@@ -63,15 +63,15 @@ func _physics_process(_delta: float) -> bool:
 			m._finish(m.customer.ko_result(0.0))
 			r = g.last_result
 			assert(r.robbed == 12 and r.net == 12.0 and r.rep == -m.ROB_REP, "escaped: the lifted cash is yours, the rep hit is huge")
-			# Ramming the customer's car dents it, harder hits cost more, and it's a nuisance.
+			# Ramming the customer's car dents it and harder hits cost more; only a ram at speed is a crime.
 			var car := StaticBody2D.new()
 			m._car = car
 			var bills: float = m.bills
 			var heat: float = g.heat
 			m._on_mower_bumped(car, 100.0)
-			assert(m.bills == bills + m.CAR_BILL and g.heat == heat + 1.0, "a knock into the car dents it: $40, +1 heat")
+			assert(m.bills == bills + m.CAR_BILL and g.heat == heat, "a knock into the car dents it: $40, an accident, no heat")
 			m._on_mower_bumped(car, 300.0)
-			assert(m.bills == bills + m.CAR_BILL * 3.0, "a ride-on at full tilt costs double")
+			assert(m.bills == bills + m.CAR_BILL * 3.0 and g.heat == heat + 1.0, "a ride-on at full tilt costs double, and it's a nuisance: +1 heat")
 			car.free()
 			# The run side: a night in the cells takes the next job slot; paying the week cools heat.
 			g.new_run(3)

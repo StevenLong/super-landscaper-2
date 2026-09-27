@@ -44,5 +44,9 @@ func _draw() -> void:
 		draw_circle(Vector2(0, 2), 6.0, Color(0, 0, 0, 0.35))
 		Facing.draw(self, t, 2, 0, velocity.angle() + _travelled * 0.05, Vector2(0, -h))
 		return
+	if kind.begins_with("body_"):
+		draw_circle(Vector2(0, 2), 6.0, Color(0, 0, 0, 0.35))
+		Animal.draw_body(self, kind, Vector2(0, -h))
+		return
 	draw_circle(Vector2(0, 2), 4.0, Color(0, 0, 0, 0.35))
 	draw_texture(t, -t.get_size() / 2.0 - Vector2(0, h))

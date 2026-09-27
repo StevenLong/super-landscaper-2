@@ -108,5 +108,7 @@ func _draw_held(at: Vector2) -> void:
 	var c := Stone.texture(carrying)
 	if carrying in ["dog", "hedgehog", "squirrel"]: # an 8-facing sheet: held facing the way you do
 		Facing.draw(self, c, 2, 0, rotation, at)
+	elif carrying.begins_with("body_"):
+		Animal.draw_body(self, carrying, at, Transform2D(-rotation, Vector2.ZERO))
 	else:
 		draw_texture(c, at - c.get_size() / 2.0)

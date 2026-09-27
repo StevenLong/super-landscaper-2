@@ -14,6 +14,7 @@ const REPAIR_PRICE := 0.5 ## per condition point repaired
 const WINDOW_BILL := 40.0
 const DENT_BILL := 20.0
 const CAR_BILL := 40.0 ## a dent in the customer's car
+const RAM_SPEED := 200.0 ## a bump into the car harder than this is on purpose (a crime); slower, an accident
 const RIFLE_RATE := 4.0 ## dollars a second out of a knocked-out customer's pockets
 const ROB_REP := 30.0 ## the worst reputation hit in the game
 const CAR_SIZE := Vector2(52, 66) ## parked along the drive: 110 long, foreshortened by 0.6 (tools/voxel.py G)
@@ -24,6 +25,12 @@ const THROW_FROM := 12.0 ## the stone leaves your hand this far in front
 ## before it wriggles or bites free. A hedgehog bare-handed stuns you instead (gloves fix it).
 const CRITTERS := {"dog": {"tier": 1, "hold": 5.0}, "hedgehog": {"tier": 0, "hold": INF}, "squirrel": {"tier": 0, "hold": 3.0}}
 const PRICKLE := 0.35 ## seconds a hedgehog stays in bare hands before the OW
+const KO_TIME := 6.0 ## seconds a stoned critter lies out cold
+const KO_SHARE := 0.4 ## how much a knockout upsets the customer, against a death
+## A stone into a critter: thrown by hand it mostly knocks out (else kills, leaving a body);
+## flung by the blades it mostly splats (else knocks out). Chances of the first outcome.
+const THROWN_KO := 0.8
+const FLUNG_SPLAT := 0.75
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
@@ -718,7 +725,12 @@ func interact() -> void:
 		walker.carrying = ""
 		walker.queue_redraw()
 		Sfx.play("glug", 0.0)
-	elif CRITTERS.has(walker.carrying): # put it down and it's off
+	elif walker.carrying.begins_with("body_") and at_truck(): # in the back, under a tarp
+		_count("bodies_hidden")
+		Sfx.play("bump")
+		walker.carrying = ""
+		walker.queue_redraw()
+	elif CRITTERS.has(walker.carrying) or walker.carrying.begins_with("body_"): # put it down (and a live one's off)
 		_land(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying)
 		walker.carrying = ""
 		walker.queue_redraw()
@@ -756,7 +768,7 @@ func _pick_up_critter() -> bool:
 		if a == null:
 			return false
 		a.queue_free() # bare-handed, a hedgehog is in your hands for a moment (_hold_critter)
-		walker.carrying = a.kind
+		walker.carrying = ("body_" if a.body else "") + a.kind
 	_held = 0.0
 	walker.queue_redraw()
 	Sfx.play("ui_move", 0.0)
@@ -1068,7 +1080,8 @@ func _finish_nicked() -> void:
 	_finish(r)
 
 
-## Ramming the customer's car dents it like a stone, and harder hits cost more.
+## Ramming the customer's car dents it like a stone, and harder hits cost more. Only a
+## ram at speed is a crime: a bump at a crawl is an accident, like a blade-flung stone.
 func _on_mower_bumped(what: Object, impact: float) -> void:
 	if what != _car or _car == null:
 		return
@@ -1078,7 +1091,8 @@ func _on_mower_bumped(what: Object, impact: float) -> void:
 	bills += bill
 	pop_text("-$%d" % bill, mower.global_position, Color("f07060"))
 	customer.on_stone("car")
-	_crime(1)
+	if impact > RAM_SPEED:
+		_crime(1)
 	_react()
 
 
@@ -1102,6 +1116,8 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 			if k.get("always", false) or randf() < Stone.LAUNCH_CHANCE:
 				var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
 				throw_stone(s.position, dir, randf_range(380.0, 560.0), randf_range(140.0, 380.0), s.kind)
+			else: # ground to grit under the blades: show it went somewhere
+				_burst(s.position, ["b4b4b8", "7a7a82", "d8d0c0"])
 		"shatter":
 			Sfx.play("crunch")
 			shake(2.0)
@@ -1189,7 +1205,7 @@ func _stone_hit_test(p: Vector2, kind := "stone") -> String:
 	if walker and p.distance_to(mower.global_position) < 18.0: # your own mower, parked
 		return "mower"
 	for a in $Animals.get_children():
-		if a is Animal and not a.dead and a.position.distance_to(p) < CRITTER_HIT:
+		if a is Animal and not a.dead and not a.body and a.position.distance_to(p) < CRITTER_HIT:
 			return "animal"
 	if kind != "ball" and dog and is_instance_valid(dog) and not dog.held and dog.position.distance_to(p) < 12.0:
 		return "dog" # the ball sails past: it's by your feet, waiting for the throw
@@ -1260,8 +1276,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_drop_bounced(f)
 		"animal":
 			for a in $Animals.get_children():
-				if a is Animal and not a.dead and a.position.distance_to(p) <= CRITTER_HIT:
-					a.squash()
+				if a is Animal and not a.dead and not a.body and a.position.distance_to(p) <= CRITTER_HIT:
+					_stone_critter(a, f.thrown)
 					break
 			if alive:
 				_drop_bounced(f)
@@ -1275,6 +1291,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"gone":
 			if f.kind == "dog":
 				_land(lawn.keep_in(p, 8.0), "dog") # it scrabbles at the fence instead
+			elif f.kind.begins_with("body_"):
+				_count("bodies_hidden") # next door's problem now
 		"mower":
 			Sfx.play("clonk")
 			mower.damage(8.0)
@@ -1302,6 +1320,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				target = "pond"
 				if alive: # it swims for the bank
 					_land(pond.position + (p - pond.position).normalized() * Vector2(Pond.RX + 10.0, Pond.RY + 10.0), f.kind)
+				elif f.kind.begins_with("body_"):
+					_count("bodies_hidden") # sleeps with the fishes
 			else:
 				Sfx.play("thud")
 				for b in $Scenery.get_children():
@@ -1330,6 +1350,9 @@ func _land(at: Vector2, kind: String) -> void:
 		if dog and is_instance_valid(dog):
 			dog.let_go(at)
 			Sfx.play("yelp")
+		return
+	if kind.begins_with("body_"):
+		(func() -> void: spawn_animal(kind.trim_prefix("body_"), at, at + Vector2.RIGHT).kill()).call_deferred()
 		return
 	if CRITTERS.has(kind): # on its feet and off, away from you
 		var away := (at - actor().global_position).normalized().rotated(randf_range(-0.6, 0.6))
@@ -1514,6 +1537,14 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF, grace 
 
 
 func _on_squashed(a: Animal) -> void:
+	if a.body: # a body through the blades: mulch, nothing left to find
+		_count("bodies_mulched")
+		_burst(a.position, ["a01818", "6a0c0c", "8a6a50"])
+		Sfx.play("squash")
+		shake(2.0)
+		if customer.on_squash(a.kind):
+			_react()
+		return
 	_splats.append(a.position)
 	if a.position.distance_to(mower.global_position) < 40.0: # run over, not stoned
 		_count("squashed_" + a.kind)
@@ -1528,6 +1559,36 @@ func _on_squashed(a: Animal) -> void:
 	_mischief(3.0)
 	if customer.on_squash(a.kind):
 		_react()
+
+
+## A stone into a critter (design doc: thrown knocks out, flung splats; either way
+## sometimes the other). Killed by a thrown stone, it's a body, not a splat.
+func _stone_critter(a: Animal, thrown: bool, roll := randf()) -> void:
+	var ko := roll < THROWN_KO if thrown else roll >= FLUNG_SPLAT
+	if not ko and not thrown:
+		a.squash() # the splat, as ever (_on_squashed)
+		return
+	Sfx.play("squeak_" + a.kind)
+	shake(2.0)
+	if ko:
+		a.stun(KO_TIME)
+		_count("ko_" + a.kind)
+		_mischief(1.0)
+		if customer.on_squash(a.kind, KO_SHARE):
+			_react()
+		return
+	a.kill()
+	_count("stoned_" + a.kind)
+	_mischief(3.0)
+	var kind := a.kind
+	if customer.on_squash(kind, 1.0, func() -> bool: return _bodies(kind) > 0):
+		_react()
+
+
+## Bodies of this kind lying on the lawn (not in your hands, not gone over the fence).
+func _bodies(kind: String) -> int:
+	return $Animals.get_children().filter(func(a: Node) -> bool:
+		return a is Animal and a.body and a.kind == kind and not a.is_queued_for_deletion()).size()
 
 
 ## The customer's visible reaction: speech, a hop on the patio, and their voice.

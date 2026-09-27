@@ -98,7 +98,7 @@ const PERSONAS := {
 		# Their own voice (customer.gd _say): an id, then a line or a pick of lines.
 		"lines": {"squash": ["May God forgive you.", "Lord have mercy!"], "flowers": "Those were for the departed!",
 			"window": "The VESTRY window!", "car": "Thou shalt not dent!", "hit": "Heavens! My EYE!",
-			"fire": "Go, and sin no more. Elsewhere.", "paid_good": "Bless you, my child.",
+			"fire": "Go, and sin no more. Elsewhere.", "stunned": "Rise, little one!", "paid_good": "Bless you, my child.",
 			"paid_ok": "The Lord loves a trier.", "paid_bad": "I shall pray for you."},
 	},
 }
@@ -138,6 +138,8 @@ var run_tally_cost := {}
 const TALLY := {
 	"squashed_hedgehog": "Hedgehogs flattened", "squashed_squirrel": "Squirrels flattened",
 	"stoned_hedgehog": "Hedgehogs stoned", "stoned_squirrel": "Squirrels sniped",
+	"ko_hedgehog": "Hedgehogs knocked out", "ko_squirrel": "Squirrels knocked out",
+	"bodies_hidden": "Bodies disposed of", "bodies_mulched": "Bodies mulched",
 	"dog_bowled": "Dogs bowled over", "dog_returned": "Dogs walked home",
 	"customer_hits": "Customers hit with a stone", "knockouts": "Customers knocked out cold",
 	"robberies": "Pockets rifled",

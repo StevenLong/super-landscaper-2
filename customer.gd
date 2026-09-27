@@ -31,6 +31,7 @@ var _glances := 0
 var _stint := 0.0 ## seconds until they move
 var _unseen: Array[Callable] = [] ## what they missed, replayed when they come out and see what's left
 var _unseen_what: Array[String] = []
+var _unseen_if: Array[Callable] = [] ## per entry: is the evidence still there? (empty: always)
 var _unseen_flowers := 0
 
 var _react_face := ""
@@ -66,6 +67,11 @@ func come_out() -> bool:
 
 
 func _look_around() -> bool:
+	for i in range(_unseen.size() - 1, -1, -1): # a body you got rid of can't be found
+		if _unseen_if[i].is_valid() and not _unseen_if[i].call():
+			_unseen.remove_at(i)
+			_unseen_what.remove_at(i)
+			_unseen_if.remove_at(i)
 	if _unseen.is_empty() and _unseen_flowers <= flowers_flat:
 		return false
 	var before := mood
@@ -74,6 +80,7 @@ func _look_around() -> bool:
 		f.call()
 	_unseen.clear()
 	_unseen_what.clear()
+	_unseen_if.clear()
 	if _unseen_flowers > flowers_flat:
 		on_flowers(_unseen_flowers)
 		what.append("my flowers")
@@ -156,15 +163,21 @@ func on_progress(new_coverage: float) -> void:
 		coverage = new_coverage
 
 
-## Returns true if they saw it (the scene reacts); unseen, the splat waits for them.
-func on_squash(kind: String) -> bool:
+## Returns true if they saw it (the scene reacts); unseen, the splat waits for them, or
+## the body does while `still_there` says so. `share` scales it: knocked out, not killed,
+## counts for less, and leaves nothing to find.
+func on_squash(kind: String, share := 1.0, still_there := Callable()) -> bool:
 	if not sees():
-		_unseen.append(on_squash.bind(kind))
-		_unseen_what.append("the " + kind)
+		if share >= 1.0:
+			_unseen.append(on_squash.bind(kind))
+			_unseen_what.append("the " + kind)
+			_unseen_if.append(still_there)
 		return false
-	var d: float = persona.get(kind, -20.0)
+	var d: float = persona.get(kind, -20.0) * share
 	_change(d)
-	if d > 0.0:
+	if share < 1.0 and d < 0.0:
+		_react("annoyed", 2.0, _say("stunned", "Is it... breathing?"))
+	elif d > 0.0:
 		_react("laughing", 2.0, "Ha! Good riddance!")
 	elif d <= -30.0:
 		_react("horrified", 2.5, _say("squash", "NO! Not the %s!" % kind))
@@ -228,6 +241,7 @@ func on_property(what: String, d: float) -> bool:
 	if not sees():
 		_unseen.append(on_property.bind(what, d))
 		_unseen_what.append("my " + what)
+		_unseen_if.append(Callable())
 		return false
 	_change(d)
 	_react("horrified", 2.0, "My %s!" % what.to_upper())
