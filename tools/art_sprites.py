@@ -649,6 +649,65 @@ def fence_v():
     return c
 
 
+def wall_h():
+    """A 24x34 run of churchyard wall for the top and bottom edges, seen 3/4: rough
+    stone courses under a coping. The ground line is the bottom row."""
+    c = Canvas(24, 34)
+    r = random.Random(41)
+    for y in range(8, 33):
+        for x in range(24):
+            n = (x * 7 + y * 13 + (x // 6) * 5 + (y // 5) * 3) % 19
+            c.px[y][x] = STONE[2] if n > 5 else (STONE[1] if n > 1 else STONE[3])
+    for y in range(12, 33, 6):                               # the courses
+        for x in range(24):
+            if r.random() < 0.8:
+                c.px[y][x] = STONE[1]
+    c.rect(0, 2, 24, 6, STONE[3])                            # the coping
+    c.rect(0, 2, 24, 1, STONE[4])
+    c.rect(0, 7, 24, 1, STONE[1])
+    c.rect(0, 33, 24, 1, hexc("0c200c", 110))
+    return c
+
+
+def wall_v():
+    """A 24x24 run of wall for the side edges: its coping from above."""
+    c = Canvas(24, 24)
+    c.rect(6, 0, 12, 24, STONE[3])
+    c.rect(6, 0, 1, 24, STONE[4])
+    c.rect(17, 0, 1, 24, STONE[1])
+    c.rect(18, 0, 3, 24, hexc("0c200c", 80))
+    for y in (0, 11):
+        c.rect(6, y, 12, 1, STONE[2])
+    return c
+
+
+def lychgate():
+    """The roofed gate on the road into a churchyard, 104x92: oak posts, a steep tiled
+    gable, the gates standing open."""
+    c = Canvas(104, 92)
+    r = random.Random(43)
+    for x in (8, 88):                                        # posts
+        shaded_rect(c, x, 34, 8, 58, WOOD)
+    c.rect(4, 32, 96, 5, WOOD[2])                            # the tie beam
+    c.rect(4, 32, 96, 1, WOOD[3])
+    for y in range(30):                                      # the gable: tiles either side
+        half = 8 + y * 44 // 30
+        for x in range(52 - half, 52 + half):
+            c.px[y + 4][x] = ROOF[3] if (x + (y // 4) * 3) % 8 else ROOF[2]
+            if r.random() < 0.03:
+                c.px[y + 4][x] = ROOF[4]
+    c.rect(44, 2, 16, 3, ROOF[1])
+    for y in range(8, 30):                                   # the gable end's boarding
+        half = max(0, (y - 8) * 22 // 22)
+        c.rect(52 - half, y + 4, half * 2, 1, WOOD[3] if y % 3 else WOOD[2])
+    for x, w in ((16, 12), (76, 12)):                        # the gates, swung open
+        shaded_rect(c, x, 56, w, 34, WOOD[1:])
+        c.rect(x, 64, w, 2, WOOD[0])
+        c.rect(x, 80, w, 2, WOOD[0])
+    c.outline(INK)
+    return c
+
+
 # ---------------------------------------------------------------- the pond
 
 def pond(frame):

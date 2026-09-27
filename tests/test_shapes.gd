@@ -56,6 +56,9 @@ func _physics_process(_delta: float) -> bool:
 			var mid := drive.position + drive.size * 0.5
 			assert(m.lawn.keep_in(mid, 8.0) == mid and not m._blocked(mid), "you can get down the passage")
 			assert(m.get_node("Client").position.y < house.position.y, "the patio's out the back, where the garden is")
+			for i in 60:
+				var spot: Dictionary = m._spawn_spot("hedgehog")
+				assert(not house.rect().grow(4.0).has_point(spot.at + spot.inward * 20.0), "critters never come out of the house's side wall")
 			assert(m._stone_hit_test(Vector2(house.rect().get_center().x, house.position.y - 20.0)) == "", "the garden behind the house is open ground")
 			m.queue_free()
 			_open(_find(50.0, "forward"))

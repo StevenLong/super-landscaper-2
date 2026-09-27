@@ -200,7 +200,8 @@ def main(only=None):
         "venues": lambda: [save("mansion", a.mansion(), 2), save("church", a.church(), 2),
                            save("vestry", a.vestry(), 2), save("gravestone", a.gravestone(), 6),
                            save("coachhouse", a.coachhouse(), 2), save("topiary", a.topiary(), 6),
-                           save("railings_h", a.railings_h(), 6), save("pier", a.pier(), 6)],
+                           save("railings_h", a.railings_h(), 6), save("pier", a.pier(), 6),
+                           save("wall_h", a.wall_h(), 6), save("wall_v", a.wall_v(), 6), save("lychgate", a.lychgate(), 4)],
         "animals": lambda: [
             save("hedgehog", v.sheet([v.hedgehog(0), v.hedgehog(1)]), 4),
             save("squirrel", v.sheet([v.squirrel(0), v.squirrel(1)]), 4),

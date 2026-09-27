@@ -98,7 +98,18 @@ func _physics_process(_delta: float) -> bool:
 			assert(graves.size() > 5, "rows of headstones")
 			assert(m._stone_hit_test(graves[0].position) == "rock", "solid: stones bounce off them")
 			assert(m._car == null, "nobody parks at the church")
-			assert(m.get_node("Scenery/House").venue == "graveyard", "the church stands where the house would")
+			var church: Node2D = m.get_node("Scenery/House")
+			assert(church.venue == "graveyard", "the church stands where the house would")
+			var fp: Rect2 = church.footprint()
+			assert(fp.position.x == 0.0 or fp.end.x == m.lawn.size_px.x, "off to one side of its yard")
+			var behind := Vector2(church.rect().get_center().x, church.position.y * 0.5)
+			assert(church.position.y > 100.0 and m.lawn.keep_in(behind, 8.0).y >= church.position.y, "walled off behind: you can't get round the back")
+			var path: Control = m.get_node("Driveway")
+			assert(absf(path.position.x + path.size.x * 0.5 - church.rect().get_center().x) < 1.0 and path.position.y == church.rect().end.y,
+				"a path from the porch")
+			assert(absf(m.get_node("Truck").position.x - church.rect().get_center().x) < 1.0, "to the lychgate, where the truck parks")
+			for c in m.get_node("Scenery").get_children():
+				assert(not m._notch.has_point((c as Node2D).position), "no headstones behind the wall")
 			g.current_job = {}
 			print("PASS venues")
 			quit()

@@ -45,6 +45,8 @@ const NEXT_DOOR := Color(0.72, 0.8, 0.7) ## next door's lawn, a touch duller tha
 const MANOR_BACK := 260.0 ## the manor's back lawn, between the ha-ha and its ridge
 const APPROACH_W := 96.0 ## the manor's approach, up the middle from the gates
 const TOPIARY_BILL := 60.0 ## a chunk out of a clipped peacock
+const CHURCH_BACK := 170.0 ## the church stands this far off the back wall, walled off behind
+const PATH_W := 48.0 ## the churchyard path, from the lychgate to the porch
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
 @export var squirrel_every := 13.0
@@ -167,6 +169,9 @@ func _build_layout() -> void:
 	if venue == "mansion": # centred on its approach, the coach house well off to one side
 		_house.gap = 200.0
 		_house.position = Vector2((size.x - _house.size.x) * 0.5, MANOR_BACK)
+	elif venue == "graveyard": # off to one side of its yard, the vestry against the boundary
+		_house.gap = 0.0
+		_house.position = Vector2(_house.GARAGE_W if _house.garage < 0 else size.x - _house.size.x - _house.GARAGE_W, CHURCH_BACK)
 	var wall := StaticBody2D.new() # the house and garage are solid; the patio in front isn't
 	for box: Rect2 in [_house.rect(), _house.garage_rect()]:
 		if not box.has_area():
@@ -192,6 +197,11 @@ func _build_layout() -> void:
 	drive.position = Vector2(g.position.x + inset, g.end.y)
 	drive.size = Vector2(g.size.x - inset * 2.0, size.y - g.end.y)
 	drive.self_modulate = GRAVEL # warm it so it doesn't read as more road
+	if venue == "graveyard": # no drive: a flagstone path from the lychgate on the road to the porch
+		drive.position = Vector2(_house.rect().get_center().x - PATH_W * 0.5, _house.rect().end.y)
+		drive.size = Vector2(PATH_W, size.y - drive.position.y)
+		drive.texture = preload("res://art/paving.png")
+		drive.self_modulate = Color.WHITE
 	lawn.exits = [Rect2(drive.position.x, size.y - 40, drive.size.x, 40 + BORDER + FOOTPATH)]
 	$Truck.position = Vector2(drive.position.x + drive.size.x * 0.5, size.y + BORDER + FOOTPATH + 34)
 	# Parked along the kerb: the zone reaches back up the drive mouth to where you pull in.
@@ -233,6 +243,18 @@ func _build_layout() -> void:
 		lawn.exclude_rect(_notch)
 		taken.append(_notch.grow(20))
 		beyond.corner(_notch, NEXT_DOOR)
+	if venue == "graveyard":
+		# Walled off behind the church and its vestry: no ground there you can't see.
+		var fp: Rect2 = _house.rect()
+		var v: Rect2 = _house.garage_rect()
+		_notch = Rect2(minf(fp.position.x, v.position.x), 0.0, fp.size.x + v.size.x, fp.position.y)
+		var pocket := Rect2(v.position.x, fp.position.y, v.size.x, v.position.y - fp.position.y)
+		lawn.holes = [_notch, pocket]
+		lawn.exclude_rect(_notch)
+		lawn.exclude_rect(pocket)
+		taken.append(_notch.grow(20))
+		beyond.corner(_notch, NEXT_DOOR)
+		beyond.corner(pocket, NEXT_DOOR)
 	if venue == "mansion":
 		var rm := RandomNumberGenerator.new() # its own, so the rest stays put
 		rm.seed = job.seed + 7
@@ -461,9 +483,11 @@ func _lay_hose(rp: RandomNumberGenerator) -> void:
 ## The churchyard: rows of headstones, solid, some with flowers laid in front, wherever
 ## nothing else stands.
 func _graves(rp: RandomNumberGenerator, taken: Array[Rect2], size: Vector2i) -> void:
-	for y in range(int(_house.size.y) + 90, size.y - 70, 88):
+	var path_x: float = _house.rect().get_center().x
+	for y in range(70, size.y - 70, 88):
 		for x in range(70, size.x - 60, 64):
-			var at := Vector2(x + rp.randf_range(-6, 6), y + rp.randf_range(-4, 4))
+			var old := clampf(absf(x - path_x) / (size.x * 0.6), 0.0, 1.0) # further from the path, older
+			var at := Vector2(x + rp.randf_range(-6, 6) * (1.0 + old), y + rp.randf_range(-4, 4) * (1.0 + old))
 			var spot := Rect2(at - Vector2(14, 24), Vector2(28, 44))
 			if rp.randf() < 0.25 or not taken.all(func(t: Rect2) -> bool: return not t.intersects(spot.grow(6))):
 				continue
@@ -473,6 +497,7 @@ func _graves(rp: RandomNumberGenerator, taken: Array[Rect2], size: Vector2i) -> 
 			g.frame = rp.randi() % 2
 			g.radius = 7.0
 			g.position = at
+			g.rotation = rp.randf_range(-0.25, 0.25) * old * old # leaning, the old ones
 			$Scenery.add_child(g)
 			lawn.exclude_circle(at, g.radius)
 			if rp.randf() < 0.5:
@@ -549,6 +574,10 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		edge = "haha"
 		road = "railings"
 		_haha = true
+	elif _house.venue == "graveyard": # a stone wall all round
+		top = "wall"
+		edge = "wall"
+		road = "wall"
 	# name: [kind, outer rect, the lawn-side line critters come in along, inward direction]
 	var fp: Rect2 = _house.rect()
 	var d0 := drive.position.x
@@ -571,10 +600,11 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	if fp.position.y > 0.0: # nothing on the back fence: critters come in all along it
 		sides.top_l[2] = [Vector2(n.end.x if nl else 0.0, 0), Vector2(n.position.x if nr else w, 0)]
 		sides.erase("top_r")
-	if n.has_area(): # next door's corner: its fence faces you along two sides
+	if n.has_area(): # next door's corner: its fence faces you along two sides (the church's back wall, one)
 		var nx := n.end.x if nl else n.position.x
-		sides.notch_h = [top, Rect2(n.position.x - (b if nl else 0.0), n.end.y - b, n.size.x + b, b),
-			[Vector2(n.position.x, n.end.y), Vector2(n.end.x, n.end.y)], Vector2.DOWN]
+		if _house.venue != "graveyard":
+			sides.notch_h = [top, Rect2(n.position.x - (b if nl else 0.0), n.end.y - b, n.size.x + b, b),
+				[Vector2(n.position.x, n.end.y), Vector2(n.end.x, n.end.y)], Vector2.DOWN]
 		sides.notch_v = [top, Rect2(nx - b if nl else nx, -b, b, n.size.y + b), [Vector2(nx, 0), Vector2(nx, n.end.y)],
 			Vector2.RIGHT if nl else Vector2.LEFT]
 	var mouth := TextureRect.new() # the drive carries on across the pavement to the road
@@ -583,6 +613,9 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	mouth.position = Vector2(d0, h)
 	mouth.size = Vector2(drive.size.x, b + FOOTPATH)
 	mouth.self_modulate = GRAVEL
+	if _house.venue == "graveyard":
+		mouth.texture = drive.texture
+		mouth.self_modulate = Color.WHITE
 	$Borders.add_child(mouth)
 	for key: String in sides:
 		var s: Array = sides[key]
@@ -597,7 +630,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		var strip := TextureRect.new()
 		var box: Rect2 = s[1]
 		if vertical: # seen from above, lifted by its height like everything that stands up
-			strip.texture = preload("res://art/hedge_v.png") if s[0] == "hedge" else preload("res://art/fence_v.png")
+			strip.texture = {"hedge": preload("res://art/hedge_v.png"), "fence": preload("res://art/fence_v.png"),
+				"wall": preload("res://art/wall_v.png")}[s[0]]
 			var from := -BORDER_UP
 			if (key == "left" and nl) or (key == "right" and nr):
 				from = n.end.y - BORDER_UP # it starts at next door's corner
@@ -605,7 +639,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			box = Rect2(box.position.x, from, box.size.x, to - from)
 		else: # its front face, standing on the run's outer edge (the lawn edge at the top)
 			strip.texture = {"hedge": preload("res://art/hedge_h.png"), "fence": preload("res://art/fence_h.png"),
-				"railings": preload("res://art/railings_h.png")}[s[0]]
+				"railings": preload("res://art/railings_h.png"), "wall": preload("res://art/wall_h.png")}[s[0]]
 			var foot := box.end.y if key.begins_with("bottom") else (n.end.y if key == "notch_h" else 0.0)
 			box = Rect2(box.position.x, foot - strip.texture.get_height(), box.size.x, strip.texture.get_height())
 		strip.stretch_mode = TextureRect.STRETCH_TILE
@@ -615,6 +649,13 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			strip.z_index = 1
 			_front.append(strip)
 		$Borders.add_child(strip)
+	if _house.venue == "graveyard": # the lychgate over the path's mouth
+		var gate := Sprite2D.new()
+		gate.texture = preload("res://art/lychgate.png")
+		gate.position = Vector2((d0 + d1) * 0.5, h + b + 2.0)
+		gate.offset = Vector2(0, -46)
+		gate.z_index = 1
+		$Borders.add_child(gate)
 	if road == "railings": # stone piers at the main gates (shut) and the tradesmen's (open)
 		var cx: float = _house.rect().get_center().x
 		for x: float in [cx - APPROACH_W * 0.5 - 6.0, cx + APPROACH_W * 0.5 + 6.0, d0 - 6.0, d1 + 6.0]:
@@ -1534,7 +1575,8 @@ func _building_hit(p: Vector2, z: float) -> String:
 			return "roof" if z <= _house.WALL_TOP + back else ""
 		if z > _house.WALL_TOP + _house.ROOF_D:
 			return ""
-		return "roof" if _house.position.y > 0.0 else "gone" # the back slope: down into the garden behind, or over the fence
+		var behind := Vector2(p.x, _house.position.y - 10.0) # the back slope: down into the garden behind, or gone
+		return "roof" if _house.position.y > 0.0 and lawn.keep_in(behind, 0.0) == behind else "gone"
 	if _house.garage_rect().has_point(p) and up < _house.GARAGE_H:
 		return "wall"
 	return ""
@@ -1864,8 +1906,13 @@ func _spawn_spot(kind: String) -> Dictionary:
 	if pool.is_empty():
 		pool = _edges
 	var e: Dictionary = pool[randi() % pool.size()]
-	return {"at": (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95)) - (e.inward as Vector2) * 10.0,
-		"grace": 0.0, "inward": e.inward}
+	var at := (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95))
+	for i in 10: # not where a building stands against the boundary (a terrace, the church)
+		if not _blocked(at + (e.inward as Vector2) * 12.0):
+			break
+		e = pool[randi() % pool.size()]
+		at = (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95))
+	return {"at": at - (e.inward as Vector2) * 10.0, "grace": 0.0, "inward": e.inward}
 
 
 ## The spot jiggles and a few leaves are shaken loose onto the lawn (along inward),
