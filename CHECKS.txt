@@ -13,39 +13,41 @@ LOAD 1 of 5: A JOB ON FOOT      (about 9 min, a garden with a dog is best)
 S8-FOOT
 Hop off and walk every direction, west especially. The walker never draws upside down and
 faces the way you walk.
->
+>yes
 
 S8-THROW
 Pick up a stone and HOLD throw. You stand still, left/right swing the aim, a white ring
 slides out as power builds and the camera leads toward it. Let go: it lands on the ring.
 Hold again and press hop: cancelled, stone still in hand. Does the aim speed feel right?
->
+>yes
 
 S8-BOUNCE
 Throw stones at the house wall, the car and your truck. Each bounces back and lands on the
 lawn instead of vanishing.
->
+>yes. Sometimes running stones over with the mower makes them vanish, not ssure if intended or a bug.
 
 S8-PROPS
 Find the gnome, flamingo, cone and hose on the lawn and mow each. Gnome: bits fly and the
 customer shouts about it. Cone: sent flying. Hose: a blue puddle. Also grab the petrol can
 at the truck, drop it on the lawn with E and mow it: a brown patch.
->
+>yes. I would prefer the hose if it was something that was attached to the house, and, you know, you grab part of it and pull it over out of the way. Maybe you pick up the end of it, or maybe you pick up a bit in the middle, just to make it more awkward than and slightly different from it just being another object on the ground.
 
 S8-FETCH
 With the dog out, throw the tennis ball: the dog runs for it and drops it at your feet.
 Then mow the ball near the dog: it sits under a little rain cloud.
->
+>Yes. One thing though, while testing this out, I picked up the ball while the dog was out and threw it. The dog fetched it, but on the second throw, because the dog was so close to me, the tennis ball immediately hit the dog. 
+
+Seems like that is going to happen pretty easily almost every time. Maybe we could make it so the tennis ball can't hit the dog?
 
 S8-CRITTERS
 Press E on a hedgehog bare-handed: OW, stars, can't move for a moment. Buy gardening gloves
 ([1] for money), pick one up and throw it. Hold a squirrel: it bites free after a few
 seconds. Pick up the dog and carry it to the patio.
->
+>Yes. Would be nice if the hedgehog briefly made it into your hands, so it's obvious what sort of happened, rather than just "ow."
 
 S8-ROCKS
 Some gardens have grey boulders: solid to the mower, stones clonk off them.
->
+>Yes
 
 
 ================================================================================
@@ -55,22 +57,23 @@ LOAD 2 of 5: CRIME      (about 7 min, two jobs)
 S8-POLICE
 Knock the customer out. They stay facing the way they fell. POLICE CALLED, a flashing
 countdown top centre, a siren getting louder. Drive off in time: the board shows WANTED.
->
+>Yes
+
 
 S8-RIFLE
 Knock one out again, get off, HOLD E over them: "Rifling... $n" counts up. Then let the
 countdown run out: NICKED, a fine, a night in the cells; the board's rundown shows the fine
 and "next job lost", and the job counter skips one.
->
+>Yes
 
 S8-CAR
 Ram the customer's car: "My CAR!", a dent bill; harder on a ride-on at full speed.
->
+>Yes. Seems to fine you and raise wanted level, not sure it should do both.
 
 S8-HITBOX
 The car and your mower bump into things where their sprites are, not short of them
 (the car used to stop you well south of its bumper).
->
+>Yes
 
 
 ================================================================================
@@ -81,13 +84,13 @@ S8-WATCH
 Dawdle. Around three quarters of their patience the portrait glances at a watch (no
 words), again later; the first nag comes with a sigh; later nags get sharper, the last a
 final warning.
->
+>Yes
 
 S8-INSIDE
 They go indoors now and then: the portrait greys out. Squash a hedgehog while they're in:
 no reaction until they come out, then "What happened to the hedgehog?!". At a window their
 head shows at the glass and the portrait gets a pane; a stone through that window hits them.
->
+>Yes
 
 
 ================================================================================
@@ -98,15 +101,17 @@ S8-SEASON
 The board header shows the week, the job and what's owed Friday. Press [3]: FRIDAY. PAYDAY.
 Short of cash, sell buttons appear, or "Let them take it" loses your dearest kit. Paid,
 back to the classifieds. Kit can also be sold from the board any time.
->
+>Yes
 
 S8-WIN
 [1] a few times and [3] through all four Fridays: SEASON WON with the tally.
->
+>Yes
 
 S8-DREGS
 New run, [4] until reputation hits bottom: one grumpy half-pay job, no bankruptcy button.
->
+>The church seems to be the level that shows up for me at the lowest reputation, along with a standard low-level job. I think that's fine, though. It pays almost double the other job, making it the better choice for someone with extremely low rep. I don't know if that needs fixing or what we would change, but yeah.
+
+One thing about the church level: it would be neat to have the customer be a priest who says priestly things. For example, they could say "May God forgive you" (or something similar) when you run over a squirrel, or "Bless you" when you do something good.
 
 
 ================================================================================
@@ -116,25 +121,37 @@ LOAD 5 of 5: VENUES AND LOOKS      (about 6 min)
 S8-MANSION
 [2] to the top band until a "Country estate" ad shows. A big pale house with a portico, a
 gravel loop round a flower island, urns on the lawn (mowing one costs $120).
->
+>The mansion is more McMansion than I imagined in my head. It's just a big house with a normal driveway. I guess the flower bed with the circle of path around it is supposed to be the U-turn driveway thing they have in big mansions, but what I was picturing was more akin to a stately manor. 
+
+There is not going to be a normal plot house right beside it, and it's not going to be a white picket fence with a driveway and a garage at the top of it. 
+
+Maybe if it helps, I could find some images of what I am picturing. Let me know if that would help.
 
 S8-CHURCH
 [4] down under "Poor" until a "Churchyard" ad shows. A church, the vicar at the door, rows
 of headstones (solid) with flowers laid at some.
->
+>If it is a vicar at the door, it didn't read as such. I made some notes above about it already. 
+
+I think the trade-off is good. It's good money, but it's kind of a pain to try and drive between all of the gravestones, so I think it's a decent balance. 
+
+Although, similarly with the mansion, it does kind of feel a little bit like it's just another plot: a large rectangular ground space with a house or building in the top middle-ish. It makes the levels feel very samey. While that's fine when you're doing sort of suburban houses and stuff like that, if we don't want the entire ladder to feel samey, we need to make it a bit more diverse.
 
 S8-TREES-CHIMNEY-GARAGE
 Tree trunks meet the ground in a rounded foot with a shadow; the chimney stands up through
 the roof; the garage looks deep enough for the car.
->
+>Tree trunks are much better at the bottom. I feel like something should change about the top of them now, too, when the canopy is faded out. It just shows a perfectly flat cutoff. 
+
+Maybe that could end in some branch structures, or maybe it fades out itself at the top part so you don't see that hard cutoff.
+
+The chimney and the garage are much better.
 
 S8-FENCES
 The sides and road-side run are one style and join at the corners; the back run goes the
 full width (a hedge shows over the roof); next door's garage and drive stay off your fence.
->
+>Yes
 
 S8-BEDS-POND
 Beds are ovals, kidneys and long beans with flowers standing up, sunk slightly into the
 lawn. The pond's rim stones stand up and the water sits below a dark bank. Next door has
 paths and beds too.
->
+>Yes
