@@ -20,7 +20,9 @@ const ROB_REP := 30.0 ## the worst reputation hit in the game
 const CAR_SIZE := Vector2(52, 66) ## parked along the drive: 110 long, foreshortened by 0.6 (tools/voxel.py G)
 const THROW_MIN := 40.0 ## how far a tap throws
 const THROW_MAX := 300.0 ## how far a full wind-up throws
-const THROW_FROM := 12.0 ## the stone leaves your hand this far in front
+const THROW_FROM := 12.0 ## the stone leaves your hand this far in front (less, the steeper you throw)
+const THROW_Z := 12.0 ## and this high
+const HEAD := 30.0 ## how tall a person is: a stone lower than this hits them
 ## Animals you can pick up: "tier" on the crime ladder for throwing one, "hold" seconds
 ## before it wriggles or bites free. A hedgehog bare-handed stuns you instead (gloves fix it).
 const CRITTERS := {"dog": {"tier": 1, "hold": 5.0}, "hedgehog": {"tier": 0, "hold": INF}, "squirrel": {"tier": 0, "hold": 3.0}}
@@ -623,7 +625,7 @@ func at_truck() -> bool:
 func _hint() -> String:
 	if walker:
 		if walker.aiming:
-			return "Let go to throw   %s cancel" % Game.key("hop")
+			return "Up/down tilt   Let go to throw   %s cancel" % Game.key("hop")
 		if walker.carrying == "jerrycan" and walker.global_position.distance_to(mower.global_position) < 44.0:
 			return Game.key("interact") + " fill up the mower"
 		if walker.carrying != "":
@@ -676,7 +678,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_thrown(dir: Vector2, power: float) -> void:
 	if walker.carrying == "":
 		return
-	var f := throw_stone(walker.global_position + dir * THROW_FROM, dir, 460.0, _throw_reach(power) - THROW_FROM, walker.carrying)
+	var f := throw_stone(walker.global_position + dir * THROW_FROM * cos(walker.pitch), dir, _throw_speed(power), walker.pitch, walker.carrying)
 	f.thrown = true
 	if CRITTERS.has(walker.carrying):
 		_count("animals_thrown")
@@ -686,9 +688,16 @@ func _on_thrown(dir: Vector2, power: float) -> void:
 	Sfx.play("ui_move")
 
 
-## How far from you a throw at this power lands.
+## How far from you a throw at this power (and your pitch) lands, if nothing's in the way.
 func _throw_reach(power: float) -> float:
-	return lerpf(THROW_MIN, THROW_MAX, power)
+	var pitch: float = walker.pitch if walker else 0.5
+	return THROW_FROM * cos(pitch) + FlyingStone.reach(_throw_speed(power), pitch, THROW_Z)
+
+
+## How hard a throw at this power leaves your hand: at 45 degrees it would carry
+## THROW_MIN to THROW_MAX.
+func _throw_speed(power: float) -> float:
+	return sqrt(FlyingStone.GRAVITY * lerpf(THROW_MIN, THROW_MAX, power))
 
 
 # ---------------------------------------------------------------- on foot
@@ -1115,7 +1124,7 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 			shake(3.0)
 			if k.get("always", false) or randf() < Stone.LAUNCH_CHANCE:
 				var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
-				throw_stone(s.position, dir, randf_range(380.0, 560.0), randf_range(140.0, 380.0), s.kind)
+				throw_stone(s.position, dir, randf_range(380.0, 560.0), randf_range(0.15, 0.4), s.kind, 4.0)
 			else: # ground to grit under the blades: show it went somewhere
 				_burst(s.position, ["b4b4b8", "7a7a82", "d8d0c0"])
 		"shatter":
@@ -1169,49 +1178,97 @@ func _count(key: String, cost := 0.0) -> void:
 
 
 ## Send a stone flying along the ground (flung by blades or thrown by hand).
-func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float, kind := "stone") -> FlyingStone:
+## Something into the air from `from`, `z0` up, at `speed` tilted `pitch` above the ground.
+func throw_stone(from: Vector2, dir: Vector2, speed: float, pitch: float, kind := "stone", z0 := THROW_Z) -> FlyingStone:
 	var f := FlyingStone.new()
 	f.kind = kind
-	f.launch(from, dir, speed, distance, _stone_hit_test.bind(kind))
+	f.launch(from, dir, speed, pitch, z0, _stone_hit_test.bind(kind))
 	f.landed.connect(_on_stone_landed)
 	$Stones.add_child.call_deferred(f)
 	return f
 
 
-## The x of the house window at p (house.gd windows()), or -1.
-func _window_at(p: Vector2) -> int:
-	var h: Rect2 = _house.rect()
+## The window a stone at ground p, height z strikes (house.gd windows(), plus UPSTAIRS
+## for the floor above), or -1 for bare wall.
+func _window_at(p: Vector2, z := 0.0) -> int:
+	var x := p.x - _house.position.x
+	var up := _up_the_front(p, z)
+	var bands: Array = _house.panes()
 	for wx: int in _house.windows():
-		if p.x - h.position.x >= wx and p.x - h.position.x <= wx + 30 and p.y > h.position.y + _house.WALL_H - 46.0:
-			return wx
+		if x >= wx and x <= wx + 30:
+			for i in bands.size():
+				if up >= bands[i][0] and up <= bands[i][1]:
+					return wx + i * _house.UPSTAIRS
 	return -1
 
 
-## What a flying stone (or whatever kind is flying) at p would hit, or "" for nothing.
-func _stone_hit_test(p: Vector2, kind := "stone") -> String:
-	if Rect2($Truck.position - Vector2(60, 28), Vector2(120, 56)).has_point(p):
+## How far up the front of the house a stone at ground p, height z meets it. The bit it
+## has gone past the wall's foot this step counts as height too, as it's seen.
+func _up_the_front(p: Vector2, z: float) -> float:
+	return z + _house.position.y + _house.WALL_H - p.y
+
+
+## A stone at ground p, height z against the buildings: the front wall (or a window in
+## it), the roof sloping back from the wall's top to the ridge, and past the ridge it's
+## gone (what's behind can't be seen). The garage is lower and the lawn runs on behind it.
+func _building_hit(p: Vector2, z: float) -> String:
+	var back: float = _house.position.y + _house.WALL_H - p.y # how far behind the wall's foot
+	if back <= 0.0:
+		return ""
+	var up := _up_the_front(p, z)
+	var h: Rect2 = _house.rect()
+	if p.x >= h.position.x and p.x <= h.end.x:
+		if up < _house.WALL_TOP:
+			return "window" if _window_at(p, z) >= 0 else "wall"
+		if back <= _house.ROOF_D:
+			return "roof" if z <= _house.WALL_TOP + back else ""
+		return "gone" if z <= _house.WALL_TOP + _house.ROOF_D else "" # over the ridge
+	if _house.garage_rect().has_point(p) and up < _house.GARAGE_H:
+		return "wall"
+	return ""
+
+
+## Is there a fence (or hedge) at p, just outside the lawn? Not across the drive's mouth.
+func _fenced(p: Vector2) -> bool:
+	for e: Rect2 in lawn.exits:
+		if e.grow(4.0).has_point(p):
+			return false
+	return Rect2(Vector2.ZERO, lawn.size_px).grow(BORDER).has_point(p)
+
+
+## What something flying (a stone, or whatever kind) at ground p and height z would hit,
+## or "" for nothing. Everything has a height: lob over the fence, the customer, the car.
+func _stone_hit_test(p: Vector2, z := 0.0, falling := false, kind := "stone") -> String:
+	if Rect2($Truck.position - Vector2(60, 28), Vector2(120, 56)).has_point(p) and z < 60.0:
 		return "truck" # parked on the road, just past the garden
 	if lawn.keep_in(p, 0.0) != p:
-		return "gone" # over the fence
-	if _car_rect().has_point(p):
+		return "fence" if z < BORDER_UP and _fenced(p) else "gone" # into it, or over it
+	if _car_rect().has_point(p) and z < 36.0:
 		return "car"
-	if _house.garage_rect().has_point(p):
-		return "wall"
-	if customer.where == "patio" and not customer.knocked_out and p.distance_to($Client.position + Vector2(0, -14)) < 11.0:
+	var building := _building_hit(p, z)
+	if building != "":
+		return building
+	if customer.where == "patio" and not customer.knocked_out and p.distance_to($Client.position) < 12.0 and z < HEAD:
 		return "customer"
-	var h: Rect2 = _house.rect()
-	if h.has_point(p) and p.y < h.position.y + _house.WALL_H:
-		return "window" if _window_at(p) >= 0 else "wall"
-	if walker and p.distance_to(mower.global_position) < 18.0: # your own mower, parked
+	if walker and falling and p.distance_to(walker.global_position) < 8.0 and z < HEAD:
+		return "self" # what goes up
+	if walker and p.distance_to(mower.global_position) < 18.0 and z < 20.0: # your own mower, parked
 		return "mower"
 	for a in $Animals.get_children():
-		if a is Animal and not a.dead and not a.body and a.position.distance_to(p) < CRITTER_HIT:
+		if a is Animal and not a.dead and not a.body and a.position.distance_to(p) < CRITTER_HIT and z < 10.0:
 			return "animal"
-	if kind != "ball" and dog and is_instance_valid(dog) and not dog.held and dog.position.distance_to(p) < 12.0:
+	if kind != "ball" and dog and is_instance_valid(dog) and not dog.held and dog.position.distance_to(p) < 12.0 and z < 16.0:
 		return "dog" # the ball sails past: it's by your feet, waiting for the throw
 	for t in $Scenery.get_children():
-		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius:
-			return "tree" if t.has_method("shake") else "rock"
+		if not (t is StaticBody2D and "radius" in t):
+			continue
+		if not t.has_method("shake"): # a boulder or a headstone
+			if p.distance_to(t.position) < t.radius and z < 24.0:
+				return "rock"
+		elif p.distance_to(t.position) < t.radius and z < -(t.crown_centre().y + t.canopy):
+			return "tree" # the trunk
+		elif p.distance_to(t.position) < t.canopy * 0.8 and absf(z + t.crown_centre().y) < t.canopy * 0.8:
+			return "tree" # up in the leaves
 	return "" # a pond is flat: the stone flies over it, see _pond_at on landing
 
 
@@ -1234,14 +1291,14 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"window":
 			var bill := WINDOW_BILL * (3.0 if _house.venue == "mansion" else 1.0) # old glass, dear glass
 			Sfx.play("glass", 0.0)
-			_house.smash(_window_at(p))
+			_house.smash(_window_at(p, f.z))
 			_count("windows", bill)
 			_mischief(5.0)
 			bills += bill
 			pop_text("-$%d" % bill, p, Color("f07060"))
 			shake(4.0)
 			tier = 1
-			if customer.where == "window" and customer.window_x == _window_at(p) and not customer.knocked_out:
+			if customer.where == "window" and customer.window_x == _window_at(p, f.z) and not customer.knocked_out:
 				_count("customer_hits") # through the glass and into them
 				tier = 2
 				if customer.on_stone("customer"):
@@ -1293,6 +1350,21 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_land(lawn.keep_in(p, 8.0), "dog") # it scrabbles at the fence instead
 			elif f.kind.begins_with("body_"):
 				_count("bodies_hidden") # next door's problem now
+		"fence":
+			Sfx.play("thud")
+			_drop_bounced(f)
+		"roof": # it clatters down the tiles and drops off the gutter
+			Sfx.play("clonk")
+			customer.on_stone("wall")
+			_react()
+			var foot := Vector2(p.x, _house.position.y + _house.WALL_H + 10.0)
+			get_tree().create_timer(0.5).timeout.connect(_land.bind(foot, f.kind))
+		"self":
+			Sfx.play("thud")
+			_count("own_head")
+			walker.dazed = 1.5
+			pop_text("OW!", walker.global_position + Vector2(0, -24), Color("f07060"))
+			_land(walker.global_position + Vector2(10, 4), f.kind)
 		"mower":
 			Sfx.play("clonk")
 			mower.damage(8.0)
@@ -1332,7 +1404,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		if alive:
 			if target == "": # just thrown across the lawn: the animal's own tier
 				tier = CRITTERS[f.kind].tier
-			elif target != "gone": # into something: one above the worse of the two, and heat for the method
+			elif target not in ["gone", "self"]: # into something: one above the worse of the two, and heat for the method
 				tier = mini(2, maxi(tier, CRITTERS[f.kind].tier) + 1)
 				Game.heat += 1.0
 		if tier > 0:

@@ -149,7 +149,7 @@ const TALLY := {
 	"gnomes_mowed": "Gnomes shattered", "flamingos_mowed": "Flamingos shredded", "cones_mowed": "Cones sent flying",
 	"hoses_mowed": "Hoses cut", "urns_mowed": "Urns smashed", "balls_mowed": "Tennis balls shredded", "jerrycans_mowed": "Petrol cans mowed",
 	"fetches": "Balls fetched", "animals_thrown": "Animals thrown", "prickled": "Hedgehogs grabbed bare-handed",
-	"bitten": "Bitten by squirrels",
+	"bitten": "Bitten by squirrels", "own_head": "Stones on your own head",
 	"trees_hit": "Trees stoned", "splashes": "Stones fed to the pond",
 	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
 	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",

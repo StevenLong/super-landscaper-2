@@ -13,6 +13,10 @@ const WALL_H := ART_FOOT - ART_RIDGE ## back fence to the foot of the front wall
 const GARAGE_FOOT := 184.0 ## the foot in art/garage.png (tools/art_sprites.py GARAGE_BASE)
 const GARAGE_H := GARAGE_FOOT - 4.0 ## its roof's top to its foot: the solid part
 const GLASS := Rect2(0, -62, 30, 36) ## a ground-floor window's glass, from its x (windows()) and the foot
+const WALL_TOP := 158.0 ## the front wall's height (tools/art_sprites.py wall_top); the roof starts here
+const ROOF_D := 77.0 ## the roof rises this far and runs this far back to the ridge (45 degrees, half of WALL_H - WALL_TOP)
+const FLOOR_UP := 79.0 ## an upstairs pane sits this far above the one below it
+const UPSTAIRS := 1000 ## added to a window's x (windows()) for the pane above it
 ## The building by venue: its art, the side building's, its width, and the x of each
 ## ground-floor window (tools/art_sprites.py draws them there).
 const VENUES := {
@@ -40,6 +44,14 @@ var peek_tex: Texture2D ## the customer's sprite sheet (client.gd), for their he
 
 func windows() -> Array:
 	return VENUES[venue].windows
+
+
+## The glass up the front, [from, to] above the foot: the ground floor, then upstairs
+## (UPSTAIRS). The church has one tall lancet.
+func panes() -> Array:
+	if venue == "graveyard":
+		return [[23.0, 144.0]]
+	return [[26.0, 62.0], [26.0 + FLOOR_UP, 62.0 + FLOOR_UP]]
 
 
 func rect() -> Rect2:
@@ -94,8 +106,8 @@ func _draw_house() -> void:
 		_front.draw_texture_rect_region(peek_tex, Rect2(GLASS.position + Vector2(peek_x, GLASS.size.y - head.size.y), head.size), head)
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
-	for x in broken:
-		var o := GLASS.position + Vector2(x, 0)
+	for id in broken:
+		var o := GLASS.position + Vector2(id % UPSTAIRS, -FLOOR_UP * floori(id / float(UPSTAIRS)))
 		var s := GLASS.size
 		_front.draw_rect(Rect2(o, s), Color("1a1820"))
 		for shard: PackedVector2Array in [

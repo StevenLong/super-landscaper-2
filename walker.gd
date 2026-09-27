@@ -7,6 +7,9 @@ signal thrown(dir: Vector2, power: float)
 
 const AIM_RATE := PI / 2.0 ## radians a second while aiming: the precision knob
 const CHARGE_TIME := 1.0 ## seconds held to reach full power
+const PITCH_RATE := PI / 3.0 ## radians a second up and down tilt the throw
+const PITCH_MIN := 0.1 ## nearly flat
+const PITCH_MAX := PI / 2.0 ## straight up (and back down on your head)
 
 @export var speed := 140.0
 
@@ -17,7 +20,8 @@ var _frame := 0
 var aiming := false
 var dazed := 0.0 ## seconds left seeing stars (a hedgehog grabbed bare-handed)
 var power := 0.0 ## 0 to 1 while aiming
-var reach := func(_power: float) -> float: return 0.0 ## main: how far a throw at this power lands
+var pitch := 0.5 ## how steeply you throw, radians above the ground; kept between throws
+var reach := func(_power: float) -> float: return 0.0 ## main: how far a throw at this power (and pitch) lands
 var _marker: Node2D
 
 
@@ -55,6 +59,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if aiming:
 		rotation += Input.get_axis("turn_left", "turn_right") * AIM_RATE * delta
+		pitch = clampf(pitch + Input.get_axis("move_back", "move_forward") * PITCH_RATE * delta, PITCH_MIN, PITCH_MAX)
 		power = minf(1.0, power + delta / CHARGE_TIME)
 		queue_redraw()
 		_marker.queue_redraw()
@@ -90,9 +95,14 @@ func _draw() -> void:
 		_draw_held(held)
 
 
-## Where the throw lands if nothing is in the way: a ring on the ground.
+## Where the throw lands if nothing is in the way: a ring on the ground. And a short
+## sight from your hand, tilted up as steeply as you'll throw.
 func _draw_marker() -> void:
 	if aiming:
+		var d := Vector2.RIGHT.rotated(rotation)
+		var tip := d * cos(pitch) * 16.0 * Vector2(1.0, 0.6) + Vector2(0, -12.0 - 16.0 * sin(pitch))
+		_marker.draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
+		_marker.draw_line(Vector2(0, -12), tip, Color(1, 1, 1, 0.8), 1.5)
 		_marker.draw_set_transform(Vector2(reach.call(power), 0), -rotation, Vector2(1.0, 0.6))
 		_marker.draw_arc(Vector2.ZERO, 7.0, 0.0, TAU, 20, Color(1, 1, 1, 0.9), 1.5)
 		_marker.draw_circle(Vector2.ZERO, 1.5, Color(1, 1, 1, 0.9))

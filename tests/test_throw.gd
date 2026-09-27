@@ -1,5 +1,6 @@
-# Charged throws: holding throw locks you in place, turns the aim and fills the power;
-# letting go throws that far; hop cancels and keeps the stone.
+# Charged throws: holding throw locks you in place, left/right turn the aim, up/down tilt
+# it, power fills; letting go throws in an arc that lands where the marker was; hop
+# cancels and keeps the stone; straight up comes down on your head.
 extends SceneTree
 
 var m: Node
@@ -46,11 +47,13 @@ func _physics_process(_delta: float) -> bool:
 		2:
 			assert(m.walker.global_position == _at, "locked in place while aiming")
 			assert(m.walker.rotation > _aim0 + 0.5, "right turns the aim")
+			assert(m.walker.pitch > 0.8, "up tilts it up")
 			assert(m.walker.power > 0.4 and m.walker.power < 0.6, "power fills over about a second")
 			assert(m.get_node("Stones").get_children().filter(func(s: Node) -> bool: return s is FlyingStone).is_empty(), "nothing thrown yet")
 			_wait = 60
 		3:
 			assert(m.walker.power == 1.0, "power stops at max")
+			m.walker.pitch = PI / 4.0
 			Input.action_release("turn_right")
 			Input.action_release("move_forward")
 			Input.action_release("throw")
@@ -59,9 +62,10 @@ func _physics_process(_delta: float) -> bool:
 			var flying: Array = m.get_node("Stones").get_children().filter(func(s: Node) -> bool: return s is FlyingStone)
 			assert(flying.size() == 1 and m.walker.carrying == "" and not m.walker.aiming, "letting go throws the stone")
 			var f: FlyingStone = flying[0]
-			assert(absf(f.velocity.angle() - m.walker.rotation) < 0.01, "along the aim")
-			var landing: Vector2 = f.position + f.velocity.normalized() * f.range_left
-			assert(absf(landing.distance_to(_at) - m.THROW_MAX) < 1.0, "a full wind-up lands at full reach, where the marker was")
+			assert(absf(f.velocity.angle() - m.walker.rotation) < 0.01 and f.vz > 0.0, "along the aim, and up")
+			var reach: float = m._throw_reach(1.0)
+			assert(absf(f.landing().distance_to(_at) - reach) < 1.0, "it comes down where the marker was")
+			assert(reach > m.THROW_MAX and reach < m.THROW_MAX + 40.0, "a full wind-up at 45 degrees carries full reach")
 			# Hop cancels the wind-up and you keep the stone.
 			m.walker.carrying = "stone"
 			_press("throw")
@@ -74,6 +78,13 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 2
 		5:
 			assert(m.walker.carrying == "stone", "letting go after a cancel throws nothing")
+			# Straight up, a tap: it comes down on your head.
+			m.walker.pitch = m.walker.PITCH_MAX
+			_press("throw")
+			Input.action_release("throw")
+			_wait = 90
+		6:
+			assert(m.tally.get("own_head", 0) == 1 and m.walker.dazed > 0.0, "what goes up comes down on your head")
 			print("PASS throw")
 			quit()
 	_step += 1

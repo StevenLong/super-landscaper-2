@@ -50,11 +50,18 @@ func _physics_process(_delta: float) -> bool:
 			assert(mower.condition < 100.0, "and hurts the mower")
 			# What a flung stone can hit.
 			var house: Node2D = m.get_node("Scenery/House")
-			assert(m._stone_hit_test(m.get_node("Client").position + Vector2(0, -14)) == "customer", "stone hits the customer")
+			assert(m._stone_hit_test(m.get_node("Client").position) == "customer", "stone hits the customer")
+			assert(m._stone_hit_test(m.get_node("Client").position, 40.0) == "", "a lob sails over their head")
 			assert(m._stone_hit_test(house.position + Vector2(55, house.WALL_H - 26.0)) == "window", "stone hits a window")
 			assert(m._stone_hit_test(house.position + Vector2(95, house.WALL_H - 26.0)) == "wall", "stone hits the wall between windows")
 			assert(m._stone_hit_test(m.get_node("Truck").position) == "truck", "stone dents the truck")
-			assert(m._stone_hit_test(Vector2(-5, 300)) == "gone", "stone over the fence")
+			assert(m._stone_hit_test(Vector2(-5, 300)) == "fence", "a low stone hits the fence")
+			assert(m._stone_hit_test(Vector2(-5, 300), 40.0) == "gone", "a high one goes over it")
+			assert(m._stone_hit_test(house.position + Vector2(55, house.WALL_H - 2.0), 90.0 + 25.0) == "window", "an upstairs window, thrown high")
+			assert(m._window_at(house.position + Vector2(55, house.WALL_H - 2.0), 115.0) == 40 + house.UPSTAIRS, "and it's the upstairs one")
+			assert(m._stone_hit_test(house.position + Vector2(55, house.WALL_H - 30.0), 170.0) == "roof", "a lob onto the roof")
+			assert(m._stone_hit_test(house.position + Vector2(55, house.WALL_H - 30.0), 230.0) == "", "higher still, it's over the roof")
+			assert(m._stone_hit_test(house.position + Vector2(55, 100.0), 200.0) == "gone", "and past the ridge, gone")
 			assert(m._stone_hit_test(Vector2(640, 600)) == "", "stone lands on grass")
 			# A pond is flat: a stone flies over it, and only one landing in it splashes.
 			var pond := Pond.new()
@@ -134,7 +141,7 @@ func _physics_process(_delta: float) -> bool:
 			# Throwing: pick up a stone and lob it at a window.
 			var house: Node2D = m.get_node("Scenery/House")
 			var bills_before: float = m.bills
-			var f: FlyingStone = m.throw_stone(house.position + Vector2(55, house.WALL_H + 94.0), Vector2.UP, 460.0, 300.0)
+			var f: FlyingStone = m.throw_stone(house.position + Vector2(55, house.WALL_H + 94.0), Vector2.UP, 400.0, 0.45)
 			_thrown = f
 			_bills0 = bills_before
 			_wait = 30

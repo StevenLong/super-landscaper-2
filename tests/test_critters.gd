@@ -80,7 +80,7 @@ func _physics_process(_delta: float) -> bool:
 			m.job.dog_name = "Rolo" # the default job has no dog
 			m._release_dog()
 			m.dog.position = Vector2(640, 600) # open grass
-			assert(m._stone_hit_test(m.dog.position) == "dog" and m._stone_hit_test(m.dog.position, "ball") == "", "a stone hits the dog, the ball sails past")
+			assert(m._stone_hit_test(m.dog.position) == "dog" and m._stone_hit_test(m.dog.position, 0.0, false, "ball") == "", "a stone hits the dog, the ball sails past")
 			m.dog.position = m.walker.global_position + Vector2(10, 0)
 			_wait = 1
 		7:
