@@ -98,7 +98,8 @@ const PERSONAS := {
 		# Their own voice (customer.gd _say): an id, then a line or a pick of lines.
 		"lines": {"squash": ["May God forgive you.", "Lord have mercy!"], "flowers": "Those were for the departed!",
 			"window": "The VESTRY window!", "car": "Thou shalt not dent!", "hit": "Heavens! My EYE!",
-			"fire": "Go, and sin no more. Elsewhere.", "stunned": "Rise, little one!", "paid_good": "Bless you, my child.",
+			"fire": "Go, and sin no more. Elsewhere.", "stunned": "Rise, little one!",
+			"status_good": "The Lord is pleased.", "status_bad": "My patience is not infinite, even if His is.", "paid_good": "Bless you, my child.",
 			"paid_ok": "The Lord loves a trier.", "paid_bad": "I shall pray for you."},
 	},
 }

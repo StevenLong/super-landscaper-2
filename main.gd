@@ -23,6 +23,7 @@ const THROW_MAX := 300.0 ## how far a full wind-up throws
 const THROW_FROM := 12.0 ## the stone leaves your hand this far in front (less, the steeper you throw)
 const THROW_Z := 12.0 ## and this high
 const HEAD := 30.0 ## how tall a person is: a stone lower than this hits them
+const TALK := 36.0 ## how close you walk up to the customer (or their door, if they're in) to talk
 ## Animals you can pick up: "tier" on the crime ladder for throwing one, "hold" seconds
 ## before it wriggles or bites free. A hedgehog bare-handed stuns you instead (gloves fix it).
 const CRITTERS := {"dog": {"tier": 1, "hold": 5.0}, "hedgehog": {"tier": 0, "hold": INF}, "squirrel": {"tier": 0, "hold": 3.0}}
@@ -114,7 +115,7 @@ func _ready() -> void:
 		var lines: Array = job.brief.duplicate()
 		if job.get("dog", false):
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
-		lines.append_array(["", "Mow the lawn. Hand in at your truck when you're happy."])
+		lines.append_array(["", "Mow the lawn, then walk up and ask to be paid. Your truck's for leaving."])
 		if Game.jobs_done == 0:
 			lines.append_array(["%s %s at the truck. %s hop off to move" % ["Stick drives and turns." if Game.pad
 				else "W/S drive, A/D turn.", Game.key("interact"), Game.key("hop")],
@@ -644,13 +645,15 @@ func _hint() -> String:
 				return "Walk %s back to the patio" % job.dog_name
 			if not dog.limping and not dog.held and walker.global_position.distance_to(dog.position) < 80.0:
 				return "Walk into %s to put them on the lead, or %s pick them up" % [job.dog_name, Game.key("interact")]
+		if near_customer():
+			return Game.key("interact") + " talk to " + job.customer
 		if at_truck():
 			return Game.key("interact") + " truck"
 		if walker.global_position.distance_to(mower.global_position) < 44.0:
 			return Game.key("hop") + " get back on"
 		return _fired_hint() if customer.fired else ""
 	if at_truck():
-		return Game.key("interact") + " talk to the customer / leave"
+		return Game.key("interact") + " leave   (on foot, walk up to the customer to get paid)"
 	return _fired_hint() if customer.fired else ""
 
 
@@ -762,6 +765,8 @@ func interact() -> void:
 			Sfx.play("ui_move", 0.0)
 		elif _pick_up_critter():
 			pass
+		elif near_customer():
+			open_customer_menu()
 		elif at_truck():
 			open_truck_menu()
 
@@ -840,7 +845,7 @@ func _stone_near(p: Vector2) -> Stone:
 
 func open_pause() -> void:
 	get_tree().paused = true
-	hud.open("Paused", [], [["resume", "Resume"], ["music", "Music: %s" % ("on" if Sfx.music_on else "off")],
+	hud.open("Paused", wants_lines(), [["resume", "Resume"], ["music", "Music: %s" % ("on" if Sfx.music_on else "off")],
 		["sound", "Sound: %s" % ("on" if Sfx.sound_on else "off")], ["quit", "Quit to title"]])
 
 
@@ -852,7 +857,6 @@ func open_truck_menu() -> void:
 	elif customer.knocked_out:
 		buttons.append(["leave_ko", "Leave quietly"])
 	else:
-		buttons.append(["handin", "Ask to be paid"])
 		buttons.append(["leave", "Drive off (no pay)"])
 	if walker and walker.carrying == "" and mower.power == "fuel":
 		buttons.append(["can", "Grab the fuel can"])
@@ -884,6 +888,8 @@ func _on_choice(id: String) -> void:
 			get_tree().paused = false
 		"handin":
 			hand_in()
+		"status":
+			open_customer_menu(_status_lines())
 		"leave":
 			_finish(customer.walked_result(_costs()))
 		"leave_ko":
@@ -906,6 +912,45 @@ func _on_choice(id: String) -> void:
 			get_tree().change_scene_to_file("res://title.tscn")
 
 
+## Close enough to the customer to talk: on foot, by the patio (their door's there too).
+func near_customer() -> bool:
+	return walker != null and not customer.knocked_out and walker.global_position.distance_to($Client.position) < TALK
+
+
+## Walked up to the customer (or knocked, if they're in): ask for your money, or how
+## it's going. `lines` is what's just been said.
+func open_customer_menu(lines: Array = []) -> void:
+	get_tree().paused = true
+	if customer.where != "patio" and customer.come_out(): # they answer the door, and see what's what
+		_react()
+	var buttons := []
+	if settled.is_empty():
+		buttons.append(["handin", "Ask to be paid"])
+	buttons.append(["status", "How am I doing?"])
+	buttons.append(["resume", "Never mind" if settled.is_empty() else "Bye"])
+	hud.open(job.customer, lines, buttons, job.look, customer.face())
+
+
+## Asked how it's going: an honest answer, then what they asked for.
+func _status_lines() -> Array:
+	return ["\"%s\"" % customer.status_line(), "Mowed: %d%%" % floori(lawn.cut_fraction() * 100.0), ""] + wants_lines()
+
+
+## What the customer asked for, so you needn't remember it: their words, and plainly
+## how they want it done. On the pause menu, and when you ask them.
+func wants_lines() -> Array:
+	var p: Dictionary = Game.PERSONAS[job.persona]
+	var lines: Array = ["%s said:" % job.customer]
+	for b: String in job.brief:
+		lines.append("   \"%s\"" % b)
+	var pace := "quickly" if p.patience < 0.95 else ("no rush" if p.patience > 1.25 else "in good time")
+	var finish := "every blade" if job.target >= 0.9 else ("roughly will do" if job.target <= 0.75 else "a tidy job")
+	lines.append("Wants it: %s, %s." % [pace, finish])
+	if job.get("dog", false):
+		lines.append("%s the dog likes to escape." % job.dog_name)
+	return lines
+
+
 ## Ask for payment. Too little done and they send you back out, annoyed.
 func hand_in() -> void:
 	var cov := lawn.cut_fraction()
@@ -923,7 +968,9 @@ func hand_in() -> void:
 	pop_text("+$%d" % settled.paid, $Client.position + Vector2(0, -40))
 	if Game.in_run and settled.mood >= 60.0:
 		Sfx.play("voice_happy")
-	open_truck_menu()
+	open_customer_menu(["\"%s\"" % settled.comment, "They hand over $%d%s." % [settled.paid,
+		(" (a $%d tip!)" % settled.tip) if settled.tip > 0 else ""],
+		"Drive off from your truck when you like. (They're watching. Behave.)"])
 
 
 ## Playtest cheat, debug builds only: [0] ends the job as well as it can go (whole

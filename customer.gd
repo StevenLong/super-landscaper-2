@@ -286,6 +286,20 @@ func _change(d: float) -> void:
 		fire(_say("fire", "That's it. You're fired!"))
 
 
+## Asked how it's going: an honest answer, by mood, and a nudge if time's getting on.
+func status_line() -> String:
+	if fired:
+		return fire_line
+	if paid:
+		return "You've been paid. Off you go."
+	var line := _say("status_good", "Lovely so far!") if mood >= 75.0 else (
+		_say("status_ok", "Coming along.") if mood >= 55.0 else (
+		_say("status_meh", "I've seen better.") if mood >= 35.0 else _say("status_bad", "You're on thin ice.")))
+	if elapsed > job.patience * GLANCES[0]:
+		line += " And do get a move on."
+	return line
+
+
 ## A line in this persona's own voice if it has one (PERSONAS "lines"), else the usual.
 func _say(id: String, usual: String) -> String:
 	var l: Variant = persona.get("lines", {}).get(id, usual)
