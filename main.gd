@@ -63,6 +63,7 @@ var _next_squirrel := 8.0
 var _dog_in := -1.0
 var _house: Node2D
 var _car: StaticBody2D ## the customer's, up the drive; not every job
+var _hose: Hose ## on its tap by the house; not every job
 var _shake := 0.0
 var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
 var _tells: Array[Dictionary] = [] ## critters about to come out: {kind, at, grace, left}
@@ -249,6 +250,9 @@ func _build_layout() -> void:
 		rp.seed = job.seed + 4
 		var props: Array = job.get("props", []) + (["ball"] if job.get("dog", false) else [])
 		for kind: String in props:
+			if kind == "hose":
+				_lay_hose(rp)
+				continue
 			var pr := _place(rp, taken, Vector2(14, 14), size)
 			if pr.has_area():
 				add_stone(pr.get_center(), kind)
@@ -305,6 +309,24 @@ func _loop_drive(at: Vector2) -> Rect2:
 	lawn.exclude_ring(at, outer, inner)
 	_add_bed(Rect2(at - inner + Vector2(26, 16), (inner - Vector2(26, 16)) * 2.0), "oval")
 	return Rect2(at - outer, outer * 2.0).grow(10)
+
+
+## The hose, off a tap on the side of the house away from the garage, wandering out
+## across the lawn.
+func _lay_hose(rp: RandomNumberGenerator) -> void:
+	var h: Rect2 = _house.rect()
+	var side := -1.0 if _house.garage > 0 else 1.0
+	var tap := Vector2(h.position.x - 3.0 if side < 0.0 else h.end.x + 3.0, h.position.y + _house.WALL_H - 8.0)
+	var path := PackedVector2Array([tap])
+	var dir := Vector2(side, 1.0).normalized()
+	for i in 18:
+		dir = dir.rotated(rp.randf_range(-0.5, 0.5))
+		path.append(lawn.keep_in(path[-1] + dir * Hose.SEG, 10.0))
+	_hose = Hose.new()
+	_hose.mower = mower
+	_hose.lay(path)
+	_hose.mowed.connect(_on_hose_mowed)
+	$Scenery.add_child(_hose)
 
 
 ## The churchyard: rows of headstones, solid, some with flowers laid in front, wherever
@@ -577,6 +599,7 @@ func _physics_process(delta: float) -> void:
 	hud.set_hint(_hint())
 	_rifle(delta)
 	_hold_critter(delta)
+	_drag_hose()
 	if police_left >= 0.0:
 		police_left = maxf(0.0, police_left - delta)
 		hud.set_police(police_left)
@@ -629,11 +652,15 @@ func _hint() -> String:
 			return "Up/down tilt   Let go to throw   %s cancel" % Game.key("hop")
 		if walker.carrying == "jerrycan" and walker.global_position.distance_to(mower.global_position) < 44.0:
 			return Game.key("interact") + " fill up the mower"
+		if walker.carrying == "hose":
+			return Game.key("interact") + " let go of the hose"
 		if walker.carrying != "":
 			return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   hold %s throw it" % Game.key("throw")
 		var near := _stone_near(walker.global_position)
 		if near:
 			return Game.key("interact") + " pick up the " + _thing(near.kind)
+		if _hose and _hose.nearest(walker.global_position) > 0:
+			return Game.key("interact") + " pick up the hose"
 		if _critter_near(walker.global_position):
 			return Game.key("interact") + " pick up the " + _critter_near(walker.global_position).kind
 		if _can_rifle():
@@ -673,7 +700,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			hop_on()
 	elif event.is_action_pressed("interact"):
 		interact()
-	elif event.is_action_pressed("throw") and walker and walker.carrying != "":
+	elif event.is_action_pressed("throw") and walker and walker.carrying not in ["", "hose"]:
 		walker.aim()
 
 
@@ -731,6 +758,11 @@ func interact() -> void:
 		if at_truck():
 			open_truck_menu()
 		return
+	if walker.carrying == "hose": # let go: it lies where you left it
+		_hose.grabbed = -1
+		walker.carrying = ""
+		walker.queue_redraw()
+		return
 	if walker.carrying == "jerrycan" and walker.global_position.distance_to(mower.global_position) < 44.0:
 		mower.add_fuel(mower.max_fuel)
 		_count("cans")
@@ -762,6 +794,10 @@ func interact() -> void:
 				_count("stones_picked")
 			walker.carrying = s.kind
 			walker.queue_redraw()
+			Sfx.play("ui_move", 0.0)
+		elif _hose and _hose.nearest(walker.global_position) > 0:
+			_hose.grabbed = _hose.nearest(walker.global_position)
+			walker.carrying = "hose"
 			Sfx.play("ui_move", 0.0)
 		elif _pick_up_critter():
 			pass
@@ -910,6 +946,35 @@ func _on_choice(id: String) -> void:
 			get_tree().paused = false
 			Game.in_run = false
 			get_tree().change_scene_to_file("res://title.tscn")
+
+
+## Dragging the hose: it follows your hand, and holds you to its length from the tap.
+func _drag_hose() -> void:
+	if _hose == null:
+		return
+	if walker == null or walker.carrying != "hose" or _hose.grabbed < 0:
+		if walker and walker.carrying == "hose": # the bit you held got mowed off
+			walker.carrying = ""
+		_hose.grabbed = -1
+		return
+	var tap := _hose.points[0]
+	walker.global_position = tap + (walker.global_position - tap).limit_length(_hose.reach())
+	_hose.hand = walker.global_position
+
+
+## Through the blades: a cut hose, a puddle where it sprays, and it's theirs.
+func _on_hose_mowed(at: Vector2) -> void:
+	var k: Dictionary = Stone.KINDS.hose
+	_count("hoses_mowed")
+	mower.damage(k.damage)
+	Sfx.play("splash")
+	shake(2.0)
+	_burst(at, ["3c9a3a", "1e5a24", "68a0e0"])
+	_spills.append([at, k.spill])
+	$Decals.queue_redraw()
+	_mischief(3.0)
+	if customer.on_property(k.theirs, k.mood):
+		_react()
 
 
 ## Close enough to the customer to talk: on foot, by the patio (their door's there too).

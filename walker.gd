@@ -113,7 +113,7 @@ func _draw_held(at: Vector2) -> void:
 		for i in 3:
 			var a := dazed * 6.0 + i * TAU / 3.0
 			draw_circle(Vector2(cos(a) * 9.0, -30.0 + sin(a) * 3.0), 1.5, Color("f8e070"))
-	if carrying == "":
+	if carrying == "" or carrying == "hose": # the hose draws itself up to your hand
 		return
 	var c := Stone.texture(carrying)
 	if carrying in ["dog", "hedgehog", "squirrel"]: # an 8-facing sheet: held facing the way you do
