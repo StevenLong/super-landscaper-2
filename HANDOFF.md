@@ -6,6 +6,53 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 9 (2026-09-27): S8 checks cleared, triage 82 to 100, fixes, throw arcs, talking
+- S8 checks: all 21 passed. Comments became NOTES 82 to 89; the dev's idea dump 90 to 100.
+  The dev answered the triage questions: grit for stones the blades grind up, a car bump
+  is a crime only at speed, pad triggers plus the stick, wants in the pause menu and in
+  "How am I doing?", the truck keeps "Drive off (no pay)"; stones knock critters out
+  (thrown: KO, else a body; flung: splat, else KO), and a stone kill leaves a body you can
+  hide or mow. The dev shared manor reference images for 88 (summarised in NOTES 88).
+- Built, all unplayed: 98 (header in two rows; the real overflow was the rundown's rep
+  line shoving the shop off, so rundown lines wrap), 84, 85, 89, 92, 87, 82, 86, 97,
+  80b (throw arcs), 95 and 93 (talk to the customer), 99 (ticker, records), 83 (the hose).
+- Verified: run_all green (exit 0) with new tests: stunned, talk, records, hose, plus
+  extended critters, throw, hazards, police, venues, mower drive. Each visual change was
+  screenshotted headful and looked at. Nothing play-checked yet.
+- Promoted to the design doc (vetoable): paid face to face, wants stay readable, car bump
+  vs ram, personal bests and worsts, stones knock critters out, the hose on its tap, pad
+  triggers. Throwing step 2 was already there.
+- Calls I made while building (vetoable, not in the design doc):
+  - Knockouts: thrown 80% KO / 20% body, flung 75% splat / 25% KO; KO lasts 6 s and costs
+    40% of a death's mood; an unseen KO leaves nothing to find. Seen mulching a body
+    counts as a death again. A body in the pond is hidden too.
+  - Arcs: gravity 600; tilt 6 to 90 degrees at 60 a second, starting about 29 and kept
+    between throws; power scaled so 45 degrees carries the old reach. Heights: fence or
+    hedge 29, a person 30, car 36, truck 60, parked mower 20, critters 10, dog 16, rocks
+    and headstones 24, the canopy a ball round the crown, a 45 degree roof, over the ridge
+    gone. New side effect: a low throw at the fence now bounces back instead of leaving.
+  - The ball never hits the dog. A ram is a crime above impact 200 (petrol near top
+    speed, the ride-on).
+  - Talking: within 36 px of the patio spot (the door's there); knocking brings them out.
+    "Wants it" comes from persona patience and target.
+  - Records: the most per job of each count, saved; firsts don't count; best for dogs
+    walked home, fetches, stones picked or binned, cans; everything else is a worst.
+  - Hose: orange so it reads on grass, tap on the side away from the garage, 18 links of
+    16 px, cut once (the far end shredded).
+  - Vicar: "Reverend" plus surname, a clerical shirt (never picked at random), a collar
+    tab drawn on the portrait only (not the standing sprite).
+- New cheat: none. New tally names: knocked out, bodies disposed of and mulched, stones on
+  your own head.
+
+OWED CHECKS: 16, in CHECKS.txt (3 loads, about 30 minutes).
+
+NEXT:
+1. Play the S9 checks; triage what they turn up.
+2. /grill on 88 (venue shapes and the manor, from the reference images); it decides 46,
+   55 and 75b.
+3. /grill on 91 (mower types that play differently) and 96 (subquests); 94 and 100 when
+   there's room.
+
 ## Session 8 (2026-09-26): the whole grill order built (season, crime, objects, venues, art)
 - Built, all unplayed: bug batch 58 to 61, charged throws step 1 (80), the season and
   payday (72, 78), impatience signals (73), heat and the police (74, with 62's car ram),
@@ -234,52 +281,3 @@ NEXT:
 1. Play CHECKS.txt (loads 1 to 6) and answer on the `>` lines.
 2. Sign off or change the MY CALLS list in session 1.
 3. Balance once felt (push mower first).
-
-## Session 1 (2026-09-24): scaffold, the first slice, then a long-horizon experiment
-- Built on `main`, one slice at a time with your feel checks: Godot 4.7 scaffold and test
-  runner, mower and cutting, zoomed follow camera, fuel and truck, vertical fuel gauge, tree
-  and flowerbed. Your verdicts: steering, speed, cut width, blocky grass, zoom and smoothing
-  all good; empty tank is a fair punishment; truck easy to find.
-- Then the experiment you asked for, on branch `long-horizon` (`d47035d`..): take it as far as
-  possible without checking in, then refine. `main` is untouched since `69a0d8a` for comparison.
-- Built on the branch: wildlife, the customer (face, mood, briefing, pay, firing), the run
-  (title, job board, shop, reputation, bankruptcy), SNES-style art (all generated in code by
-  `tools/`), synthesised audio and music, stones and mower damage, on-foot mode, the dog,
-  knockouts and the wanted level, post-payment mischief, time nags, pixel font, attract mode,
-  gamepad, sound toggles, hold-Tab zoom-out, ponds, a balance probe.
-- Verified: `bash tests/run_all.sh` green (10 checks incl. a whole-run flow and a hazards test);
-  screenshots of every screen reviewed. Nothing here has been played by a person yet.
-- Bugs found and fixed on the way: 100% was unreachable (corner cells); scraping along a wall
-  wrecked the mower (the balance bot found it); deferred focus errors; the gardener firing the
-  bot for trampling.
-- MY CALLS, NEED YOUR SIGN-OFF (the design doc doesn't cover them; I have not written them
-  into `../game-dev/Super Landscaper.md`):
-  - Empty tank: crawl, no cutting. Exhausted push mower: crawl, still cuts.
-  - Six personas (nature lover, squirrel hater, gardener, busy, perfectionist, grump). Only
-    the gardener has a stated instant-fail (3+ flowers).
-  - Hand-in refused below 60% of their hidden target (sends you back, -10 mood).
-  - Pay = base x quality (squared below target) x lateness (floor 40%) x mood (0.5 to 1.5),
-    plus a 25% tip if delighted, on time and on target. Fuel, repairs and damages come off.
-  - Reputation moves half-way to its trend each job; 3/2/1/0 offers at 45/20/0; medium lawns
-    at 55, large at 75.
-  - Wanted level: +1 per knockout (+2 if by mower), 12% arrest chance per level per job,
-    decays a third per paid job. Arrest ends the run.
-  - The dog is bowled over and limps home, never killed (I kept it slapstick).
-  - Mischief after payment: -3 rep per squash, -2 per flower hit, -5 window, -8 dog or
-    customer. A paid customer can't fire you.
-  - Mower prices $180 / $650; upgrades: bigger tank $120, sharp blades $150.
-- Not built (deliberately): the garden/meta track, leaderboards, truck inventory Tetris (the
-  trailer is cosmetic), robot mowers, salting the lawn, the serial-killer run
-  as a distinct thing.
-- Housekeeping: early test runs wrote a stray best score ($140) to this machine's real save
-  (`%APPDATA%\Godot\app_userdata\Super Landscaper\best.cfg`) before tests got their own file.
-  Delete it if you want a clean slate.
-
-OWED CHECKS: CHECKS.txt (26 checks, five loads).
-
-NEXT:
-1. Play the five loads and send notes (triage them in one pass).
-2. Decide the experiment's verdict: merge `long-horizon` into `main`, cherry-pick, or rewrite.
-3. Sign off or change the MY CALLS list, then fold the kept ones into the design doc.
-4. Balance: the push mower is tight against most customers even for the bot
-   (`tests/sim_balance.gd`); tune once you've felt it.
