@@ -12,14 +12,23 @@ const TINTS := [Color(1, 1, 1), Color(1, 0.92, 0.84), Color(0.86, 0.94, 1.0), Co
 
 var _r: RandomNumberGenerator
 var _tree_i := 0
+var _house_y := 0.0
 
 
 ## w, h: the lawn; border: the hedge/fence run's depth; far: y of the road's far
-## pavement's far edge; up: how far a hedge or fence rises.
-func build(w: float, h: float, border: float, far: float, up: float, r: RandomNumberGenerator) -> void:
+## pavement's far edge; up: how far a hedge or fence rises. The street matches the plot
+## (game.gd _shape): a terrace has terraces either side, a house set forward has
+## neighbours set forward too (house_y).
+func build(w: float, h: float, border: float, far: float, up: float, r: RandomNumberGenerator, shape := "rect", house_y := 0.0) -> void:
 	y_sort_enabled = true
 	_r = r
+	_house_y = house_y
 	for side in [-1, 1]:
+		if shape == "terrace":
+			for i in 3:
+				var x := -border - (i + 1) * (w + border) if side < 0 else w + border + i * (w + border)
+				_terrace(Rect2(x, 0, w, h), border, up)
+			continue
 		var plot := Rect2(-border - PLOT if side < 0 else w + border, 0, PLOT, h)
 		match ["house", "house", "woods", "lot"][r.randi() % 4]:
 			"house":
@@ -54,7 +63,7 @@ func _neighbour(plot: Rect2, side: int, h: float, border: float, up: float) -> v
 		_ground(preload("res://art/grass_long.png"), Rect2(plot.position, plot.size))
 	# House and garage (560 wide) centred in the plot, so neither runs into a fence.
 	var garage: int = [-1, 1][_r.randi() % 2]
-	var hs := _house(Vector2(plot.position.x + (PLOT - 560.0) * 0.5 + (HouseScript.GARAGE_W if garage < 0 else 0.0), 0), garage)
+	var hs := _house(Vector2(plot.position.x + (PLOT - 560.0) * 0.5 + (HouseScript.GARAGE_W if garage < 0 else 0.0), _house_y), garage)
 	var g: Rect2 = hs.garage_rect()
 	var drive := Rect2(g.position.x + 10, g.end.y, g.size.x - 20, h + border + 40.0 - g.end.y)
 	_ground(preload("res://art/gravel.png"), drive, Color(1.0, 0.88, 0.68))
@@ -78,8 +87,39 @@ func _neighbour(plot: Rect2, side: int, h: float, border: float, up: float) -> v
 		var at := Vector2(_r.randf_range(yard.position.x, yard.end.x - sz.x), _r.randf_range(yard.position.y, yard.end.y - sz.y))
 		if not Rect2(at, sz).grow(20).intersects(drive):
 			_bed(Rect2(at, sz), tidy)
-	if _r.randf() < 0.7:
-		_tree(Vector2(plot.position.x + _r.randf_range(80, PLOT - 80), _r.randf_range(420, h - 60)), 42.0)
+	if _r.randf() < 0.7 and yard.size.y > 100.0:
+		_tree(Vector2(plot.position.x + _r.randf_range(80, PLOT - 80), _r.randf_range(yard.position.y + 60, yard.end.y)), 42.0)
+
+
+## Another terrace like the customer's: the house at the road end with its passage, a
+## long thin garden behind, fenced from the next.
+func _terrace(plot: Rect2, border: float, up: float) -> void:
+	var tidy := _r.randf() < 0.5
+	_ground(preload("res://art/grass_light.png") if tidy else preload("res://art/grass_long.png"), plot, Color(0.85, 0.92, 0.8))
+	var passage: int = [-1, 1][_r.randi() % 2]
+	var hs: Node2D = HouseScript.new()
+	hs.passage = true
+	hs.garage = passage
+	hs.position = Vector2(plot.position.x + (HouseScript.GARAGE_W if passage < 0 else 0.0), _house_y)
+	hs.modulate = TINTS[_r.randi() % TINTS.size()]
+	add_child(hs)
+	var g: Rect2 = hs.garage_rect()
+	_ground(preload("res://art/paving.png"), Rect2(g.position.x + 10, g.position.y, g.size.x - 20, plot.end.y + border + 40.0 - g.position.y))
+	_strip(preload("res://art/fence_v.png"), Rect2(plot.end.x, -up, border, plot.size.y + border), 0)
+	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, -32, plot.size.x, 32), 0)
+	_strip(preload("res://art/hedge_h.png"), Rect2(plot.position.x, plot.end.y + border - 44, hs.rect().size.x, 44), 0)
+	for i in _r.randi_range(0, 2): # beds, or dug-over patches, down the garden
+		var sz := Vector2(_r.randf_range(90, 200), _r.randf_range(40, 80))
+		_bed(Rect2(plot.position + Vector2(_r.randf_range(30, plot.size.x - sz.x - 30), _r.randf_range(60, _house_y - sz.y - 80)), sz), tidy)
+	if _r.randf() < 0.6:
+		_tree(Vector2(plot.position.x + _r.randf_range(80, plot.size.x - 80), _r.randf_range(120, _house_y - 80)), [34.0, 42.0][_r.randi() % 2])
+
+
+## Next door's corner of an L plot: their lawn, and a tree maybe.
+func corner(box: Rect2, tint: Color) -> void:
+	_ground(preload("res://art/grass_light.png"), box, tint)
+	if box.size.x > 140.0 and _r.randf() < 0.7:
+		_tree(Vector2(box.get_center().x + _r.randf_range(-30, 30), box.position.y + box.size.y * 0.5), 42.0)
 
 
 ## A patch of woods: darker ground and trees packed in.

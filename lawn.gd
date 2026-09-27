@@ -19,6 +19,7 @@ const MASK := {UNCUT: Color(0, 0, 0), CUT: Color(0.5, 0, 0), CUT_DARK: Color(1, 
 @export var cell_px := 4
 
 var exits: Array[Rect2] = [] ## walkable ground past the lawn's edge (the drive out to the kerb)
+var holes: Array[Rect2] = [] ## off limits inside the lawn's rect (next door's corner of an L plot)
 
 var _img: Image
 var _tex: ImageTexture
@@ -126,6 +127,16 @@ func keep_in(p: Vector2, margin: float) -> Vector2:
 		var q := p.clamp(a.position, a.end)
 		if q.distance_squared_to(p) < best.distance_squared_to(p):
 			best = q
+	for hole in holes: # out by the nearest side that's still on the lawn
+		var g := hole.grow(margin)
+		if not g.has_point(best):
+			continue
+		var inner := Rect2(Vector2.ZERO, size_px).grow(-margin)
+		var out := Vector2.INF
+		for q: Vector2 in [Vector2(g.position.x, best.y), Vector2(g.end.x, best.y), Vector2(best.x, g.position.y), Vector2(best.x, g.end.y)]:
+			if inner.grow(0.01).has_point(q) and q.distance_squared_to(best) < out.distance_squared_to(best):
+				out = q
+		best = out
 	return best
 
 

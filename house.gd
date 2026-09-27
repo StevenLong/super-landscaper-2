@@ -1,10 +1,10 @@
 extends Node2D
-## The customer's house at the top of the garden, with a patio they watch from, and a
-## garage attached on one side that the drive leads up to. Not lawn. Seen 3/4: the art
-## stands up from the front wall's foot at WALL_H, and its ridge meets the back fence
-## (y 0), so the ground from the fence to the foot is all house. What's behind the roof
-## can't be seen, so it can't be reached either. The garage is lower: the lawn carries
-## on behind it.
+## The customer's house, with a patio they watch from, and a garage attached on one side
+## that the drive leads up to. Not lawn. Seen 3/4: the art stands up from the front wall's
+## foot at WALL_H to the ridge at the top of rect(), so that ground is all house. On a
+## plain plot the ridge meets the back fence; set forward (or on a terrace) there's a back
+## garden behind it, and the patio is out the back. The garage is lower: the lawn carries
+## on behind it. A terrace has no garage, just a passage down the side.
 
 const GARAGE_W := 120.0
 const ART_FOOT := 348.0 ## y of the wall's foot in art/house.png (tools/art_sprites.py HOUSE_BASE)
@@ -32,6 +32,8 @@ var venue := "house":
 var size := Vector2(440, WALL_H + 24.0) ## the house and its patio
 var garage := 1 ## which side it's on: -1 left, 1 right
 var gap := 0.0 ## a detached garage stands this far off the house, lawn between
+var passage := false ## no garage: a path down that side instead (garage_rect() has no depth)
+var back_patio := false ## the patio's out the back, behind the ridge, where the garden is
 var broken: Array[int] = [] ## x of each smashed window (windows())
 var peek_x := -1: ## the window the customer is watching from, or -1
 	set(v):
@@ -59,6 +61,8 @@ func rect() -> Rect2:
 
 
 func garage_rect() -> Rect2:
+	if passage: # a line along the ridge: the drive (the passage) runs from here to the road
+		return Rect2(position + Vector2(-GARAGE_W if garage < 0 else size.x, 0), Vector2(GARAGE_W, 0))
 	return Rect2(position + Vector2(-GARAGE_W - gap if garage < 0 else size.x + gap, WALL_H - GARAGE_H), Vector2(GARAGE_W, GARAGE_H))
 
 
@@ -68,7 +72,14 @@ func footprint() -> Rect2:
 
 
 func patio_point() -> Vector2:
+	if back_patio:
+		return back_patio_rect().get_center() + Vector2(0, -4)
 	return position + Vector2(size.x * 0.5 + 44, size.y - 6)
+
+
+## The paving out the back, or nothing.
+func back_patio_rect() -> Rect2:
+	return Rect2(position + Vector2(size.x * 0.5 - 20, -48), Vector2(128, 48)) if back_patio else Rect2()
 
 
 func smash(window_x: int) -> void:
@@ -90,6 +101,8 @@ func _ready() -> void:
 	_front.draw.connect(_draw_house)
 	add_child(_front)
 	_art = load("res://art/%s.png" % VENUES[venue].art)
+	if passage:
+		return
 	var g := Sprite2D.new()
 	g.texture = load("res://art/%s.png" % VENUES[venue].side)
 	g.centered = false

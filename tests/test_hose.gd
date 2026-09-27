@@ -15,7 +15,7 @@ func _initialize() -> void:
 	g.save_path = "user://test_best.cfg"
 	for s in range(1, 400):
 		var j: Dictionary = g.make_job(s)
-		if "hose" in j.get("props", []) and not j.has("venue"):
+		if "hose" in j.get("props", []) and not j.has("venue") and not j.has("shape"): # a plain plot: the tap on the front corner
 			g.current_job = j
 			break
 	assert("hose" in g.current_job.props, "found a garden with a hose")

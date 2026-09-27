@@ -118,6 +118,7 @@ const HIGH_HEAT := 3.0 ## from here, a nuisance gets the police called too
 const SUBURBAN := ["nature", "squirrel_hater", "gardener", "busy", "perfectionist", "grump"]
 
 const LAWN_SIZES := [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]
+const TERRACE := Vector2i(560, 1600) ## a terrace's long thin garden: about a small lawn's area
 
 var money := 0
 var total_earned := 0
@@ -245,7 +246,8 @@ func ad_text(job: Dictionary) -> String:
 	var ad: Array = ads[job.seed % ads.size()]
 	var parts: Array[String] = [ad[1]]
 	parts.append({"mansion": "Country estate.", "graveyard": "Churchyard."}.get(job.get("venue", ""),
-		["Small lawn.", "Good-sized garden.", "Extensive grounds."][LAWN_SIZES.find(job.size)]))
+		"Long garden, terraced house." if job.get("shape", "") == "terrace"
+		else ["Small lawn.", "Good-sized garden.", "Extensive grounds."][LAWN_SIZES.find(job.size)]))
 	if job.get("ponds", 0) > 0:
 		parts.append("Ornamental pond.")
 	if job.get("dog", false):
@@ -321,7 +323,26 @@ func make_job(seed_value: int) -> Dictionary:
 	elif not dregs and reputation < 20.0 and rv.randf() < 0.5:
 		_venue(job, "graveyard", "vicar", 1, 0.7)
 		job.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)
+	else:
+		_shape(job)
 	return job
+
+
+## The plot's shape, by neighbourhood (design doc, Levels): terraces at the bottom of the
+## ladder, semis with the house set forward in the middle, odd-shaped detached plots at
+## the top, and a plain rectangle now and then in each. Its own draws.
+func _shape(job: Dictionary) -> void:
+	var r := RandomNumberGenerator.new()
+	r.seed = job.seed + 6
+	if r.randf() < 0.3:
+		return
+	if reputation < 40.0:
+		job.shape = "terrace"
+		job.size = TERRACE
+	elif reputation < 70.0:
+		job.shape = "forward"
+	else:
+		job.shape = "L"
 
 
 ## Turn a job into a venue's: its persona, its lawn size, and its pay scaled.
