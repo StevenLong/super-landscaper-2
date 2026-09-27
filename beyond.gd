@@ -25,9 +25,13 @@ func build(w: float, h: float, border: float, far: float, up: float, r: RandomNu
 	_house_y = house_y
 	for side in [-1, 1]:
 		if shape == "terrace":
+			var park := r.randf() < 0.35 # the council playground at the end of the row
 			for i in 3:
 				var x := -border - (i + 1) * (w + border) if side < 0 else w + border + i * (w + border)
-				_terrace(Rect2(x, 0, w, h), border, up)
+				if park and i == 0:
+					_playground(Rect2(x, 0, w, h), border)
+				else:
+					_terrace(Rect2(x, 0, w, h), border, up)
 			continue
 		var plot := Rect2(-border - PLOT if side < 0 else w + border, 0, PLOT, h)
 		match ["house", "house", "woods", "lot"][r.randi() % 4]:
@@ -113,6 +117,60 @@ func _terrace(plot: Rect2, border: float, up: float) -> void:
 		_bed(Rect2(plot.position + Vector2(_r.randf_range(30, plot.size.x - sz.x - 30), _r.randf_range(60, _house_y - sz.y - 80)), sz), tidy)
 	if _r.randf() < 0.6:
 		_tree(Vector2(plot.position.x + _r.randf_range(80, plot.size.x - 80), _r.randf_range(120, _house_y - 80)), [34.0, 42.0][_r.randi() % 2])
+
+
+## The council playground next to the terraces: rough grass, a tarmac pad by the road with
+## swings, a slide and a roundabout, railings along the front.
+func _playground(plot: Rect2, border: float) -> void:
+	_ground(preload("res://art/grass_long.png"), plot, Color(0.9, 0.95, 0.75))
+	var pad := Rect2(plot.position.x + 30, _house_y + 40, plot.size.x - 60, plot.end.y - _house_y - 60)
+	_ground(preload("res://art/paving.png"), pad, Color(0.95, 0.55, 0.45)) # the red safety surface
+	var rail := Color(0.45, 0.6, 0.5)
+	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, plot.end.y + border - 32, plot.size.x, 32), 0, rail)
+	_strip(preload("res://art/fence_v.png"), Rect2(plot.end.x, -32.0, border, plot.size.y + border), 0, rail)
+	_kit(Vector2(pad.position.x + 90, pad.position.y + 90), "swings")
+	_kit(Vector2(pad.end.x - 90, pad.position.y + 100), "slide")
+	_kit(Vector2(pad.get_center().x, pad.end.y - 70), "roundabout")
+	for i in 3:
+		_tree(Vector2(plot.position.x + _r.randf_range(80, plot.size.x - 80), _r.randf_range(100, _house_y - 60)), 50.0)
+
+
+## One bit of playground kit, standing at its foot. Drawn plain (tools/make_art.py has no art for it).
+func _kit(foot: Vector2, what: String) -> void:
+	var k := Node2D.new()
+	k.position = foot
+	k.scale = Vector2(1.6, 1.6)
+	k.draw.connect(_draw_kit.bind(k, what))
+	add_child(k)
+
+
+func _draw_kit(k: Node2D, what: String) -> void:
+	var steel := Color("c83c30")
+	var dark := Color("2a2a30")
+	match what:
+		"swings": # an A-frame side-on to you: two posts, the bar, two seats on chains
+			for x: float in [-48.0, 48.0]:
+				k.draw_line(Vector2(x - 8, 0), Vector2(x, -60), steel, 3.0)
+				k.draw_line(Vector2(x + 8, 0), Vector2(x, -60), steel, 3.0)
+			k.draw_line(Vector2(-50, -60), Vector2(50, -60), steel, 4.0)
+			for x: float in [-22.0, 22.0]:
+				k.draw_line(Vector2(x - 8, -60), Vector2(x - 8, -18), dark, 1.0)
+				k.draw_line(Vector2(x + 8, -60), Vector2(x + 8, -18), dark, 1.0)
+				k.draw_rect(Rect2(x - 10, -19, 20, 4), dark)
+		"slide": # a ladder up to a platform, and the chute down
+			k.draw_line(Vector2(-30, 0), Vector2(-30, -56), Color("8a8a90"), 2.0)
+			k.draw_line(Vector2(-18, 0), Vector2(-18, -56), Color("8a8a90"), 2.0)
+			for y in range(-8, -56, -8):
+				k.draw_line(Vector2(-30, y), Vector2(-18, y), Color("8a8a90"), 2.0)
+			k.draw_rect(Rect2(-32, -60, 20, 5), steel)
+			k.draw_colored_polygon(PackedVector2Array([Vector2(-12, -60), Vector2(-12, -52), Vector2(40, -2), Vector2(48, -2), Vector2(48, -8)]), Color("e8c040"))
+		"roundabout": # a flat disc, seen at a slant, with a rail round the middle
+			k.draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.6))
+			k.draw_circle(Vector2(0, 4), 38.0, dark)
+			k.draw_circle(Vector2.ZERO, 38.0, Color("3a70c0"))
+			k.draw_arc(Vector2.ZERO, 22.0, 0.0, TAU, 24, steel, 3.0)
+			k.draw_set_transform(Vector2.ZERO)
+			k.draw_line(Vector2(0, 0), Vector2(0, -22), steel, 3.0)
 
 
 ## Next door's corner of an L plot: their lawn, and a tree maybe.
