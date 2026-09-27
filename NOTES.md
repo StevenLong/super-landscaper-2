@@ -31,14 +31,9 @@ BLOCKS = spoils the next playtest.
 90. [PARKED since 2026-09-27] Character and company creation: pick the character's look,
    name the company, design a logo. QUESTION when unparked: where does it show (truck
    livery, board header, the ads)?
-91. [DESIGN, large] Mower types that play differently, three separable pieces:
-   a. Push: walking pace by default, a sprint button reaches today's speed; walking drains
-      less stamina, so longer and more precise (touches parked 30).
-   b. Petrol: a ripcord mini-game to start it the first time; badly damaged and still run,
-      it may stall.
-   c. Ride-on: manual gears, stepped up and down, setting top speed and turning circle.
 94. [DESIGN, moderate] A strimmer for edges: cut close to a bed without killing flowers.
-   Equipment, design doc Mowers and Equipment.
+   Equipment, design doc Mowers and Equipment. Now a packable item in the truck bed (106);
+   its own grill: what counts as an edge. Fire (the Molotov) wants one too (79b).
 96. [DESIGN, large] Optional subquests. Example: the pet rock escaped; bring any rock you find
    to the customer, who says whether it's theirs. Hand-ins go through "How am I doing?"
    (95, built in session 9).
@@ -79,8 +74,32 @@ knows rectangles and needs the plot outline.
    `come_out`'s replay of everything unseen. Lands with or after 104. Future dog deaths
    (the mower, stoned and thrown over the fence) must leave evidence; a mulched dog always does.
 
-PROPOSED ORDER: play the S9 checks; 101, 102, 103 (the playtest complaint); then 104 and
-105 together (the witness rework); then a grill on 91 and 96.
+### Grilled 2026-09-27 (91: packing the truck, robot mowers, how each mower plays)
+
+Decided in the design doc (Mowers and Equipment: packing the truck, each mower's feel).
+
+106. [FEATURE, large] Packing the truck: a packing screen after taking a job (grids for the
+   bed and the trailer, items as rotatable shapes, starting as you left it); the cab's push
+   mower free; at the job, take kit out at the truck (the unused mower recalled); "Pack up
+   and leave" brings everything home unless the police were called; the trailer a shop
+   item, bundled with a ride-on if you haven't one; petrol cans as cargo. Homes: `game.gd`
+   (owned kit, the packed layout), a new packing scene between `board.gd` and `main.gd`,
+   `main.gd` (the truck, leaving). Question zero: GLoot (a Godot 4 inventory addon with a
+   grid and rotation) from memory, not checked; likely too general for two small grids.
+107. [FEATURE, moderate] The robot mower: set down, mows straight until it bumps something
+   or the edge, turns a random way; turns back at bed edges; flings stones and squashes
+   critters as yours. Picked up and carried back like a body. Waits on 106.
+108. [FEATURE, small] Push mower: walk at about 60% speed, hold sprint (a free letter key, a
+   pad trigger) for today's speed at a faster stamina drain. Unparks part of 30: better
+   push mowers replace it in the cab.
+109. [FEATURE, moderate] Petrol mower: a timed ripcord pull each job (a sweeping marker,
+   release in the sweet spot, narrower the worse its condition); below about 40% a knock
+   can stall it.
+110. [FEATURE, moderate] Ride-on: four gears, instant shifts, each a top speed, higher gears
+   a wider turning circle.
+
+PROPOSED ORDER: play the S9 checks and the 101 to 105 builds; 108, 109, 110 (small, each
+mower's feel, no packing needed); then 106 and 107; a grill on 96, then 94 and fire.
 
 ### Parked
 
@@ -88,8 +107,8 @@ PROPOSED ORDER: play the S9 checks; 101, 102, 103 (the playtest complaint); then
    at high heat).
 21b. [PARKED since 2026-09-26] Job types for variety, not pressure: mini golf, farm or
    botanical garden, infestation jobs. Add when 12 jobs of one lawn kind feel samey.
-30. [PARKED since 2026-09-24] Stamina progression (S1-PUSH): level it up, better push mowers,
-   drug or cybernetic enhancements.
+30. [PARKED since 2026-09-24] Stamina progression (S1-PUSH): level it up, drug or cybernetic
+   enhancements. (Better push mowers are decided: they replace yours in the cab, 108.)
 30b. [PARKED since 2026-09-24] A dark path: the menace board (mafia dons, chasing enemies
    round a warehouse), a negative-reputation run, the loan shark as the way in.
 37. [PARKED since 2026-09-24] Secret layer: collect enough hedgehogs or squirrels and a
