@@ -51,9 +51,11 @@ const BARK := [Color("2e1c10"), Color("4a2e18"), Color("6a4428"), Color("8a6038"
 
 
 ## The trunk, drawn a row at a time: round (lit from the left), tapering a little,
-## flaring into roots at the foot, with grooves of bark. The canopy hides its top.
+## flaring into roots at the foot, with grooves of bark. Under the canopy it forks
+## into limbs and tapers to a point, so a faded canopy shows branches, not a cut.
 func _draw() -> void:
-	var top := crown_centre().y + canopy * 0.5
+	var top := crown_centre().y
+	var fork := -(crown_centre().y + canopy) + 2.0 # just under the canopy's lower edge
 	draw_set_transform(Vector2(0, 1), 0.0, Vector2(1.0, 0.35))
 	draw_circle(Vector2.ZERO, canopy * 0.8, Color(0.05, 0.12, 0.05, 0.35)) # the canopy's shadow, sun overhead
 	draw_set_transform(Vector2.ZERO)
@@ -80,8 +82,11 @@ func _draw() -> void:
 				break
 		draw_rect(Rect2(xi, -1.0, 1.0, depth + 1.0), col.darkened(0.15)) # the underside's in shade
 		draw_rect(Rect2(xi, roundf(depth), 1.0, 1.0), BARK[0])
+	_limbs(rng, fork, -top)
 	for h in int(-top):
-		var hw := radius * (1.0 - 0.12 * h / -top) + 4.0 * pow(maxf(0.0, 1.0 - h / 7.0), 2.0)
+		var hw := radius * (1.0 - 0.12 * minf(h, fork) / -top) + 4.0 * pow(maxf(0.0, 1.0 - h / 7.0), 2.0)
+		if h > fork: # into the crown: narrows to a point
+			hw *= lerpf(1.0, 0.0, (h - fork) / (-top - fork))
 		var y := -1.0 - h
 		draw_rect(Rect2(-hw - 1.0, y, hw * 2.0 + 2.0, 1.0), BARK[0]) # outline
 		var from := -hw
@@ -92,3 +97,19 @@ func _draw() -> void:
 		for g in grooves:
 			if h >= g.y and h <= g.z:
 				draw_rect(Rect2(roundf(g.x * hw), y, 1.0, 1.0), BARK[1])
+
+
+## Two or three limbs out of the fork, reaching up and out into the canopy.
+func _limbs(rng: RandomNumberGenerator, fork: float, tip: float) -> void:
+	var sides := [-1.0, 1.0] + ([rng.randf_range(-0.3, 0.3)] if rng.randf() < 0.5 else [])
+	for side: float in sides:
+		var rise := (tip - fork) * rng.randf_range(0.7, 1.0)
+		var reach := canopy * rng.randf_range(0.45, 0.65) * side
+		for h in int(rise):
+			var t := h / rise
+			var x := reach * sqrt(t) # out first, then up
+			var hw := lerpf(radius * 0.6, 0.5, t)
+			var y := -1.0 - fork + 3.0 - h
+			draw_rect(Rect2(x - hw - 1.0, y, hw * 2.0 + 2.0, 1.0), BARK[0])
+			draw_rect(Rect2(x - hw, y, hw, 1.0), BARK[3])
+			draw_rect(Rect2(x, y, hw, 1.0), BARK[2])

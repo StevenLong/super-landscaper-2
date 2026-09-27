@@ -1,4 +1,5 @@
-# Drives the mower in the real main scene: holding forward moves it and cuts grass,
+# Drives the mower in the real main scene: holding forward (key, then the pad's right
+# trigger) moves it and cuts grass,
 # it stays on the lawn when driven into the edge, and its camera is bounded by the lawn.
 extends SceneTree
 
@@ -24,8 +25,17 @@ func _physics_process(_delta: float) -> bool:
 		assert(cam.is_current(), "the mower camera should be the active one")
 		assert(cam.limit_right > 100000 and cam.limit_bottom > 100000, "the camera never clamps: the street and next door are there to see")
 		Input.action_press("move_forward")
-	elif _frame == 600:
+	elif _frame == 300: # halfway, over to the pad's right trigger
 		Input.action_release("move_forward")
+		Input.action_press("accelerate")
+	elif _frame == 600:
+		Input.action_release("accelerate")
+		mower._physics_process(0.0)
+		assert(mower.throttle == 0.0, "let go, no throttle")
+		Input.action_press("reverse")
+		mower._physics_process(0.0)
+		assert(mower.throttle < 0.0, "the left trigger backs up")
+		Input.action_release("reverse")
 		assert(mower.global_position.y < _start.y - 200.0, "mower should have driven up the lawn")
 		assert(mower.global_position.y >= 0.0, "mower must stay on the lawn")
 		assert(lawn.cut_fraction() > 0.01, "driving should cut grass, got %f" % lawn.cut_fraction())

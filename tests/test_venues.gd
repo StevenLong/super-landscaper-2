@@ -60,6 +60,10 @@ func _physics_process(_delta: float) -> bool:
 			m.queue_free()
 			var yard := _find(10.0, "graveyard")
 			assert(yard.persona == "vicar" and not yard.dog, "a bottom-band churchyard: the vicar, no dog")
+			assert(yard.customer.begins_with("Reverend ") and yard.look.collar, "the vicar is titled and wears a collar")
+			var rev := Customer.new(yard)
+			rev.on_squash("hedgehog")
+			assert(rev.last_line in g.PERSONAS.vicar.lines.squash, "and speaks like one")
 			g.current_job = yard
 			m = load("res://main.tscn").instantiate()
 			m.hedgehog_every = 9999.0

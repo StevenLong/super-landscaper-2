@@ -167,9 +167,9 @@ func on_squash(kind: String) -> bool:
 	if d > 0.0:
 		_react("laughing", 2.0, "Ha! Good riddance!")
 	elif d <= -30.0:
-		_react("horrified", 2.5, "NO! Not the %s!" % kind)
+		_react("horrified", 2.5, _say("squash", "NO! Not the %s!" % kind))
 	else:
-		_react("annoyed", 1.5, "Oi! Watch it!")
+		_react("annoyed", 1.5, _say("squash", "Oi! Watch it!"))
 	return true
 
 
@@ -190,7 +190,7 @@ func on_flowers(total_flat: int) -> bool:
 		fire("My FLOWERS! Get off my property!")
 		return true
 	_change(persona.flower * fresh)
-	_react("horrified" if limit > 0 else "annoyed", 1.5, "Mind the flowers!")
+	_react("horrified" if limit > 0 else "annoyed", 1.5, _say("flowers", "Mind the flowers!"))
 	return true
 
 
@@ -206,13 +206,13 @@ func on_stone(target: String) -> bool:
 			if randf() < 0.35 or mood < 25.0:
 				knock_out()
 				return true
-			_react("hurt", 3.0, "OW! My EYE!")
+			_react("hurt", 3.0, _say("hit", "OW! My EYE!"))
 		"window":
 			_change(-25.0)
-			_react("horrified", 2.5, "My WINDOW!")
+			_react("horrified", 2.5, _say("window", "My WINDOW!"))
 		"car":
 			_change(-20.0)
-			_react("horrified", 2.5, "My CAR!")
+			_react("horrified", 2.5, _say("car", "My CAR!"))
 		"wall":
 			_change(-5.0)
 			_react("annoyed", 1.5, "Careful!")
@@ -269,7 +269,13 @@ func _change(d: float) -> void:
 		return
 	mood = clampf(mood + d, 0.0, 100.0)
 	if mood <= 0.0:
-		fire("That's it. You're fired!")
+		fire(_say("fire", "That's it. You're fired!"))
+
+
+## A line in this persona's own voice if it has one (PERSONAS "lines"), else the usual.
+func _say(id: String, usual: String) -> String:
+	var l: Variant = persona.get("lines", {}).get(id, usual)
+	return l[randi() % l.size()] if l is Array else l
 
 
 ## Fired you or not, they still react to what you do next (that's the fun of spite).
@@ -298,7 +304,7 @@ func evaluate(cov: float, fuel_cost: float) -> Dictionary:
 	var pay := int(round(base * quality * time_f * mood_f))
 	var tip := int(round(base * 0.25)) if (cov >= target and elapsed <= patience and mood >= 75.0) else 0
 	var rep := (mood - 50.0) / 5.0 + (2.0 if cov >= target else -3.0)
-	var comment := "Lovely job. Thank you!" if mood >= 75.0 else ("That'll do." if mood >= 45.0 else "Hmph. Take your money and go.")
+	var comment := _say("paid_good", "Lovely job. Thank you!") if mood >= 75.0 else (_say("paid_ok", "That'll do.") if mood >= 45.0 else _say("paid_bad", "Hmph. Take your money and go."))
 	return {
 		"outcome": "paid", "coverage": cov, "target_met": cov >= target,
 		"elapsed": elapsed, "on_time": elapsed <= patience, "mood": mood,

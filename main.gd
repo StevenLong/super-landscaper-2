@@ -23,6 +23,7 @@ const THROW_FROM := 12.0 ## the stone leaves your hand this far in front
 ## Animals you can pick up: "tier" on the crime ladder for throwing one, "hold" seconds
 ## before it wriggles or bites free. A hedgehog bare-handed stuns you instead (gloves fix it).
 const CRITTERS := {"dog": {"tier": 1, "hold": 5.0}, "hedgehog": {"tier": 0, "hold": INF}, "squirrel": {"tier": 0, "hold": 3.0}}
+const PRICKLE := 0.35 ## seconds a hedgehog stays in bare hands before the OW
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
@@ -754,13 +755,7 @@ func _pick_up_critter() -> bool:
 		var a := _critter_near(at)
 		if a == null:
 			return false
-		if a.kind == "hedgehog" and "gloves" not in Game.upgrades:
-			walker.dazed = 1.5
-			_count("prickled")
-			Sfx.play("squeak_hedgehog")
-			pop_text("OW!", at + Vector2(0, -24), Color("f07060"))
-			return true
-		a.queue_free()
+		a.queue_free() # bare-handed, a hedgehog is in your hands for a moment (_hold_critter)
 		walker.carrying = a.kind
 	_held = 0.0
 	walker.queue_redraw()
@@ -777,10 +772,13 @@ func _critter_near(p: Vector2) -> Animal:
 
 ## Holding an animal: the dog wriggles free, a squirrel bites; carry the dog to its owner.
 func _hold_critter(delta: float) -> void:
-	if walker == null or not CRITTERS.has(walker.carrying) or walker.aiming:
+	if walker == null or not CRITTERS.has(walker.carrying):
+		return
+	var kind: String = walker.carrying
+	var bare := kind == "hedgehog" and "gloves" not in Game.upgrades
+	if walker.aiming and not bare:
 		return
 	_held += delta
-	var kind: String = walker.carrying
 	if kind == "dog" and walker.global_position.distance_to(dog.home_point) < 60.0:
 		walker.carrying = ""
 		walker.queue_redraw()
@@ -788,13 +786,19 @@ func _hold_critter(delta: float) -> void:
 		dog.home.emit(dog) # handed back to its owner
 		dog.queue_free()
 		return
-	if _held < CRITTERS[kind].hold:
+	if _held < (PRICKLE if bare else CRITTERS[kind].hold):
 		return
 	walker.carrying = ""
 	walker.queue_redraw()
 	if kind == "squirrel":
 		_count("bitten")
 		Sfx.play("squeak_squirrel")
+		pop_text("OW!", walker.global_position + Vector2(0, -24), Color("f07060"))
+	elif bare:
+		walker.cancel_aim()
+		walker.dazed = 1.5
+		_count("prickled")
+		Sfx.play("squeak_hedgehog")
 		pop_text("OW!", walker.global_position + Vector2(0, -24), Color("f07060"))
 	_land(walker.global_position + Vector2(10, 0).rotated(walker.rotation), kind)
 
@@ -1152,7 +1156,7 @@ func _count(key: String, cost := 0.0) -> void:
 func throw_stone(from: Vector2, dir: Vector2, speed: float, distance: float, kind := "stone") -> FlyingStone:
 	var f := FlyingStone.new()
 	f.kind = kind
-	f.launch(from, dir, speed, distance, _stone_hit_test)
+	f.launch(from, dir, speed, distance, _stone_hit_test.bind(kind))
 	f.landed.connect(_on_stone_landed)
 	$Stones.add_child.call_deferred(f)
 	return f
@@ -1167,8 +1171,8 @@ func _window_at(p: Vector2) -> int:
 	return -1
 
 
-## What a flying stone at p would hit, or "" for nothing.
-func _stone_hit_test(p: Vector2) -> String:
+## What a flying stone (or whatever kind is flying) at p would hit, or "" for nothing.
+func _stone_hit_test(p: Vector2, kind := "stone") -> String:
 	if Rect2($Truck.position - Vector2(60, 28), Vector2(120, 56)).has_point(p):
 		return "truck" # parked on the road, just past the garden
 	if lawn.keep_in(p, 0.0) != p:
@@ -1187,8 +1191,8 @@ func _stone_hit_test(p: Vector2) -> String:
 	for a in $Animals.get_children():
 		if a is Animal and not a.dead and a.position.distance_to(p) < CRITTER_HIT:
 			return "animal"
-	if dog and is_instance_valid(dog) and not dog.held and dog.position.distance_to(p) < 12.0:
-		return "dog"
+	if kind != "ball" and dog and is_instance_valid(dog) and not dog.held and dog.position.distance_to(p) < 12.0:
+		return "dog" # the ball sails past: it's by your feet, waiting for the throw
 	for t in $Scenery.get_children():
 		if t is StaticBody2D and "radius" in t and p.distance_to(t.position) < t.radius:
 			return "tree" if t.has_method("shake") else "rock"

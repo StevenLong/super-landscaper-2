@@ -180,7 +180,8 @@ func add_fuel(amount: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	throttle = Input.get_axis("move_back", "move_forward") if occupied else 0.0
+	# Pad triggers too (right to go, left to back up), so the stick is free to steer.
+	throttle = clampf(Input.get_axis("move_back", "move_forward") + Input.get_axis("reverse", "accelerate"), -1.0, 1.0) if occupied else 0.0
 	if power == "stamina":
 		if throttle != 0.0:
 			fuel = maxf(0.0, fuel - fuel_burn * delta)

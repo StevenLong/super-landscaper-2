@@ -31,12 +31,14 @@ func _build() -> void:
 	var root := UI.vbox(16)
 	margin.add_child(root)
 
-	# Header: day, money, reputation.
+	# Header, two rows so it never runs off the side: the week and money, then your name.
 	var head := UI.hbox(26)
 	head.add_child(UI.label("Week %d, job %d of %d" % [Game.week, Game.job_of_week(), Game.JOBS_PER_WEEK], 30, UI.GOLD))
-	head.add_child(UI.label("Owed Friday: $%d" % Game.payment(), 22, UI.BAD if Game.money < Game.payment() else UI.TEXT))
 	head.add_child(UI.label("Money: $%d" % Game.money, 26))
+	head.add_child(UI.label("Owed Friday: $%d" % Game.payment(), 22, UI.BAD if Game.money < Game.payment() else UI.TEXT))
 	head.add_child(UI.label("Earned this run: $%d" % Game.total_earned, 22, UI.DIM))
+	root.add_child(head)
+	head = UI.hbox(26)
 	var trend := Game.rep_trend - Game.reputation
 	var arrow := "  (rising)" if trend > 3.0 else ("  (sliding)" if trend < -3.0 else "")
 	head.add_child(UI.label("Reputation: %s%s" % [UI.rep_word(Game.reputation), arrow], 22,
@@ -125,9 +127,10 @@ func _rundown(r: Dictionary) -> Control:
 		if tally.size() > 5:
 			shown.append("and %d more" % (tally.size() - 5))
 		var t := UI.label("Also counted: " + ",  ".join(shown), 18, UI.GOLD)
-		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		t.custom_minimum_size.x = 560
 		info.add_child(t)
+	for l: Label in info.get_children(): # long lines wrap, not shove the shop off the screen
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size.x = 560
 	return UI.panel(row)
 
 

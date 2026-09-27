@@ -38,19 +38,26 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 2
 		1:
 			m.interact()
-			assert(m.walker.carrying == "" and m.walker.dazed > 0.0 and m.tally.get("prickled", 0) == 1, "a hedgehog bare-handed: ow, dazed")
+			assert(m.walker.carrying == "hedgehog" and m.tally.get("prickled", 0) == 0, "bare-handed, it's in your hands for a moment")
+			_wait = 30
+		2:
+			assert(m.walker.carrying == "" and m.walker.dazed > 0.0 and m.tally.get("prickled", 0) == 1, "then ow, dropped, dazed")
 			g.upgrades.append("gloves")
 			_wait = 100
-		2:
+		3:
 			assert(m.walker.dazed <= 0.0, "the stars clear")
+			for a in _critters("hedgehog"):
+				a.free() # the dropped one has run off; a fresh one to hand
+			var h2: Animal = m.spawn_animal("hedgehog", m.walker.global_position + Vector2(5, 0), m.walker.global_position + Vector2(5, 0))
+			h2.speed = 0.0
 			m.interact()
 			assert(m.walker.carrying == "hedgehog", "with gloves, you pick it up")
 			_wait = 2
-		3:
+		4:
 			assert(_critters("hedgehog").is_empty(), "it's in your hands, not on the lawn")
 			m._on_thrown(Vector2.UP, 0.0) # a short lob onto the grass
 			_wait = 30
-		4:
+		5:
 			assert(_critters("hedgehog").size() == 1 and g.heat == 0.0, "it lands alive, and a hedgehog on the grass is no crime")
 			# Into a window: one tier above the worse of window (1) and hedgehog (0), and heat for the method.
 			var house: Node2D = m.get_node("Scenery/House")
@@ -66,20 +73,22 @@ func _physics_process(_delta: float) -> bool:
 			m.walker.carrying = "squirrel"
 			m._held = 0.0
 			_wait = 200
-		5:
+		6:
 			assert(m.walker.carrying == "" and m.tally.get("bitten", 0) == 1, "the squirrel bites and escapes")
 			assert(_critters("squirrel").size() == 1, "and bolts")
 			# The dog: pick it up and carry it home.
 			m.job.dog_name = "Rolo" # the default job has no dog
 			m._release_dog()
+			m.dog.position = Vector2(640, 600) # open grass
+			assert(m._stone_hit_test(m.dog.position) == "dog" and m._stone_hit_test(m.dog.position, "ball") == "", "a stone hits the dog, the ball sails past")
 			m.dog.position = m.walker.global_position + Vector2(10, 0)
 			_wait = 1
-		6:
+		7:
 			m.interact()
 			assert(m.walker.carrying == "dog" and m.dog.held, "picked up the dog")
 			m.walker.global_position = m.dog.home_point + Vector2(0, 30)
 			_wait = 2
-		7:
+		8:
 			assert(m.walker.carrying == "" and m.tally.get("dog_returned", 0) == 1, "carried home to its owner")
 			# Thrown across the lawn, a dog is tier 1.
 			m._release_dog()

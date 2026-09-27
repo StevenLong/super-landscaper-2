@@ -95,6 +95,11 @@ const PERSONAS := {
 		"ads": [["CHURCHYARD", "grass wants cutting. Respect for the departed essential. Modest fee."],
 			["GRAVEYARD MOWING,", "St. Swithin's. Tread softly among the stones."]],
 		"hedgehog": -25.0, "squirrel": -10.0, "flower": -8.0, "patience": 1.3, "target": 0.75, "indoors": 0.4,
+		# Their own voice (customer.gd _say): an id, then a line or a pick of lines.
+		"lines": {"squash": ["May God forgive you.", "Lord have mercy!"], "flowers": "Those were for the departed!",
+			"window": "The VESTRY window!", "car": "Thou shalt not dent!", "hit": "Heavens! My EYE!",
+			"fire": "Go, and sin no more. Elsewhere.", "paid_good": "Bless you, my child.",
+			"paid_ok": "The Lord loves a trier.", "paid_bad": "I shall pray for you."},
 	},
 }
 
@@ -238,7 +243,8 @@ func ad_text(job: Dictionary) -> String:
 	if job.get("dog", false):
 		parts.append("Friendly dog, a known escapee.")
 	var names: PackedStringArray = job.customer.split(" ")
-	parts.append("$%d cash. Ring %s." % [job.pay, names[0] if job.seed % 2 == 0 else "%s. %s" % [names[0][0], names[-1]]])
+	var who := names[0] if job.seed % 2 == 0 else "%s. %s" % [names[0][0], names[-1]]
+	parts.append("$%d cash. Ring %s." % [job.pay, "the vicarage" if job.persona == "vicar" else who])
 	return "[color=#7a1c14]%s[/color] %s" % [ad[0], " ".join(parts)]
 
 
@@ -322,6 +328,10 @@ func _venue(job: Dictionary, venue: String, persona_key: String, size_i: int, pa
 	job.target = p.target
 	job.patience = 300.0 * area * p.patience
 	job.pay = int(round((70.0 + 50.0 * size_i) * area * (1.0 + (p.target - 0.8)) * pay_scale / 5.0) * 5)
+	if persona_key == "vicar": # dressed for it, so they read as one
+		job.customer = "Reverend " + job.customer.split(" ")[-1]
+		job.look.shirt = Face.CLERICAL
+		job.look.collar = true
 
 
 ## The small things lying about a garden (Stone.KINDS). Its own draws, so the rest of

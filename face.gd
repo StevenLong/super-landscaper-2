@@ -12,7 +12,8 @@ const SKINS := [["f8d0a8", "e8b088", "c08060"], ["f0c090", "d09868", "a06840"], 
 const HAIRS := [["484050", "282430", "141018"], ["a07040", "704820", "4a2c14"], ["f8e080", "d8b048", "a07c28"],
 	["e88848", "c05828", "883818"], ["c8c8c8", "989898", "686868"], ["f8f8f0", "d8d8d0", "a8a8a0"]]
 const SHIRTS := [["4878c8", "305090"], ["c84848", "903030"], ["48a058", "307040"], ["e8c048", "b08828"],
-	["9058b8", "683888"], ["e8e8e0", "b0b0a8"]]
+	["9058b8", "683888"], ["e8e8e0", "b0b0a8"], ["34323c", "1e1c24"]]
+const CLERICAL := 6 ## the black shirt, never picked at random (game.gd looks use the first six)
 
 @export var pixel_scale := 3
 
@@ -37,6 +38,7 @@ var view := "patio": ## where they are (Customer.where): greyed indoors, behind 
 
 var _tex: Texture2D
 var _style := 0
+var _collar := false ## a dog collar at the throat (the vicar)
 var _shake := 0.0
 var _mouth_open := false
 var _flap := 0.0
@@ -44,6 +46,7 @@ var _flap := 0.0
 
 func set_look(look: Dictionary) -> void:
 	_style = look.hair_style
+	_collar = look.get("collar", false)
 	_tex = ImageTexture.create_from_image(swapped("res://art/faces.png", look, Rect2i(0, _style * CELL, CELL * FRAMES.size() * 2, CELL)))
 	queue_redraw()
 
@@ -99,6 +102,8 @@ func _draw() -> void:
 	var tint := Color(0.4, 0.4, 0.45) if view == "inside" else Color.WHITE # can't see you, you can't see them
 	draw_texture_rect_region(_tex, Rect2(Vector2(6, 6) + jitter, Vector2(s, s)),
 		Rect2(i * CELL, _style * CELL, CELL, CELL), tint)
+	if _collar: # the white tab at the throat, over the neck in tools/make_faces.py
+		draw_rect(Rect2(Vector2(6, 6) + jitter + Vector2(17, 32) * pixel_scale, Vector2(6, 2) * pixel_scale), Color("f4f0e6") * tint)
 	if view == "window": # a pane of glass between you: a sheen and the glazing bars
 		var pane := Rect2(6, 6, s, s)
 		draw_rect(pane, Color(0.7, 0.85, 1.0, 0.18))
