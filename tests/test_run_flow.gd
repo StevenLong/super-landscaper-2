@@ -1,4 +1,4 @@
-# A whole run through the real scenes: title -> board -> job -> pay -> board,
+# A whole run through the real scenes: title -> board -> job -> pay -> summary -> board,
 # then the shop, the dregs when reputation is gone, and payday at the week's end.
 extends SceneTree
 
@@ -48,17 +48,22 @@ func _process(_delta: float) -> bool:
 			current_scene._on_choice("drive_off")
 			assert(game.last_result.outcome == "paid", "a mowed lawn is accepted and you drive off (the scene is already on its way out)")
 		4:
-			assert(current_scene.name == "Board", "back to the board after a job")
-			assert(game.job_of_week() == 2 and game.jobs_done == 1 and not game.payday_due(), "on to the week's second job")
-			assert(game.money > 0, "the job paid")
-			var rundown := current_scene.find_children("*", "Label", true, false).filter(
-				func(l: Label) -> bool: return l.text.begins_with("Last job: Job done"))
-			assert(rundown.size() == 1, "the board shows the last job's rundown")
+			assert(current_scene.name == "Summary", "back at base, the job's summary")
+			var labels := current_scene.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+			assert(labels.any(func(t: String) -> bool: return t.begins_with("Last job: Job done")), "how it ended")
 			assert(game.last_result.has("rep_before") and game.last_result.has("rep_after"), "the rundown knows the rep change")
 			var tally := current_scene.find_children("*", "Ticker", true, false)
 			assert(tally.size() == 1 and tally[0].text.contains("Windows put through 1 (-$40)") and tally[0].text.contains("sent back"),
 				"the rundown lists what the job counted, with what it cost")
 			assert(not tally[0].text.contains("Hedgehogs"), "and nothing that didn't happen")
+			assert("After you left, the customer noticed:" in labels and labels.any(func(t: String) -> bool: return t.contains("Every blade cut")),
+				"what they found after you'd gone: every blade cut")
+			assert(labels.any(func(t: String) -> bool: return t.begins_with("Word gets round")), "with the total")
+			current_scene.find_child("Continue", true, false).pressed.emit()
+		5:
+			assert(current_scene.name == "Board", "then the board")
+			assert(game.job_of_week() == 2 and game.jobs_done == 1 and not game.payday_due(), "on to the week's second job")
+			assert(game.money > 0, "the job paid")
 			assert(game.run_tally.get("windows", 0) == 1, "the run adds it up")
 			game.money = 1000
 			assert(game.buy("petrol") and game.equipped == "petrol", "buying a mower equips it")
@@ -66,7 +71,7 @@ func _process(_delta: float) -> bool:
 			assert(game.money == 1000 - game.MOWERS.petrol.price, "the price came off")
 			game.reputation = 0.0
 			current_scene._ready()
-		5:
+		6:
 			assert(current_scene.offers.size() == 1 and current_scene.offers[0].persona == "grump", "no reputation: the dregs, one hostile job")
 			assert(current_scene.find_children("Take", "Button", true, false).size() == 1, "and it can be taken")
 			game.jobs_done = 3

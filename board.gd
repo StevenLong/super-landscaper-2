@@ -55,8 +55,6 @@ func _build() -> void:
 	var jobs := UI.vbox(12)
 	jobs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cols.add_child(jobs)
-	if not Game.last_result.is_empty():
-		jobs.add_child(_rundown(Game.last_result))
 	jobs.add_child(UI.label("Classifieds: gardens & grounds", 26))
 	var first: Control = null
 	if Game.reputation <= 0.0:
@@ -79,55 +77,6 @@ func _build() -> void:
 		shop.add_child(_upgrade_row(key))
 	if first:
 		UI.focus(first)
-
-
-## The last job in one panel: how it ended, the money, and what it did to your name.
-func _rundown(r: Dictionary) -> Control:
-	var row := UI.hbox(14)
-	if r.has("look"):
-		var f := Face.new()
-		f.pixel_scale = 2
-		f.custom_minimum_size = Vector2(92, 92)
-		f.set_look(r.look)
-		f.expression = r.face
-		row.add_child(f)
-	var info := UI.vbox(4)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(info)
-	var title: String = {"fired": "FIRED!", "walked": "You drove off unpaid",
-		"ko": "Well, that happened", "nicked": "Nicked!"}.get(r.outcome, "Job done")
-	info.add_child(UI.label("Last job: %s   %s" % [title, r.get("customer", "")], 22,
-		UI.GOOD if r.outcome == "paid" else UI.BAD))
-	info.add_child(UI.label(r.comment if r.outcome == "ko" else "\"%s\"" % r.comment, 18, UI.DIM))
-	var money := "Paid $%d" % r.paid
-	if r.tip > 0:
-		money += " (incl. $%d tip)" % r.tip
-	if r.fuel_cost > 0.0:
-		money += "   Costs -$%d" % roundi(r.fuel_cost)
-	if r.get("robbed", 0) > 0:
-		money += "   Lifted $%d" % r.robbed
-	if r.get("fine", 0) > 0:
-		money += "   Fine -$%d" % r.fine
-	money += "   Net %s$%d" % ["+" if r.net >= 0.0 else "-", absi(roundi(r.net))]
-	info.add_child(UI.label(money, 20))
-	var d: float = r.get("rep_after", 0.0) - r.get("rep_before", 0.0)
-	var rep := "Reputation %+d" % roundi(d)
-	if Game.rep_trend - Game.reputation < -3.0:
-		rep += ", and sliding"
-	if r.get("mischief", 0.0) > 0.0:
-		rep += "   (mischief after payment: -%d)" % roundi(r.mischief)
-	if r.get("heat_up", false):
-		rep += "   Wanted level up"
-	if r.get("cells", false):
-		rep += "   A night in the cells: next job lost"
-	info.add_child(UI.label(rep, 20, UI.GOOD if d >= 0.0 and r.outcome == "paid" else UI.BAD))
-	for l: Label in info.get_children(): # long lines wrap, not shove the shop off the screen
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.custom_minimum_size.x = 560
-	var tally := Game.tally_lines(r.get("tally", {}), r.get("tally_cost", {}), r.get("records", []))
-	if not tally.is_empty(): # everything the job counted, going by like a news ticker
-		info.add_child(Ticker.new("   *   ".join(tally), 18, UI.GOLD, 560))
-	return UI.panel(row)
 
 
 ## An offer as a classified ad on newsprint: no picture, just the words and the hints

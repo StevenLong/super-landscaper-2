@@ -85,7 +85,7 @@ func _physics_process(_delta: float) -> bool:
 		var r: Dictionary = root.get_node("Game").last_result
 		assert(_main.over and r.outcome == "paid" and r.paid > 0, "driving off ends the job, paid")
 		assert(r.mischief > 0.0 and r.rep < _main.settled.rep, "and the mischief costs reputation")
-		assert(not _main.hud.is_open(), "no results screen in the job: the board has the rundown")
+		assert(not _main.hud.is_open(), "no results screen in the job: the summary has the rundown")
 		print("PASS customer")
 		quit()
 	return false

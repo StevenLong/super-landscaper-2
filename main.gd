@@ -47,6 +47,8 @@ const APPROACH_W := 96.0 ## the manor's approach, up the middle from the gates
 const TOPIARY_BILL := 60.0 ## a chunk out of a clipped peacock
 const CHURCH_BACK := 170.0 ## the church stands this far off the back wall, walled off behind
 const PATH_W := 48.0 ## the churchyard path, from the lychgate to the porch
+const WINDOW_CONE := deg_to_rad(50.0) ## half the spread a window sees out over
+const SIGHT_REACH := 1400.0 ## as far as the highlight reaches
 
 @export var hedgehog_every := 7.0 ## seconds between hedgehogs, roughly
 @export var squirrel_every := 13.0
@@ -73,6 +75,11 @@ var _car: StaticBody2D ## the customer's, up the drive; not every job
 var _hose: Hose ## on its tap by the house; not every job
 var _notch := Rect2() ## next door's corner of an L plot: not yours, fenced off
 var _haha := false ## the manor: its park sides drop into a ditch, nothing to bounce off
+var _cone: Node2D ## the ground the window they're at can see, faintly lit
+var _cone_pts := PackedVector2Array()
+var _cone_x := -1 ## the window it was worked out for
+var _carry_seen := "" ## what you're carrying that they've already seen you with
+var _known_bodies := {} ## kind -> bodies they've already seen made or carried: not news later
 var _shake := 0.0
 var _edges: Array[Dictionary] = [] ## where critters come in: {kind, from, to, inward}
 var _tells: Array[Dictionary] = [] ## critters about to come out: {kind, at, grace, left}
@@ -105,6 +112,14 @@ func _ready() -> void:
 	if Game.in_run:
 		mower.apply_spec(Game.mower_spec())
 	_build_layout()
+	customer.sight = _in_sight
+	_cone = Node2D.new()
+	_cone.name = "SightCone"
+	_cone.z_index = -1
+	_cone.draw.connect(func() -> void:
+		if _cone_pts.size() > 2:
+			_cone.draw_colored_polygon(_cone_pts, Color(1.0, 0.95, 0.6, 0.12)))
+	add_child(_cone)
 	if job.get("dog", false):
 		_dog_in = randf_range(15.0, 35.0)
 
@@ -684,6 +699,81 @@ func _add_haha(outer: Rect2, vertical: bool) -> void:
 	$Borders.add_child(d)
 
 
+## Can the customer see p from where they are (design doc, The Customer: line of sight)?
+## On the patio they turn to face you, so it's a clear line; at a window, a cone out of
+## it. Anything taller than a person blocks the view: buildings, the car, the truck, tall
+## topiary. Hedges, fences, rocks and headstones don't.
+func _in_sight(p: Vector2) -> bool:
+	if customer.where == "window":
+		var eye := _window_eye()
+		if absf(Vector2.DOWN.angle_to(p - eye)) > WINDOW_CONE:
+			return false
+		return _clear(eye, p)
+	return _clear($Client.position, p)
+
+
+## Where they look out of the window they're at: its sill, out front.
+func _window_eye() -> Vector2:
+	return _house.position + Vector2(customer.window_x + 15.0, _house.WALL_H + 6.0)
+
+
+## Nothing taller than a person between a and b (either end's own spot aside).
+func _clear(a: Vector2, b: Vector2) -> bool:
+	var boxes: Array[Rect2] = [Rect2(_house.position, Vector2(_house.size.x, _house.WALL_H)), _house.garage_rect(),
+		_car_rect(), Rect2($Truck.position - Vector2(64, 32), Vector2(128, 64))]
+	var tall := $Scenery.get_children().filter(func(t: Node) -> bool: return "height" in t and t.height > HEAD)
+	var d := a.distance_to(b)
+	var t := 10.0
+	while t < d - 14.0:
+		var q := a.lerp(b, t / d)
+		for r in boxes:
+			if r.has_point(q):
+				return false
+		for o: Node2D in tall:
+			if q.distance_to(o.position) < o.radius:
+				return false
+		t += 6.0
+	return true
+
+
+## The faint patch of ground the window they're at looks out over, so you can tell where
+## they can see even with that window off screen.
+func _show_cone() -> void:
+	var x: int = customer.window_x if customer.where == "window" and not customer.knocked_out else -1
+	if x == _cone_x:
+		return
+	_cone_x = x
+	_cone_pts = PackedVector2Array()
+	if x >= 0:
+		var eye := _window_eye()
+		_cone_pts.append(eye)
+		var ground := Rect2(Vector2.ZERO, Vector2(lawn.size_px)).grow(BORDER)
+		for i in 41:
+			var dir := Vector2.DOWN.rotated(lerpf(-WINDOW_CONE, WINDOW_CONE, i / 40.0))
+			var reach := 16.0
+			while reach < SIGHT_REACH and ground.has_point(eye + dir * reach) and _clear(eye, eye + dir * (reach + 14.0)):
+				reach += 12.0
+			_cone_pts.append(eye + dir * reach)
+	_cone.queue_redraw()
+
+
+## Carry a body (or worse) into their sight and they react there and then, paid or not
+## (design doc: brought into view, it counts at once). Once per thing you pick up.
+func _carried_into_view() -> void:
+	var what: String = walker.carrying if walker else ""
+	if not what.begins_with("body_"):
+		_carry_seen = ""
+		return
+	if _carry_seen == what or not customer.sees(walker.global_position):
+		return
+	_carry_seen = what
+	_mischief(3.0)
+	var kind := what.trim_prefix("body_")
+	if customer.on_squash(kind, 1.0, walker.global_position):
+		_known_bodies[kind] = _known_bodies.get(kind, 0) + 1
+		_react()
+
+
 ## Is p inside something a critter can't walk through?
 func _blocked(p: Vector2) -> bool:
 	if _house.rect().has_point(p) or _house.garage_rect().has_point(p) or _car_rect().has_point(p) or _notch.has_point(p):
@@ -818,7 +908,10 @@ func _physics_process(delta: float) -> void:
 	# Where they are: on the patio, at a window (the house draws them at the glass), or in.
 	$Client.visible = customer.where == "patio"
 	_house.peek_x = customer.window_x if customer.where == "window" and not customer.knocked_out else -1
-	$HUD/Face.view = customer.where
+	# Greyed while they can't see you (design doc: line of sight), so you know you're unseen.
+	$HUD/Face.view = customer.where if customer.sees(actor().global_position) else "inside"
+	_show_cone()
+	_carried_into_view()
 	if customer.fired and settled.is_empty():
 		_fired()
 	hud.set_hint(_hint())
@@ -1198,7 +1291,7 @@ func _on_hose_mowed(at: Vector2) -> void:
 	_spills.append([at, k.spill])
 	$Decals.queue_redraw()
 	_mischief(3.0)
-	if customer.on_property(k.theirs, k.mood):
+	if customer.on_property(k.theirs, k.mood, at):
 		_react()
 
 
@@ -1211,8 +1304,8 @@ func near_customer() -> bool:
 ## it's going. `lines` is what's just been said.
 func open_customer_menu(lines: Array = []) -> void:
 	get_tree().paused = true
-	if customer.where != "patio" and customer.come_out(): # they answer the door, and see what's what
-		_react()
+	if customer.where != "patio": # they answer the door
+		customer.come_out()
 	var buttons := []
 	if settled.is_empty():
 		buttons.append(["handin", "Ask to be paid"])
@@ -1335,6 +1428,10 @@ func _finish(result: Dictionary) -> void:
 		result.rep -= ROB_REP
 	result.look = job.look
 	result.face = customer.face() if result.outcome != "walked" else "furious"
+	if result.outcome != "ko": # out cold, they find nothing
+		result.noticed = customer.aftermath(_bodies_in_view(), lawn.cut_fraction() >= 0.999)
+		for n: Array in result.noticed:
+			result.rep += n[1]
 	Game.record_result(result)
 	Sfx.music("")
 	match result.outcome:
@@ -1345,7 +1442,7 @@ func _finish(result: Dictionary) -> void:
 			Sfx.play("voice_angry")
 	get_tree().paused = false
 	if Game.in_run:
-		get_tree().change_scene_to_file("res://board.tscn")
+		get_tree().change_scene_to_file("res://summary.tscn")
 	elif get_tree().current_scene == self: # a lone job (dev play): go again
 		get_tree().reload_current_scene()
 
@@ -1378,11 +1475,11 @@ func _rifle(delta: float) -> void:
 
 ## A crime on the ladder (Game.HEAT): heat now, and the police called for assault, or
 ## for anything once your record is bad enough.
-func _crime(tier: int) -> void:
+func _crime(tier: int, at := Vector2.INF) -> void:
 	Game.heat += Game.HEAT[tier]
 	worst_crime = maxi(worst_crime, tier)
 	hud.pop("WANTED +%d" % Game.HEAT[tier])
-	if police_left < 0.0 and customer.sees() and (tier >= 2 or _heat0 >= Game.HIGH_HEAT): # no witness, no call
+	if police_left < 0.0 and customer.sees(at) and (tier >= 2 or _heat0 >= Game.HIGH_HEAT): # no witness, no call
 		_call_police()
 
 
@@ -1438,9 +1535,9 @@ func _on_mower_bumped(what: Object, impact: float) -> void:
 		_count("topiary", TOPIARY_BILL)
 		bills += TOPIARY_BILL
 		pop_text("-$%d" % TOPIARY_BILL, what.position + Vector2(0, -40), Color("f07060"))
-		customer.on_property("topiary", -20.0)
+		customer.on_property("topiary", -20.0, what.position)
 		if impact > RAM_SPEED:
-			_crime(1)
+			_crime(1, what.position)
 		_react()
 		return
 	if what != _car or _car == null:
@@ -1450,9 +1547,9 @@ func _on_mower_bumped(what: Object, impact: float) -> void:
 	_count("car_dents", bill)
 	bills += bill
 	pop_text("-$%d" % bill, mower.global_position, Color("f07060"))
-	customer.on_stone("car")
+	customer.on_stone("car", _car.position)
 	if impact > RAM_SPEED:
-		_crime(1)
+		_crime(1, _car.position)
 	_react()
 
 
@@ -1490,7 +1587,7 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 		dog.grieve() # right in front of it
 	if k.has("theirs"):
 		_mischief(3.0)
-		if customer.on_property(k.theirs, k.mood):
+		if customer.on_property(k.theirs, k.mood, s.position):
 			_react()
 
 
@@ -1638,7 +1735,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_count("customer_hits")
 			_mischief(8.0)
 			tier = 2 # assault
-			if customer.on_stone("customer"):
+			if customer.on_stone("customer", p):
 				_knock_out() # a crime of its own
 				tier = -1
 			else:
@@ -1657,18 +1754,18 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			if customer.where == "window" and customer.window_x == _window_at(p, f.z) and not customer.knocked_out:
 				_count("customer_hits") # through the glass and into them
 				tier = 2
-				if customer.on_stone("customer"):
+				if customer.on_stone("customer", p):
 					_knock_out()
 					tier = -1
 			else:
-				customer.on_stone("window")
+				customer.on_stone("window", p)
 			if not customer.knocked_out:
 				_react()
 			if alive:
 				_drop_bounced(f) # it scrambles back out
 		"wall":
 			Sfx.play("thud")
-			customer.on_stone("wall")
+			customer.on_stone("wall", p)
 			_react()
 			_drop_bounced(f)
 		"car":
@@ -1677,7 +1774,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			bills += CAR_BILL
 			pop_text("-$%d" % CAR_BILL, p, Color("f07060"))
 			shake(3.0)
-			customer.on_stone("car")
+			customer.on_stone("car", p)
 			tier = 1
 			_react()
 			_drop_bounced(f)
@@ -1697,7 +1794,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		"dog":
 			Sfx.play("yelp")
 			dog.bowl("stone")
-			customer.on_stone("dog")
+			customer.on_stone("dog", p)
 			tier = 1
 			_react()
 			_drop_bounced(f)
@@ -1711,7 +1808,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_drop_bounced(f)
 		"roof": # it clatters down the tiles and drops off the gutter
 			Sfx.play("clonk")
-			customer.on_stone("wall")
+			customer.on_stone("wall", p)
 			_react()
 			var foot := Vector2(p.x, _house.position.y + _house.WALL_H + 10.0)
 			if p.y < _house.position.y + _house.WALL_H - _house.ROOF_D: # the back slope
@@ -1766,7 +1863,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				tier = mini(2, maxi(tier, CRITTERS[f.kind].tier) + 1)
 				Game.heat += 1.0
 		if tier > 0:
-			_crime(tier)
+			_crime(tier, p)
 
 
 ## A stone that struck something solid bounces back off it and lands on the lawn.
@@ -1858,7 +1955,7 @@ func _release_dog() -> void:
 		if by == "mower": # a stone's reaction is the stone's (see _on_stone_landed)
 			customer.on_dog_hit()
 			_mischief(8.0)
-			_crime(2)
+			_crime(2, _d.position)
 			_react())
 	dog.caught.connect(func(d: Dog) -> void:
 		Sfx.play("ui_select", 0.0)
@@ -1868,7 +1965,7 @@ func _release_dog() -> void:
 		add_stone.call_deferred(at, "ball"))
 	dog.home.connect(func(_d: Dog) -> void:
 		_count("dog_returned")
-		if customer.on_dog_returned():
+		if customer.on_dog_returned(_d.position):
 			_react())
 	$Animals.add_child(dog)
 	customer.last_line = "Oh no, %s's got out!" % job.dog_name
@@ -1979,7 +2076,7 @@ func _on_squashed(a: Animal) -> void:
 		_burst(a.position, ["a01818", "6a0c0c", "8a6a50"])
 		Sfx.play("squash")
 		shake(2.0)
-		if customer.on_squash(a.kind):
+		if customer.on_squash(a.kind, 1.0, a.position):
 			_react()
 		return
 	_splats.append(a.position)
@@ -1994,7 +2091,7 @@ func _on_squashed(a: Animal) -> void:
 	shake(3.0)
 	Sfx.play("squeak_" + a.kind)
 	_mischief(3.0)
-	if customer.on_squash(a.kind):
+	if customer.on_squash(a.kind, 1.0, a.position):
 		_react()
 
 
@@ -2011,21 +2108,35 @@ func _stone_critter(a: Animal, thrown: bool, roll := randf()) -> void:
 		a.stun(KO_TIME)
 		_count("ko_" + a.kind)
 		_mischief(1.0)
-		if customer.on_squash(a.kind, KO_SHARE):
+		if customer.on_squash(a.kind, KO_SHARE, a.position):
 			_react()
 		return
 	a.kill()
 	_count("stoned_" + a.kind)
 	_mischief(3.0)
-	var kind := a.kind
-	if customer.on_squash(kind, 1.0, func() -> bool: return _bodies(kind) > 0):
+	if customer.on_squash(a.kind, 1.0, a.position):
+		_known_bodies[a.kind] = _known_bodies.get(a.kind, 0) + 1
 		_react()
+
+
+## Bodies left lying where the customer will see them from the patio, by kind: found after
+## you've gone, less any they already saw (a stoning they watched, one you carried past).
+func _bodies_in_view() -> Dictionary:
+	var out := {}
+	for a in $Animals.get_children():
+		if a is Animal and a.body and not a.dead and not a.is_queued_for_deletion() and _clear($Client.position, a.position):
+			out[a.kind] = out.get(a.kind, 0) + 1
+	for kind: String in out.keys():
+		out[kind] -= _known_bodies.get(kind, 0)
+		if out[kind] <= 0:
+			out.erase(kind)
+	return out
 
 
 ## Bodies of this kind lying on the lawn (not in your hands, not gone over the fence).
 func _bodies(kind: String) -> int:
 	return $Animals.get_children().filter(func(a: Node) -> bool:
-		return a is Animal and a.body and a.kind == kind and not a.is_queued_for_deletion()).size()
+		return a is Animal and a.body and not a.dead and not a.is_queued_for_deletion() and a.kind == kind).size()
 
 
 ## The customer's visible reaction: speech, a hop on the patio, and their voice.
@@ -2045,7 +2156,7 @@ func _on_trampled(_flat: int, _total: int) -> void:
 		if b.has_method("flattened_count"):
 			total += b.flattened_count()
 	Sfx.play("crunch")
-	if customer.on_flowers(total):
+	if customer.on_flowers(total, actor().global_position):
 		_mischief(2.0)
 		if Time.get_ticks_msec() >= _flowers_quiet_until: # the rep still counts every flower
 			_flowers_quiet_until = Time.get_ticks_msec() + 1500

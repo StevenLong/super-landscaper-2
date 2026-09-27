@@ -1,6 +1,7 @@
-# Seen versus evidence: indoors the customer sees nothing, and what they missed is judged
-# by what's left when they come out; noise brings them out at once; a window sees it all,
-# and a stone through their window hits them. No witness, no police call.
+# Seen versus evidence (design doc, The Customer): during the job they only know what they
+# see happen, in their line of sight; stepping outside finds nothing; noise brings them out
+# and they know. After you've gone they notice what's theirs, and bodies left in view.
+# A window sees a cone out of it; a stone through it hits them. No witness, no police call.
 extends SceneTree
 
 var m: Node
@@ -14,23 +15,32 @@ func _initialize() -> void:
 	c.where = "inside"
 	var mood := c.mood
 	assert(not c.sees() and not c.on_squash("hedgehog") and c.mood == mood, "indoors, a squashed hedgehog goes unseen")
-	assert(not c.on_flowers(1) and c.mood == mood, "and so do flowers")
+	assert(not c.on_flowers(3) and c.mood == mood, "and so do flowers")
+	assert(not c.on_property("gnome", -15.0) and c.mood == mood, "and a wrecked gnome")
 	assert(not c.on_stone("wall") and c.where == "inside", "a thud on the wall doesn't bring them out")
-	assert(c.come_out() and c.mood < mood and c.face() == "horrified", "out on the patio, the evidence lands")
-	assert(c.last_line.contains("the hedgehog") and c.last_line.contains("my flowers"), "itemised: %s" % c.last_line)
-	assert(not c.come_out(), "and only once")
+	c.come_out()
+	assert(c.where == "patio" and c.mood == mood, "stepping out, they find nothing")
+	var found := c.aftermath({}, true)
+	assert(found.size() == 3, "after you've gone: %s" % [found])
+	assert(found[0][0] == "Their gnome, ruined" and found[0][1] == -3.0, "their gnome, a fifth of its mood in reputation")
+	assert(found[1][0] == "3 of their flowers flattened" and found[1][1] < 0.0, "their flowers")
+	assert(found[2][0] == "Every blade cut" and found[2][1] > 0.0, "and the good news too")
+	assert(not c.on_flowers(3, Vector2.ZERO), "the same flowers aren't news twice")
 
 	c = Customer.new(job)
 	c.where = "inside"
 	mood = c.mood
 	c.on_stone("window")
-	assert(c.where == "patio" and c.mood < mood, "breaking glass brings them straight out, and they see it")
+	assert(c.where == "patio" and c.mood < mood, "breaking glass brings them straight out, and they know")
+
+	c = Customer.new(job)
+	c.sight = func(p: Vector2) -> bool: return p.x < 100.0
+	assert(c.sees(Vector2(50, 0)) and not c.sees(Vector2(500, 0)), "on the patio, only what's in their line of sight")
+	assert(not c.on_squash("hedgehog", 1.0, Vector2(500, 0)), "out of sight, a squash goes unseen")
 
 	c = Customer.new(job.merged({"persona": "squirrel_hater"}, true))
-	c.where = "inside"
-	c.on_squash("squirrel")
-	c.come_out()
-	assert(c.face() == "laughing", "the squirrel hater is delighted to find one flattened")
+	found = c.aftermath({"squirrel": 2}, false)
+	assert(found[0][0] == "2 dead squirrels on the lawn" and found[0][1] > 0.0, "the squirrel hater is pleased to find them")
 
 	c = Customer.new(job.merged({"indoors": 1.0}, true))
 	c.tick(36.0)
@@ -46,15 +56,28 @@ func _physics_process(_delta: float) -> bool:
 	if _wait > 0:
 		_wait -= 1
 		return false
+	var house: Node2D = m.get_node("Scenery/House")
+	var hidden: Vector2 = house.position + Vector2(500, 60) # behind the garage, past the house
+	var open: Vector2 = house.position + Vector2(220, 520) # out on the front lawn
 	match _step:
 		0:
+			assert(m._in_sight(open) and not m._in_sight(hidden), "from the patio: the front lawn, not round the back of the house")
+			m.hud.close()
+			m.get_tree().paused = false
+			m.mower.global_position = hidden
+			_wait = 2
+		1:
+			assert(m.get_node("HUD/Face").view == "inside", "out of their sight, the portrait greys")
+			m.mower.global_position = open
 			m.customer.where = "window"
 			m.customer.window_x = 40
 			_wait = 2
-		1:
-			var house: Node2D = m.get_node("Scenery/House")
+		2:
 			assert(not m.get_node("Client").visible and house.peek_x == 40, "at a window: off the patio, their head at the glass")
 			assert(m.get_node("HUD/Face").view == "window", "the portrait shows the pane")
+			var eye: Vector2 = m._window_eye()
+			assert(m._in_sight(eye + Vector2(0, 200)) and not m._in_sight(eye + Vector2(600, 40)), "a window sees a cone out in front, not off to the side")
+			assert(m._cone_pts.size() > 3, "and the ground it sees is lit, faintly")
 			assert(m._stone_hit_test(m.get_node("Client").position + Vector2(0, -14)) != "customer", "nobody on the patio to hit")
 			var f := FlyingStone.new()
 			f.position = house.position + Vector2(55, house.WALL_H - 26.0)
@@ -71,7 +94,9 @@ func _physics_process(_delta: float) -> bool:
 			m._crime(1)
 			assert(m.police_left < 0.0, "unseen, nobody calls the police")
 			m.customer.where = "patio"
-			m._crime(1)
+			m._crime(1, hidden)
+			assert(m.police_left < 0.0, "nor out of their sight")
+			m._crime(1, open)
 			assert(m.police_left > 0.0, "seen at high heat, they do")
 			print("PASS seen")
 			quit()

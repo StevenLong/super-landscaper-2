@@ -22,17 +22,16 @@ var elapsed := 0.0
 var last_line := ""
 var paid := false ## once paid they stop watching the clock
 
-var where := "patio" ## "patio" watching, "inside" (sees nothing), or at a "window" (sees it all)
+var where := "patio" ## "patio" watching, "inside" (sees nothing), or at a "window" (a cone out of it)
 var window_x := -1 ## which window (house.gd windows()) while at one
 var windows: Array = [40, 120, 290, 370] ## main sets the building's
 var nags := 0 ## the first comes as the tip goes, with a sigh
 var _nag_at := 0.0
 var _glances := 0
 var _stint := 0.0 ## seconds until they move
-var _unseen: Array[Callable] = [] ## what they missed, replayed when they come out and see what's left
-var _unseen_what: Array[String] = []
-var _unseen_if: Array[Callable] = [] ## per entry: is the evidence still there? (empty: always)
-var _unseen_flowers := 0
+var sight := Callable() ## main: can they see this point from where they are? (unset: all of it)
+var _owned: Array = [] ## their things wrecked out of sight, [what, mood]: found after you've gone
+var _unseen_flowers := 0 ## flattened out of sight: found after you've gone
 
 var _react_face := ""
 var _react_left := 0.0
@@ -45,9 +44,13 @@ func _init(job_data: Dictionary) -> void:
 	_stint = randf_range(20.0, 35.0)
 
 
-## Can they see the garden right now? From the patio or a window, yes; indoors, no.
-func sees() -> bool:
-	return where != "inside" and not knocked_out
+## Can they see what happens at `at` (design doc, The Customer: line of sight)? Indoors,
+## nothing; outside or at a window, whatever's in their line of sight (main's `sight`).
+## With no point, whether they're looking at all.
+func sees(at := Vector2.INF) -> bool:
+	if where == "inside" or knocked_out:
+		return false
+	return at == Vector2.INF or not sight.is_valid() or sight.call(at)
 
 
 ## Share of the job they spend indoors or at a window: the fusspot hardly goes in.
@@ -55,42 +58,32 @@ func indoors() -> float:
 	return job.get("indoors", persona.get("indoors", 0.3))
 
 
-## Out onto the patio, and a look at what's left: anything they missed gets an itemised
-## meltdown (or, for the squirrel hater, delight). Returns true if they had something to say.
-func come_out() -> bool:
+## Out onto the patio. Nothing is found just by stepping out: what they didn't see
+## happen, they don't know about until you've gone (aftermath()).
+func come_out() -> void:
 	if where == "patio":
-		return false
+		return
 	where = "patio"
 	window_x = -1
 	_stint = randf_range(15.0, 30.0)
-	return _look_around()
 
 
-func _look_around() -> bool:
-	for i in range(_unseen.size() - 1, -1, -1): # a body you got rid of can't be found
-		if _unseen_if[i].is_valid() and not _unseen_if[i].call():
-			_unseen.remove_at(i)
-			_unseen_what.remove_at(i)
-			_unseen_if.remove_at(i)
-	if _unseen.is_empty() and _unseen_flowers <= flowers_flat:
-		return false
-	var before := mood
-	var what := _unseen_what.duplicate()
-	for f in _unseen:
-		f.call()
-	_unseen.clear()
-	_unseen_what.clear()
-	_unseen_if.clear()
-	if _unseen_flowers > flowers_flat:
-		on_flowers(_unseen_flowers)
-		what.append("my flowers")
-	if fired:
-		return true # the evidence finished it: on_flowers or the mood said so
-	if mood >= before:
-		_react("laughing", 2.0, "Ha! Somebody got %s!" % " and ".join(what))
-	else:
-		_react("horrified", 3.0, "What happened to %s?!" % ", ".join(what))
-	return true
+## What they find after you've gone, by ownership (design doc, The Customer): their own
+## things wrecked out of sight, and whatever main found lying in view (bodies, {kind: n}).
+## Reputation only, the money's settled. Each entry is [what, reputation].
+func aftermath(bodies: Dictionary, all_cut: bool) -> Array:
+	var out: Array = []
+	for o: Array in _owned:
+		out.append(["Their %s, ruined" % o[0], o[1] / 5.0])
+	if _unseen_flowers > 0:
+		out.append(["%d of their flowers flattened" % _unseen_flowers, persona.flower * _unseen_flowers / 5.0])
+	for kind: String in bodies:
+		var n: int = bodies[kind]
+		out.append([("A dead %s on the lawn" % kind) if n == 1 else ("%d dead %ss on the lawn" % [n, kind]),
+			persona.get(kind, -20.0) * n / 5.0])
+	if all_cut:
+		out.append(["Every blade cut", 2.0])
+	return out
 
 ## The expression to show right now: a short reaction if one is playing, else the mood tier.
 func face() -> String:
@@ -113,10 +106,11 @@ func tick(delta: float) -> String:
 	if knocked_out:
 		return ""
 	if fired or paid: # settled: they come out and watch you leave
-		return last_line if come_out() else ""
+		come_out()
+		return ""
 	_stint -= delta
-	if _stint <= 0.0 and _move():
-		return last_line
+	if _stint <= 0.0:
+		_move()
 	# Patience running low: a glance at the watch, no words (waits out any reaction).
 	if _glances < GLANCES.size() and elapsed >= job.patience * GLANCES[_glances] and _react_left <= 0.0:
 		_glances += 1
@@ -139,22 +133,20 @@ func tick(delta: float) -> String:
 
 
 ## Time for a change of scene: in for a cup of tea, back out, or peering from a window.
-## Returns true if they came out to something worth a word.
-func _move() -> bool:
+func _move() -> void:
 	var going_in := randf() < indoors()
 	if where == "patio":
-		if not going_in:
-			_stint = randf_range(15.0, 30.0)
-			return false
-		where = "inside"
-		_stint = randf_range(10.0, 25.0)
-		return false
+		_stint = randf_range(15.0, 30.0)
+		if going_in:
+			where = "inside"
+			_stint = randf_range(10.0, 25.0)
+		return
 	if going_in and randf() < 0.5:
 		where = "window" if where == "inside" else "inside"
 		window_x = windows[randi() % windows.size()] if where == "window" else -1
 		_stint = randf_range(8.0, 15.0)
-		return where == "window" and _look_around()
-	return come_out()
+		return
+	come_out()
 
 
 func on_progress(new_coverage: float) -> void:
@@ -163,15 +155,11 @@ func on_progress(new_coverage: float) -> void:
 		coverage = new_coverage
 
 
-## Returns true if they saw it (the scene reacts); unseen, the splat waits for them, or
-## the body does while `still_there` says so. `share` scales it: knocked out, not killed,
-## counts for less, and leaves nothing to find.
-func on_squash(kind: String, share := 1.0, still_there := Callable()) -> bool:
-	if not sees():
-		if share >= 1.0:
-			_unseen.append(on_squash.bind(kind))
-			_unseen_what.append("the " + kind)
-			_unseen_if.append(still_there)
+## Returns true if they saw it happen at `at` (the scene reacts). Unseen, a critter isn't
+## theirs: only a body left lying in view is found, after you've gone. `share` scales it:
+## knocked out, not killed, counts for less.
+func on_squash(kind: String, share := 1.0, at := Vector2.INF) -> bool:
+	if not sees(at):
 		return false
 	var d: float = persona.get(kind, -20.0) * share
 	_change(d)
@@ -186,15 +174,16 @@ func on_squash(kind: String, share := 1.0, still_there := Callable()) -> bool:
 	return true
 
 
-## Returns true if this was news (newly flattened flowers), so the scene can react.
-func on_flowers(total_flat: int) -> bool:
-	if not sees():
-		_unseen_flowers = maxi(_unseen_flowers, total_flat)
-		return false
-	var fresh := total_flat - flowers_flat
+## Returns true if this was news (newly flattened flowers, seen at `at`), so the scene can
+## react. Unseen, they're theirs: found after you've gone.
+func on_flowers(total_flat: int, at := Vector2.INF) -> bool:
+	var fresh := total_flat - flowers_flat - _unseen_flowers
 	if fresh <= 0:
 		return false
-	flowers_flat = total_flat
+	if not sees(at):
+		_unseen_flowers += fresh
+		return false
+	flowers_flat += fresh
 	if fired:
 		_react("horrified", 2.0, ["Stop that!", "Get OFF my lawn!", "Vandal!"][randi() % 3])
 		return true
@@ -207,9 +196,10 @@ func on_flowers(total_flat: int) -> bool:
 	return true
 
 
-## A flung stone (or worse) lands on something of theirs. Returns true if it knocked them out.
-func on_stone(target: String) -> bool:
-	if not sees():
+## A flung stone (or worse) lands on something of theirs at `at`. Returns true if it
+## knocked them out. Noise brings them out: they hear it, so they know.
+func on_stone(target: String, at := Vector2.INF) -> bool:
+	if not sees(at):
 		if target == "wall":
 			return false # a thud, nothing to see
 		come_out() # glass breaking, a clonk on the car, the dog yelping: they're out at once
@@ -235,13 +225,11 @@ func on_stone(target: String) -> bool:
 	return false
 
 
-## Something of theirs wrecked (a gnome, the hose, a spill on the lawn). Returns true if
-## they saw it; unseen, what's left of it waits for them.
-func on_property(what: String, d: float) -> bool:
-	if not sees():
-		_unseen.append(on_property.bind(what, d))
-		_unseen_what.append("my " + what)
-		_unseen_if.append(Callable())
+## Something of theirs wrecked at `at` (a gnome, the hose, a spill on the lawn). Returns
+## true if they saw it; unseen, it's theirs, so it's found after you've gone.
+func on_property(what: String, d: float, at := Vector2.INF) -> bool:
+	if not sees(at):
+		_owned.append([what, d])
 		return false
 	_change(d)
 	_react("horrified", 2.0, "My %s!" % what.to_upper())
@@ -261,8 +249,8 @@ func on_dog_hit() -> void:
 
 
 ## Returns true if they saw it.
-func on_dog_returned() -> bool:
-	if not sees():
+func on_dog_returned(at := Vector2.INF) -> bool:
+	if not sees(at):
 		return false
 	_change(10.0)
 	_react("delighted", 2.0, "Oh, thank you! Bad %s!" % job.get("dog_name", "dog"))

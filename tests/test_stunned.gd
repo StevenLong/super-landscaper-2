@@ -1,7 +1,7 @@
 # A stone into a critter: thrown, it knocks out (lies there, wakes and runs) or kills it
 # leaving a body; flung by the blades, it splats or knocks out. A body can be carried,
-# thrown over the fence or mowed to nothing, and a body gone before the customer comes
-# out is never found.
+# thrown over the fence or mowed to nothing. A body left lying in view is found after
+# you've gone (not when they step out); one gone by then never is.
 extends SceneTree
 
 var m: Node
@@ -77,15 +77,19 @@ func _physics_process(_delta: float) -> bool:
 		4:
 			assert(m._bodies("hedgehog") == 1, "set down, it lies there")
 			var b: Animal = m.get_node("Animals").get_children().filter(func(a: Node) -> bool: return a is Animal and a.body)[0]
-			# Left lying there while they're in, it's found when they come out.
+			# Left lying in view while they're in: stepping out finds nothing, leaving it does.
 			m.customer.where = "inside"
 			m._stone_critter(_still(Vector2(300, 650)), true, 0.99)
 			var mood: float = m.customer.mood
 			m.customer.come_out()
-			assert(m.customer.mood < mood, "a body left on the lawn is found")
+			assert(m.customer.mood == mood, "stepping out, they find nothing")
+			var found: Array = m.customer.aftermath(m._bodies_in_view(), false)
+			assert(found.size() == 1 and found[0][0] == "2 dead hedgehogs on the lawn" and found[0][1] < 0.0,
+				"after you've gone, both bodies in view are found: %s" % [found])
 			m.customer.where = "inside"
 			b.squash()
 			assert(m.tally.get("bodies_mulched", 0) == 1 and m._splats.size() == 1, "mowed: mulch, no splat")
+			assert(m._bodies_in_view().get("hedgehog", 0) == 1, "and mulched, it isn't there to find")
 			print("PASS stunned")
 			quit()
 	_step += 1
