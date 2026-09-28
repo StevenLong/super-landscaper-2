@@ -6,6 +6,55 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 11 (2026-09-28): the S9 and S10 checks triaged and built, each mower's feel
+- All 28 checks answered. Passed as written: S9-HEAD, S9-HEDGEHOG, S9-GRIT, S9-CAR, S9-TREES,
+  S9-VICAR ("better"), S10-TERRACE, S10-SEMI, S10-SIGHT, S10-CONE, S10-UNSEEN, S10-CHURCH.
+  The rest turned up work (NOTES 113 to 139, triaged at the start); S10-CARRY couldn't be
+  tried (no intact body) and rolls on as S11-CARRY.
+- The dev's calls this session (promoted to the design doc, vetoable): the throw shows its
+  whole arc to the first hit (reverses "no path line"); things thrown off the plot land next
+  door, never fetchable; critters live past the boundary and walk in, a hedge rustling as
+  they pass; knocked out stays knocked out; running one over knocks it out, likelier the
+  smaller the mower, the ride-on always splats; a critter thrown hard into something solid
+  is knocked out; the hose green on a reel, only the end and reel are grips, no kinks; the
+  pad layout (A on, B off and back, X throw, the stick only steers); the door knock moment;
+  the lead on when you choose; the summary as two books; once-a-job things as events; no
+  stamina levelling (a consumable kept as an idea); the manor's back lawn kept; the ha-ha
+  redrawn before railings.
+- Calls I made (vetoable): interact does the target nearest the spot in front of you,
+  outlined (options were A/X, a cycle button, a pick list); run-over knockout 70% push,
+  30% petrol; the house fades only while its art covers you (it had nothing behind it);
+  the manor roof square-ended; sprint on R/RB, gears R/C and RB/LB; walking drains stamina
+  0.6x, sprinting 1.5x; ripcord sweet spot at 62% of the meter, 6 to 20% wide by
+  condition, a stall on half of knocks under 40%; ride-on gears 30/50/75/100% speed.
+- Built (all unplayed): the bug batch (throw arc, windows, thuds, fired-after-paid,
+  knockouts carried, spawns, off-plot flights), controls, the hose and reel, interact
+  targets, the door, the summary, the manor fade and roof, the ha-ha, 108 to 110 (each
+  mower's feel), 112 (sim_balance per plot), and docs/SPRITES.md (137 prep).
+- Found on the way: squirrels "climbed down" rocks, headstones and topiary (the tree filter
+  took any round obstacle); a critter spawned inside next door's corner spun forever; the
+  hose chain blew up to infinity when yanked taut (the anti-kink step kept stretched
+  lengths); a flaky test pair fixed; a spawn spot could still land against a building when
+  ten random tries all did (now forty, else no spawn that time). Once a commit (9471c66) went in over two failing
+  tests: both were test flaws, fixed in 80bfe24.
+- Balance (NOTES 140, sim numbers not play): no mower gets the bot to 85% within patience
+  on the small plots; the ride-on isn't faster than petrol on open lawns; the push at
+  walking pace is far off; the ride-on can't mow the churchyard. Nothing retuned.
+- Verified: run_all green twice in a row at the end (parse, smoke, 31 tests); new tests throw_path, fallout,
+  controls, mower_feel; hose, tells, talk, records, animals rewritten or extended. Every
+  visual change screenshotted and looked at (arc, facade, hose and reel, door, ha-ha,
+  ripcord meter, summary). Not measured: anything by feel.
+- 106 (packing) not started on purpose: it changes how mowers are chosen, on top of this
+  session's unplayed mower feel, and its grid sizes and shapes are still open.
+
+OWED CHECKS: 24, in CHECKS.txt (3 loads, about 50 minutes).
+
+NEXT:
+1. Play the checks; triage what they turn up.
+2. A call on NOTES 140 (retune from the sim, or play first), then 106 and 107.
+3. /grill on 137 (the art pipeline: blocks the manor and topiary redraws), then 136
+   (storylines and the animal dealer), 96 (subquests), 94 (strimmer) with fire, 100 (weeds).
+
 ## Session 10 (2026-09-27): grills on 88 and 91, plot shapes, the manor, churchyard, line of sight
 - No checks answered: all 16 S9 checks roll on (S9-BODY and S9-BOARD reworded for this
   session's rule changes). 12 new, 28 owed.
@@ -276,35 +325,3 @@ NEXT:
 2. A `/grill` session on the queued design items: 21 (escalation, the biggest), 22, 25, 26,
    27, 29, 38, 40.
 3. 46, more layout variety, whenever a build session wants something concrete.
-
-## Session 3 (2026-09-24): play-check triage, quick fixes, one rundown, fired stays in the job
-- You answered all 29 checks. Signed off: briefing, engine audio, tank trade-off, condition
-  gauge, ride-on, push-mower winnability, board fit, hand-in send-back, hanging about, spawns
-  avoiding the house/truck/trees. Everything else became NOTES.md items (now the task list).
-- Fixed: glug looped forever (one-shot sounds never loop now; ponds had it too); the truck
-  refilled push-mower stamina; a g tail bled over the w (reproduced at a 1600x900 window, a
-  1px atlas gap fixes it at five sizes); the attract mower's flip showed; WASD in menus.
-- Cheats moved off F9 (the editor's pause key): board [1] cash, [2] rep; job [0] perfect
-  finish. New CLAUDE.md rule: letters and number row only, no function keys, no backquote.
-- One rundown: paying updates the truck menu; driving off goes straight to the board, whose
-  Last job panel shows the outcome, money and rep change. The corner face ducks to the bottom
-  right when you're near it (your call: option b).
-- Fired no longer ends the job (you corrected my 1.5s-then-board version): no pay and the rep
-  hit land at once, you stay, spite is mischief, you leave from the truck.
-- Handoff now sorts NOTES.md: decided design goes to the doc, the rest waits for a grill or
-  sits parked with a date. Promoted this time (veto any): fired stays in the job; tone (no
-  punches pulled, gruesome only when you go absurd); the cop-call countdown. The tone call
-  supersedes session 1's MY CALLS item "the dog is never killed".
-- Verified: run_all green (13 checks; new test_polish and test_fired, both shown to fail with
-  their fix removed); screenshots of the title, board rundown, paid and fired truck menus, and
-  the ducked face. None of it played.
-
-OWED CHECKS: CHECKS.txt (12 checks, four loads). S1-PAD (gamepad) has been owed since
-session 1.
-
-NEXT:
-1. Play CHECKS.txt and answer on the `>` lines.
-2. Build 12 with 39: the world past the garden (road, footpath, neighbours) and a sensible
-   layout (truck on the street or in the drive, a drive and garage). Needs a few layout calls.
-3. A `/grill` session on the queued design items: 21, 22, 25, 26, 27, 29, 38, 40.
-4. Still open from session 1: sign off or change the rest of the MY CALLS list.

@@ -2193,13 +2193,17 @@ func _spawn_spot(kind: String) -> Dictionary:
 		pool = _edges.filter(func(e: Dictionary) -> bool: return kind != "hedgehog" or e.kind != "wall")
 	if pool.is_empty():
 		return {}
-	var e: Dictionary = pool[randi() % pool.size()]
-	var at := (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95))
-	for i in 10: # not where a building stands against the boundary (a terrace, the church)
-		if not _blocked(at + (e.inward as Vector2) * 12.0):
+	var e: Dictionary = {}
+	var at := Vector2.INF
+	for i in 40: # not where a building stands against the boundary (a terrace, the church)
+		var c: Dictionary = pool[randi() % pool.size()]
+		var p := (c.from as Vector2).lerp(c.to, randf_range(0.05, 0.95))
+		if not _blocked(p + (c.inward as Vector2) * 12.0) and not _blocked(p + (c.inward as Vector2) * 24.0):
+			e = c
+			at = p
 			break
-		e = pool[randi() % pool.size()]
-		at = (e.from as Vector2).lerp(e.to, randf_range(0.05, 0.95))
+	if e.is_empty():
+		return {} # nowhere to come in this time
 	var from := at
 	for i in 10: # back out of sight, so it's seen walking in, not popping up
 		from = at - (e.inward as Vector2) * (40.0 + 30.0 * i)
