@@ -478,25 +478,28 @@ func _gravel(box: Rect2, called: String) -> void:
 	lawn.exclude_rect(box)
 
 
-## The hose, off a tap on the side of the house away from the garage, wandering out
-## across the lawn.
+## The hose, on a reel below a tap on the side of the house away from the garage,
+## wandering out across the lawn.
 func _lay_hose(rp: RandomNumberGenerator) -> void:
 	var h: Rect2 = _house.rect()
 	var side := -1.0 if _house.garage > 0 else 1.0
 	var tap := Vector2(h.position.x - 3.0 if side < 0.0 else h.end.x + 3.0, h.position.y + _house.WALL_H - 8.0)
+	var reel := tap + Vector2(side * 14.0, 10.0)
 	var dir := Vector2(side, 1.0).normalized()
 	if _house.back_patio: # the tap's on the back wall, where the garden is
 		tap = Vector2(h.position.x + 30.0 if side < 0.0 else h.end.x - 30.0, h.position.y - 3.0)
+		reel = tap + Vector2(0.0, -14.0)
 		dir = Vector2(side * 0.4, -1.0).normalized()
-	var path := PackedVector2Array([tap])
-	for i in 18:
+	var path := PackedVector2Array([lawn.keep_in(reel, 8.0)])
+	for i in Hose.LINKS:
 		dir = dir.rotated(rp.randf_range(-0.5, 0.5))
 		path.append(lawn.keep_in(path[-1] + dir * Hose.SEG, 10.0))
 	_hose = Hose.new()
 	_hose.mower = mower
-	_hose.lay(path)
+	_hose.lay(path, tap)
 	_hose.mowed.connect(_on_hose_mowed)
 	$Scenery.add_child(_hose)
+	$Scenery.add_child(_hose.reel)
 
 
 ## The churchyard: rows of headstones, solid, some with flowers laid in front, wherever
@@ -986,8 +989,9 @@ func _hint() -> String:
 		var near := _stone_near(walker.global_position)
 		if near:
 			return Game.key("interact") + " pick up the " + _thing(near.kind)
-		if _hose and _hose.nearest(walker.global_position) > 0:
-			return Game.key("interact") + " pick up the hose"
+		var hose := _hose_grip()
+		if hose != "":
+			return Game.key("interact") + {"end": " pick up the hose", "wind": " wind the hose in", "pull": " pull the hose out"}[hose]
 		if dog and is_instance_valid(dog) and not dog.limping and not dog.held:
 			if dog.following == walker:
 				return "Walk %s back to the patio   %s pick them up" % [job.dog_name, Game.key("interact")]
@@ -1101,7 +1105,7 @@ func interact() -> void:
 			open_truck_menu()
 		return
 	if walker.carrying == "hose": # let go: it lies where you left it
-		_hose.grabbed = -1
+		_hose.grabbed = false
 		walker.carrying = ""
 		walker.queue_redraw()
 		return
@@ -1137,8 +1141,13 @@ func interact() -> void:
 			walker.carrying = s.kind
 			walker.queue_redraw()
 			Sfx.play("ui_move", 0.0)
-		elif _hose and _hose.nearest(walker.global_position) > 0:
-			_hose.grabbed = _hose.nearest(walker.global_position)
+		elif _hose_grip() == "wind":
+			_hose.winding = true
+			Sfx.play("ui_move", 0.0)
+		elif _hose_grip() != "": # its end, or off the reel
+			_hose.grabbed = true
+			_hose.winding = false
+			_hose.hand = walker.global_position
 			walker.carrying = "hose"
 			Sfx.play("ui_move", 0.0)
 		elif _pick_up_critter():
@@ -1298,18 +1307,34 @@ func _on_choice(id: String) -> void:
 			get_tree().change_scene_to_file("res://title.tscn")
 
 
-## Dragging the hose: it follows your hand, and holds you to its length from the tap.
+## Dragging the hose: it follows your hand, paying off the reel, and holds you to its
+## length from the reel.
 func _drag_hose() -> void:
 	if _hose == null:
 		return
-	if walker == null or walker.carrying != "hose" or _hose.grabbed < 0:
-		if walker and walker.carrying == "hose": # the bit you held got mowed off
+	if walker == null or walker.carrying != "hose" or not _hose.grabbed:
+		if walker and walker.carrying == "hose": # the end you held got mowed off
 			walker.carrying = ""
-		_hose.grabbed = -1
+		_hose.grabbed = false
 		return
-	var tap := _hose.points[0]
-	walker.global_position = tap + (walker.global_position - tap).limit_length(_hose.reach())
+	var at := _hose.points[0]
+	walker.global_position = at + (walker.global_position - at).limit_length(_hose.reach())
 	_hose.hand = walker.global_position
+
+
+## What your hands can do with the hose here: "end" (pick it up), "wind" (at the reel, some
+## of it out), "pull" (at the reel, all wound in), or "". Only the end and the reel.
+func _hose_grip() -> String:
+	if _hose == null or walker == null or walker.carrying != "":
+		return ""
+	var at := walker.global_position
+	if _hose.points.size() > 1 and _hose.end().distance_to(at) < 16.0:
+		return "end"
+	if _hose.points[0].distance_to(at) < 22.0:
+		if _hose.points.size() > 1:
+			return "" if _hose.winding else "wind"
+		return "pull" if _hose.length > 0 else ""
+	return ""
 
 
 ## Through the blades: a cut hose, a puddle where it sprays, and it's theirs.
