@@ -15,65 +15,73 @@ Pick up a stone and hold throw. The whole flight shows as a dotted arc with a fa
 shadow, and the ring sits where it first hits: flat on the lawn, or standing up on the
 house wall. Put the ring on an upstairs window and let go: does it hit that window? Try
 the roof too. Is the arc easy to read?
->
+>yes, much better
 
 S11-HOLE
 Break a window, then throw another stone at the same window: a thud, no second bill.
->
+>yes
 
 S11-OVER
 Lob a stone high over the side fence, then a body: they fly on and lie next door, where
 you can see them but not reach them. Lob a live critter over: it wanders off.
->
+>Yes
 
 S11-KOCARRY
 Knock a hedgehog out with a stone and pick it up bare-handed: OW, but when it drops it's
 still out cold. Knock a squirrel out, carry it a while: no bite. Throw a live squirrel
 hard at the house wall: it's knocked out.
->
+>yes, though doing so always gives wanted level, even unobserved
 
 S11-CARRY
 (Rolled on from S10-CARRY.) A hand-thrown stone kills about one critter in five. Kill one
 while the customer can't see you, pick up the body and walk into their sight: they react
 at once.
->
+>Yes, but they also re-react every time you pick up the same dead critter. I think that should probably only have one instance per body.
+
+Another thing I noticed is that dead hedgehogs don't hurt your hands. They'd still be spiky, so they probably should still hurt your hands.
+
+And throwing a hedgehog at another hedgehog, specifically a dead hedgehog at a live hedgehog, caused one to vanish. I think the body vanished when it hit the live one. It should have probably made another dead or unconscious hedgehog.
 
 S11-HEAP
 Put a gnome down next to a body and near the hose's end. White brackets show what [E]
 would take, and the hint names it. Turn to face each one: the brackets move to it.
->
+>Yes, but I'm not sure how I feel about those brackets. They can stay for now, but I'm not sure I like the look and the effect. It needs to soak a bit more. Maybe it's fine.
 
 S11-HOSE
 The hose is green, on a reel below a chunkier tap. Take its end and walk off: it pays off
 the reel, bends round, never kinks or folds. Let go, walk to the reel, [E]: it winds in.
 [E] again at the reel pulls it out again. Mow it: cut, and shorter from then on.
->
+>It is much better. One thing I would like changed: when you run over it somewhere in the middle, the rest of the length of it shouldn't just vanish. It should just stay there, and you should still be able to pick up the end piece and drag it out of the way.
+
+Also, we should think about whether or not we want the player to be able to actually use the hose. I'm not sure yet what beneficial or mischievous reasons they would do that for, but it's there, so we should think about it.
 
 S11-LEAD
 Walk into the loose dog: nothing happens. Throw its ball: it fetches; throw again: it
 fetches again. [E] by the dog puts the lead on; [E] again picks it up.
->
+>yes
 
 S11-DOOR
 While the customer's indoors, walk up to the front door: "knock on the door". Knock: a
 pause, the door opens, they're standing in it, then you talk. Close the chat: they step
 out onto the patio and the door shuts. Later, when they go back in off screen, do you
 hear the door?
->
+>yes
 
 S11-DOGHOME
 Walk the dog home while its owner's indoors: they come out pleased.
->
+>yes
 
 S11-HOUSE
 The house front is plain cream with faint courses, no slanted brown grid (ask your partner).
 A stone on the wall while they're inside: just a thud, no voice.
->
+>Yes, it looks better and the stone doesn't affect an inside customer. 
+
+One thing that's been bothering me slightly: it feels a little bit like once the stone hits a wall, it teleports straight to the ground. Can there be a bit of a slower drop?
 
 S11-MOTOR
 Hop off the petrol mower with it running and walk away: its motor gets quieter and moves
 to one side.
->
+>yes
 
 
 ================================================================================
@@ -84,43 +92,45 @@ S11-PUSH
 The push mower walks at a slower pace. Hold Shift (pad A) to push flat out: full speed, and
 the stamina bar drains faster. Sprinting past the truck on the pad doesn't open its menu. Does the walking pace feel right against the customer's
 patience?
->
+>yes
 
 S11-RIPCORD
 The petrol mower won't go until you start it: hold W (pad RT), a white marker sweeps a
 meter, let go in the green. Too early or too late: a cough and a second lost. Does it
 feel good, or fiddly by the third job?
->
+>yes, but see my notes
 
 S11-STALL
 Knock the petrol mower about till its condition is under 40%, then bump into things: now
 and then it stalls and wants the cord again.
->
+>yes
 
 S11-GEARS
 The ride-on starts switched off: [E] (pad A) turns the key. Shift up a gear, Ctrl down
 (pad RB, LB); the hint shows the gear. Each gear is faster; top gear turns wide. Does it
 feel good to drive?
->
+>It feels worse to drive than it did before, but that might be for the best as it was, I think, massively overpowered. Every job was fast and easy. 
+
+Now, going at the top speed on it is a massive risk: you're going to hit something, probably a bunch of things. The turning speed really compensates for its massive strength on the straights.
 
 S11-ENGINE
 On the petrol or the ride-on, away from the truck, [E] switches the engine off: the fuel
 gauge stops falling. The ride-on's key turns it back on; the petrol wants its cord again.
->
+>yes
 
 S11-RUNOVER
 Run over hedgehogs with the push mower: mostly they're knocked out and flung aside, not
 splatted. With the ride-on: always a splat.
->
+>yes
 
 S11-PAD
 (Pad.) A gets you back on the mower, B gets off, X throws, B backs out of the pause menu.
 On the mower the triggers drive and the stick only steers.
->
+>yes
 
 S11-BOARD
 On the board, buy something: the cursor stays on that row instead of jumping to the top.
->
+>yes
 
 
 ================================================================================
@@ -131,21 +141,27 @@ S11-SPAWN
 An L plot (reputation 70 or more) and a churchyard (under 20): critters walk in from
 outside the garden, never stuck spinning in a wall or a headstone. A hedge rustles as one
 pushes through it; no leaves on walls or fences. Squirrels come down trees, never rocks.
->
+>I haven't seen any critters stuck since. I'll let you know if it comes back.
 
 S11-MANOR
 The manor's roof ends are square: no corners of grass you can't reach. Walk round to the
 back lawn: the house fades only when you're behind a chimney.
->
+>It's a bit better, or almost completely better, but the fading behind the chimney is pointless. You can barely get behind it, and then they all fade, which is very distracting and unnecessary. 
+
+Players should be allowed to walk behind them (they shouldn't be solid), but I don't think we need to worry about a hidden law behind them. We should just let the player figure it out for themselves. 
+
+Alternatively, instead of having the whole thing fade, just have the specific chimney that you're behind fade.
 
 S11-HAHA
 The manor's ha-ha now: stone coping at the lawn's edge, a shadowed drop, the bank rising
 to the park. Does it read as a sunken wall? A stone thrown low goes in and lies there.
->
+>It definitely reads better as a border. I now know what the thing in real life is that you're trying to depict. 
+
+The corners here can be a little rough, and I've also noticed a few other spaces where fences aren't quite lined up. In the L-shaped one, I think around the L, I saw some fences that were not attached or sticking out in weird ways.
 
 S11-SUMMARY
 After a messy job, the summary has two panels: Money (each line, then Net) and Reputation
 (each line, what they noticed, then All told, and how much shows in your standing yet).
 Do the totals read clearly? A cut hose or the dog walked home shows as an event, with no
 PERSONAL WORST.
->
+>The summary is much better overall. I think the "all told" line is going to be confusing, but I'm not sure what the better wording or presentation would be.

@@ -66,6 +66,106 @@ BLOCKS = spoils the next playtest.
    at walking pace is far off any patience, and the bot can't reach 85% within patience on
    the small plots with any mower. The dev's call (2026-09-28): play first and see if a
    person beats the bot; retune after (patience, push walk speed, the ride-on's turning).
+   S11-GEARS (play): the ride-on feels worse to drive than before, maybe rightly (it was
+   massively overpowered, every job fast and easy); top gear is a real risk, the wide turn
+   offsets its strength on the straights. S11-PUSH: the walking pace felt right.
+
+### Notes 2026-09-28b (S11 check fallout, and a notes dump)
+
+141. [BUG, small, BLOCKS] A critter thrown into anything gets you wanted, even unseen and
+   even for a customer who wants it hurt (S11-KOCARRY, and a squirrel into a fence). Cause:
+   `main.gd` ~2041, a live critter into anything is tier +1 and +1 heat, unconditionally,
+   and `_crime()` adds heat with or without a witness (only the police call needs one);
+   both as the design doc says (The Run, the ladder). The dev's call: if the customer wants
+   that critter harmed, how doesn't matter; it's only a crime into their car, through their
+   window, or at them. FIX: skip the projectile tier and heat when the persona's weight for
+   that kind is positive, unless the target is car, window, hole or customer. QUESTIONS:
+   (a) should an unwitnessed crime add heat at all (today heat is your record, seen or not)?
+   (b) does the dog count as off limits too (a squirrel at the dog)?
+142. [FEATURE, small] Throwing a squirrel out of the yard, seen by a customer who hates
+   squirrels, should earn mood. Home: the "gone" branch in `main.gd` ~1975 (a live critter
+   over the boundary gets no reaction today); `customer.gd` beside `on_squash()`. FIX: an
+   eviction seen scores the persona's weight for that kind times a share. QUESTION: does a
+   nature lover mind seeing a hedgehog hurled over the fence (the sign follows the persona)?
+   My lean: yes, at the knockout share (0.4).
+143. [BUG, small] Picking up the same body again makes the customer react again (S11-CARRY).
+   Cause: `main.gd` ~794 `_carried_into_view()`, `_carry_seen` clears when you put the body
+   down, and a dropped body is respawned as a new Animal. FIX: a seen flag rides with the
+   body (on the Animal, carried through `walker.carrying` and `_land`).
+144. [BUG, small] A dead hedgehog doesn't prick bare hands (S11-CARRY). Cause: `main.gd`
+   `_hold_critter()` returns early for "body_" kinds (not keys of CRITTERS). FIX: a
+   hedgehog body pricks bare-handed like a live one.
+145. [BUG, small] A body thrown into a live critter vanishes (S11-CARRY, dead hedgehog at a
+   live one). Cause: `main.gd` "animal" hit branch: the live one is stoned, but only a live
+   projectile lands (`if alive: _drop_bounced`). FIX: a body lands too.
+146. [FEATURE, moderate] The hose cut mid-length: the far piece stays on the lawn and you
+   can pick up its end and drag it clear (S11-HOSE). Today `hose.gd` `_cut_at()` drops
+   everything past the cut. FIX: the cut-off links become a loose piece (no reel), grabbed
+   by either end (my call).
+147. [DESIGN, moderate] Using the hose: what's it for, helpful or mischievous (S11-HOSE)?
+   Seed ideas, none decided: watering beds (the gardener's mood), soaking the customer or
+   the dog, sluicing critters out, putting out fire (79b, 94). Grill alongside 94 and 100.
+148. [VISUAL, small] A stone off a wall snaps to the ground (S11-HOUSE). Cause: `main.gd`
+   `_drop_bounced()` lands it at once. FIX: it falls from the height it hit, with a
+   little bounce back (FlyingStone already has z and vz).
+149. [VISUAL, small] The ripcord needs a visible cord (S11-RIPCORD notes): a cord drawn out
+   of the mower as you hold, snapping back on release, and PULL over the green. Home:
+   `mower.gd` `_draw_cord()`.
+150. [BUG, small] A mower out of fuel restarts by itself once refuelled. Cause: `mower.gd`
+   ~301, running is just fuel > 0. FIX: running dry switches it off (petrol wants the
+   cord, the ride-on its key).
+151. [BUG, moderate, BLOCKS] A lag spike when the customer goes to a window, at least on the
+   manor. Likely cause (not measured): `main.gd` `_show_cone()` casts 41 rays, and for
+   every 12 px step out to 1400 px re-walks `_clear()` from the window, which re-filters
+   every scenery node each call: quadratic per ray. FIX: march each ray once, filter the
+   tall list once. Check: time `_show_cone()` on the manor before and after.
+152. [VISUAL, small] The greyed portrait doesn't say "can't see you" (a watcher asked), and
+   it snaps grey, flickering past tall things. Home: `face.gd` ~102, a binary tint. FIX:
+   ease the tint over about 0.25 s; a label under the portrait while greyed, UNSEEN (my
+   wording, open to the text pass, 159).
+153. [BUG, small] Fired and police called by one act: both banners on top of each other.
+   Cause: `hud.gd` `banner()` always draws mid-screen at the same height. FIX: a banner
+   waits for the one showing to finish.
+154. [BUG, small] "How am I doing?" still offered after you're paid or fired. `main.gd`
+   `open_customer_menu()`. FIX: offered only while unsettled.
+155. [BUG, small] The job's opening briefing often shows in a weird spot; the dev wants it
+   on the player or the customer (it's the customer talking). Not reproduced: in a
+   1280x720 window on the default job it sits screen-centre (`hud.gd` `open()`,
+   PRESET_CENTER), over the player. QUESTION: a screenshot next time it's off, and what
+   size the window was.
+156. [VISUAL, small] The manor's chimney fade is pointless and distracting: you can barely
+   get behind one, and the whole house fades (S11-MANOR). Chimneys stay walk-behind.
+   Options (the dev's): no fade at all (let the player find it), or fade only the chimney
+   you're behind. My lean: no fade (deletes `house.gd` `hides()` and its use).
+157. [VISUAL, moderate] Corners and joins: the ha-ha's corners are rough, and round the L
+   plot's notch some fences don't meet or stick out (S11-HAHA). Home: `main.gd` borders
+   (~600 to 730). FIX: screenshot every plot shape's corners, then fix the joins.
+158. [DESIGN, small] The summary's "All told" line will confuse (S11-SUMMARY); the dev has
+   no better wording yet. Home: `summary.gd` ~89. Goes to the text pass (159) unless the
+   presentation changes (say, standing before and after instead of a total).
+159. [DESIGN, large] The Mad Libs session: rewrite all in-game text together in the dev's
+   voice, with several variants per meaning. PREP (buildable first): pull every
+   player-facing line into one text file, each meaning a list of variants picked at
+   random, so the session is editing one file. QUESTION: what format the dev wants to edit
+   in (plain text, a spreadsheet CSV, a markdown table).
+160. [DESIGN, large] A season calendar of regular clients instead of one-off ads: customers
+   book you monthly, you return to the same garden, the relationship matters, and firing
+   costs a steady income; the ads become a way to find contacts or fill gaps. Touches the
+   board, the week and the loan shark's cadence, what a garden remembers between visits,
+   and 106. Needs a /grill before more board work (47, the hub).
+161. [BUG, small] 21 GDScript warnings in the editor: shadowing (`game.gd` params `job` and
+   `key` shadow the `job()` and `key()` functions; `board.gd` `size`; `flowerbed.gd` `shape`;
+   `flying_stone.gd` `z`, `vz`, `velocity`), confusable locals (`beyond.gd` `x`, `main.gd`
+   `t` and `e`), an unused param (`beyond.gd` `_lot(up)`). FIX: rename. QUESTION: add a
+   run_all step that fails on any GDScript warning, so they don't pile up again? My lean: yes.
+
+Also: S11-HEAP's target brackets stay for now; the dev is unsure of the look, to soak.
+S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
+
+PROPOSED ORDER: 151 (the lag spoils the manor), then the small bug batch 141 (after its
+questions), 143, 144, 145, 150, 153, 154, 161; then 152, 142, 148, 149, 156, 146, 157; 155
+when it's caught on screen. Grill 160 before any more board work; 159's prep after 160,
+since a calendar rewrites much of the board's text.
 
 ### Grilled 2026-09-27 (91: packing the truck, robot mowers, how each mower plays)
 
