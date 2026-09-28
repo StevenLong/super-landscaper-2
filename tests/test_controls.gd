@@ -1,7 +1,8 @@
 # Controls, 2026-09-28 (NOTES 122, 127, 130): back (Esc, the pad's B) or pause again backs
 # out of a panel with a way out; interact gets you back on the mower; walking into the dog
 # does nothing, interact puts the lead on, again picks it up; the pad's B hops, X throws;
-# with several things in reach, interact does the one you face (NOTES 123); buying on the
+# with several things in reach, interact does the one you face (NOTES 123); at the truck
+# on the mower, interact opens it only when you're not on the throttle; buying on the
 # board keeps the cursor in that row.
 extends SceneTree
 
@@ -37,6 +38,14 @@ func _physics_process(_delta: float) -> bool:
 		return false
 	match _step:
 		0:
+			assert(m.at_truck(), "the mower starts at the truck")
+			m.mower.throttle = 1.0 # the pad's A is sprint while you're pushing
+			m.interact()
+			assert(not m.hud.is_open(), "with the throttle held, interact doesn't open the truck")
+			m.mower.throttle = 0.0
+			m.interact()
+			assert(m.hud.is_open(), "stopped, it does")
+			m._on_choice("resume")
 			m.open_pause()
 			assert(m.hud.is_open() and paused, "paused")
 			_press("ui_cancel")

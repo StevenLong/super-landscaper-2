@@ -32,7 +32,7 @@ func _physics_process(_delta: float) -> bool:
 			mower.apply_spec(g.MOWERS.petrol)
 			mower.global_position = Vector2(400, 650)
 			mower.rotation = -PI / 2.0
-			assert(mower.needs_pull, "a petrol mower starts by hand each job")
+			assert(mower.engine_off, "a petrol mower starts by hand each job")
 			assert(m._hint().contains("pull the cord"), "and the hint says how")
 			var good: Vector2 = mower.sweet()
 			mower.condition = 30.0
@@ -46,7 +46,7 @@ func _physics_process(_delta: float) -> bool:
 			Input.action_release("move_forward")
 			_wait = 2
 		2:
-			assert(mower.needs_pull and mower._cough > 0.0, "let go outside the green: a cough")
+			assert(mower.engine_off and mower._cough > 0.0, "let go outside the green: a cough")
 			assert(mower.fuel == _fuel, "an engine that isn't going burns nothing")
 			_wait = int(mower.COUGH * 60.0) + 2
 		3:
@@ -56,7 +56,7 @@ func _physics_process(_delta: float) -> bool:
 			Input.action_release("move_forward")
 			_wait = 2
 		5:
-			assert(not mower.needs_pull, "let go in the green: it catches")
+			assert(not mower.engine_off, "let go in the green: it catches")
 			Input.action_press("move_forward")
 			_wait = 30
 		6:
@@ -64,19 +64,21 @@ func _physics_process(_delta: float) -> bool:
 			Input.action_release("move_forward")
 			mower.condition = 80.0
 			mower.stall_check(0.0)
-			assert(not mower.needs_pull, "in good condition a knock doesn't stall it")
+			assert(not mower.engine_off, "in good condition a knock doesn't stall it")
 			mower.condition = 30.0
 			mower.stall_check(0.9)
-			assert(not mower.needs_pull, "in poor condition, not every knock...")
+			assert(not mower.engine_off, "in poor condition, not every knock...")
 			mower.stall_check(0.1)
-			assert(mower.needs_pull, "...but one can, and it needs the cord again")
+			assert(mower.engine_off, "...but one can, and it needs the cord again")
 			# The ride-on: four gears.
 			mower.apply_spec(g.MOWERS.rideon)
 			mower.condition = 100.0
 			mower.global_position = Vector2(640, 650)
 			mower.rotation = -PI / 2.0
 			mower.velocity = Vector2.ZERO
-			assert(not mower.needs_pull and mower.gear == 1, "a ride-on starts on the key, in first")
+			assert(mower.engine_off and mower.gear == 1 and m._hint().contains("turn the key"), "a ride-on starts on the key, in first")
+			m.interact()
+			assert(not mower.engine_off, "interact turns the key")
 			Input.action_press("move_forward")
 			_wait = 60
 		7:
@@ -107,6 +109,21 @@ func _physics_process(_delta: float) -> bool:
 		13:
 			Input.action_release("gear_down")
 			assert(mower.gear == 2, "and down again")
+			# Switched off, a powered mower burns nothing; the petrol needs its cord again.
+			_fuel = mower.fuel
+			m.interact()
+			assert(mower.engine_off, "interact switches it off")
+			_wait = 30
+		14:
+			assert(mower.fuel == _fuel, "off, it burns no fuel")
+			m.interact()
+			assert(not mower.engine_off, "and the key turns it back on")
+			mower.apply_spec(g.MOWERS.petrol)
+			mower.engine_off = false
+			m.interact()
+			assert(mower.engine_off and m._hint().contains("pull the cord"), "the petrol switches off, and wants the cord again")
+			m.interact()
+			assert(mower.engine_off, "interact doesn't start a petrol: the cord does")
 			print("PASS mower feel")
 			quit()
 	_step += 1

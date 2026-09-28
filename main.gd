@@ -1021,13 +1021,20 @@ func _hint() -> String:
 		if walk != "":
 			return walk
 		return _fired_hint() if customer.fired else ""
-	if mower.needs_pull:
+	if mower.engine_off and mower.sprite_kind == "petrol":
 		return "Hold %s to pull the cord, let go in the green" % ("(RT)" if Game.pad else "[W]") # the throttle: a trigger or a key
+	if mower.engine_off:
+		return Game.key("interact") + " turn the key"
 	if at_truck():
 		return Game.key("interact") + " leave   (on foot, walk up to the customer to get paid)"
+	if customer.fired:
+		return _fired_hint()
+	var off := ("   %s engine off" % Game.key("interact")) if mower.power == "fuel" else ""
 	if mower.sprite_kind == "rideon":
-		return "Gear %d   %s up, %s down" % [mower.gear, Game.key("gear_up"), Game.key("gear_down")]
-	return _fired_hint() if customer.fired else ""
+		return "Gear %d   %s up, %s down" % [mower.gear, Game.key("gear_up"), Game.key("gear_down")] + off
+	if off != "" and mower.velocity.length() < 5.0:
+		return off.strip_edges()
+	return ""
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1115,9 +1122,13 @@ func hop_on() -> void:
 
 
 func interact() -> void:
-	if walker == null:
-		if at_truck():
+	if walker == null: # on the mower: the key, the truck, or the engine off
+		if mower.engine_off and mower.sprite_kind == "rideon":
+			mower.toggle_engine()
+		elif at_truck() and mower.throttle == 0.0: # held with the throttle it's the pad's sprint, not the truck
 			open_truck_menu()
+		elif not at_truck():
+			mower.toggle_engine()
 		return
 	if walker.carrying == "hose": # let go: it lies where you left it
 		_hose.grabbed = false

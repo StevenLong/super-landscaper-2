@@ -83,7 +83,7 @@ func _next() -> void:
 	paused = false
 	mower = m.get_node("Mower")
 	mower.apply_spec(game.MOWERS[run[2]].duplicate())
-	mower.needs_pull = false # a good pull first time
+	mower.engine_off = false # a good pull first time
 	lawn = m.get_node("Lawn")
 	waypoints.clear()
 	_grid()
@@ -196,7 +196,7 @@ func _physics_process(_delta: float) -> bool:
 		paused = false
 	m.customer.mood = 60.0 # the probe measures mowing time, not customer management
 	m.police_left = -1.0 # nor crime: it bumps the car now and then
-	mower.needs_pull = false # stalled on a knock: it pulls the cord again, first time
+	mower.engine_off = false # stalled on a knock: it pulls the cord again, first time
 	var cov := lawn.cut_fraction()
 	for mark: float in MARKS:
 		if cov >= mark and not hit.has(mark):

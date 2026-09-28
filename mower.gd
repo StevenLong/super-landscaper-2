@@ -47,7 +47,8 @@ var repaired := 0.0 ## points repaired this job (costs money)
 var occupied := true ## false while the player is off on foot
 var throttle := 0.0
 var sprinting := false ## a push mower, pushed flat out (hold sprint)
-var needs_pull := false ## a petrol mower before its ripcord is pulled this job, or after a stall
+var engine_off := false ## a powered mower switched off: burns nothing and won't go. The petrol starts by
+## ripcord (each job, after a stall, after you switch it off); the ride-on on its key (interact)
 var pull := -1.0 ## the ripcord's marker, 0 to 1, while you draw the cord; -1 when not
 var gear := 1 ## a ride-on's gear, 1 to 4
 var _cough := 0.0
@@ -166,7 +167,7 @@ func _ripcord(delta: float) -> void:
 	elif pull >= 0.0:
 		var s := sweet()
 		if pull >= s.x and pull <= s.y:
-			needs_pull = false
+			engine_off = false
 			Sfx.play("ui_select", 0.0)
 		else:
 			_miss()
@@ -185,16 +186,27 @@ func sweet() -> Vector2:
 	return Vector2(SWEET_AT, SWEET_AT + lerpf(0.06, 0.2, condition / 100.0))
 
 
+## Interact on a powered mower: the ride-on's key turns it on or off; the petrol only
+## switches off this way (its ripcord starts it). Off, it burns no fuel.
+func toggle_engine() -> void:
+	if power != "fuel" or (engine_off and sprite_kind == "petrol"):
+		return
+	engine_off = not engine_off
+	pull = -1.0
+	Sfx.play("ui_select" if not engine_off else "ui_move", 0.0)
+	_cord.queue_redraw()
+
+
 ## A knock can stall a petrol mower in poor condition; it needs the ripcord again.
 func stall_check(roll := randf()) -> void:
-	if sprite_kind == "petrol" and not needs_pull and condition < STALL_BELOW and roll < STALL_CHANCE:
-		needs_pull = true
+	if sprite_kind == "petrol" and not engine_off and condition < STALL_BELOW and roll < STALL_CHANCE:
+		engine_off = true
 		Sfx.play("cough")
 
 
 ## The ripcord's meter over the mower: the sweet spot in green, the marker in white.
 func _draw_cord() -> void:
-	if not (needs_pull and occupied):
+	if not (engine_off and occupied and sprite_kind == "petrol"):
 		return
 	_cord.global_rotation = 0.0
 	var at := Vector2(-22, -46)
@@ -238,7 +250,7 @@ func apply_spec(spec: Dictionary) -> void:
 	body = spec.body
 	_apply_visual()
 	fuel = max_fuel
-	needs_pull = sprite_kind == "petrol" # started by hand, each job
+	engine_off = power == "fuel" # started by hand (or key), each job
 	gear = 1
 	edge_margin = minf(edge_margin, cut_radius * 0.75)
 
@@ -269,8 +281,10 @@ func _physics_process(delta: float) -> void:
 	var keys := 0.0 if Game.pad else Input.get_axis("move_back", "move_forward")
 	throttle = clampf(keys + Input.get_axis("reverse", "accelerate"), -1.0, 1.0) if occupied else 0.0
 	sprinting = power == "stamina" and throttle > 0.0 and fuel > 0.0 and Input.is_action_pressed("sprint")
-	if needs_pull:
+	if engine_off and sprite_kind == "petrol":
 		_ripcord(delta)
+	elif engine_off:
+		throttle = 0.0 # sat on it, key off
 	if sprite_kind == "rideon" and occupied:
 		if Input.is_action_just_pressed("gear_up"):
 			gear = mini(gear + 1, GEARS.size())
@@ -281,10 +295,10 @@ func _physics_process(delta: float) -> void:
 			fuel = maxf(0.0, fuel - fuel_burn * (SPRINT_BURN if sprinting else WALK_BURN) * delta)
 		else:
 			fuel = minf(max_fuel, fuel + regen * delta)
-	elif not needs_pull: # an engine that isn't going burns nothing
+	elif not engine_off: # an engine that isn't going burns nothing
 		fuel = maxf(0.0, fuel - fuel_burn * delta)
 	fuel_changed.emit(fuel / max_fuel)
-	var running := fuel > 0.0 and condition > 0.0 and not needs_pull
+	var running := fuel > 0.0 and condition > 0.0 and not engine_off
 
 	if occupied:
 		var turn: float = turn_rate * (GEAR_TURN[gear - 1] if sprite_kind == "rideon" else 1.0)
