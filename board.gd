@@ -213,8 +213,8 @@ func _screen() -> VBoxContainer:
 	return col
 
 
-func _centred(col: VBoxContainer, text: String, size: int, color := UI.TEXT) -> void:
-	var lab := UI.label(text, size, color)
+func _centred(col: VBoxContainer, text: String, font_size: int, color := UI.TEXT) -> void:
+	var lab := UI.label(text, font_size, color)
 	lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(lab)
 

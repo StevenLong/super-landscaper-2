@@ -68,7 +68,7 @@ func _physics_process(_delta: float) -> bool:
 			m.interact()
 			m._on_choice("handin")
 			assert(not m.settled.is_empty() and m.settled.paid > 0 and _menu().contains("hand over"), "paid, face to face")
-			assert(not _menu().contains("Ask to be paid"), "and not twice")
+			assert(not _menu().contains("Ask to be paid") and not _menu().contains("How am I doing?"), "and not twice, nor how it went")
 			print("PASS talk")
 			quit()
 	_step += 1

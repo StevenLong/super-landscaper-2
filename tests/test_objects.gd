@@ -6,7 +6,6 @@ var m: Node
 var g: Node
 var _step := 0
 var _wait := 0
-var _ball: Stone
 
 
 func _initialize() -> void:

@@ -8,3 +8,6 @@
 
 # Python bytecode from tools/
 __pycache__/
+
+# tests/run_all.sh: warnings as errors, only while the tests run
+/override.cfg

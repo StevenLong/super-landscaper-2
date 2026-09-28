@@ -3,7 +3,7 @@
 # stays out in your hands and where you put it; thrown hard into a wall, one is knocked
 # out; squirrels only climb down trees; at the L plot and the churchyard, critters get
 # into the garden instead of spinning in a wall; a stone lobbed over the fence lands
-# next door, out of reach. The house fades only while its art stands over you.
+# next door, out of reach.
 extends SceneTree
 
 var g: Node
@@ -68,6 +68,10 @@ func _check_batch(where: String) -> void:
 		stuck.map(func(a: Animal) -> String: return "%s at %s" % [a.kind, a.position])])
 
 
+func _stones_on_plot() -> int:
+	return m.get_node("Stones").get_children().filter(func(s: Node) -> bool: return s is Stone and m._on_plot(s.position)).size()
+
+
 func _physics_process(_delta: float) -> bool:
 	if _wait > 0:
 		_wait -= 1
@@ -76,13 +80,6 @@ func _physics_process(_delta: float) -> bool:
 		0:
 			# A broken pane is a hole: the next stone goes in, no second bill.
 			var h: Node2D = m._house
-			# The house fades only while its art stands over you: a chimney, not open lawn.
-			var chimney := false
-			for x in range(0, int(h.size.x), 2):
-				chimney = chimney or h.hides(Vector2(h.position.x + x, h.position.y - 6))
-			assert(chimney, "behind a chimney, the house fades")
-			assert(not h.hides(Vector2(h.position.x + 5, h.position.y - 60)) and not h.hides(h.position + Vector2(100, h.WALL_H + 10)),
-				"on open lawn behind it, or in front of it, it doesn't")
 			var p := Vector2(h.position.x + h.windows()[0] + 15.0, h.position.y + h.WALL_H - 2.0)
 			var z := 40.0
 			assert(m._building_hit(p, z) == "window", "glass there")
@@ -134,6 +131,16 @@ func _physics_process(_delta: float) -> bool:
 			var laid: Array = m.get_node("Animals").get_children().filter(func(a: Node) -> bool: return a is Animal and a.kind == "squirrel")
 			assert(laid.size() == 1 and laid[0].out > 0.0, "slammed into the wall, it's knocked out")
 			laid[0].free()
+			# A stone that hits the wall high falls from there, not straight onto the grass.
+			var hw: Node2D = m._house
+			var hit := FlyingStone.new()
+			hit.position = hw.position + Vector2(200, hw.WALL_H - 2.0)
+			hit.velocity = Vector2(0, -200)
+			hit.z = 40.0
+			var n0: int = _stones_on_plot()
+			m._on_stone_landed(hit, "wall")
+			hit.free()
+			assert(_stones_on_plot() == n0, "still falling, it isn't on the grass yet")
 			# Lobbed high over the side fence: it lands next door and stays there, out of reach.
 			var edge := Vector2(float(m.lawn.size_px.x) - 60.0, 400.0) # far enough back to clear the fence
 			m.walker.global_position = edge
@@ -143,6 +150,7 @@ func _physics_process(_delta: float) -> bool:
 		5:
 			var out: Array = m.get_node("Stones").get_children().filter(func(s: Node) -> bool: return s is Stone and not m._on_plot(s.position))
 			assert(out.size() == 1, "the stone lies next door, not gone")
+			assert(_stones_on_plot() == 1, "and the one off the wall has come down")
 			assert(m._stone_near(m.walker.global_position) == null and m._stone_near(out[0].position) == null, "and you can't reach it")
 			m.queue_free()
 			_open(_find(85.0, "shape", "L"))

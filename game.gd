@@ -246,20 +246,20 @@ func mower_spec() -> Dictionary:
 
 ## A job as a newspaper classified (BBCode): the headline, the customer's hint worked
 ## into the wording, the plot, anything to watch for, the pay and who to ring.
-func ad_text(job: Dictionary) -> String:
-	var ads: Array = PERSONAS[job.persona].ads
-	var ad: Array = ads[job.seed % ads.size()]
+func ad_text(j: Dictionary) -> String:
+	var ads: Array = PERSONAS[j.persona].ads
+	var ad: Array = ads[j.seed % ads.size()]
 	var parts: Array[String] = [ad[1]]
-	parts.append({"mansion": "Country estate.", "graveyard": "Churchyard."}.get(job.get("venue", ""),
-		"Long garden, terraced house." if job.get("shape", "") == "terrace"
-		else ["Small lawn.", "Good-sized garden.", "Extensive grounds."][LAWN_SIZES.find(job.size)]))
-	if job.get("ponds", 0) > 0:
+	parts.append({"mansion": "Country estate.", "graveyard": "Churchyard."}.get(j.get("venue", ""),
+		"Long garden, terraced house." if j.get("shape", "") == "terrace"
+		else ["Small lawn.", "Good-sized garden.", "Extensive grounds."][LAWN_SIZES.find(j.size)]))
+	if j.get("ponds", 0) > 0:
 		parts.append("Ornamental pond.")
-	if job.get("dog", false):
+	if j.get("dog", false):
 		parts.append("Friendly dog, a known escapee.")
-	var names: PackedStringArray = job.customer.split(" ")
-	var who := names[0] if job.seed % 2 == 0 else "%s. %s" % [names[0][0], names[-1]]
-	parts.append("$%d cash. Ring %s." % [job.pay, "the vicarage" if job.persona == "vicar" else who])
+	var names: PackedStringArray = j.customer.split(" ")
+	var who := names[0] if j.seed % 2 == 0 else "%s. %s" % [names[0][0], names[-1]]
+	parts.append("$%d cash. Ring %s." % [j.pay, "the vicarage" if j.persona == "vicar" else who])
 	return "[color=#7a1c14]%s[/color] %s" % [ad[0], " ".join(parts)]
 
 
@@ -295,7 +295,7 @@ func make_job(seed_value: int) -> Dictionary:
 	var size: Vector2i = LAWN_SIZES[size_i]
 	var area := float(size.x * size.y) / (1280.0 * 720.0)
 	var target: float = clampf(p.target + r.randf_range(-0.05, 0.04), 0.5, 1.0)
-	var job := {
+	var j := {
 		"seed": seed_value,
 		"customer": "%s %s" % [FIRST[r.randi() % FIRST.size()], LAST[r.randi() % LAST.size()]],
 		"persona": persona_key,
@@ -321,53 +321,53 @@ func make_job(seed_value: int) -> Dictionary:
 	var rv := RandomNumberGenerator.new()
 	rv.seed = seed_value + 5
 	if not dregs and reputation >= 75.0 and rv.randf() < 0.4:
-		_venue(job, "mansion", "toff", 2, 1.8)
-		job.props = ["urn", "urn"] + (["urn"] if rv.randf() < 0.5 else []) + ["hose"]
-		job.size = MANOR
-		job.ponds = 1 if rv.randf() < 0.5 else 0
-		job.beds = 0 # the parterre is the beds
-		job.trees = rv.randi_range(2, 3)
+		_venue(j, "mansion", "toff", 2, 1.8)
+		j.props = ["urn", "urn"] + (["urn"] if rv.randf() < 0.5 else []) + ["hose"]
+		j.size = MANOR
+		j.ponds = 1 if rv.randf() < 0.5 else 0
+		j.beds = 0 # the parterre is the beds
+		j.trees = rv.randi_range(2, 3)
 	elif not dregs and reputation < 20.0 and rv.randf() < 0.5:
-		_venue(job, "graveyard", "vicar", 1, 0.7)
-		job.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)
+		_venue(j, "graveyard", "vicar", 1, 0.7)
+		j.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)
 	else:
-		_shape(job)
-	return job
+		_shape(j)
+	return j
 
 
 ## The plot's shape, by neighbourhood (design doc, Levels): terraces at the bottom of the
 ## ladder, semis with the house set forward in the middle, odd-shaped detached plots at
 ## the top, and a plain rectangle now and then in each. Its own draws.
-func _shape(job: Dictionary) -> void:
+func _shape(j: Dictionary) -> void:
 	var r := RandomNumberGenerator.new()
-	r.seed = job.seed + 6
+	r.seed = j.seed + 6
 	if r.randf() < 0.3:
 		return
 	if reputation < 40.0:
-		job.shape = "terrace"
-		job.size = TERRACE
+		j.shape = "terrace"
+		j.size = TERRACE
 	elif reputation < 70.0:
-		job.shape = "forward"
+		j.shape = "forward"
 	else:
-		job.shape = "L"
+		j.shape = "L"
 
 
 ## Turn a job into a venue's: its persona, its lawn size, and its pay scaled.
-func _venue(job: Dictionary, venue: String, persona_key: String, size_i: int, pay_scale: float) -> void:
+func _venue(j: Dictionary, venue: String, persona_key: String, size_i: int, pay_scale: float) -> void:
 	var p: Dictionary = PERSONAS[persona_key]
 	var size: Vector2i = LAWN_SIZES[size_i]
 	var area := float(size.x * size.y) / (1280.0 * 720.0)
-	job.venue = venue
-	job.persona = persona_key
-	job.brief = p.brief
-	job.size = size
-	job.target = p.target
-	job.patience = 300.0 * area * p.patience
-	job.pay = int(round((70.0 + 50.0 * size_i) * area * (1.0 + (p.target - 0.8)) * pay_scale / 5.0) * 5)
+	j.venue = venue
+	j.persona = persona_key
+	j.brief = p.brief
+	j.size = size
+	j.target = p.target
+	j.patience = 300.0 * area * p.patience
+	j.pay = int(round((70.0 + 50.0 * size_i) * area * (1.0 + (p.target - 0.8)) * pay_scale / 5.0) * 5)
 	if persona_key == "vicar": # dressed for it, so they read as one
-		job.customer = "Reverend " + job.customer.split(" ")[-1]
-		job.look.shirt = Face.CLERICAL
-		job.look.collar = true
+		j.customer = "Reverend " + j.customer.split(" ")[-1]
+		j.look.shirt = Face.CLERICAL
+		j.look.collar = true
 
 
 ## The small things lying about a garden (Stone.KINDS). Its own draws, so the rest of
@@ -462,19 +462,19 @@ func fine(tier: int, at_heat: float) -> int:
 	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_heat))
 
 
-func buy(key: String) -> bool:
-	var price: int = MOWERS[key].price if MOWERS.has(key) else UPGRADES[key].price
+func buy(item: String) -> bool:
+	var price: int = MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price
 	if money < price:
 		return false
-	if MOWERS.has(key):
-		if key in owned:
+	if MOWERS.has(item):
+		if item in owned:
 			return false
-		owned.append(key)
-		equipped = key
+		owned.append(item)
+		equipped = item
 	else:
-		if key in upgrades:
+		if item in upgrades:
 			return false
-		upgrades.append(key)
+		upgrades.append(item)
 	money -= price
 	return true
 
@@ -494,8 +494,8 @@ func payment() -> int:
 
 
 ## What kit fetches sold: everything but the push mower.
-func resale(key: String) -> int:
-	return int((MOWERS[key].price if MOWERS.has(key) else UPGRADES[key].price) * RESALE)
+func resale(item: String) -> int:
+	return int((MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price) * RESALE)
 
 
 ## Kit that can be sold or taken, dearest first (the heavies take your best).
@@ -506,16 +506,16 @@ func sellable() -> Array[String]:
 	return out
 
 
-func sell(key: String) -> void:
-	money += resale(key)
-	if MOWERS.has(key):
-		owned.erase(key)
-		if equipped == key: # onto the best you have left
+func sell(item: String) -> void:
+	money += resale(item)
+	if MOWERS.has(item):
+		owned.erase(item)
+		if equipped == item: # onto the best you have left
 			for k in owned:
 				if equipped not in owned or MOWERS[k].price > MOWERS[equipped].price:
 					equipped = k
 	else:
-		upgrades.erase(key)
+		upgrades.erase(item)
 
 
 ## The week's end: pay the shark. Short, the heavies take kit, dearest first, until its

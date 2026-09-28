@@ -27,6 +27,10 @@ const TALK := 36.0 ## how close you walk up to the customer (or their door, if t
 ## Animals you can pick up: "tier" on the crime ladder for throwing one, "hold" seconds
 ## before it wriggles or bites free. A hedgehog bare-handed stuns you instead (gloves fix it).
 const CRITTERS := {"dog": {"tier": 1, "hold": 5.0}, "hedgehog": {"tier": 0, "hold": INF}, "squirrel": {"tier": 0, "hold": 3.0}}
+## What a thrown thing can hit that's theirs: they always know (a thud, glass, a crunch, a
+## yelp), and a critter thrown at one is a crime even when they want the critter hurt.
+const THEIRS := ["customer", "window", "hole", "car", "dog"]
+const DROP_FROM := 8.0 ## struck higher than this, a bounced stone falls rather than landing at once
 const PRICKLE := 0.35 ## seconds a hedgehog stays in bare hands before the OW
 const KO_TIME := 6.0 ## seconds a stoned critter lies out cold
 const SLAM := 200.0 ## px/s along the ground: a critter thrown into something this hard is knocked out
@@ -75,12 +79,13 @@ var _dog_in := -1.0
 var _house: Node2D
 var _car: StaticBody2D ## the customer's, up the drive; not every job
 var _hose: Hose ## on its tap by the house; not every job
+var _held_hose: Hose ## the one in your hands: _hose, or a piece of it the blades cut off
 var _notch := Rect2() ## next door's corner of an L plot: not yours, fenced off
 var _haha := false ## the manor: its park sides drop into a ditch, nothing to bounce off
 var _cone: Node2D ## the ground the window they're at can see, faintly lit
 var _cone_pts := PackedVector2Array()
 var _cone_x := -1 ## the window it was worked out for
-var _carry_seen := "" ## what you're carrying that they've already seen you with
+var _held_seen := false ## the body in your hands is one they've already seen (Animal.seen)
 var _focus: Node2D ## brackets round what interact would do (_draw_focus)
 var _knocking := false ## knocked, waiting for them to answer
 var _where := "patio" ## where the customer was last frame, to hear the door when they go in
@@ -507,8 +512,16 @@ func _lay_hose(rp: RandomNumberGenerator) -> void:
 	_hose.mower = mower
 	_hose.lay(path, tap)
 	_hose.mowed.connect(_on_hose_mowed)
+	_hose.split.connect(_on_hose_split)
 	$Scenery.add_child(_hose)
 	$Scenery.add_child(_hose.reel)
+
+
+## Cut through, what was past the blades lies loose where it was: take either end and drag it.
+func _on_hose_split(piece: PackedVector2Array, nozzle_on: int) -> void:
+	var h := Hose.new()
+	h.lay_loose(piece, nozzle_on)
+	$Scenery.add_child.call_deferred(h)
 
 
 ## The churchyard: rows of headstones, solid, some with flowers laid in front, wherever
@@ -634,7 +647,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	if n.has_area(): # next door's corner: its fence faces you along two sides (the church's back wall, one)
 		var nx := n.end.x if nl else n.position.x
 		if _house.venue != "graveyard":
-			sides.notch_h = [top, Rect2(n.position.x - (b if nl else 0.0), n.end.y - b, n.size.x + b, b),
+			# Just the notch's width: the side run turns the corner (its style can differ).
+			sides.notch_h = [top, Rect2(n.position.x, n.end.y - b, n.size.x, b),
 				[Vector2(n.position.x, n.end.y), Vector2(n.end.x, n.end.y)], Vector2.DOWN]
 		sides.notch_v = [top, Rect2(nx - b if nl else nx, -b, b, n.size.y + b), [Vector2(nx, 0), Vector2(nx, n.end.y)],
 			Vector2.RIGHT if nl else Vector2.LEFT]
@@ -657,7 +671,10 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		_strips.append({"kind": s[0], "rect": s[1], "inward": s[3]})
 		var vertical: bool = key in ["left", "right", "notch_v"]
 		if s[0] == "haha":
-			_add_haha(s[1], vertical)
+			var run: Rect2 = s[1]
+			if top == "haha" and edge == "haha": # the back and a side meet: the corner's drawn on its own
+				run = Rect2(run.position.x, 0.0, run.size.x, run.end.y) if vertical else Rect2(0.0, run.position.y, w, run.size.y)
+			_add_haha(run, vertical)
 			continue
 		var strip := TextureRect.new()
 		var box: Rect2 = s[1]
@@ -666,7 +683,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 				"wall": preload("res://art/wall_v.png")}[s[0]]
 			var from := -BORDER_UP
 			if (key == "left" and nl) or (key == "right" and nr):
-				from = n.end.y - BORDER_UP # it starts at next door's corner
+				from = n.end.y - b - BORDER_UP # it starts at next door's corner, and takes it
 			var to := n.end.y - BORDER_UP if key == "notch_v" else h + b - BORDER_UP
 			box = Rect2(box.position.x, from, box.size.x, to - from)
 		else: # its front face, standing on the run's outer edge (the lawn edge at the top)
@@ -681,6 +698,9 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			strip.z_index = 1
 			_front.append(strip)
 		$Borders.add_child(strip)
+	if top == "haha" and edge == "haha":
+		_add_haha_corner(Vector2.ZERO, Vector2(-1, -1))
+		_add_haha_corner(Vector2(w, 0.0), Vector2(1, -1))
 	if _house.venue == "graveyard": # the lychgate over the path's mouth
 		var gate := Sprite2D.new()
 		gate.texture = preload("res://art/lychgate.png")
@@ -730,6 +750,24 @@ func _add_haha(outer: Rect2, vertical: bool) -> void:
 	$Borders.add_child(d)
 
 
+## Where the back ha-ha meets a side one, its bands turn the corner as square rings, so the
+## coping and the drop run round unbroken. `out` points away from the lawn on both axes.
+func _add_haha_corner(corner: Vector2, out: Vector2) -> void:
+	var d := Node2D.new()
+	d.z_index = -1
+	var bank := BORDER - 10.0
+	var shades := [Color("1a2c16"), Color("24401e"), Color("2e5226"), Color("3a662e"), Color("447434"), Color("4e8038")]
+	var rings := [] # [how far out, colour], outermost first: each square painted over by the next
+	for i in range(shades.size() - 1, -1, -1):
+		rings.append([10.0 + bank * (i + 1) / shades.size(), shades[i]])
+	rings.append_array([[10.0, Color("121e10")], [5.0, Color("5e5e66")], [4.0, Color("9a9aa0")], [1.0, Color("d0d0d6")]])
+	d.draw.connect(func() -> void:
+		for r: Array in rings: # the same bands as _add_haha, the lit and dark coping edges included
+			var far: Vector2 = corner + out * (r[0] as float)
+			d.draw_rect(Rect2(Vector2(minf(corner.x, far.x), minf(corner.y, far.y)), Vector2(r[0], r[0])), r[1]))
+	$Borders.add_child(d)
+
+
 ## Can the customer see p from where they are (design doc, The Customer: line of sight)?
 ## On the patio they turn to face you, so it's a clear line; at a window, a cone out of
 ## it. Anything taller than a person blocks the view: buildings, the car, the truck, tall
@@ -750,21 +788,31 @@ func _window_eye() -> Vector2:
 
 ## Nothing taller than a person between a and b (either end's own spot aside).
 func _clear(a: Vector2, b: Vector2) -> bool:
-	var boxes: Array[Rect2] = [Rect2(_house.position, Vector2(_house.size.x, _house.WALL_H)), _house.garage_rect(),
-		_car_rect(), Rect2($Truck.position - Vector2(64, 32), Vector2(128, 64))]
-	var tall := $Scenery.get_children().filter(func(t: Node) -> bool: return "height" in t and t.height > HEAD)
+	var blockers := _sight_blockers()
 	var d := a.distance_to(b)
 	var t := 10.0
 	while t < d - 14.0:
-		var q := a.lerp(b, t / d)
-		for r in boxes:
-			if r.has_point(q):
-				return false
-		for o: Node2D in tall:
-			if q.distance_to(o.position) < o.radius:
-				return false
+		if _blocks_sight(a.lerp(b, t / d), blockers):
+			return false
 		t += 6.0
 	return true
+
+
+## What's taller than a person: [boxes, tall scenery]. Worked out once per look.
+func _sight_blockers() -> Array:
+	var boxes: Array[Rect2] = [Rect2(_house.position, Vector2(_house.size.x, _house.WALL_H)), _house.garage_rect(),
+		_car_rect(), Rect2($Truck.position - Vector2(64, 32), Vector2(128, 64))]
+	return [boxes, $Scenery.get_children().filter(func(t: Node) -> bool: return "height" in t and t.height > HEAD)]
+
+
+func _blocks_sight(q: Vector2, blockers: Array) -> bool:
+	for r: Rect2 in blockers[0]:
+		if r.has_point(q):
+			return true
+	for o: Node2D in blockers[1]:
+		if q.distance_to(o.position) < o.radius:
+			return true
+	return false
 
 
 ## The faint patch of ground the window they're at looks out over, so you can tell where
@@ -779,25 +827,29 @@ func _show_cone() -> void:
 		var eye := _window_eye()
 		_cone_pts.append(eye)
 		var ground := Rect2(Vector2.ZERO, Vector2(lawn.size_px)).grow(BORDER)
+		var blockers := _sight_blockers()
 		for i in 41:
 			var dir := Vector2.DOWN.rotated(lerpf(-WINDOW_CONE, WINDOW_CONE, i / 40.0))
 			var reach := 16.0
-			while reach < SIGHT_REACH and ground.has_point(eye + dir * reach) and _clear(eye, eye + dir * (reach + 14.0)):
+			var t := 10.0 # marched once along the ray (checking the whole line each step was a lag spike)
+			while reach < SIGHT_REACH and ground.has_point(eye + dir * reach):
+				while t <= reach and not _blocks_sight(eye + dir * t, blockers):
+					t += 6.0
+				if t <= reach:
+					break
 				reach += 12.0
 			_cone_pts.append(eye + dir * reach)
 	_cone.queue_redraw()
 
 
 ## Carry a body (or worse) into their sight and they react there and then, paid or not
-## (design doc: brought into view, it counts at once). Once per thing you pick up.
+## (design doc: brought into view, it counts at once). Once per body, however often it's
+## put down and picked up again.
 func _carried_into_view() -> void:
 	var what: String = walker.carrying if walker else ""
-	if not what.begins_with("body_"):
-		_carry_seen = ""
+	if not what.begins_with("body_") or _held_seen or not customer.sees(walker.global_position):
 		return
-	if _carry_seen == what or not customer.sees(walker.global_position):
-		return
-	_carry_seen = what
+	_held_seen = true
 	_mischief(3.0)
 	var kind := what.trim_prefix("body_")
 	if customer.on_squash(kind, 1.0, walker.global_position):
@@ -870,8 +922,6 @@ func _process(delta: float) -> void:
 	for t in $Scenery.get_children():
 		if "canopy" in t:
 			t.near = t.crown_rect().grow(20.0).has_point(me) or me.distance_to(t.position) < t.radius + 30.0
-	# And the house, only while its art stands over you (a chimney above the ridge).
-	_house.modulate.a = move_toward(_house.modulate.a, 0.45 if _house.hides(me) else 1.0, delta * 4.0)
 	# So does the front hedge or fence while you're behind it.
 	for strip in _front:
 		var behind := Rect2(strip.position - Vector2(0, 40), strip.size + Vector2(0, 40)).has_point(me)
@@ -1021,6 +1071,8 @@ func _hint() -> String:
 		if walk != "":
 			return walk
 		return _fired_hint() if customer.fired else ""
+	if mower.engine_off and mower.fuel <= 0.0 and not at_truck():
+		return "Out of petrol: push it to the truck, or fetch a can"
 	if mower.engine_off and mower.sprite_kind == "petrol":
 		return "Hold %s to pull the cord, let go in the green" % ("(RT)" if Game.pad else "[W]") # the throttle: a trigger or a key
 	if mower.engine_off:
@@ -1064,6 +1116,7 @@ func _on_thrown(dir: Vector2, power: float) -> void:
 	var f := throw_stone(_throw_from(dir), dir, _throw_speed(power), walker.pitch, walker.carrying)
 	f.thrown = true
 	f.out = _out
+	f.seen = _held_seen
 	if CRITTERS.has(walker.carrying):
 		_count("animals_thrown")
 	walker.carrying = ""
@@ -1131,7 +1184,7 @@ func interact() -> void:
 			mower.toggle_engine()
 		return
 	if walker.carrying == "hose": # let go: it lies where you left it
-		_hose.grabbed = false
+		_held_hose.grabbed = false
 		walker.carrying = ""
 		walker.queue_redraw()
 		return
@@ -1147,7 +1200,7 @@ func interact() -> void:
 		walker.carrying = ""
 		walker.queue_redraw()
 	elif CRITTERS.has(walker.carrying) or walker.carrying.begins_with("body_"): # put it down (and a live one's off)
-		_land(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying, _out)
+		_land(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying, _out, _held_seen)
 		walker.carrying = ""
 		walker.queue_redraw()
 	elif walker.carrying != "": # set it down, or in the truck
@@ -1179,6 +1232,11 @@ func _targets() -> Array[Dictionary]:
 	if grip != "":
 		out.append({"at": _hose.end() if grip == "end" else _hose.points[0] + Vector2(0, -12),
 			"hint": {"end": "pick up the hose", "wind": "wind the hose in", "pull": "pull the hose out"}[grip], "act": _grip_hose.bind(grip)})
+	for h in $Scenery.get_children():
+		if h is Hose and h.loose and not h.is_queued_for_deletion():
+			for e in [0, h.points.size() - 1]: # either end of a cut-off piece
+				if h.points[e].distance_to(at) < 16.0:
+					out.append({"at": h.points[e], "hint": "pick up the hose", "act": _grip_loose.bind(h, e)})
 	if dog and is_instance_valid(dog) and not dog.limping and not dog.held:
 		if dog.following == walker:
 			out.append({"at": dog.position, "hint": "pick up %s" % job.dog_name, "act": _pick_up_dog})
@@ -1230,6 +1288,18 @@ func _grip_hose(grip: String) -> void:
 	_hose.grabbed = true # its end, or off the reel
 	_hose.winding = false
 	_hose.hand = walker.global_position
+	_held_hose = _hose
+	walker.carrying = "hose"
+
+
+## A cut-off piece by the end at point e: that end's the one that follows your hand.
+func _grip_loose(h: Hose, e: int) -> void:
+	Sfx.play("ui_move", 0.0)
+	if e == 0:
+		h.flip()
+	h.grabbed = true
+	h.hand = walker.global_position
+	_held_hose = h
 	walker.carrying = "hose"
 
 
@@ -1262,17 +1332,22 @@ func _pick_up_animal(a: Animal) -> void:
 	a.queue_free() # bare-handed, a hedgehog is in your hands for a moment (_hold_critter)
 	walker.carrying = ("body_" if a.body else "") + a.kind
 	_out = a.out # knocked out, it stays out in your hands
+	_held_seen = a.seen
 	_held = 0.0
 	walker.queue_redraw()
 	Sfx.play("ui_move", 0.0)
 
 
 ## Holding an animal: the dog wriggles free, a squirrel bites; carry the dog to its owner.
+## Dead, a hedgehog's spines still prick.
 func _hold_critter(delta: float) -> void:
-	if walker == null or not CRITTERS.has(walker.carrying):
+	if walker == null:
 		return
-	var kind: String = walker.carrying
+	var kind: String = walker.carrying.trim_prefix("body_")
 	var bare := kind == "hedgehog" and "gloves" not in Game.upgrades
+	var body: bool = walker.carrying.begins_with("body_")
+	if not CRITTERS.has(kind) or (body and not bare):
+		return
 	_out = maxf(0.0, _out - delta)
 	if (walker.aiming or _out > 0.0) and not bare: # out cold, it can't bite or wriggle; spines still prick
 		return
@@ -1298,7 +1373,7 @@ func _hold_critter(delta: float) -> void:
 		_count("prickled")
 		Sfx.play("squeak_hedgehog")
 		pop_text("OW!", walker.global_position + Vector2(0, -24), Color("f07060"))
-	_land(walker.global_position + Vector2(10, 0).rotated(walker.rotation), kind, _out)
+	_land(walker.global_position + Vector2(10, 0).rotated(walker.rotation), ("body_" if body else "") + kind, _out, _held_seen)
 
 
 ## What a small thing's called in a hint.
@@ -1385,18 +1460,20 @@ func _on_choice(id: String) -> void:
 
 
 ## Dragging the hose: it follows your hand, paying off the reel, and holds you to its
-## length from the reel.
+## length from the reel. A cut-off piece just comes along.
 func _drag_hose() -> void:
-	if _hose == null:
+	if _held_hose == null:
 		return
-	if walker == null or walker.carrying != "hose" or not _hose.grabbed:
+	if walker == null or walker.carrying != "hose" or not _held_hose.grabbed:
 		if walker and walker.carrying == "hose": # the end you held got mowed off
 			walker.carrying = ""
-		_hose.grabbed = false
+		_held_hose.grabbed = false
+		_held_hose = null
 		return
-	var at := _hose.points[0]
-	walker.global_position = at + (walker.global_position - at).limit_length(_hose.reach())
-	_hose.hand = walker.global_position
+	if not _held_hose.loose:
+		var at := _held_hose.points[0]
+		walker.global_position = at + (walker.global_position - at).limit_length(_held_hose.reach())
+	_held_hose.hand = walker.global_position
 
 
 ## What your hands can do with the hose here: "end" (pick it up), "wind" (at the reel, some
@@ -1474,9 +1551,9 @@ func open_customer_menu(lines: Array = []) -> void:
 	if customer.where != "patio": # they answer the door
 		customer.come_out()
 	var buttons := []
-	if settled.is_empty():
+	if settled.is_empty(): # paid or fired, how you're doing is settled
 		buttons.append(["handin", "Ask to be paid"])
-	buttons.append(["status", "How am I doing?"])
+		buttons.append(["status", "How am I doing?"])
 	buttons.append(["resume", "Never mind" if settled.is_empty() else "Bye"])
 	hud.open(job.customer, lines, buttons, job.look, customer.face())
 
@@ -1636,7 +1713,7 @@ func _rifle(delta: float) -> void:
 		return
 	if robbed == 0.0:
 		_count("robberies")
-		_crime(1)
+		_crime(1, Vector2.INF, true) # a neighbour saw
 		if police_left < 0.0:
 			_call_police()
 	var take := minf(_wallet, RIFLE_RATE * delta)
@@ -1649,11 +1726,14 @@ func _rifle(delta: float) -> void:
 
 
 ## A crime on the ladder (Game.HEAT): heat now, and the police called for assault, or
-## for anything once your record is bad enough.
-func _crime(tier: int, at := Vector2.INF) -> void:
-	Game.heat += Game.HEAT[tier]
+## for anything once your record is bad enough. Only if they know: seen at `at`, or
+## `known` (heard it, felt it, or a neighbour saw). `extra` heat is for the method.
+func _crime(tier: int, at := Vector2.INF, known := false, extra := 0.0) -> void:
+	if not (known or customer.sees(at)):
+		return
+	Game.heat += Game.HEAT[tier] + extra
 	worst_crime = maxi(worst_crime, tier)
-	hud.pop("WANTED +%d" % Game.HEAT[tier])
+	hud.pop("WANTED +%d" % roundi(Game.HEAT[tier] + extra))
 	if police_left < 0.0 and customer.sees(at) and (tier >= 2 or _heat0 >= Game.HIGH_HEAT): # no witness, no call
 		_call_police()
 
@@ -1724,7 +1804,7 @@ func _on_mower_bumped(what: Object, impact: float) -> void:
 	pop_text("-$%d" % bill, mower.global_position, Color("f07060"))
 	customer.on_stone("car", _car.position)
 	if impact > RAM_SPEED:
-		_crime(1, _car.position)
+		_crime(1, _car.position, true) # the crunch
 	_react()
 
 
@@ -1970,7 +2050,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				if a is Animal and not a.dead and not a.body and a.position.distance_to(p) <= CRITTER_HIT:
 					_stone_critter(a, f.thrown)
 					break
-			if alive:
+			if alive or f.kind.begins_with("body_"): # a body lands too, beside the one it felled
 				_drop_bounced(f)
 		"dog":
 			Sfx.play("yelp")
@@ -1984,6 +2064,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_land(lawn.keep_in(p, 8.0), "dog") # it scrabbles at the fence instead
 			elif f.kind.begins_with("body_"):
 				_count("bodies_hidden") # next door's problem now
+			elif alive and f.thrown and customer.on_evict(f.kind, KO_SHARE, p): # seen going over
+				_react()
 		"fence":
 			Sfx.play("thud")
 			_drop_bounced(f)
@@ -1995,13 +2077,13 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			var foot := Vector2(p.x, _house.position.y + _house.WALL_H + 10.0)
 			if p.y < _house.position.y + _house.WALL_H - _house.ROOF_D: # the back slope
 				foot.y = _house.position.y - 10.0
-			get_tree().create_timer(0.5).timeout.connect(_land.bind(foot, f.kind, f.out))
+			get_tree().create_timer(0.5).timeout.connect(_land.bind(foot, f.kind, f.out, f.seen))
 		"self":
 			Sfx.play("thud")
 			_count("own_head")
 			walker.dazed = 1.5
 			pop_text("OW!", walker.global_position + Vector2(0, -24), Color("f07060"))
-			_land(walker.global_position + Vector2(10, 4), f.kind, f.out)
+			_land(walker.global_position + Vector2(10, 4), f.kind, f.out, f.seen)
 		"mower":
 			Sfx.play("clonk")
 			mower.damage(8.0)
@@ -2028,7 +2110,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_count("splashes")
 				target = "pond"
 				if alive: # it swims for the bank
-					_land(pond.position + (p - pond.position).normalized() * Vector2(Pond.RX + 10.0, Pond.RY + 10.0), f.kind, f.out)
+					_land(pond.position + (p - pond.position).normalized() * Vector2(Pond.RX + 10.0, Pond.RY + 10.0), f.kind, f.out, f.seen)
 				elif f.kind.begins_with("body_"):
 					_count("bodies_hidden") # sleeps with the fishes
 			else:
@@ -2038,37 +2120,53 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				for b in $Scenery.get_children():
 					if b.has_method("flattened_count") and b.rect().has_point(p):
 						b._trample(b.to_local(p), 12.0) # flattens a flower or two where it lands
-				_land(p, f.kind, f.out)
+				_land(p, f.kind, f.out, f.seen)
 	if f.thrown and tier >= 0:
+		var method := 0.0
 		if alive:
 			if target == "": # just thrown across the lawn: the animal's own tier
 				tier = CRITTERS[f.kind].tier
-			elif target not in ["gone", "self"]: # into something: one above the worse of the two, and heat for the method
+			elif target not in ["gone", "self"] and not (customer.persona.get(f.kind, -20.0) > 0.0 and target not in THEIRS):
+				# into something: one above the worse of the two, and heat for the method. Unless
+				# they want it hurt: then how is no crime, bar at them, their car, window or dog.
 				tier = mini(2, maxi(tier, CRITTERS[f.kind].tier) + 1)
-				Game.heat += 1.0
+				method = 1.0
 		if tier > 0:
-			_crime(tier, p)
+			_crime(tier, p, target in THEIRS, method)
 
 
-## A stone that struck something solid bounces back off it and lands on the lawn. A critter
-## thrown hard into it is knocked out.
+## A stone that struck something solid bounces back off it and lands on the lawn: struck
+## high, it falls from there. A critter thrown hard into it is knocked out.
 func _drop_bounced(f: FlyingStone) -> void:
 	if f.thrown and f.kind in ["hedgehog", "squirrel"] and f.velocity.length() > SLAM:
 		f.out = maxf(f.out, KO_TIME)
 		Sfx.play("squeak_" + f.kind)
 		_count("ko_" + f.kind)
-	_land(lawn.keep_in(f.position - f.velocity.normalized() * 12.0, 4.0), f.kind, f.out)
+	var at := lawn.keep_in(f.position - f.velocity.normalized() * 12.0, 4.0)
+	if f.z < DROP_FROM:
+		_land(at, f.kind, f.out, f.seen)
+		return
+	var fall := FlyingStone.new() # a little way back off it, then straight down: lands as ground
+	fall.kind = f.kind
+	fall.out = f.out
+	fall.seen = f.seen
+	fall.launch(at, -f.velocity, 30.0, 0.0, f.z, func(_p: Vector2, _z: float, _down: bool) -> String: return "")
+	fall.landed.connect(_on_stone_landed)
+	$Stones.add_child.call_deferred(fall)
 
 
 ## Something thrown or flung comes down on the lawn. A ball, the dog goes after.
-func _land(at: Vector2, kind: String, out := 0.0) -> void:
+func _land(at: Vector2, kind: String, out := 0.0, seen := false) -> void:
 	if kind == "dog":
 		if dog and is_instance_valid(dog):
 			dog.let_go(lawn.keep_in(at, 8.0)) # over the fence, it scrabbles back
 			Sfx.play("yelp")
 		return
 	if kind.begins_with("body_"):
-		(func() -> void: spawn_animal(kind.trim_prefix("body_"), at, at + Vector2.RIGHT).kill()).call_deferred()
+		(func() -> void:
+			var a := spawn_animal(kind.trim_prefix("body_"), at, at + Vector2.RIGHT)
+			a.kill()
+			a.seen = seen).call_deferred()
 		return
 	if CRITTERS.has(kind): # on its feet and off, away from you; or still out cold where it lands
 		var away := (at - actor().global_position).normalized().rotated(randf_range(-0.6, 0.6))
@@ -2123,7 +2221,7 @@ func _splash(p: Vector2, size := 1.0) -> void:
 
 func _knock_out() -> void:
 	_wallet = job.pay * randf_range(0.2, 0.6)
-	_crime(2)
+	_crime(2, Vector2.INF, true) # they felt it
 	_count("knockouts")
 	customer.knock_out()
 	$Client.knock_out()
@@ -2147,7 +2245,7 @@ func _release_dog() -> void:
 		if by == "mower": # a stone's reaction is the stone's (see _on_stone_landed)
 			customer.on_dog_hit()
 			_mischief(8.0)
-			_crime(2, _d.position)
+			_crime(2, _d.position, true) # the yelp
 			_react())
 	dog.caught.connect(func(d: Dog) -> void:
 		Sfx.play("ui_select", 0.0)
@@ -2199,9 +2297,9 @@ func _spawn_spot(kind: String) -> Dictionary:
 		return {"at": t.position + Vector2.RIGHT.rotated(randf() * TAU) * t.radius * 0.5,
 			"grace": 1.0, "inward": Vector2.DOWN} # climbing down out of the canopy
 	var want := "hedge" if kind == "hedgehog" else "fence"
-	var pool := _edges.filter(func(e: Dictionary) -> bool: return e.kind == want)
+	var pool := _edges.filter(func(ed: Dictionary) -> bool: return ed.kind == want)
 	if pool.is_empty():
-		pool = _edges.filter(func(e: Dictionary) -> bool: return kind != "hedgehog" or e.kind != "wall")
+		pool = _edges.filter(func(ed: Dictionary) -> bool: return kind != "hedgehog" or ed.kind != "wall")
 	if pool.is_empty():
 		return {}
 	var e: Dictionary = {}
@@ -2390,6 +2488,7 @@ func _stone_critter(a: Animal, thrown: bool, roll := randf()) -> void:
 	_mischief(3.0)
 	if customer.on_squash(a.kind, 1.0, a.position):
 		_known_bodies[a.kind] = _known_bodies.get(a.kind, 0) + 1
+		a.seen = true
 		_react()
 
 

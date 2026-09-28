@@ -14,6 +14,8 @@ const HAIRS := [["484050", "282430", "141018"], ["a07040", "704820", "4a2c14"], 
 const SHIRTS := [["4878c8", "305090"], ["c84848", "903030"], ["48a058", "307040"], ["e8c048", "b08828"],
 	["9058b8", "683888"], ["e8e8e0", "b0b0a8"], ["34323c", "1e1c24"]]
 const CLERICAL := 6 ## the black shirt, never picked at random (game.gd looks use the first six)
+const GREY_TIME := 0.25 ## seconds to grey out (or back) as they lose sight of you
+const UNSEEN := "UNSEEN" ## across the greyed portrait, so it says what the grey means
 
 @export var pixel_scale := 3
 
@@ -42,6 +44,7 @@ var _collar := false ## a dog collar at the throat (the vicar)
 var _shake := 0.0
 var _mouth_open := false
 var _flap := 0.0
+var _grey := 0.0 ## 0 seen, 1 greyed out: eased, so passing tall things doesn't flicker
 
 
 func set_look(look: Dictionary) -> void:
@@ -78,6 +81,10 @@ static func swapped(path: String, look: Dictionary, region := Rect2i()) -> Image
 
 
 func _process(delta: float) -> void:
+	var grey := move_toward(_grey, 1.0 if view == "inside" else 0.0, delta / GREY_TIME)
+	if grey != _grey:
+		_grey = grey
+		queue_redraw()
 	if _shake > 0.0:
 		_shake -= delta
 		queue_redraw()
@@ -99,11 +106,16 @@ func _draw() -> void:
 		return
 	var jitter := Vector2(randf_range(-2, 2), randf_range(-2, 2)) if _shake > 0.0 else Vector2.ZERO
 	var i := FRAMES.find(expression) + (FRAMES.size() if _mouth_open else 0)
-	var tint := Color(0.4, 0.4, 0.45) if view == "inside" else Color.WHITE # can't see you, you can't see them
+	var tint := Color.WHITE.lerp(Color(0.4, 0.4, 0.45), _grey) # can't see you, you can't see them
 	draw_texture_rect_region(_tex, Rect2(Vector2(6, 6) + jitter, Vector2(s, s)),
 		Rect2(i * CELL, _style * CELL, CELL, CELL), tint)
 	if _collar: # the white tab at the throat, over the neck in tools/make_faces.py
 		draw_rect(Rect2(Vector2(6, 6) + jitter + Vector2(17, 32) * pixel_scale, Vector2(6, 2) * pixel_scale), Color("f4f0e6") * tint)
+	if _grey > 0.0: # a band along the bottom says what the grey means
+		var band := Rect2(6, 6 + s - 28, s, 28)
+		draw_rect(band, Color(0.07, 0.05, 0.09, 0.8 * _grey))
+		draw_string(get_theme_default_font(), Vector2(6, band.end.y - 6), UNSEEN, HORIZONTAL_ALIGNMENT_CENTER, s, 20,
+			Color(Color("f0ead8"), _grey)) # UI.TEXT: UI would pull in the Sfx autoload
 	if view == "window": # a pane of glass between you: a sheen and the glazing bars
 		var pane := Rect2(6, 6, s, s)
 		draw_rect(pane, Color(0.7, 0.85, 1.0, 0.18))

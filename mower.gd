@@ -204,16 +204,25 @@ func stall_check(roll := randf()) -> void:
 		Sfx.play("cough")
 
 
-## The ripcord's meter over the mower: the sweet spot in green, the marker in white.
+## The ripcord's meter over the mower: the sweet spot in green with PULL over it (lit while
+## the marker's in it), the marker in white. Below, the cord itself draws out of the engine
+## as you hold, and snaps back when you let go.
 func _draw_cord() -> void:
-	if not (engine_off and occupied and sprite_kind == "petrol"):
+	if not (engine_off and occupied and sprite_kind == "petrol" and fuel > 0.0):
 		return
 	_cord.global_rotation = 0.0
+	var engine := Vector2(0, -10)
+	var handle := engine + Vector2(6, -8) * (1.0 + 2.5 * maxf(pull, 0.0))
+	_cord.draw_line(engine, handle, Color("d8d0c0"), 1.0)
+	_cord.draw_rect(Rect2(handle - Vector2(3, 1), Vector2(6, 3)), Color("c83828"))
 	var at := Vector2(-22, -46)
 	var s := sweet()
 	_cord.draw_rect(Rect2(at - Vector2(1, 1), Vector2(46, 8)), Color(0, 0, 0, 0.7))
 	_cord.draw_rect(Rect2(at, Vector2(44, 6)), Color("5a3030") if _cough > 0.0 else Color("3a3a42"))
 	_cord.draw_rect(Rect2(at + Vector2(44 * s.x, 0), Vector2(44 * (s.y - s.x), 6)), Color("58c048"))
+	var lit := pull >= s.x and pull <= s.y
+	_cord.draw_string(ThemeDB.fallback_font, at + Vector2(44 * (s.x + s.y) / 2.0 - 20, -3), "PULL", HORIZONTAL_ALIGNMENT_CENTER, 40, 10,
+		Color("f8d048") if lit else Color("f0ead8")) # UI.GOLD, UI.TEXT
 	if pull >= 0.0:
 		_cord.draw_rect(Rect2(at + Vector2(44 * pull - 1, -2), Vector2(2, 10)), Color.WHITE)
 
@@ -281,7 +290,9 @@ func _physics_process(delta: float) -> void:
 	var keys := 0.0 if Game.pad else Input.get_axis("move_back", "move_forward")
 	throttle = clampf(keys + Input.get_axis("reverse", "accelerate"), -1.0, 1.0) if occupied else 0.0
 	sprinting = power == "stamina" and throttle > 0.0 and fuel > 0.0 and Input.is_action_pressed("sprint")
-	if engine_off and sprite_kind == "petrol":
+	if engine_off and fuel <= 0.0:
+		pass # dry: pushed along slowly, as ever, till there's petrol to start it on
+	elif engine_off and sprite_kind == "petrol":
 		_ripcord(delta)
 	elif engine_off:
 		throttle = 0.0 # sat on it, key off
@@ -297,6 +308,9 @@ func _physics_process(delta: float) -> void:
 			fuel = minf(max_fuel, fuel + regen * delta)
 	elif not engine_off: # an engine that isn't going burns nothing
 		fuel = maxf(0.0, fuel - fuel_burn * delta)
+		if fuel <= 0.0: # run dry, it dies: refuelled, it wants starting again
+			engine_off = true
+			Sfx.play("cough")
 	fuel_changed.emit(fuel / max_fuel)
 	var running := fuel > 0.0 and condition > 0.0 and not engine_off
 

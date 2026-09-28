@@ -32,6 +32,9 @@ func _physics_process(_delta: float) -> bool:
 		# It lands at the portrait (the customer may be off screen) and as a big banner.
 		var texts: Array = _main.hud.get_children().filter(func(c: Node) -> bool: return c is Label).map(func(l: Label) -> String: return l.text)
 		assert("YOU'RE FIRED" in texts, "a big banner says you're fired")
+		_main.hud.banner("POLICE CALLED")
+		var police: Label = _main.hud.get_children().filter(func(c: Node) -> bool: return c is Label and c.text == "POLICE CALLED")[0]
+		assert(not police.visible, "a second banner waits its turn, not on top of the first")
 		assert("Rep -18" in texts, "the rep hit pops by the portrait")
 		var speech: Label = _main.hud.get_node("Speech")
 		assert(speech.visible and speech.text.contains(_main.customer.fire_line), "their line is under the portrait")

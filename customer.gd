@@ -174,6 +174,20 @@ func on_squash(kind: String, share := 1.0, at := Vector2.INF) -> bool:
 	return true
 
 
+## A critter thrown out over the boundary, seen at `at`: `share` of what its death would
+## mean to them, glad or appalled. Returns true if they saw it.
+func on_evict(kind: String, share: float, at := Vector2.INF) -> bool:
+	if not sees(at):
+		return false
+	var d: float = persona.get(kind, -20.0) * share
+	_change(d)
+	if d > 0.0:
+		_react("laughing", 2.0, _say("evict", "And STAY out!"))
+	else:
+		_react("horrified" if d <= -12.0 else "annoyed", 2.0, _say("evict_bad", "Don't THROW it!"))
+	return true
+
+
 ## Returns true if this was news (newly flattened flowers, seen at `at`), so the scene can
 ## react. Unseen, they're theirs: found after you've gone.
 func on_flowers(total_flat: int, at := Vector2.INF) -> bool:

@@ -34,12 +34,12 @@ func _shown(rep: float) -> int:
 
 
 ## A line in one of the books: what, then its amount at the right.
-func _line(box: Control, what: String, amount: String, color := UI.TEXT, size := 20) -> void:
+func _line(box: Control, what: String, amount: String, color := UI.TEXT, font_size := 20) -> void:
 	var row := UI.hbox(12)
-	var l := UI.label(what, size, color)
+	var l := UI.label(what, font_size, color)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(l)
-	row.add_child(UI.label(amount, size, color))
+	row.add_child(UI.label(amount, font_size, color))
 	box.add_child(row)
 
 

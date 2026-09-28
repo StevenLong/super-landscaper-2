@@ -5,7 +5,6 @@ extends SceneTree
 
 var m: Node
 var _frame := 0
-var _spawned := false
 
 
 func _initialize() -> void:

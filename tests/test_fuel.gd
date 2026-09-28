@@ -41,6 +41,7 @@ func _physics_process(_delta: float) -> bool:
 	elif _frame == 303:
 		assert(_mower.fuel > _mower.max_fuel - 0.1, "parking at the truck should fill the tank (the engine still burns while parked), got %f" % _mower.fuel)
 		assert(_main.get_node("HUD/Fuel").value > 0.99, "HUD fuel bar should read full")
+		assert(_mower.engine_off, "run dry, it died: refuelled, it wants starting again")
 		print("PASS fuel")
 		quit()
 	return false

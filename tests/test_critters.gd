@@ -106,6 +106,31 @@ func _physics_process(_delta: float) -> bool:
 			m._on_stone_landed(f, "")
 			f.free()
 			assert(g.heat == _heat + 1.0 and not m.dog.held and m.dog.visible, "a thrown dog lands and runs off: tier 1")
+			# A squirrel into the fence: a crime only if they see it, and never for one who wants it hurt.
+			var sq := func(target: String) -> float:
+				var h0: float = g.heat
+				var s := FlyingStone.new()
+				s.kind = "squirrel"
+				s.thrown = true
+				s.position = Vector2(640, 600)
+				m._on_stone_landed(s, target)
+				s.free()
+				return g.heat - h0
+			m.customer.where = "inside"
+			assert(sq.call("fence") == 0.0, "unseen, no heat")
+			m.customer.where = "patio"
+			assert(sq.call("fence") == 2.0, "seen: tier 1, +1 for the method")
+			var was: Dictionary = m.customer.persona
+			m.customer.persona = g.PERSONAS.squirrel_hater
+			assert(sq.call("fence") == 0.0, "they wanted it hurt: how is no crime")
+			assert(sq.call("dog") > 0.0, "but not at their dog")
+			m.customer.mood = 50.0
+			sq.call("gone")
+			assert(m.customer.mood > 50.0, "seen thrown out of the garden: they're glad")
+			m.customer.persona = was
+			m.customer.mood = 50.0
+			sq.call("gone")
+			assert(m.customer.mood < 50.0, "and a nature lover isn't")
 			print("PASS critters")
 			quit()
 	_step += 1

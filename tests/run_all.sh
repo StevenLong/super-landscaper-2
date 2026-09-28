@@ -5,6 +5,11 @@ cd "$(dirname "$0")/.." || exit 1
 GODOT="${GODOT:?set it to your Godot executable (see CLAUDE.md Environment)}"
 fail=0
 
+# Warnings as errors for this run only (tests/strict.cfg): the editor's parse step doesn't
+# analyse warnings, but every script a test loads does, so a new warning fails that test.
+cp tests/strict.cfg override.cfg
+trap 'rm -f override.cfg' EXIT
+
 parse="$("$GODOT" --headless --editor --quit 2>&1 | grep -E "SCRIPT ERROR|Parse Error|SHADER ERROR")"
 if [ -n "$parse" ]; then echo "FAIL  parse check"; echo "$parse"; fail=1; else echo "PASS  parse check"; fi
 

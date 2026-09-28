@@ -26,6 +26,10 @@ func _initialize() -> void:
 	root.add_child(m)
 
 
+func _loose() -> Array:
+	return m.get_node("Scenery").get_children().filter(func(n: Node) -> bool: return n is Hose and n.loose)
+
+
 func _check_shape(h: Hose) -> void:
 	for i in h.points.size() - 1:
 		assert(h.points[i].distance_to(h.points[i + 1]) <= h.SEG + 1.0, "it never stretches: %.1f at link %d of %d, step %d" % [h.points[i].distance_to(h.points[i + 1]), i, h.points.size(), _step])
@@ -88,14 +92,34 @@ func _physics_process(_delta: float) -> bool:
 			m.walker.global_position = m.mower.global_position + Vector2(0, 30)
 			m.hop_on()
 			_len = h.points.size()
-			m.mower.global_position = h.points[_len - 2]
+			m.mower.global_position = h.points[floori(_len / 2.0)]
 			m.mower.velocity = Vector2(100, 0)
 			_wait = 1
 		7:
 			var h: Hose = m._hose
-			assert(h.cut and h.points.size() < _len and m.tally.get("hoses_mowed", 0) == 1, "mowed: cut, the end shredded")
+			assert(h.cut and h.points.size() < _len and m.tally.get("hoses_mowed", 0) == 1, "mowed through the middle")
 			assert(h.length < Hose.LINKS, "and it's shorter now")
 			assert(m._spills.size() == 1, "a puddle")
+			var pieces := _loose()
+			assert(pieces.size() == 1 and pieces[0].points.size() >= 2, "the far side lies loose, not gone")
+			m.mower.velocity = Vector2.ZERO
+			m.hop_off()
+			m.mower.global_position = Vector2(100, 100) # out of the way
+			m.walker.global_position = pieces[0].points[0] # its cut end
+			_wait = 2
+		8:
+			var piece: Hose = _loose()[0]
+			var away := (piece.points[0] - piece.points[piece.points.size() - 1]).normalized()
+			m.interact()
+			assert(m.walker.carrying == "hose" and piece.grabbed, "picked up by its cut end")
+			m.walker.global_position += away * 60.0 # drag it off, away from its far end
+			_wait = 40
+		9:
+			var piece: Hose = _loose()[0]
+			assert(piece.end().distance_to(m.walker.global_position) < 1.0, "it comes with you")
+			_check_shape(piece)
+			m.interact()
+			assert(m.walker.carrying == "" and not piece.grabbed, "and lies where you drop it")
 			print("PASS hose")
 			quit()
 	_step += 1

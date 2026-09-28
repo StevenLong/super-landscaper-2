@@ -46,9 +46,9 @@ func _ready() -> void:
 			if _inside(at, 12.0 if box else 5.0):
 				_flowers.append(at)
 				_flat.append(false)
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	$Area/Shape.shape = shape
+	var box_shape := RectangleShape2D.new()
+	box_shape.size = size
+	$Area/Shape.shape = box_shape
 	$Area/Shape.position = size / 2.0
 
 

@@ -27,7 +27,9 @@ if a session changes the design, edit the vault doc and push game-dev too.
   `PASS` AND its output has no `SCRIPT ERROR`. Each test runs under a 60s timeout, since a
   failed assert halts the script but leaves godot idling.
 - The parse check catches errors, not GDScript warnings, and only in scripts the project loads:
-  a parse error in a test file passes it. The test run itself catches those.
+  a parse error in a test file passes it. The test run itself catches those, and warnings too:
+  run_all copies `tests/strict.cfg` to `override.cfg` for the run, so any warning is an error.
+  A scratch script run by hand while that file exists is strict as well.
 - New test: a `tests/test_<name>.gd` extending SceneTree that prints `PASS ...` and calls `quit()`.
   Autoload names (`Game`, `Sfx`) don't compile inside a -s script: use `root.get_node("Game")`.
   Set `save_path` to a test file before anything records a result.

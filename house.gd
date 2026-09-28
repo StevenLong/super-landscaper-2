@@ -95,21 +95,6 @@ func back_patio_rect() -> Rect2:
 	return Rect2(position + Vector2(size.x * 0.5 - 20, -48), Vector2(128, 48)) if back_patio else Rect2()
 
 
-## Does the art stand over p, hiding what's there (a chimney above the ridge, say)? Only
-## then is it worth fading: a person there is about 24 px tall on screen.
-func hides(p: Vector2) -> bool:
-	if _img == null:
-		return false
-	var x := int(p.x - position.x)
-	var y := int(p.y - position.y - WALL_H + ART_FOOT) # p's foot, in the art's rows
-	if x < 0 or x >= _img.get_width() or p.y >= position.y + WALL_H:
-		return false # off to the side, or in front of the wall: drawn in front of it anyway
-	for row in range(maxi(0, y - 24), mini(y, _img.get_height()), 4):
-		if _img.get_pixel(x, row).a > 0.5:
-			return true
-	return false
-
-
 func smash(window_x: int) -> void:
 	if window_x not in broken:
 		broken.append(window_x)
@@ -120,7 +105,6 @@ func smash(window_x: int) -> void:
 ## whatever is behind the garage (or the house) behind it, not in front.
 var _front: Node2D
 var _art: Texture2D ## kept: a texture only load()ed while drawing is freed and draws white
-var _img: Image ## the art's pixels, for hides()
 
 
 func _ready() -> void:
@@ -130,9 +114,6 @@ func _ready() -> void:
 	_front.draw.connect(_draw_house)
 	add_child(_front)
 	_art = load("res://art/%s.png" % VENUES[venue].art)
-	_img = _art.get_image()
-	if _img and _img.is_compressed():
-		_img.decompress()
 	if passage:
 		return
 	var g := Sprite2D.new()

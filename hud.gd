@@ -5,6 +5,9 @@ extends CanvasLayer
 signal choice(id: String)
 
 const SPEECH_W := 360.0
+const BANNER_MS := 2350 ## a banner's whole life: in, held, faded
+
+var _banner_free := 0 ## ticks (msec) when the banner showing now is gone
 
 var _panel: PanelContainer
 var _back := "" ## the open panel's way out ("resume"), for back (Esc, B) or pause again
@@ -95,8 +98,11 @@ func pop(text: String, color := UI.BAD) -> void:
 
 
 ## A big game-over style line for a moment, above the player (who is always mid-screen).
-## Play carries on.
+## Play carries on. Two at once (fired, and the police called) take turns.
 func banner(text: String) -> void:
+	var now := Time.get_ticks_msec()
+	var wait := maxf(0.0, (_banner_free - now) / 1000.0)
+	_banner_free = maxi(_banner_free, now) + BANNER_MS
 	var l := UI.label(text, 80, UI.BAD)
 	UI.shadow(l, 6)
 	add_child(l)
@@ -104,7 +110,11 @@ func banner(text: String) -> void:
 	l.position = Vector2((view.x - l.get_minimum_size().x) / 2.0, view.y * 0.22)
 	l.pivot_offset = l.get_minimum_size() / 2.0
 	l.scale = Vector2(2.5, 2.5)
+	l.visible = wait == 0.0
 	var tw := l.create_tween()
+	if wait > 0.0:
+		tw.tween_interval(wait)
+		tw.tween_callback(l.show)
 	tw.tween_property(l, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_interval(1.6)
 	tw.tween_property(l, "modulate:a", 0.0, 0.5)

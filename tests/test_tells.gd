@@ -39,7 +39,7 @@ func _physics_process(_delta: float) -> bool:
 		assert(not m._on_plot(_h.position) and not _h.on_plot and not _h.visited, "out past the boundary, coming in")
 		_rustles = _rustling()
 	elif _frame > 5 and _step == 0:
-		assert(_frame < 900 and is_instance_valid(_h), "it walks in, got %s" % [_h.position if is_instance_valid(_h) else "freed"])
+		assert(_frame < 900 and is_instance_valid(_h), "it walks in, got %s" % [str(_h.position) if is_instance_valid(_h) else "freed"])
 		if _h.on_plot:
 			assert(_h.visited, "it's been in the garden now")
 			assert(_rustling() > _rustles, "the hedge rustled as it pushed through")
@@ -49,7 +49,7 @@ func _physics_process(_delta: float) -> bool:
 			_step = 1
 			_frame = 1000
 	elif _step == 1:
-		assert(_frame < 1400, "it never left, at %s" % [_h.position if is_instance_valid(_h) else ""])
+		assert(_frame < 1400, "it never left, at %s" % [str(_h.position) if is_instance_valid(_h) else ""])
 		if not is_instance_valid(_h):
 			print("PASS tells")
 			quit()

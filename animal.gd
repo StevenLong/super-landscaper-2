@@ -24,6 +24,7 @@ var immune := 0.0 ## seconds a mower can't hurt it: just knocked clear of one
 var on_plot := true ## on the property, not out next door (main._cross)
 var visited := true ## has been in the garden: once it wanders off out of sight, it's gone
 var body := false ## killed by a stone, not the blades: intact, lying there
+var seen := false ## a body the customer has already seen: carrying it past them again is no news
 var _pause := 0.0
 var _dart := 0.0
 var _t := 0.0

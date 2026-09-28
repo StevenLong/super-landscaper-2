@@ -9,6 +9,7 @@ var g: Node
 var _step := 0
 var _wait := 0
 var _h: Animal
+var _before := 0
 
 
 func _initialize() -> void:
@@ -90,6 +91,50 @@ func _physics_process(_delta: float) -> bool:
 			b.squash()
 			assert(m.tally.get("bodies_mulched", 0) == 1 and m._splats.size() == 1, "mowed: mulch, no splat")
 			assert(m._bodies_in_view().get("hedgehog", 0) == 1, "and mulched, it isn't there to find")
+			for a in m.get_node("Animals").get_children():
+				a.queue_free()
+			# Carried into view, a body counts once, however often it's put down and picked up.
+			g.upgrades.assign(["gloves"])
+			m.customer.where = "patio"
+			_h = _still(Vector2(640, 600))
+			_h.kill()
+			m.walker.global_position = _h.position
+			m.walker.rotation = 0.0
+			_wait = 2
+		5:
+			m.interact()
+			assert(m.walker.carrying == "body_hedgehog", "picked up")
+			var mood: float = m.customer.mood
+			m._carried_into_view()
+			assert(m.customer.mood < mood, "they see you with it")
+			m.interact() # put it down
+			_wait = 2
+		6:
+			var mood: float = m.customer.mood
+			m.interact()
+			assert(m.walker.carrying == "body_hedgehog", "picked up again")
+			m._carried_into_view()
+			assert(m.customer.mood == mood, "the same body: no news")
+			# Dead, a hedgehog still pricks bare hands.
+			g.upgrades.assign([])
+			m._held = 0.0
+			_wait = 40
+		7:
+			assert(m.walker.carrying == "" and m.walker.dazed > 0.0, "a dead hedgehog pricks too")
+			# A body thrown into a live one: it's stoned, and the body lands beside it.
+			var live := _still(Vector2(400, 650))
+			_h = live
+			_before = m._bodies("hedgehog") # the dropped one
+			var f := FlyingStone.new()
+			f.kind = "body_hedgehog"
+			f.thrown = true
+			f.position = live.position
+			m._on_stone_landed(f, "animal")
+			f.free()
+			_wait = 2
+		8:
+			var others: int = m._bodies("hedgehog") - (1 if _h.body else 0)
+			assert(others == _before + 1, "the thrown body lies there, beside the one it felled")
 			print("PASS stunned")
 			quit()
 	_step += 1

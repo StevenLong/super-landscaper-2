@@ -30,11 +30,11 @@ func build(w: float, h: float, border: float, far: float, up: float, r: RandomNu
 		if shape == "terrace":
 			var park := r.randf() < 0.35 # the council playground at the end of the row
 			for i in 3:
-				var x := -border - (i + 1) * (w + border) if side < 0 else w + border + i * (w + border)
+				var at := -border - (i + 1) * (w + border) if side < 0 else w + border + i * (w + border)
 				if park and i == 0:
-					_playground(Rect2(x, 0, w, h), border)
+					_playground(Rect2(at, 0, w, h), border)
 				else:
-					_terrace(Rect2(x, 0, w, h), border, up)
+					_terrace(Rect2(at, 0, w, h), border, up)
 			continue
 		var plot := Rect2(-border - PLOT if side < 0 else w + border, 0, PLOT, h)
 		match ["house", "house", "woods", "lot"][r.randi() % 4]:
@@ -203,7 +203,7 @@ func _woods(plot: Rect2, side: int) -> void:
 
 
 ## An empty lot: patchy long grass and bare earth, a few stones, a sagging fence.
-func _lot(plot: Rect2, h: float, border: float, up: float) -> void:
+func _lot(plot: Rect2, h: float, border: float, _up: float) -> void:
 	_ground(preload("res://art/grass_long.png"), Rect2(plot.position, plot.size), Color(1.0, 0.95, 0.72))
 	for i in 7: # churned-up earth in rough curves, and weeds
 		var sz := Vector2(_r.randf_range(60, 200), _r.randf_range(40, 120))

@@ -80,6 +80,12 @@ func _physics_process(_delta: float) -> bool:
 			bills = m.bills
 			m._on_stone_mowed(urn, m.mower)
 			assert(m.bills == bills + Stone.KINDS.urn.bill, "a mowed urn is billed")
+			for w: int in m.customer.windows: # was about 190 ms a window: a hitch every time they moved
+				m.customer.where = "window"
+				m.customer.window_x = w
+				var t0 := Time.get_ticks_usec()
+				m._show_cone()
+				assert(Time.get_ticks_usec() - t0 < 50000, "the window's view is quick to work out")
 			m.queue_free()
 			var yard := _find(10.0, "graveyard")
 			assert(yard.persona == "vicar" and not yard.dog, "a bottom-band churchyard: the vicar, no dog")
