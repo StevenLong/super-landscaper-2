@@ -81,6 +81,7 @@ var _cone: Node2D ## the ground the window they're at can see, faintly lit
 var _cone_pts := PackedVector2Array()
 var _cone_x := -1 ## the window it was worked out for
 var _carry_seen := "" ## what you're carrying that they've already seen you with
+var _focus: Node2D ## brackets round what interact would do (_draw_focus)
 var _out := 0.0 ## seconds the critter in your hands has left out cold (0: awake)
 var _known_bodies := {} ## kind -> bodies they've already seen made or carried: not news later
 var _shake := 0.0
@@ -117,6 +118,10 @@ func _ready() -> void:
 		mower.apply_spec(Game.mower_spec())
 	_build_layout()
 	customer.sight = _in_sight
+	_focus = Node2D.new()
+	_focus.z_index = 5 # over everything, like the throw's sight
+	_focus.draw.connect(_draw_focus)
+	add_child(_focus)
 	_cone = Node2D.new()
 	_cone.name = "SightCone"
 	_cone.z_index = -1
@@ -835,6 +840,7 @@ func _process(delta: float) -> void:
 	var want := 1.0 if Input.is_action_pressed("look") and not get_tree().paused else 2.0
 	cam.zoom = cam.zoom.lerp(Vector2(want, want), minf(1.0, delta * 8.0))
 	_shake = maxf(0.0, _shake - delta * 18.0)
+	_focus.queue_redraw()
 	cam.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
 	# Winding up a throw, the camera leads halfway to the landing marker so it stays on screen.
 	if walker:
@@ -986,29 +992,16 @@ func _hint() -> String:
 			return Game.key("interact") + " let go of the hose"
 		if walker.carrying != "":
 			return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   hold %s throw it" % Game.key("throw")
-		var near := _stone_near(walker.global_position)
-		if near:
-			return Game.key("interact") + " pick up the " + _thing(near.kind)
-		var hose := _hose_grip()
-		if hose != "":
-			return Game.key("interact") + {"end": " pick up the hose", "wind": " wind the hose in", "pull": " pull the hose out"}[hose]
-		if dog and is_instance_valid(dog) and not dog.limping and not dog.held:
-			if dog.following == walker:
-				return "Walk %s back to the patio   %s pick them up" % [job.dog_name, Game.key("interact")]
-			if walker.global_position.distance_to(dog.position) < DOG_REACH:
-				return "%s put %s on the lead" % [Game.key("interact"), job.dog_name]
-		if _critter_near(walker.global_position):
-			return Game.key("interact") + " pick up the " + _critter_near(walker.global_position).kind
-		if _can_rifle():
+		var t := _target()
+		if t.get("hint", "") == "rifle":
 			if Input.is_action_pressed("interact") and robbed > 0.0:
 				return "Rifling... $%d" % floori(robbed)
 			return "Hold %s rifle their pockets" % Game.key("interact")
-		if near_customer():
-			return Game.key("interact") + " talk to " + job.customer
-		if at_truck():
-			return Game.key("interact") + " truck"
-		if walker.global_position.distance_to(mower.global_position) < 44.0:
-			return Game.key("interact") + " get back on"
+		var walk := ("Walk %s back to the patio   " % job.dog_name) if dog and is_instance_valid(dog) and dog.following == walker else ""
+		if not t.is_empty():
+			return walk + Game.key("interact") + " " + t.hint
+		if walk != "":
+			return walk
 		return _fired_hint() if customer.fired else ""
 	if at_truck():
 		return Game.key("interact") + " leave   (on foot, walk up to the customer to get paid)"
@@ -1133,61 +1126,109 @@ func interact() -> void:
 		walker.carrying = ""
 		walker.queue_redraw()
 	else:
-		var s := _stone_near(walker.global_position)
-		if s:
-			s.queue_free()
-			if s.kind == "stone":
-				_count("stones_picked")
-			walker.carrying = s.kind
-			walker.queue_redraw()
-			Sfx.play("ui_move", 0.0)
-		elif _hose_grip() == "wind":
-			_hose.winding = true
-			Sfx.play("ui_move", 0.0)
-		elif _hose_grip() != "": # its end, or off the reel
-			_hose.grabbed = true
-			_hose.winding = false
-			_hose.hand = walker.global_position
-			walker.carrying = "hose"
-			Sfx.play("ui_move", 0.0)
-		elif _pick_up_critter():
-			pass
-		elif near_customer():
-			open_customer_menu()
-		elif at_truck():
-			open_truck_menu()
-		elif walker.global_position.distance_to(mower.global_position) < 44.0:
-			hop_on()
+		var t := _target()
+		if not t.is_empty():
+			(t.act as Callable).call()
 
 
-## Grab a nearby animal. A hedgehog bare-handed: you yelp, drop it, and stand there dazed.
-## The dog: the lead goes on first; one on your lead you can pick up.
-func _pick_up_critter() -> bool:
+## Everything empty hands can do here: [{at, hint, act}]. The one nearest the spot just in
+## front of you is the one interact does, and it's outlined (_target, _draw_focus), so with
+## a gnome, a hose and a body all in a heap you turn to pick.
+func _targets() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if walker == null or walker.carrying != "" or walker.aiming:
+		return out
 	var at := walker.global_position
-	if dog and is_instance_valid(dog) and not dog.limping and not dog.held and dog.following != walker and dog.position.distance_to(at) < DOG_REACH:
-		dog.lead(walker)
-		return true
-	if dog and is_instance_valid(dog) and not dog.held and dog.following == walker:
-		dog.hold()
-		walker.carrying = "dog"
-	else:
-		var a := _critter_near(at)
-		if a == null:
-			return false
-		a.queue_free() # bare-handed, a hedgehog is in your hands for a moment (_hold_critter)
-		walker.carrying = ("body_" if a.body else "") + a.kind
-		_out = a.out # knocked out, it stays out in your hands
+	for s in $Stones.get_children():
+		if s is Stone and not s.is_queued_for_deletion() and s.position.distance_to(at) < 18.0 and _on_plot(s.position):
+			out.append({"at": s.position, "hint": "pick up the " + _thing(s.kind), "act": _pick_up_stone.bind(s)})
+	var grip := _hose_grip()
+	if grip != "":
+		out.append({"at": _hose.end() if grip == "end" else _hose.points[0] + Vector2(0, -12),
+			"hint": {"end": "pick up the hose", "wind": "wind the hose in", "pull": "pull the hose out"}[grip], "act": _grip_hose.bind(grip)})
+	if dog and is_instance_valid(dog) and not dog.limping and not dog.held:
+		if dog.following == walker:
+			out.append({"at": dog.position, "hint": "pick up %s" % job.dog_name, "act": _pick_up_dog})
+		elif dog.position.distance_to(at) < DOG_REACH:
+			out.append({"at": dog.position, "hint": "put %s on the lead" % job.dog_name, "act": dog.lead.bind(walker)})
+	for a in $Animals.get_children():
+		if a is Animal and not a.dead and not a.is_queued_for_deletion() and a.position.distance_to(at) < 20.0 and _on_plot(a.position):
+			out.append({"at": a.position, "hint": "pick up the " + ("dead " if a.body else "") + a.kind, "act": _pick_up_animal.bind(a)})
+	if _can_rifle():
+		out.append({"at": $Client.position, "hint": "rifle", "act": func() -> void: pass}) # held, see _rifle
+	if near_customer():
+		out.append({"at": $Client.position, "hint": "talk to " + job.customer, "act": open_customer_menu})
+	if at_truck():
+		out.append({"at": $Truck.position, "hint": "truck", "act": open_truck_menu})
+	if at.distance_to(mower.global_position) < 44.0:
+		out.append({"at": mower.global_position, "hint": "get back on", "act": hop_on})
+	return out
+
+
+## The target nearest the spot just in front of you, or {}.
+func _target() -> Dictionary:
+	var best := {}
+	if walker == null:
+		return best
+	var front := walker.global_position + Vector2.RIGHT.rotated(walker.rotation) * 12.0
+	for t: Dictionary in _targets():
+		if best.is_empty() or (t.at as Vector2).distance_to(front) < (best.at as Vector2).distance_to(front):
+			best = t
+	return best
+
+
+func _pick_up_stone(s: Stone) -> void:
+	s.queue_free()
+	if s.kind == "stone":
+		_count("stones_picked")
+	walker.carrying = s.kind
+	walker.queue_redraw()
+	Sfx.play("ui_move", 0.0)
+
+
+func _grip_hose(grip: String) -> void:
+	Sfx.play("ui_move", 0.0)
+	if grip == "wind":
+		_hose.winding = true
+		return
+	_hose.grabbed = true # its end, or off the reel
+	_hose.winding = false
+	_hose.hand = walker.global_position
+	walker.carrying = "hose"
+
+
+## Brackets round what interact would do, so you can see which of a heap it is (not the
+## truck, which is big enough to see).
+func _draw_focus() -> void:
+	var t := _target() if not over else {}
+	if t.is_empty() or t.hint == "truck":
+		return
+	var c: Vector2 = t.at + Vector2(0, -6)
+	var s := 10.0
+	var col := Color(1, 1, 1, 0.6 + 0.3 * sin(Time.get_ticks_msec() / 150.0))
+	for k: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		var corner := c + k * s
+		_focus.draw_line(corner, corner - Vector2(k.x * 4.0, 0), col, 1.5)
+		_focus.draw_line(corner, corner - Vector2(0, k.y * 4.0), col, 1.5)
+
+
+## The dog on your lead, up into your arms.
+func _pick_up_dog() -> void:
+	dog.hold()
+	walker.carrying = "dog"
 	_held = 0.0
 	walker.queue_redraw()
 	Sfx.play("ui_move", 0.0)
-	return true
 
 
-func _critter_near(p: Vector2) -> Animal:
-	for a in $Animals.get_children():
-		if a is Animal and not a.dead and not a.is_queued_for_deletion() and a.position.distance_to(p) < 20.0 and _on_plot(a.position):
-			return a
-	return null
+## Grab a critter. A hedgehog bare-handed: you yelp, drop it, and stand there dazed.
+func _pick_up_animal(a: Animal) -> void:
+	a.queue_free() # bare-handed, a hedgehog is in your hands for a moment (_hold_critter)
+	walker.carrying = ("body_" if a.body else "") + a.kind
+	_out = a.out # knocked out, it stays out in your hands
+	_held = 0.0
+	walker.queue_redraw()
+	Sfx.play("ui_move", 0.0)
 
 
 ## Holding an animal: the dog wriggles free, a squirrel bites; carry the dog to its owner.
@@ -1522,7 +1563,7 @@ func _can_rifle() -> bool:
 ## Hold interact over a knocked-out customer: their cash trickles out, so every second
 ## robbing is a second not running. Robbery is its own crime, and a neighbour always sees.
 func _rifle(delta: float) -> void:
-	if not (_can_rifle() and Input.is_action_pressed("interact")):
+	if not (_can_rifle() and Input.is_action_pressed("interact") and _target().get("hint", "") == "rifle"):
 		return
 	if robbed == 0.0:
 		_count("robberies")

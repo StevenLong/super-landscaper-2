@@ -81,6 +81,9 @@ func _physics_process(_delta: float) -> bool:
 			m._release_dog()
 			m.dog.position = Vector2(640, 600) # open grass
 			assert(m._stone_hit_test(m.dog.position) == "dog" and m._stone_hit_test(m.dog.position, 0.0, false, "ball") == "", "a stone hits the dog, the ball sails past")
+			for c in _critters("squirrel"): # out of the way: the nearest thing in front is what interact does
+				c.queue_free()
+			m.walker.rotation = 0.0
 			m.dog.position = m.walker.global_position + Vector2(10, 0)
 			_wait = 1
 		7:

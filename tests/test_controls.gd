@@ -1,7 +1,8 @@
 # Controls, 2026-09-28 (NOTES 122, 127, 130): back (Esc, the pad's B) or pause again backs
 # out of a panel with a way out; interact gets you back on the mower; walking into the dog
 # does nothing, interact puts the lead on, again picks it up; the pad's B hops, X throws;
-# buying on the board keeps the cursor in that row.
+# with several things in reach, interact does the one you face (NOTES 123); buying on the
+# board keeps the cursor in that row.
 extends SceneTree
 
 var g: Node
@@ -68,19 +69,34 @@ func _physics_process(_delta: float) -> bool:
 			assert(m.dog.following == m.walker and m.walker.carrying == "", "interact puts the lead on")
 			m.interact()
 			assert(m.walker.carrying == "dog", "and again picks them up")
+			# A heap: a gnome one side, a body the other. What you face is what you get.
+			m.walker.carrying = ""
+			m.dog.queue_free()
+			m.dog = null
+			var at: Vector2 = m.walker.global_position
+			m.add_stone(at + Vector2(12, 0), "gnome")
+			m.spawn_animal("hedgehog", at + Vector2(-12, 0), at + Vector2(-12, 1)).kill()
+			_wait = 2
+		5:
+			m.walker.rotation = 0.0
+			assert(m._hint().ends_with("pick up the gnome"), "facing the gnome: %s" % m._hint())
+			m.walker.rotation = PI
+			assert(m._hint().ends_with("pick up the dead hedgehog"), "turn round, the body: %s" % m._hint())
+			m.interact()
+			assert(m.walker.carrying == "body_hedgehog", "and interact takes what you face")
 			m.queue_free()
 			g.new_run(7)
 			g.money = 5000
 			change_scene_to_file("res://board.tscn")
 			_wait = 10
-		5:
+		6:
 			var board := current_scene
 			var row: Control = board.find_child("petrol", true, false)
 			assert(row != null, "the petrol mower's row")
 			var buy: Button = row.find_children("*", "Button", true, false)[0]
 			buy.pressed.emit()
 			_wait = 3
-		6:
+		7:
 			var focused := root.gui_get_focus_owner()
 			assert(focused != null and current_scene.find_child("petrol", true, false).is_ancestor_of(focused),
 				"after buying, the cursor stays in that row, on %s" % [focused])
