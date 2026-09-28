@@ -23,13 +23,16 @@ func _physics_process(_delta: float) -> bool:
 		var house: Rect2 = m.get_node("Scenery/House").rect()
 		var hedges: Array = m._edges.filter(func(e: Dictionary) -> bool: return e.kind == "hedge")
 		for i in 40:
-			var a: Animal = m.spawn_animal("hedgehog" if i % 2 == 0 else "squirrel")
-			assert(a != null, "spawned")
-			assert(not (a.position.x > house.position.x and a.position.x < house.end.x and a.position.y < 20.0),
-				"nothing comes from behind the house")
-			if a.kind == "hedgehog" and not hedges.is_empty():
-				assert(hedges.any(func(e: Dictionary) -> bool: return _near_line(a.position, e.from, e.to, 14.0)),
-					"hedgehogs come out of a hedge, got %s" % a.position)
+			var kind := "hedgehog" if i % 2 == 0 else "squirrel"
+			var spot: Dictionary = m._spawn_spot(kind)
+			var at: Vector2 = spot.get("edge", spot.at) # where it comes in over the boundary (or down a tree)
+			assert(not (at.x > house.position.x and at.x < house.end.x and at.y < 20.0), "nothing comes from behind the house")
+			if kind == "hedgehog" and not hedges.is_empty():
+				assert(hedges.any(func(e: Dictionary) -> bool: return _near_line(at, e.from, e.to, 1.0)),
+					"hedgehogs come in through a hedge, got %s" % at)
+			if spot.grace <= 0.0:
+				assert(not m._on_plot(spot.at), "walking in from next door, not popping up in the garden")
+			assert(m.spawn_animal(kind) != null, "spawned")
 		# Off the mower, you stay in the garden.
 		m.hop_off()
 		m.walker.global_position = Vector2(-200, -200)

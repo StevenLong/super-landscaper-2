@@ -2,7 +2,7 @@ class_name Animal
 extends Area2D
 ## Wildlife that wanders across the lawn. Hedgehogs trundle in a straight line;
 ## squirrels dart and pause. A moving mower that touches one squashes it.
-## Leaves the lawn (and frees itself) once it walks off the far side. Turns away
+## Comes in from next door and wanders off there again (main._cross). Turns away
 ## from anything `blocked` says is solid (house, truck, trees, ponds). A stone can
 ## knock one out (it lies on its side, then wakes and runs) or kill it outright, which
 ## leaves a body, belly up, until someone moves it or mows it.
@@ -19,6 +19,8 @@ var grace := 0.0 ## seconds before obstacles count (a squirrel climbing down a t
 var heading := Vector2.RIGHT
 var dead := false ## squashed: the splat is main's, this node is on its way out
 var out := 0.0 ## seconds left knocked out
+var on_plot := true ## on the property, not out next door (main._cross)
+var visited := true ## has been in the garden: once it wanders off out of sight, it's gone
 var body := false ## killed by a stone, not the blades: intact, lying there
 var _pause := 0.0
 var _dart := 0.0
@@ -66,7 +68,7 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 		return
 	position = next
-	if not lawn_rect.grow(30.0).has_point(position):
+	if not lawn_rect.grow(800.0).has_point(position): # main frees it once it's off the property out of sight (_cross)
 		queue_free()
 	queue_redraw()
 

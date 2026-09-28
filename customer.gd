@@ -258,7 +258,7 @@ func on_dog_returned(at := Vector2.INF) -> bool:
 
 
 func fire(line: String) -> void:
-	if fired or knocked_out:
+	if fired or knocked_out or paid: # once paid, what you do after goes on your reputation (main._mischief)
 		return
 	fired = true
 	mood = 0.0

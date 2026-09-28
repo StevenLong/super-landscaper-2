@@ -56,7 +56,7 @@ func _physics_process(_delta: float) -> bool:
 			var gates := Vector2(cx, m.lawn.size_px.y + 4.0)
 			assert(not m.lawn.exits.any(func(e: Rect2) -> bool: return e.has_point(gates)), "and the front gates are shut")
 			assert(m._stone_hit_test(gates, 5.0) == "fence", "railings along the road")
-			assert(m._stone_hit_test(Vector2(-10, 600), 5.0) == "gone", "a ha-ha on the park sides: into the ditch")
+			assert(m._stone_hit_test(Vector2(-10, 600), 5.0) == "", "a ha-ha on the park sides: on into the ditch")
 			assert(m.get_node("Beyond").get_children().all(func(n: Node) -> bool: return not ("venue" in n)), "no neighbours, only parkland")
 			var beds := m.get_node("Scenery").get_children().filter(func(n: Node) -> bool: return "box" in n and n.box)
 			var ovals := m.get_node("Scenery").get_children().filter(func(n: Node) -> bool: return "shape" in n and n.shape == "oval")

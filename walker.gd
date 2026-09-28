@@ -21,7 +21,7 @@ var aiming := false
 var dazed := 0.0 ## seconds left seeing stars (a hedgehog grabbed bare-handed)
 var power := 0.0 ## 0 to 1 while aiming
 var pitch := 0.5 ## how steeply you throw, radians above the ground; kept between throws
-var reach := func(_power: float) -> float: return 0.0 ## main: how far a throw at this power (and pitch) lands
+var path := func(_power: float) -> Array: return [PackedVector3Array(), "ground"] ## main: where a throw at this power goes (FlyingStone.trace)
 var _marker: Node2D
 
 
@@ -38,6 +38,7 @@ func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	_marker = Node2D.new()
 	_marker.z_index = 5 # over trees and roofs: it's a sight, not a thing on the ground
+	_marker.top_level = true # drawn in the garden's coordinates, where the flight is traced
 	_marker.draw.connect(_draw_marker)
 	add_child(_marker)
 
@@ -95,17 +96,33 @@ func _draw() -> void:
 		_draw_held(held)
 
 
-## Where the throw lands if nothing is in the way: a ring on the ground. And a short
-## sight from your hand, tilted up as steeply as you'll throw.
+## The whole flight as a dotted arc, its shadow faint on the ground, and a ring where it
+## first hits: flat on the ground, or standing up on a wall at the height it strikes.
+## And a short sight from your hand, tilted up as steeply as you'll throw.
 func _draw_marker() -> void:
-	if aiming:
-		var d := Vector2.RIGHT.rotated(rotation)
-		var tip := d * cos(pitch) * 16.0 * Vector2(1.0, 0.6) + Vector2(0, -12.0 - 16.0 * sin(pitch))
-		_marker.draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
-		_marker.draw_line(Vector2(0, -12), tip, Color(1, 1, 1, 0.8), 1.5)
-		_marker.draw_set_transform(Vector2(reach.call(power), 0), -rotation, Vector2(1.0, 0.6))
-		_marker.draw_arc(Vector2.ZERO, 7.0, 0.0, TAU, 20, Color(1, 1, 1, 0.9), 1.5)
-		_marker.draw_circle(Vector2.ZERO, 1.5, Color(1, 1, 1, 0.9))
+	if not aiming:
+		return
+	var white := Color(1, 1, 1, 0.9)
+	var hand := global_position + Vector2(0, -12)
+	var tip := Vector2.RIGHT.rotated(rotation) * cos(pitch) * 16.0 * Vector2(1.0, 0.6) + Vector2(0, -16.0 * sin(pitch))
+	_marker.draw_line(hand, hand + tip, Color(1, 1, 1, 0.8), 1.5)
+	var trace: Array = path.call(power)
+	var pts: PackedVector3Array = trace[0]
+	if pts.is_empty():
+		return
+	for i in range(2, pts.size() - 1, 2):
+		var q := pts[i]
+		_marker.draw_circle(Vector2(q.x, q.y), 1.2, Color(0, 0, 0, 0.3))
+		_marker.draw_circle(Vector2(q.x, q.y - q.z), 1.6, Color(1, 1, 1, 0.85))
+	var end := pts[pts.size() - 1]
+	var at := Vector2(end.x, end.y - end.z)
+	if end.z < 1.0: # on the ground: a ring lying flat
+		_marker.draw_set_transform(at, 0.0, Vector2(1.0, 0.6))
+	else: # it strikes something standing up: the ring stands up on it
+		_marker.draw_set_transform(at, 0.0, Vector2.ONE)
+	_marker.draw_arc(Vector2.ZERO, 7.0, 0.0, TAU, 20, white, 1.5)
+	_marker.draw_circle(Vector2.ZERO, 1.5, white)
+	_marker.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_held(at: Vector2) -> void:

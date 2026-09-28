@@ -14,6 +14,7 @@ var velocity := Vector2.ZERO ## along the ground
 var z := 0.0 ## height above the ground
 var vz := 0.0 ## rising (+) or falling (-)
 var kind := "stone" ## what's flying (Stone.KINDS): it lands as one
+var out := 0.0 ## a critter knocked out: seconds it has left out cold, carried through the flight
 var thrown := false ## by hand, on purpose: what it hits can be a crime (a flung one is an accident)
 var hit_test: Callable
 var _age := 0.0
@@ -40,17 +41,43 @@ func landing() -> Vector2:
 	return position + velocity * (vz + sqrt(vz * vz + 2.0 * GRAVITY * maxf(z, 0.0))) / GRAVITY
 
 
-func _physics_process(delta: float) -> void:
-	_age += delta
-	position += velocity * delta
+## One step of a flight at ground p, height z, rising vz: [p, z, vz, what it hit] after
+## delta. What it hit is test's answer, or "ground" on touching down (p moved back to
+## where it did). Throws and their aiming line (trace) both step through here.
+static func step(p: Vector2, z: float, vz: float, velocity: Vector2, delta: float, test: Callable) -> Array:
+	p += velocity * delta
 	z += vz * delta - 0.5 * GRAVITY * delta * delta
 	vz -= GRAVITY * delta
-	var hit: String = hit_test.call(position, maxf(z, 0.0), vz < 0.0) if hit_test.is_valid() else ""
-	if hit != "" or z <= 0.0:
-		if hit == "": # back to where it actually touched down
-			position -= velocity * (-z / maxf(-vz, 1.0))
-			z = 0.0
-		landed.emit(self, hit)
+	var hit: String = test.call(p, maxf(z, 0.0), vz < 0.0) if test.is_valid() else ""
+	if hit == "" and z <= 0.0:
+		p -= velocity * (-z / maxf(-vz, 1.0))
+		z = 0.0
+		hit = "ground"
+	return [p, z, vz, hit]
+
+
+## A whole flight, if nothing moves meanwhile: [each step's (x, y, height), what it hits].
+static func trace(p: Vector2, velocity: Vector2, z: float, vz: float, test: Callable, delta: float) -> Array:
+	var pts := PackedVector3Array([Vector3(p.x, p.y, z)])
+	for i in 900:
+		var s := step(p, z, vz, velocity, delta, test)
+		p = s[0]
+		z = s[1]
+		vz = s[2]
+		pts.append(Vector3(p.x, p.y, z))
+		if s[3] != "":
+			return [pts, s[3]]
+	return [pts, "ground"]
+
+
+func _physics_process(delta: float) -> void:
+	_age += delta
+	var s := step(position, z, vz, velocity, delta, hit_test)
+	position = s[0]
+	z = s[1]
+	vz = s[2]
+	if s[3] != "":
+		landed.emit(self, "" if s[3] == "ground" else s[3])
 		queue_free()
 	queue_redraw()
 
