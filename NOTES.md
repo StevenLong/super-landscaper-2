@@ -64,8 +64,8 @@ BLOCKS = spoils the next playtest.
    push 47% in 12 min; churchyard ride-on only 44% (it can't fit between headstones).
    So: the ride-on isn't faster than petrol on open lawns (it turns wide), the push mower
    at walking pace is far off any patience, and the bot can't reach 85% within patience on
-   the small plots with any mower. QUESTION: retune (patience up, push walk speed, the
-   ride-on's turning), or play first and see if a person beats the bot?
+   the small plots with any mower. The dev's call (2026-09-28): play first and see if a
+   person beats the bot; retune after (patience, push walk speed, the ride-on's turning).
 
 ### Grilled 2026-09-27 (91: packing the truck, robot mowers, how each mower plays)
 
@@ -95,5 +95,5 @@ on top of this session's mower feel); then 106 and 107.
    at high heat).
 21b. [PARKED since 2026-09-26] Job types for variety, not pressure: mini golf, farm or
    botanical garden, infestation jobs. Add when 12 jobs of one lawn kind feel samey.
-30b. [PARKED since 2026-09-24] A dark path: the menace board (mafia dons, chasing enemies
+30b. [PARKED since 2026-09-24, the dev kept it 2026-09-28] A dark path: the menace board (mafia dons, chasing enemies
    round a warehouse), a negative-reputation run, the loan shark as the way in.

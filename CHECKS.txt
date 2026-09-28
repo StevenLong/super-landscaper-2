@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (24 checks, 3 loads, about 50 minutes)
+PLAY CHECKS OWED  (25 checks, 3 loads, about 50 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -81,8 +81,8 @@ LOAD 2 of 3: THE MOWERS      (about 15 min; [1] on the board for money, buy petr
 ================================================================================
 
 S11-PUSH
-The push mower walks at a slower pace. Hold [R] (pad RB) to push flat out: full speed, and
-the stamina bar drains faster. Does the walking pace feel right against the customer's
+The push mower walks at a slower pace. Hold Shift (pad A) to push flat out: full speed, and
+the stamina bar drains faster. Sprinting past the truck on the pad doesn't open its menu. Does the walking pace feel right against the customer's
 patience?
 >
 
@@ -98,8 +98,14 @@ and then it stalls and wants the cord again.
 >
 
 S11-GEARS
-The ride-on: [R] up a gear, [C] down (pad RB, LB); the hint shows the gear. Each gear is
-faster; top gear turns wide. Does it feel good to drive?
+The ride-on starts switched off: [E] (pad A) turns the key. Shift up a gear, Ctrl down
+(pad RB, LB); the hint shows the gear. Each gear is faster; top gear turns wide. Does it
+feel good to drive?
+>
+
+S11-ENGINE
+On the petrol or the ride-on, away from the truck, [E] switches the engine off: the fuel
+gauge stops falling. The ride-on's key turns it back on; the petrol wants its cord again.
 >
 
 S11-RUNOVER

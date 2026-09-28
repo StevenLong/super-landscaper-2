@@ -44,14 +44,19 @@ Notepad whenever an answer is still blank.
   controls, mower_feel; hose, tells, talk, records, animals rewritten or extended. Every
   visual change screenshotted and looked at (arc, facade, hose and reel, door, ha-ha,
   ripcord meter, summary). Not measured: anything by feel.
+- After the handoff, the dev's calls (built, 4ae2567): Shift (pad A) sprints; the ride-on
+  shifts on Shift and Ctrl (pad RB, LB); powered mowers start switched off and interact
+  switches them off to save fuel (ride-on key on; petrol by ripcord). The pad's A is also
+  interact, so from the mower the truck opens only off the throttle (my call). CLAUDE.md
+  now allows Shift and Ctrl. NOTES 140: play first, then retune. 30b stays parked.
 - 106 (packing) not started on purpose: it changes how mowers are chosen, on top of this
   session's unplayed mower feel, and its grid sizes and shapes are still open.
 
-OWED CHECKS: 24, in CHECKS.txt (3 loads, about 50 minutes).
+OWED CHECKS: 25, in CHECKS.txt (3 loads, about 50 minutes).
 
 NEXT:
 1. Play the checks; triage what they turn up.
-2. A call on NOTES 140 (retune from the sim, or play first), then 106 and 107.
+2. Retune from the checks and NOTES 140's numbers if play agrees; then 106 and 107.
 3. /grill on 137 (the art pipeline: blocks the manor and topiary redraws), then 136
    (storylines and the animal dealer), 96 (subquests), 94 (strimmer) with fire, 100 (weeds).
 
