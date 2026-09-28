@@ -3,7 +3,7 @@
 # stays out in your hands and where you put it; thrown hard into a wall, one is knocked
 # out; squirrels only climb down trees; at the L plot and the churchyard, critters get
 # into the garden instead of spinning in a wall; a stone lobbed over the fence lands
-# next door, out of reach.
+# next door, out of reach. The house fades only while its art stands over you.
 extends SceneTree
 
 var g: Node
@@ -76,6 +76,13 @@ func _physics_process(_delta: float) -> bool:
 		0:
 			# A broken pane is a hole: the next stone goes in, no second bill.
 			var h: Node2D = m._house
+			# The house fades only while its art stands over you: a chimney, not open lawn.
+			var chimney := false
+			for x in range(0, int(h.size.x), 2):
+				chimney = chimney or h.hides(Vector2(h.position.x + x, h.position.y - 6))
+			assert(chimney, "behind a chimney, the house fades")
+			assert(not h.hides(Vector2(h.position.x + 5, h.position.y - 60)) and not h.hides(h.position + Vector2(100, h.WALL_H + 10)),
+				"on open lawn behind it, or in front of it, it doesn't")
 			var p := Vector2(h.position.x + h.windows()[0] + 15.0, h.position.y + h.WALL_H - 2.0)
 			var z := 40.0
 			assert(m._building_hit(p, z) == "window", "glass there")

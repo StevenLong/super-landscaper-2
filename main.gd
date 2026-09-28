@@ -854,9 +854,8 @@ func _process(delta: float) -> void:
 	for t in $Scenery.get_children():
 		if "canopy" in t:
 			t.near = t.crown_rect().grow(20.0).has_point(me) or me.distance_to(t.position) < t.radius + 30.0
-	# And the house, from just behind its ridge (a chimney, the manor's roofline).
-	var ridge := Rect2(_house.position - Vector2(0, 44), Vector2(_house.size.x, 44)).has_point(me)
-	_house.modulate.a = move_toward(_house.modulate.a, 0.45 if ridge else 1.0, delta * 4.0)
+	# And the house, only while its art stands over you (a chimney above the ridge).
+	_house.modulate.a = move_toward(_house.modulate.a, 0.45 if _house.hides(me) else 1.0, delta * 4.0)
 	# So does the front hedge or fence while you're behind it.
 	for strip in _front:
 		var behind := Rect2(strip.position - Vector2(0, 40), strip.size + Vector2(0, 40)).has_point(me)

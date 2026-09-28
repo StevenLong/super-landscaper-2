@@ -268,7 +268,8 @@ def sash(c, wx, top, h):
 
 
 def mansion():
-    """A stately manor, 960 wide and symmetrical: a hipped slate roof with four stacks,
+    """A stately manor, 960 wide and symmetrical: a slate roof, square-ended so it fills its
+    footprint (no corners of grass you can't reach), with four stacks,
     pale ashlar with quoins and a string course, eight tall sashes a floor, a pediment
     breaking the roofline over a columned portico. Same wall foot, ridge and window
     heights as the house, so house.gd treats it alike."""
@@ -278,13 +279,8 @@ def mansion():
     wall_top = B - 158
     ridge = wall_top - 154
     roof(c, 0, ridge, W, 154, r, SLATE)
-    for y in range(ridge, wall_top):                     # hipped: the ends slope back
-        cut = (wall_top - y) // 2 - 6
-        for x in list(range(0, max(0, cut))) + list(range(W - max(0, cut), W)):
-            c.px[y][x] = (0, 0, 0, 0)
-        if cut > 0:
-            c.rect(cut, y, 1, 1, SLATE[4])
-            c.rect(W - cut - 1, y, 1, 1, SLATE[0])
+    c.rect(0, ridge, 2, wall_top - ridge, SLATE[4])      # the square ends, lit and shaded
+    c.rect(W - 2, ridge, 2, wall_top - ridge, SLATE[0])
     for cx in (170, 330, 606, 766):
         chimney(c, cx, ridge)
     for y in range(wall_top + 4, B):                     # pale ashlar with fine courses
