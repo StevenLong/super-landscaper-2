@@ -29,12 +29,29 @@ signal bumped(what: Object, impact: float) ## a hard knock into something solid
 @export var knock_out := 0.3 ## how often a critter it runs over is knocked out, not splatted: the smaller the mower, the likelier
 @export var body := Vector2(36, 28) ## length x width, as the voxel model is built
 
+const WALK := 0.6 ## a push mower walks at this share of its top speed; hold sprint for all of it
+const WALK_BURN := 0.6 ## walking tires you slowly (of fuel_burn)...
+const SPRINT_BURN := 1.5 ## ...sprinting fast
+const PULL_TIME := 0.9 ## seconds for the ripcord's marker to sweep the meter
+const SWEET_AT := 0.62 ## where the sweet spot starts on the meter
+const COUGH := 1.0 ## seconds lost to a missed pull
+const STALL_BELOW := 40.0 ## a petrol mower in worse condition than this can stall on a knock...
+const STALL_CHANCE := 0.5 ## ...this often
+const GEARS := [0.3, 0.5, 0.75, 1.0] ## a ride-on's top speed in each gear, of max_speed
+const GEAR_TURN := [1.0, 0.85, 0.7, 0.55] ## and its turn rate: higher gears, wider circles
+
 @onready var fuel := max_fuel
 var fuel_used := 0.0
 var condition := 100.0 ## 0 = broken: crawls and cuts nothing until repaired at the truck
 var repaired := 0.0 ## points repaired this job (costs money)
 var occupied := true ## false while the player is off on foot
 var throttle := 0.0
+var sprinting := false ## a push mower, pushed flat out (hold sprint)
+var needs_pull := false ## a petrol mower before its ripcord is pulled this job, or after a stall
+var pull := -1.0 ## the ripcord's marker, 0 to 1, while you draw the cord; -1 when not
+var gear := 1 ## a ride-on's gear, 1 to 4
+var _cough := 0.0
+var _cord: Node2D ## the ripcord's meter, over the mower
 var _stride := 0.0
 var _bump_cooldown := 0.0
 var _was_touching := false
@@ -49,6 +66,10 @@ func _ready() -> void:
 	_engine.max_distance = 1100.0
 	_engine.attenuation = 1.5
 	add_child(_engine)
+	_cord = Node2D.new()
+	_cord.z_index = 5
+	_cord.draw.connect(_draw_cord)
+	add_child(_cord)
 	_clippings = CPUParticles2D.new()
 	_clippings.emitting = false
 	_clippings.amount = 24
@@ -129,6 +150,62 @@ func _update_sound(delta: float, running: bool) -> void:
 	_bump_cooldown -= delta
 
 
+## Drawing the ripcord: holding the throttle draws it while the marker sweeps the meter;
+## let go in the sweet spot and it starts. Let go outside it, or draw it all the way, and it
+## coughs and you lose a second. The throttle does nothing till it's going.
+func _ripcord(delta: float) -> void:
+	var held := throttle > 0.0 and occupied
+	throttle = 0.0
+	if _cough > 0.0:
+		_cough -= delta
+		pull = -1.0
+	elif held:
+		pull = maxf(pull, 0.0) + delta / PULL_TIME
+		if pull >= 1.0:
+			_miss()
+	elif pull >= 0.0:
+		var s := sweet()
+		if pull >= s.x and pull <= s.y:
+			needs_pull = false
+			Sfx.play("ui_select", 0.0)
+		else:
+			_miss()
+		pull = -1.0
+	_cord.queue_redraw()
+
+
+func _miss() -> void:
+	pull = -1.0
+	_cough = COUGH
+	Sfx.play("cough")
+
+
+## Where on the meter the ripcord catches: [from, to], narrower the worse its condition.
+func sweet() -> Vector2:
+	return Vector2(SWEET_AT, SWEET_AT + lerpf(0.06, 0.2, condition / 100.0))
+
+
+## A knock can stall a petrol mower in poor condition; it needs the ripcord again.
+func stall_check(roll := randf()) -> void:
+	if sprite_kind == "petrol" and not needs_pull and condition < STALL_BELOW and roll < STALL_CHANCE:
+		needs_pull = true
+		Sfx.play("cough")
+
+
+## The ripcord's meter over the mower: the sweet spot in green, the marker in white.
+func _draw_cord() -> void:
+	if not (needs_pull and occupied):
+		return
+	_cord.global_rotation = 0.0
+	var at := Vector2(-22, -46)
+	var s := sweet()
+	_cord.draw_rect(Rect2(at - Vector2(1, 1), Vector2(46, 8)), Color(0, 0, 0, 0.7))
+	_cord.draw_rect(Rect2(at, Vector2(44, 6)), Color("5a3030") if _cough > 0.0 else Color("3a3a42"))
+	_cord.draw_rect(Rect2(at + Vector2(44 * s.x, 0), Vector2(44 * (s.y - s.x), 6)), Color("58c048"))
+	if pull >= 0.0:
+		_cord.draw_rect(Rect2(at + Vector2(44 * pull - 1, -2), Vector2(2, 10)), Color.WHITE)
+
+
 ## Damage from what we just drove into: only the moment of contact, and only the
 ## speed INTO the obstacle, counts. Scraping along a wall, or pressing against it,
 ## is free; a head-on smack is not.
@@ -150,6 +227,7 @@ func _check_impacts(velocity_before: Vector2) -> void:
 		_bump_cooldown = 0.4
 		Sfx.play("bump")
 		damage(impact / 25.0)
+		stall_check()
 
 
 func apply_spec(spec: Dictionary) -> void:
@@ -160,6 +238,8 @@ func apply_spec(spec: Dictionary) -> void:
 	body = spec.body
 	_apply_visual()
 	fuel = max_fuel
+	needs_pull = sprite_kind == "petrol" # started by hand, each job
+	gear = 1
 	edge_margin = minf(edge_margin, cut_radius * 0.75)
 
 
@@ -188,21 +268,33 @@ func _physics_process(delta: float) -> void:
 	# true while turning shouldn't creep the mower forward or back.
 	var keys := 0.0 if Game.pad else Input.get_axis("move_back", "move_forward")
 	throttle = clampf(keys + Input.get_axis("reverse", "accelerate"), -1.0, 1.0) if occupied else 0.0
+	sprinting = power == "stamina" and throttle > 0.0 and fuel > 0.0 and Input.is_action_pressed("sprint")
+	if needs_pull:
+		_ripcord(delta)
+	if sprite_kind == "rideon" and occupied:
+		if Input.is_action_just_pressed("gear_up"):
+			gear = mini(gear + 1, GEARS.size())
+		if Input.is_action_just_pressed("gear_down"):
+			gear = maxi(gear - 1, 1)
 	if power == "stamina":
 		if throttle != 0.0:
-			fuel = maxf(0.0, fuel - fuel_burn * delta)
+			fuel = maxf(0.0, fuel - fuel_burn * (SPRINT_BURN if sprinting else WALK_BURN) * delta)
 		else:
 			fuel = minf(max_fuel, fuel + regen * delta)
-	else:
+	elif not needs_pull: # an engine that isn't going burns nothing
 		fuel = maxf(0.0, fuel - fuel_burn * delta)
 	fuel_changed.emit(fuel / max_fuel)
-	var running := fuel > 0.0 and condition > 0.0
+	var running := fuel > 0.0 and condition > 0.0 and not needs_pull
 
 	if occupied:
-		rotation += Input.get_axis("turn_left", "turn_right") * turn_rate * delta
+		var turn: float = turn_rate * (GEAR_TURN[gear - 1] if sprite_kind == "rideon" else 1.0)
+		rotation += Input.get_axis("turn_left", "turn_right") * turn * delta
 
 	var fwd := Vector2.RIGHT.rotated(rotation)
-	var target := throttle * (max_speed if throttle > 0.0 else reverse_speed)
+	var top: float = max_speed * (WALK if power == "stamina" and not sprinting else 1.0)
+	if sprite_kind == "rideon":
+		top = max_speed * GEARS[gear - 1]
+	var target := throttle * (top if throttle > 0.0 else reverse_speed)
 	if not running:
 		target *= empty_speed_scale
 	elif condition < 35.0:

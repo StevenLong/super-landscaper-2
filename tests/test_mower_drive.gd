@@ -6,6 +6,7 @@ extends SceneTree
 var _main: Node
 var _frame := 0
 var _start: Vector2
+var _fuel := 0.0
 
 
 func _initialize() -> void:
@@ -40,6 +41,22 @@ func _physics_process(_delta: float) -> bool:
 		assert(mower.global_position.y >= 0.0, "mower must stay on the lawn")
 		assert(lawn.cut_fraction() > 0.01, "driving should cut grass, got %f" % lawn.cut_fraction())
 		assert(_main.get_node("HUD/Percent").text != "0%", "HUD should show progress")
+		# The push mower walks at 60% of its top speed; held, sprint pushes it flat out and
+		# tires you faster (NOTES 108).
+		mower.apply_spec(root.get_node("Game").MOWERS.push)
+		mower.global_position = Vector2(400, 650)
+		mower.rotation = -PI / 2.0
+		mower.velocity = Vector2.ZERO
+		Input.action_press("move_forward")
+	elif _frame == 660:
+		assert(absf(mower.velocity.length() - mower.max_speed * mower.WALK) < 2.0, "walking: %.0f" % mower.velocity.length())
+		_fuel = mower.fuel
+		Input.action_press("sprint")
+	elif _frame == 720:
+		assert(absf(mower.velocity.length() - mower.max_speed) < 2.0 and mower.sprinting, "sprinting, flat out: %.0f" % mower.velocity.length())
+		assert(_fuel - mower.fuel > 1.4 * mower.fuel_burn, "and tiring fast: %.2f in a second" % (_fuel - mower.fuel))
+		Input.action_release("sprint")
+		Input.action_release("move_forward")
 		print("PASS mower drive")
 		quit()
 	return false

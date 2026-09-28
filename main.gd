@@ -153,6 +153,8 @@ func _ready() -> void:
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
 		lines.append_array(["", "Mow the lawn, then walk up and ask to be paid. Your truck's for leaving."])
 		if Game.jobs_done == 0:
+			if mower.power == "stamina":
+				lines.append("Hold %s to push flat out: it tires you faster." % Game.key("sprint"))
 			lines.append_array(["%s %s at the truck. %s hop off to move" % ["Triggers drive, the stick steers." if Game.pad
 				else "W/S drive, A/D turn.", Game.key("interact"), Game.key("hop")],
 				"stones, fetch fuel or catch a dog. Hold %s to look around. %s pause." % [Game.key("look"), Game.key("pause")]])
@@ -1019,8 +1021,12 @@ func _hint() -> String:
 		if walk != "":
 			return walk
 		return _fired_hint() if customer.fired else ""
+	if mower.needs_pull:
+		return "Hold %s to pull the cord, let go in the green" % ("(RT)" if Game.pad else "[W]") # the throttle: a trigger or a key
 	if at_truck():
 		return Game.key("interact") + " leave   (on foot, walk up to the customer to get paid)"
+	if mower.sprite_kind == "rideon":
+		return "Gear %d   %s up, %s down" % [mower.gear, Game.key("gear_up"), Game.key("gear_down")]
 	return _fired_hint() if customer.fired else ""
 
 

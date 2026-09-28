@@ -1,0 +1,113 @@
+# Each mower's feel (NOTES 109, 110; design doc Mowers and Equipment). The petrol mower
+# starts by ripcord: hold the throttle to draw it while a marker sweeps, let go in the
+# sweet spot and it catches; outside it, a cough and a second lost; the worse its
+# condition, the narrower the spot; in poor condition a knock can stall it. The ride-on
+# has four gears: each a top speed, higher ones turning wider.
+extends SceneTree
+
+var m: Node
+var mower: CharacterBody2D
+var g: Node
+var _step := 0
+var _wait := 0
+var _fuel := 0.0
+
+
+func _initialize() -> void:
+	g = root.get_node("Game")
+	m = load("res://main.tscn").instantiate()
+	m.hedgehog_every = 9999.0
+	m.squirrel_every = 9999.0
+	root.add_child(m)
+	_wait = 2
+
+
+func _physics_process(_delta: float) -> bool:
+	if _wait > 0:
+		_wait -= 1
+		return false
+	match _step:
+		0:
+			mower = m.mower
+			mower.apply_spec(g.MOWERS.petrol)
+			mower.global_position = Vector2(400, 650)
+			mower.rotation = -PI / 2.0
+			assert(mower.needs_pull, "a petrol mower starts by hand each job")
+			assert(m._hint().contains("pull the cord"), "and the hint says how")
+			var good: Vector2 = mower.sweet()
+			mower.condition = 30.0
+			assert(mower.sweet().y - mower.sweet().x < good.y - good.x, "in worse condition the sweet spot is narrower")
+			mower.condition = 100.0
+			_fuel = mower.fuel
+			Input.action_press("move_forward")
+			_wait = int(mower.PULL_TIME * 60.0 * 0.3) # let go too early
+		1:
+			assert(mower.velocity.length() < 1.0 and mower.pull > 0.0, "drawing the cord, it doesn't move")
+			Input.action_release("move_forward")
+			_wait = 2
+		2:
+			assert(mower.needs_pull and mower._cough > 0.0, "let go outside the green: a cough")
+			assert(mower.fuel == _fuel, "an engine that isn't going burns nothing")
+			_wait = int(mower.COUGH * 60.0) + 2
+		3:
+			Input.action_press("move_forward")
+			_wait = int(mower.PULL_TIME * 60.0 * (mower.sweet().x + mower.sweet().y) * 0.5) # into the green
+		4:
+			Input.action_release("move_forward")
+			_wait = 2
+		5:
+			assert(not mower.needs_pull, "let go in the green: it catches")
+			Input.action_press("move_forward")
+			_wait = 30
+		6:
+			assert(mower.velocity.length() > 100.0, "and drives")
+			Input.action_release("move_forward")
+			mower.condition = 80.0
+			mower.stall_check(0.0)
+			assert(not mower.needs_pull, "in good condition a knock doesn't stall it")
+			mower.condition = 30.0
+			mower.stall_check(0.9)
+			assert(not mower.needs_pull, "in poor condition, not every knock...")
+			mower.stall_check(0.1)
+			assert(mower.needs_pull, "...but one can, and it needs the cord again")
+			# The ride-on: four gears.
+			mower.apply_spec(g.MOWERS.rideon)
+			mower.condition = 100.0
+			mower.global_position = Vector2(640, 650)
+			mower.rotation = -PI / 2.0
+			mower.velocity = Vector2.ZERO
+			assert(not mower.needs_pull and mower.gear == 1, "a ride-on starts on the key, in first")
+			Input.action_press("move_forward")
+			_wait = 60
+		7:
+			assert(absf(mower.velocity.length() - mower.max_speed * mower.GEARS[0]) < 2.0, "first gear's top speed: %.0f" % mower.velocity.length())
+			Input.action_press("gear_up")
+			_wait = 1
+		8:
+			Input.action_release("gear_up")
+			assert(mower.gear == 2, "up a gear")
+			_wait = 1
+		9:
+			Input.action_press("gear_up")
+			_wait = 1
+		10:
+			Input.action_release("gear_up")
+			assert(mower.gear == 3 and m._hint().contains("Gear 3"), "and another, shown in the hint")
+			_wait = 60
+		11:
+			assert(absf(mower.velocity.length() - mower.max_speed * mower.GEARS[2]) < 2.0, "third gear's faster: %.0f" % mower.velocity.length())
+			Input.action_press("turn_right")
+			_wait = 10
+		12:
+			Input.action_release("turn_right")
+			Input.action_release("move_forward")
+			assert(mower.GEAR_TURN[2] < mower.GEAR_TURN[0], "higher gears turn wider")
+			Input.action_press("gear_down")
+			_wait = 1
+		13:
+			Input.action_release("gear_down")
+			assert(mower.gear == 2, "and down again")
+			print("PASS mower feel")
+			quit()
+	_step += 1
+	return false

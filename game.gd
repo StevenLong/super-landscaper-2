@@ -164,7 +164,8 @@ const EVENTS := {"dog_bowled": "Bowled the dog over", "dog_returned": "Walked th
 ## in anything else is a personal worst.
 const GOOD_TALLY := ["dog_returned", "fetches", "stones_picked", "stones_binned", "cans"]
 ## Button prompts follow what you last touched: keyboard keys, or an Xbox-style pad.
-const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "B"], "throw": ["Q", "X"], "look": ["Tab", "Y"], "pause": ["Esc", "Start"]}
+const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "B"], "throw": ["Q", "X"], "look": ["Tab", "Y"], "pause": ["Esc", "Start"], "sprint": ["R", "RB"],
+	"gear_up": ["R", "RB"], "gear_down": ["C", "LB"]}
 var pad := false
 
 var best_score := 0

@@ -292,6 +292,20 @@ def door():
     write("door", lowpass(out, 0.25))
 
 
+def cough():
+    """An engine that won't catch: a few ragged pops, dying away."""
+    r = random.Random(9)
+    total = n(0.45)
+    out = [0.0] * total
+    for start, amp in ((0.0, 1.0), (0.09, 0.8), (0.2, 0.55), (0.3, 0.3)):
+        s0 = n(start)
+        for k in range(n(0.07)):
+            if s0 + k < total:
+                t = k / RATE
+                out[s0 + k] += (math.sin(t * 6.283 * 70) + r.uniform(-1, 1) * 0.8) * math.exp(-t * 45) * amp
+    write("cough", lowpass(out, 0.2))
+
+
 def bump():
     total = n(0.15)
     write("bump", lowpass([(noise() * 0.6 + math.sin(i * 6.283 * 70 / RATE)) * env(i, total, 0.001, 0.1) for i in range(total)], 0.2))
@@ -401,6 +415,7 @@ def main():
     siren()
     knock()
     door()
+    cough()
 
 
 if __name__ == "__main__":
