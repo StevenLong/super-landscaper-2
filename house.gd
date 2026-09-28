@@ -20,9 +20,9 @@ const UPSTAIRS := 1000 ## added to a window's x (windows()) for the pane above i
 ## The building by venue: its art, the side building's, its width, and the x of each
 ## ground-floor window (tools/art_sprites.py draws them there).
 const VENUES := {
-	"house": {"art": "house", "side": "garage", "width": 440.0, "windows": [40, 120, 290, 370]},
-	"mansion": {"art": "mansion", "side": "coachhouse", "width": 960.0, "windows": [40, 130, 220, 310, 620, 710, 800, 890]},
-	"graveyard": {"art": "church", "side": "vestry", "width": 440.0, "windows": [50, 130, 280, 360]},
+	"house": {"art": "house", "side": "garage", "width": 440.0, "windows": [40, 120, 290, 370], "door": Rect2(203, -66, 34, 66)},
+	"mansion": {"art": "mansion", "side": "coachhouse", "width": 960.0, "windows": [40, 130, 220, 310, 620, 710, 800, 890], "door": Rect2(458, -72, 44, 72)},
+	"graveyard": {"art": "church", "side": "vestry", "width": 440.0, "windows": [50, 130, 280, 360], "door": Rect2(196, -72, 48, 72)},
 }
 
 var venue := "house":
@@ -42,6 +42,11 @@ var peek_x := -1: ## the window the customer is watching from, or -1
 			if _front:
 				_front.queue_redraw()
 var peek_tex: Texture2D ## the customer's sprite sheet (client.gd), for their head and shoulders at the glass
+var door_open := false: ## the front door stands open (they've answered it)
+	set(v):
+		door_open = v
+		if _front:
+			_front.queue_redraw()
 
 
 func windows() -> Array:
@@ -75,6 +80,14 @@ func patio_point() -> Vector2:
 	if back_patio:
 		return back_patio_rect().get_center() + Vector2(0, -4)
 	return position + Vector2(size.x * 0.5 + 44, size.y - 6)
+
+
+## Where you knock and they answer: the front door's step (the doors are at the middle of
+## every front), or the patio out the back, where the garden is.
+func door_point() -> Vector2:
+	if back_patio:
+		return patio_point()
+	return position + Vector2(size.x * 0.5, WALL_H + 6.0)
 
 
 ## The paving out the back, or nothing.
@@ -113,6 +126,11 @@ func _ready() -> void:
 
 func _draw_house() -> void:
 	_front.draw_texture(_art, Vector2(0, -ART_FOOT))
+	if door_open and not back_patio: # a dark doorway, the door swung in against its frame
+		var d: Rect2 = VENUES[venue].door
+		_front.draw_rect(d, Color("1a1820"))
+		_front.draw_rect(Rect2(d.position, Vector2(5, d.size.y)), Color("5a3a20"))
+		_front.draw_rect(Rect2(d.position + Vector2(5, 0), Vector2(1, d.size.y)), Color("2a1a10"))
 	if peek_x >= 0 and peek_tex:
 		# Head and shoulders at the glass, facing out (the sheet's south row), cut off by the sill.
 		var head := Rect2(9, 2 * 94 + 12, 30, 24) # tools/voxel.py client(): 48 x 94 cells

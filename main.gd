@@ -82,6 +82,8 @@ var _cone_pts := PackedVector2Array()
 var _cone_x := -1 ## the window it was worked out for
 var _carry_seen := "" ## what you're carrying that they've already seen you with
 var _focus: Node2D ## brackets round what interact would do (_draw_focus)
+var _knocking := false ## knocked, waiting for them to answer
+var _where := "patio" ## where the customer was last frame, to hear the door when they go in
 var _out := 0.0 ## seconds the critter in your hands has left out cold (0: awake)
 var _known_bodies := {} ## kind -> bodies they've already seen made or carried: not news later
 var _shake := 0.0
@@ -967,6 +969,7 @@ func _physics_process(delta: float) -> void:
 			_tells.erase(t)
 			spawn_animal(t.kind, t.at, Vector2.INF, t.grace)
 	_cross()
+	_after_door()
 
 
 func _fired_hint() -> String:
@@ -1157,7 +1160,10 @@ func _targets() -> Array[Dictionary]:
 	if _can_rifle():
 		out.append({"at": $Client.position, "hint": "rifle", "act": func() -> void: pass}) # held, see _rifle
 	if near_customer():
-		out.append({"at": $Client.position, "hint": "talk to " + job.customer, "act": open_customer_menu})
+		if customer.where == "patio":
+			out.append({"at": $Client.position, "hint": "talk to " + job.customer, "act": open_customer_menu})
+		else:
+			out.append({"at": _house.door_point() + Vector2(0, -20), "hint": "knock on the door", "act": _knock})
 	if at_truck():
 		out.append({"at": $Truck.position, "hint": "truck", "act": open_truck_menu})
 	if at.distance_to(mower.global_position) < 44.0:
@@ -1395,7 +1401,40 @@ func _on_hose_mowed(at: Vector2) -> void:
 
 ## Close enough to the customer to talk: on foot, by the patio (their door's there too).
 func near_customer() -> bool:
-	return walker != null and not customer.knocked_out and walker.global_position.distance_to($Client.position) < TALK
+	var at: Vector2 = $Client.position if customer.where == "patio" else _house.door_point()
+	return walker != null and not customer.knocked_out and not _knocking and walker.global_position.distance_to(at) < TALK
+
+
+## Knock, and wait: they open the door and stand in it, then you talk. Once the chat's
+## over they step back out onto the patio and the door shuts (_after_door).
+func _knock() -> void:
+	_knocking = true
+	Sfx.play("knock", 0.0)
+	await get_tree().create_timer(0.8).timeout
+	if not is_inside_tree() or over:
+		return
+	customer.come_out()
+	_where = "patio" # answering the door, not stepping out on their own: no door sound
+	_house.door_open = true
+	$Client.position = _house.door_point()
+	$Client.visible = true
+	await get_tree().create_timer(0.35).timeout
+	_knocking = false
+	if is_inside_tree() and not over and not customer.knocked_out:
+		open_customer_menu()
+
+
+## Chat over, they step out of the doorway onto the patio and the door shuts behind them.
+## Going back in off screen, the door's heard shutting.
+func _after_door() -> void:
+	if _house.door_open and not _knocking and not hud.is_open():
+		_house.door_open = false
+		Sfx.play("door")
+		$Client.create_tween().tween_property($Client, "position", _house.patio_point(), 0.6)
+	if customer.where != _where:
+		if _where == "patio" and customer.where != "patio":
+			Sfx.play("door")
+		_where = customer.where
 
 
 ## Walked up to the customer (or knocked, if they're in): ask for your money, or how

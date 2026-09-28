@@ -265,6 +265,33 @@ def yelp():
     write("yelp", lowpass(out, 0.5))
 
 
+def knock():
+    """Three raps on a wooden door."""
+    r = random.Random(7)
+    total = n(0.62)
+    out = [0.0] * total
+    for start in (0.0, 0.2, 0.36):
+        s0 = n(start)
+        for k in range(n(0.09)):
+            t = k / RATE
+            out[s0 + k] += (math.sin(t * 6.283 * 190) * 0.7 + math.sin(t * 6.283 * 430) * 0.3
+                            + r.uniform(-1, 1) * math.exp(-t * 200) * 0.8) * math.exp(-t * 55)
+    write("knock", lowpass(out, 0.3))
+
+
+def door():
+    """A door shutting: the latch clicks, the door thumps into its frame."""
+    r = random.Random(8)
+    total = n(0.35)
+    out = []
+    for i in range(total):
+        t = i / RATE
+        click = r.uniform(-1, 1) * math.exp(-t * 300) * 0.5
+        thump = math.sin(t * 6.283 * 85 * (1 - t)) * math.exp(-max(0.0, t - 0.03) * 22) * (1.0 if t > 0.03 else 0.0)
+        out.append(click + thump + r.uniform(-1, 1) * 0.15 * math.exp(-max(0.0, t - 0.03) * 40) * (t > 0.03))
+    write("door", lowpass(out, 0.25))
+
+
 def bump():
     total = n(0.15)
     write("bump", lowpass([(noise() * 0.6 + math.sin(i * 6.283 * 70 / RATE)) * env(i, total, 0.001, 0.1) for i in range(total)], 0.2))
@@ -372,7 +399,14 @@ def main():
     splash()  # last, so its noise doesn't shift the sounds made before it
     sigh()
     siren()
+    knock()
+    door()
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 1:  # just the named sounds (their own rng, so the rest don't shift)
+        for name in sys.argv[1:]:
+            globals()[name]()
+    else:
+        main()

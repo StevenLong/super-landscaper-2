@@ -1,4 +1,5 @@
-# Talking to the customer: walk up to them (or knock, if they're in) to ask to be paid
+# Talking to the customer: walk up to them (or knock on the door, if they're in: it opens and
+# they stand in it) to ask to be paid
 # or how it's going; the answer includes what they asked for, as does the pause menu.
 # The truck is for leaving.
 extends SceneTree
@@ -32,13 +33,23 @@ func _physics_process(_delta: float) -> bool:
 	match _step:
 		0:
 			m.hop_off()
-			m.walker.global_position = m.get_node("Client").position + Vector2(0, 20)
 			m.customer.where = "inside"
+			m.walker.global_position = m._house.door_point() + Vector2(0, 20)
 			_wait = 2
 		1:
-			assert(m.near_customer() and m._hint().contains("talk to"), "walk up and the hint offers a word")
+			assert(m.near_customer() and m._hint().contains("knock on the door"), "they're in: walk up to the door and knock")
 			m.interact()
-			assert(m.hud.is_open() and m.customer.where == "patio", "knock, and they come out to talk")
+			assert(not m.hud.is_open() and m._knocking, "a knock, then a wait")
+			_wait = 75
+		2:
+			assert(m.hud.is_open() and m.customer.where == "patio", "they answer, and you talk")
+			assert(m._house.door_open and m.get_node("Client").position == m._house.door_point(), "standing in the open doorway")
+			m._on_choice("resume")
+			_wait = 2
+		3:
+			assert(not m._house.door_open, "chat over, they step out and the door shuts")
+			m.interact()
+			assert(m.hud.is_open(), "on the patio now: walk up and talk")
 			var menu := _menu()
 			assert(menu.contains("Ask to be paid") and menu.contains("How am I doing?"), "ask for pay, or how it's going: " + menu)
 			m._on_choice("status")
