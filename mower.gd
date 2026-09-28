@@ -26,6 +26,7 @@ signal bumped(what: Object, impact: float) ## a hard knock into something solid
 @export var empty_speed_scale := 0.35 ## pushing a dead mower
 @export var sprite_kind := "petrol" ## art/mower_<kind>.png: two frames of motion, then empty; a row per facing
 @export var toughness := 1.0 ## damage taken is divided by this
+@export var knock_out := 0.3 ## how often a critter it runs over is knocked out, not splatted: the smaller the mower, the likelier
 @export var body := Vector2(36, 28) ## length x width, as the voxel model is built
 
 @onready var fuel := max_fuel
@@ -153,7 +154,7 @@ func _check_impacts(velocity_before: Vector2) -> void:
 
 func apply_spec(spec: Dictionary) -> void:
 	for k in ["power", "max_speed", "reverse_speed", "accel", "brake", "turn_rate", "cut_radius",
-			"max_fuel", "fuel_burn", "regen", "empty_speed_scale", "toughness"]:
+			"max_fuel", "fuel_burn", "regen", "empty_speed_scale", "toughness", "knock_out"]:
 		set(k, spec[k])
 	sprite_kind = spec.sprite
 	body = spec.body

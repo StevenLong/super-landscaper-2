@@ -1443,6 +1443,13 @@ func _costs() -> float:
 ## The job is over: record it and head back to the board, which shows the rundown.
 func _finish(result: Dictionary) -> void:
 	over = true
+	# What moved your name, line by line, for the summary (result.rep is their sum).
+	var job_rep: float = result.rep + result.get("mischief", 0.0)
+	result.rep_lines = [[{"paid": "The job", "fired": "Fired", "walked": "Drove off unpaid", "ko": "Knocked them out cold",
+		"nicked": "Nicked"}.get(result.outcome, "The job"), job_rep]]
+	if result.get("mischief", 0.0) > 0.0:
+		result.rep_lines.append(["Trouble after they'd settled up", -result.mischief])
+	result.bills = bills
 	var flat := 0
 	for b in $Scenery.get_children():
 		if b.has_method("flattened_count"):
@@ -1458,6 +1465,7 @@ func _finish(result: Dictionary) -> void:
 		result.robbed = floori(robbed)
 		result.net += result.robbed
 		result.rep -= ROB_REP
+		result.rep_lines.append(["Rifled their pockets", -ROB_REP])
 	result.look = job.look
 	result.face = customer.face() if result.outcome != "walked" else "furious"
 	if result.outcome != "ko": # out cold, they find nothing
@@ -2172,8 +2180,27 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF, grace 
 	a.heading = (toward - at).normalized()
 	a.lawn_rect = r
 	a.squashed.connect(_on_squashed)
+	a.run_over.connect(_on_run_over)
 	$Animals.add_child(a)
 	return a
+
+
+## The blades caught it but didn't splat it (smaller mowers, mower.knock_out): out cold,
+## flung clear to the side, and safe from the blades for a moment so this pass can't finish it.
+func _on_run_over(a: Animal, by: Node2D) -> void:
+	a.stun(KO_TIME)
+	a.immune = 1.0
+	var side := Vector2.RIGHT.rotated(by.rotation).orthogonal()
+	if side.dot(a.position - by.global_position) < 0.0:
+		side = -side
+	var to := lawn.keep_in(a.position + side * (by.body.y * 0.5 + 16.0), 6.0)
+	a.create_tween().tween_property(a, "position", to, 0.18).set_ease(Tween.EASE_OUT)
+	Sfx.play("squeak_" + a.kind)
+	shake(2.0)
+	_count("ko_" + a.kind)
+	_mischief(1.0)
+	if customer.on_squash(a.kind, KO_SHARE, a.position):
+		_react()
 
 
 func _on_squashed(a: Animal) -> void:

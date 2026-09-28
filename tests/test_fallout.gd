@@ -21,6 +21,11 @@ func _initialize() -> void:
 	c.paid = true
 	c._change(-200.0)
 	assert(not c.fired, "once paid, you can't be fired")
+	c = Customer.new(g.default_job())
+	c.where = "inside"
+	c.sight = func(_p: Vector2) -> bool: return false
+	var mood := c.mood
+	assert(c.on_dog_returned(Vector2(10, 10)) and c.mood > mood and c.where == "patio", "the dog brought home while they're in: they come out, pleased")
 	_open({})
 
 

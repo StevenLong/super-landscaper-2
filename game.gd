@@ -13,21 +13,21 @@ const MOWERS := {
 		"name": "Push mower", "price": 0, "power": "stamina", "sprite": "push", "body": Vector2(30, 22),
 		"max_speed": 165.0, "reverse_speed": 80.0, "accel": 420.0, "brake": 900.0,
 		"turn_rate": 3.6, "cut_radius": 14.0, "max_fuel": 20.0, "fuel_burn": 1.0,
-		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0, "toughness": 0.8,
+		"regen": 4.0, "empty_speed_scale": 0.4, "fuel_price": 0.0, "toughness": 0.8, "knock_out": 0.7,
 		"blurb": "Legs for an engine. Narrow, nimble.",
 	},
 	"petrol": {
 		"name": "Petrol mower", "price": 180, "power": "fuel", "sprite": "petrol", "body": Vector2(36, 28),
 		"max_speed": 220.0, "reverse_speed": 110.0, "accel": 600.0, "brake": 900.0,
 		"turn_rate": 3.0, "cut_radius": 16.0, "max_fuel": 60.0, "fuel_burn": 1.0,
-		"regen": 0.0, "empty_speed_scale": 0.35, "fuel_price": 0.25, "toughness": 1.0,
+		"regen": 0.0, "empty_speed_scale": 0.35, "fuel_price": 0.25, "toughness": 1.0, "knock_out": 0.3,
 		"blurb": "Faster, wider. Burns fuel nonstop.",
 	},
 	"rideon": {
 		"name": "Ride-on mower", "price": 650, "power": "fuel", "sprite": "rideon", "body": Vector2(52, 40),
 		"max_speed": 300.0, "reverse_speed": 120.0, "accel": 340.0, "brake": 520.0,
 		"turn_rate": 1.9, "cut_radius": 26.0, "max_fuel": 80.0, "fuel_burn": 1.5,
-		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25, "toughness": 2.0,
+		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25, "toughness": 2.0, "knock_out": 0.0,
 		"blurb": "Huge cut. Turns like a barge.",
 	},
 }
@@ -157,6 +157,9 @@ const TALLY := {
 	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
 	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",
 }
+## What can only happen once a job: shown as the event, never a count or a record.
+const EVENTS := {"dog_bowled": "Bowled the dog over", "dog_returned": "Walked the dog home",
+	"knockouts": "Knocked the customer out cold", "robberies": "Rifled their pockets", "hoses_mowed": "Cut the hose"}
 ## The counts it's good to beat: a record in one of these is a personal best. A record
 ## in anything else is a personal worst.
 const GOOD_TALLY := ["dog_returned", "fetches", "stones_picked", "stones_binned", "cans"]
@@ -404,7 +407,7 @@ func tally_lines(counts: Dictionary, costs: Dictionary, beaten: Array = []) -> A
 	var out: Array[String] = []
 	for k: String in TALLY:
 		if counts.get(k, 0) > 0:
-			var line := "%s %d" % [TALLY[k], counts[k]]
+			var line: String = EVENTS[k] if EVENTS.has(k) else "%s %d" % [TALLY[k], counts[k]]
 			if costs.get(k, 0.0) > 0.0:
 				line += " (-$%d)" % roundi(costs[k])
 			if k in beaten:
@@ -435,6 +438,8 @@ func record_result(result: Dictionary) -> void:
 	# Counts past your old record for a job (not firsts: everything's a first once).
 	result.records = []
 	for k: String in result.get("tally", {}):
+		if EVENTS.has(k):
+			continue # once a job: nothing to beat
 		if records.get(k, 0) > 0 and result.tally[k] > records[k]:
 			result.records.append(k)
 		records[k] = maxi(records.get(k, 0), result.tally[k])

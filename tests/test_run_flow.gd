@@ -58,7 +58,8 @@ func _process(_delta: float) -> bool:
 			assert(not tally[0].text.contains("Hedgehogs"), "and nothing that didn't happen")
 			assert("After you left, the customer noticed:" in labels and labels.any(func(t: String) -> bool: return t.contains("Every blade cut")),
 				"what they found after you'd gone: every blade cut")
-			assert(labels.any(func(t: String) -> bool: return t.begins_with("Word gets round")), "with the total")
+			assert("Money" in labels and "Reputation" in labels and "Net" in labels and "All told" in labels, "two books, a total each")
+			assert(labels.count("All told") == 1 and not labels.any(func(t: String) -> bool: return t.begins_with("Reputation ")), "one reputation total, not two")
 			current_scene.find_child("Continue", true, false).pressed.emit()
 		5:
 			assert(current_scene.name == "Board", "then the board")

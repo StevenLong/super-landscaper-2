@@ -8,6 +8,7 @@ extends Area2D
 ## leaves a body, belly up, until someone moves it or mows it.
 
 signal squashed(animal: Animal)
+signal run_over(animal: Animal, mower: Node2D) ## knocked out by the blades, not splatted (main flings it clear)
 
 @export var kind := "hedgehog"
 @export var speed := 40.0
@@ -19,6 +20,7 @@ var grace := 0.0 ## seconds before obstacles count (a squirrel climbing down a t
 var heading := Vector2.RIGHT
 var dead := false ## squashed: the splat is main's, this node is on its way out
 var out := 0.0 ## seconds left knocked out
+var immune := 0.0 ## seconds a mower can't hurt it: just knocked clear of one
 var on_plot := true ## on the property, not out next door (main._cross)
 var visited := true ## has been in the garden: once it wanders off out of sight, it's gone
 var body := false ## killed by a stone, not the blades: intact, lying there
@@ -41,6 +43,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_t += delta
+	immune = maxf(0.0, immune - delta)
 	if dead or body:
 		return
 	if out > 0.0:
@@ -81,6 +84,11 @@ func _on_body_entered(b: Node2D) -> void:
 			return # lying there: it can't get out of the way, but a stopped mower can't hurt it
 		# A stopped mower is just an obstacle: turn back the way we came.
 		heading = -heading
+		return
+	if immune > 0.0:
+		return
+	if not body and randf() < b.knock_out:
+		run_over.emit(self, b)
 		return
 	squash()
 

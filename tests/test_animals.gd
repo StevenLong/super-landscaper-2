@@ -7,6 +7,7 @@ var _mower: CharacterBody2D
 var _frame := 0
 var _walker: Animal
 var _victim: Animal
+var _start := Vector2.ZERO
 var _bouncer: Animal
 var _walker_start: Vector2
 
@@ -34,6 +35,7 @@ func _physics_process(_delta: float) -> bool:
 		# Drive at a hedgehog.
 		_mower.global_position = Vector2(300, 400)
 		_mower.rotation = 0.0
+		_mower.knock_out = 0.0 # always the splat (a ride-on)
 		_victim = _main.spawn_animal("hedgehog", Vector2(420, 400), Vector2(420, 401))
 		_victim.speed = 0.0
 		Input.action_press("move_forward")
@@ -52,6 +54,20 @@ func _physics_process(_delta: float) -> bool:
 		_main._on_stone_landed(f, "animal")
 		f.free()
 		assert(_walker.dead or _walker.out > 0.0, "and the critter it hit is the one hit (splatted, or now and then out cold)")
+		# A small mower knocks one out instead: flung clear to the side, and safe from the
+		# blades for a moment, so the same pass can't finish it.
+		_mower.knock_out = 1.0
+		_mower.global_position = Vector2(300, 480)
+		_mower.rotation = 0.0
+		_victim = _main.spawn_animal("hedgehog", Vector2(420, 480), Vector2(420, 481))
+		_victim.speed = 0.0
+		_start = _victim.position
+		Input.action_press("move_forward")
+	elif _frame == 270:
+		Input.action_release("move_forward")
+		assert(not _victim.dead and _victim.out > 0.0, "run over by a small mower: knocked out, not splatted: dead %s out %s at %s mower %s" % [_victim.dead, _victim.out, _victim.position, _mower.global_position])
+		assert(absf(_victim.position.y - _start.y) > 20.0, "and flung out from under the deck")
+		assert(_main.tally.get("ko_hedgehog", 0) == 1 and _main.tally.get("squashed_hedgehog", 0) == 1, "counted as a knockout")
 		print("PASS animals")
 		quit()
 	return false

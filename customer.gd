@@ -249,9 +249,11 @@ func on_dog_hit() -> void:
 
 
 ## Returns true if they saw it.
+## Their dog brought home. Indoors, it scratches at the door and they come out: they
+## get their dog back either way, so they always know.
 func on_dog_returned(at := Vector2.INF) -> bool:
 	if not sees(at):
-		return false
+		come_out()
 	_change(10.0)
 	_react("delighted", 2.0, "Oh, thank you! Bad %s!" % job.get("dog_name", "dog"))
 	return true
