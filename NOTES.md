@@ -102,8 +102,8 @@ Built in session 12 (unplayed, see CHECKS.txt): 141 to 146, 148 to 154, 156, 157
 Also: S11-HEAP's target brackets stay for now; the dev is unsure of the look, to soak.
 S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
 
-PROPOSED ORDER: play session 12's checks; grill 160; then the text pass (159) with 158 in
-it; 155 when it's caught on screen.
+PROPOSED ORDER: grill 160 (the dev's pick); then the text pass (159) with 158 in it; play
+the S12 checks; 155 when it's caught on screen.
 
 ### Grilled 2026-09-27 (91: packing the truck, robot mowers, how each mower plays)
 

@@ -6,6 +6,43 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 12 (2026-09-28): the S11 checks triaged and built, no witness no heat
+- All 24 S11 checks answered. Passed as written: S11-ARC ("much better"), S11-HOLE, S11-OVER,
+  S11-LEAD, S11-DOOR, S11-DOGHOME, S11-HOUSE (the look), S11-MOTOR, S11-PUSH (pace right),
+  S11-STALL, S11-ENGINE, S11-RUNOVER, S11-PAD, S11-BOARD, S11-SPAWN (nothing stuck since;
+  the dev will say if it returns). S11-HEAP: brackets stay, the dev is unsure of the look.
+  S11-GEARS: feels worse to drive, maybe rightly (it was overpowered); noted on NOTES 140.
+  The rest, plus a notes dump, became NOTES 141 to 161 (591d64f).
+- The dev's calls (promoted to the design doc, 6fab5b0, vetoable): no witness, no heat
+  (seen, heard, or a neighbour for a robbery); a critter a customer wants hurt is no crime
+  whatever it hits, bar them, their car, window or dog; a critter thrown out in their sight
+  moves mood by 40% of its death; the loose hose piece; an engine run dry dies and wants
+  restarting; the greyed portrait eases and says UNSEEN; buildings never fade (chimneys).
+- My calls (vetoable): a broken pane counts as their window; a cut-off hose piece can't be
+  cut again (a `ponytail:` in hose.gd); an empty mower is still pushable; the ripcord's cord
+  and PULL; wording for UNSEEN, PULL, "Out of petrol" until the text pass.
+- Built (a39ec5f, unplayed): 141 to 146, 148 to 154, 156, 157, 161. The manor lag measured:
+  `_show_cone()` 190 ms worst per window change, now 6 ms (headless timing, a test guards it).
+- New gate: run_all copies `tests/strict.cfg` to `override.cfg`, so every GDScript warning
+  fails the tests (the editor's parse step never saw warnings). It found three more the
+  editor hadn't shown (summary.gd, two tests).
+- Text pass prep: `docs/TEXT.md` from `tools/text_inventory.py`, 417 lines by script and
+  function. The dev's format for it: line by line together, I show the scenario and the
+  current text, they reword and give variants.
+- 155 (the briefing in a weird spot) not reproduced: screen-centre in a 1280x720 window.
+- Verified: run_all green (parse, smoke, 32 tests) under the strict gate; new or extended
+  tests venues (cone timing), critters (heat and eviction), stunned (bodies), fuel, fired,
+  talk, hose (loose piece), fallout (wall drop). Screenshotted and looked at: UNSEEN, the
+  ripcord cord, the ha-ha corner, the L notch join. Not measured: anything by feel.
+
+OWED CHECKS: 16, in CHECKS.txt (3 loads, about 40 minutes).
+
+NEXT:
+1. /grill on 160 (a season calendar of regular clients: the dev's pick for next).
+2. The text pass (159, with 158's "All told"), line by line with the dev.
+3. Play the S12 checks; triage.
+4. Then 140's retune if play agrees, 106 and 107; grills on 137, 136, 147 with 94 and 100, 96.
+
 ## Session 11 (2026-09-28): the S9 and S10 checks triaged and built, each mower's feel
 - All 28 checks answered. Passed as written: S9-HEAD, S9-HEDGEHOG, S9-GRIT, S9-CAR, S9-TREES,
   S9-VICAR ("better"), S10-TERRACE, S10-SEMI, S10-SIGHT, S10-CONE, S10-UNSEEN, S10-CHURCH.
@@ -299,34 +336,3 @@ NEXT:
 2. Play CHECKS.txt whenever.
 3. A `/grill` on the queued design items: 21 (escalation, the biggest), 22, 25, 26, 27,
    29, 38, 40, plus 56 (obstacle rules).
-
-## Session 4 (2026-09-25): every buildable NOTES item, the street, the tally, classifieds
-- Your session-3 answers: 9 of 12 signed off (title flip, WASD, stamina, face duck, paid
-  menu, cheats, spite, glug, stones). Three became NOTES 41-43 and are now built: pad A in
-  menus (Godot's ui_accept has no pad button), pond splash (the hit test ignored hop height),
-  reactions at the portrait.
-- Your calls this session: talking mouth as a second face frame; garage attached left or
-  right with the drive to it, truck at the kerb (more variety later, NOTES 46); ads read as
-  ads with the customer's gimmick blended in; the tally shows only non-zero counts, as a
-  surprise. Promoted to the design doc (veto any): street layout, reactions at the
-  portrait, classifieds, the tally (game-dev 4322d86).
-- My calls, flagged for your veto: trees went 3/4 (visible trunk, only the trunk is solid,
-  canopy fades near you); the fired banner reads YOU'RE FIRED; the corner face no longer
-  ducks, because with the camera always centred you can never be near it (it was your option
-  b in session 3).
-- Also built: splats that last and a red trail, spawn tells (rustle and leaves 0.9s before),
-  a dog lead and hints, smashed windows, 16px critter hits, stones at your mower/trees/beds,
-  title music/sound toggles, softer menu blips.
-- New notes from you: 44 (one view for everything? a feel check), 45 (audio grates and
-  leans NES not SNES; synth in the tool or real samples is your call after a listen).
-- Verified: run_all green (16 checks; new test_street, test_tells, test_title); screenshots
-  of every visual change; sim_balance after the trees and the street stays in the same
-  range (push 85% 278s, petrol 189s, ride-on 130s). None of it played or listened to.
-
-OWED CHECKS: CHECKS.txt (15 checks, four loads, about 20 min). S1-PAD is now S4-PAD-MENUS.
-
-NEXT:
-1. Play CHECKS.txt and answer on the `>` lines. S4-VIEW and S4-AUDIO feed 44 and 45.
-2. A `/grill` session on the queued design items: 21 (escalation, the biggest), 22, 25, 26,
-   27, 29, 38, 40.
-3. 46, more layout variety, whenever a build session wants something concrete.
