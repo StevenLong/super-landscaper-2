@@ -14,52 +14,61 @@ S9-ARC
 Pick up a stone and HOLD throw. Up/down tilt the throw: a little white sight by your hand
 tilts and the ring moves. Let go: the stone flies in an arc, its shadow along the ground,
 and lands on the ring. Does the tilt speed feel right?
->
+>I have more in my notes about this.
+
+While the tilting seems to actually work, there's a couple of issues with it and things I would like to change:
+
+1. I think we should try having the full guideline show you exactly where the stone will go. Currently, it is difficult to tell what the stone will do when it's being thrown. For example, if I'm trying to hit an upstairs window on the house, the target can be placed exactly on the window, but the stone will still crash into the very bottom of the house.
+2. I'm not sure if this behavior is a bug or if the visuals just aren't explaining well what is happening. If possible, I think both the target and the guide should show where the stone is actually going to go.
 
 S9-LOB
 Throw low at the side fence: it bounces back into the garden. Lob it high: it clears the
 fence and is gone. Lob one over the customer's head on the patio: it misses them.
->
+>The stone vanishes the moment it leaves the plot. I'd rather it kept existing and just landed out there. 
 
 S9-HOUSE
 Throw high at the house: an upstairs window breaks. Higher still: it lands on the roof,
 clatters, and drops off the gutter in front of the house.
->
+>It took me quite a few tries to get it to actually hit a window. It was possible, but it was done through trial and error rather than knowing what I was doing. It does bounce off walls and stuff now. It makes a weird noise when it hits the house. As I said in my notes, I think it might be the customer getting mad about it from inside the house. I tried several times to throw it onto the roof. I could not manage with the way it is currently. 
+
+I tried once in the church, and the stone seemed to instantly vanish, but I presume it went out of bounds. It's a similar issue to what I described above.
 
 S9-HEAD
 Tilt all the way up and tap throw: it comes straight back down on your head. OW, stars.
->
+>yes
 
 S9-FETCH
 With the dog at your feet, throw the ball: it sails past the dog, and the dog fetches it.
->
+>There is an issue with how this works because the leash attaches automatically. You can't actually throw the ball for the dog a second time. Attaching the leash should be an active thing.
 
 S9-HEDGEHOG
 Grab a hedgehog bare-handed: it's in your hands for a moment before the OW.
->
+>Yes.
 
 S9-KO
 Throw stones at critters. Mostly they're knocked out: on their side with stars, then they
 get up and run. Now and then one dies: an intact body, belly up, no splat. Does a body
 read as dead, and different from knocked out?
->
+>This works well, as I noted in my notes: knocking out a hedgehog (and possibly other creatures) and then picking them up. 
+
+The hedgehog, at least, hurts you and then is conscious again when it goes back on the ground. It should still hurt you, but it should remain unconscious. As should other creatures
 
 S9-BODY
 Pick a body up. Lob it over the fence, or put it in the truck, or mow it (mulch, no
 splat). Kill one while the customer is inside and hide it: nothing is ever said. Leave
 one lying in view: they come out and still say nothing, but after you leave the summary
 screen lists "A dead hedgehog on the lawn".
->
+>Yes, except the same problem with the stones: when you launch it over the wall, it vanishes.
 
 S9-GRIT
 Mow some stones: the ones that don't fly off leave a puff of grey grit.
->
+>yes
 
 S9-HOSE
 The hose is orange, on a brass tap at the side of the house. Pick it up by the end and
 drag it: it follows, and stops you at its length. Grab it near the tap: you can't take it
 as far. Mow it: cut there, the far end shredded, a puddle, "My HOSE!".
->
+>See my notes on this
 
 
 ================================================================================
@@ -71,18 +80,25 @@ Hop off and walk up to the customer: "[E] talk to ...". "How am I doing?": their
 what they said at the briefing, and a "Wants it: ..." line. The pause menu shows that too.
 Mow, then ask to be paid there, face to face. The truck only offers leaving. Try it while
 they're indoors: they come out to the door.
->
+>This works, but summoning them back outside is a little weird. It seems like you have to interact with the space where they were standing, rather than the door itself, and you don't see them materialize until after the window is closed.
+
+We might want to add some kind of door opening and closing moment so that:
+
+1. There is an audio cue when they are off-screen to tell you they have gone back inside.
+2. You have to do an actual knock on the door, then the door opens, the customer is standing in the doorway, and then the dialogue box opens.
 
 S9-BOARD
 After a messy job: the board's header is on two rows and nothing runs off the right side.
 On the summary screen before it, the counts scroll along as a ticker. Do more of something than your previous record (windows,
 flowers) and it says PERSONAL WORST (or BEST for dogs walked home, balls fetched).
->
+>This works, but it makes me realize something: some things can only happen once, so counting them is weird. 
+
+It seems like there can only be one hose, so you can only run over the hose once. The dog only seems to come out once, so it can only be returned once. You can only knock the customer out once, I think.
 
 S9-CAR
 Bump the customer's car slowly: a dent bill, no WANTED. Ram it at full speed on the petrol
 or ride-on: dent bill and WANTED.
->
+>Yes
 
 
 ================================================================================
@@ -92,16 +108,16 @@ LOAD 3 of 3: CHURCHYARD, TREES, PAD      (about 6 min)
 S9-VICAR
 [4] down to a "Churchyard" ad: it says "Ring the vicarage". The customer is "Reverend ...",
 black shirt and white collar. Squash something: "May God forgive you" or "Lord have mercy!".
->
+>Better
 
 S9-TREES
 Walk under a tree so its canopy fades: the trunk forks into branches, no flat cut.
->
+>yes
 
 S9-PAD
 (If a pad is handy.) On the mower: right trigger drives, left trigger reverses, the stick
 steers.
->
+>Yes, I think we need to lose forward and backwards off the controller stick as drive and reverse. It's difficult with the stick to not accidentally be pushing slightly forwards or backwards while trying to drive using the triggers.
 
 
 ================================================================================
@@ -113,18 +129,18 @@ Reputation under 40 ([4] a few times): a "Long garden, terraced house." ad. The 
 at the road end with a gravel passage down its side, a long thin garden behind, and the
 customer on a patio out the back. Terraces either side, sometimes a council playground.
 Mow it: do the long garden and the walk back for fuel feel fair against their patience?
->
+>Yes
 
 S10-SEMI
 Reputation 40 to 70: the house stands forward with its garage and drive, a back garden
 behind, the patio out back, the neighbours set forward too. Stand just behind the roof's
 ridge: the house fades.
->
+>yes
 
 S10-L
 Reputation 70 or more ([2] a few times): next door's back corner is cut into the garden,
 fenced on two sides, by the house. You can't get in. A stone thrown into it is gone.
->
+>Critters are getting stuck in the spawn walls of this level.
 
 
 ================================================================================
@@ -136,21 +152,32 @@ Reputation 75 or more, a "Country estate" ad. First look: does it read as a stat
 home, not a McMansion? Railings and shut gates on the road, the approach up the middle,
 the truck at a side gate by the coach house, a loop drive or forecourt, box-edged beds,
 topiary in pairs, a back lawn, parkland with no neighbours.
->
+>It's still a bit McMansiony, to be honest. It should be more of a stone-style building, like in the things I sent you. I think we should really lean into the over-the-top grandeur of the place.
+
+There is also a lot of weird stuff with the roof:
+
+1. Translucency and the Lawn:
+The roof does go translucent, but there is no lawn behind it, so we're doing that for nothing. Either we actually put a lawn back there that you have to get to, or we just make it solid. If you can't see the ground there, you shouldn't be able to go there.
+2. Roof Edges and Corners:
+The roof is angled at the edges, and there is grass you cannot reach in those cutout triangle corners.
 
 S10-TOPIARY
 Knock into a topiary: a chunk comes out, -$60, "My TOPIARY!". Knock it again: nothing more.
->
+>The topiary looks very strange. I am not sure what it is supposed to be. A little bubble in it pops when you hit it.
 
 S10-HAHA
 Throw a stone low at a side or back edge of the manor: it drops into the ditch and is
 gone, no bounce. Low at the road railings: it bounces back.
->
+>I actually didn't realize this was what you had drawn; I thought it was a broken hedge. Whatever it is supposed to look like, it doesn't really look like that. 
+
+When I throw a stone low at it, the stone vanishes as soon as it gets to the wall. Maybe it's sliding under the sprite, or maybe it's the same as in the other levels where when it leaves the plot, it just vanishes. 
+
+But yeah, this isn't really reading as I think you were hoping.
 
 S10-CHURCH
 Reputation under 20, a churchyard: the church to one side, walled off behind, a lychgate
 over the path with the truck at it, headstones leaning more towards the edges.
->
+>yes, see notes about the bad walls
 
 
 ================================================================================
@@ -160,26 +187,26 @@ LOAD 6 of 6: WHO SEES WHAT      (about 12 min, any garden)
 S10-SIGHT
 With the customer on the patio, go behind the house, the garage, the car or the truck:
 their portrait greys. Step back into view: it's normal again.
->
+>yes
 
 S10-CONE
 When they're at a window: a faint lit wedge on the ground in front of it. Outside the
 wedge their portrait greys. Is the wedge easy to see, without being loud?
->
+>yes
 
 S10-UNSEEN
 While their portrait is grey, flatten some flowers and mow a gnome: no reaction. They
 step outside: still nothing. Finish and leave: a summary screen lists "After you left,
 the customer noticed:" with the gnome and the flowers, a reputation for each and a total.
->
+>yes
 
 S10-CARRY
 Kill a critter while unseen, pick up the body and walk into their sight: they react at
 once.
->
+>I can't seem to actually get a dead but not exploded critter, so I can't test. Could it be that OKs with the mower insta-splat the critters? We might need some i-frames for them and knockback. I can't aim the rocks well with the current throw and throwing the critters seems to never result in a OK or kill.
 
 S10-SUMMARY
 After any job, the summary screen: the job's card, the ticker, the noticed list (if
 anything), then "Back to the board". Does the card's "Reputation" line read as at odds with
 the list's "all told" total?
->
+>The two reputation locations make it confusing what the actual final total is. We should probably list the money changes and its total, and the reputation changes and its final total, grouped in more distinct ways or areas.
