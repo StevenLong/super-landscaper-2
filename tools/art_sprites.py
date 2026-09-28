@@ -813,17 +813,6 @@ def cone():
     return c
 
 
-def hose():
-    """A coiled garden hose with a brass nozzle. Mowed, it leaks."""
-    c = Canvas(18, 12)
-    for r in (7.5, 5.5, 3.5):
-        shaded_ellipse(c, 9, 6, r, r * 0.62, HOSE)
-        shaded_ellipse(c, 9, 6, r - 1.2, (r - 1.2) * 0.62, HOSE[:2])
-    c.rect(14, 2, 3, 2, YELLOW[3])                        # nozzle
-    c.outline(INK)
-    return c
-
-
 def ball():
     """A tennis ball: the dog fetches it."""
     c = Canvas(7, 7)

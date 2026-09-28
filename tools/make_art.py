@@ -217,7 +217,6 @@ def main(only=None):
             save("gnome", a.gnome(), 6),
             save("flamingo", a.flamingo(), 6),
             save("cone", a.cone(), 6),
-            save("hose", a.hose(), 6),
             save("ball", a.ball(), 6),
             save("rock", a.rock(), 4),
             save("urn", a.urn(), 6),
