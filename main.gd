@@ -2152,8 +2152,8 @@ func _tell(kind: String) -> void:
 	var spot := _spawn_spot(kind)
 	if spot.is_empty():
 		return
-	if spot.grace <= 0.0:
-		spawn_animal(kind, spot.at).visited = false # not gone till it has been in
+	if spot.grace <= 0.0: # straight in over its edge, not along behind the house
+		spawn_animal(kind, spot.at, spot.edge + spot.inward * 150.0).visited = false # not gone till it has been in
 		return
 	_tells.append({"kind": kind, "at": spot.at, "grace": spot.grace, "left": TELL})
 	_rustle(spot.at, spot.inward)
@@ -2270,6 +2270,8 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF, grace 
 			return null
 		at = spot.at
 		grace = spot.grace
+		if spot.has("edge") and toward == Vector2.INF:
+			toward = spot.edge + spot.inward * 150.0
 	if toward == Vector2.INF:
 		for i in 10:
 			toward = Vector2(randf_range(r.position.x, r.end.x), randf_range(r.position.y, r.end.y))

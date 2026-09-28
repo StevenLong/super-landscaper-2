@@ -54,15 +54,17 @@ func _spawn_batch() -> void:
 	for i in 24:
 		var a: Animal = m.spawn_animal("hedgehog" if i % 2 == 0 else "squirrel")
 		if a:
-			a.visited = false
 			_spawned.append(a)
 	assert(_spawned.size() > 0, "critters come")
 	_wait = 600
 
 
 func _check_batch(where: String) -> void:
-	var stuck := _spawned.filter(func(a: Animal) -> bool: return is_instance_valid(a) and not a.visited)
-	assert(stuck.size() <= _spawned.size() / 6, "%s: %d of %d critters never got in: %s" % [where, stuck.size(), _spawned.size(),
+	# Stuck is what the dev saw: at the boundary, never getting in (spinning in a wall). One
+	# still out past it, far off, is walking in or has wandered off next door.
+	var stuck := _spawned.filter(func(a: Animal) -> bool:
+		return is_instance_valid(a) and not a.visited and not a.on_plot and a.position.distance_to(m.lawn.keep_in(a.position, 0.0)) < 40.0)
+	assert(stuck.is_empty(), "%s: %d of %d critters stuck at the boundary: %s" % [where, stuck.size(), _spawned.size(),
 		stuck.map(func(a: Animal) -> String: return "%s at %s" % [a.kind, a.position])])
 
 

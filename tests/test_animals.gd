@@ -8,6 +8,7 @@ var _frame := 0
 var _walker: Animal
 var _victim: Animal
 var _start := Vector2.ZERO
+var _ko0 := 0
 var _bouncer: Animal
 var _walker_start: Vector2
 
@@ -62,12 +63,13 @@ func _physics_process(_delta: float) -> bool:
 		_victim = _main.spawn_animal("hedgehog", Vector2(420, 480), Vector2(420, 481))
 		_victim.speed = 0.0
 		_start = _victim.position
+		_ko0 = _main.tally.get("ko_hedgehog", 0) # the stone above may have knocked one out too
 		Input.action_press("move_forward")
 	elif _frame == 270:
 		Input.action_release("move_forward")
 		assert(not _victim.dead and _victim.out > 0.0, "run over by a small mower: knocked out, not splatted: dead %s out %s at %s mower %s" % [_victim.dead, _victim.out, _victim.position, _mower.global_position])
 		assert(absf(_victim.position.y - _start.y) > 20.0, "and flung out from under the deck")
-		assert(_main.tally.get("ko_hedgehog", 0) == 1 and _main.tally.get("squashed_hedgehog", 0) == 1, "counted as a knockout")
+		assert(_main.tally.get("ko_hedgehog", 0) == _ko0 + 1 and _main.tally.get("squashed_hedgehog", 0) == 1, "counted as a knockout")
 		print("PASS animals")
 		quit()
 	return false
