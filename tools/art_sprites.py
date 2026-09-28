@@ -139,7 +139,7 @@ def facade(c, x, y0, w, h):
     """Cream render with faint courses and a brick plinth, y0 top to y0 + h foot."""
     for y in range(y0, y0 + h):
         for x_ in range(x, x + w):
-            c.px[y][x_] = CREAM[2] if (y - y0) % 9 == 8 else (CREAM[3] if (x_ + y) % 17 else CREAM[2])
+            c.px[y][x_] = CREAM[2] if (y - y0) % 9 == 8 else CREAM[3]
     for y in range(y0 + h - 10, y0 + h):
         for x_ in range(x, x + w):
             c.px[y][x_] = BRICK[2] if ((x_ + (4 if (y // 3) % 2 else 0)) % 8) and y % 3 else BRICK[1]

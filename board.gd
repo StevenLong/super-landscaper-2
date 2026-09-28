@@ -15,8 +15,11 @@ func _ready() -> void:
 	_build()
 
 
-func _build() -> void:
+## Lay the board out. `keep`: the shop row you just bought or sold in, which keeps the
+## cursor instead of it jumping back to the top.
+func _build(keep := "") -> void:
 	for c in get_children():
+		remove_child(c)
 		c.queue_free()
 	var bg := ColorRect.new()
 	bg.color = UI.BG
@@ -75,6 +78,12 @@ func _build() -> void:
 	shop.add_child(UI.label("Upgrades", 30))
 	for key: String in Game.UPGRADES:
 		shop.add_child(_upgrade_row(key))
+	var kept := find_child(keep, true, false) if keep != "" else null
+	if kept:
+		for b: Button in kept.find_children("*", "Button", true, false):
+			if not b.disabled:
+				first = b
+				break
 	if first:
 		UI.focus(first)
 
@@ -118,18 +127,20 @@ func _mower_row(key: String) -> Control:
 	if key in Game.owned:
 		var use := UI.button("Use", func() -> void:
 			Game.equipped = key
-			_build(), 18)
+			_build(key), 18)
 		use.disabled = Game.equipped == key
 		row.add_child(use)
 		if key != "push":
-			row.add_child(_sell_button(key, _build))
+			row.add_child(_sell_button(key, _build.bind(key)))
 	else:
 		var buy := UI.button("Buy $%d" % m.price, func() -> void:
 			Game.buy(key)
-			_build(), 18)
+			_build(key), 18)
 		buy.disabled = Game.money < m.price
 		row.add_child(buy)
-	return UI.panel(row)
+	var p := UI.panel(row)
+	p.name = key # _build(key) finds the row again
+	return p
 
 
 func _upgrade_row(key: String) -> Control:
@@ -141,14 +152,16 @@ func _upgrade_row(key: String) -> Control:
 	info.add_child(UI.label(u.blurb, 20, UI.DIM))
 	row.add_child(info)
 	if key in Game.upgrades:
-		row.add_child(_sell_button(key, _build))
+		row.add_child(_sell_button(key, _build.bind(key)))
 	else:
 		var buy := UI.button("Buy $%d" % u.price, func() -> void:
 			Game.buy(key)
-			_build(), 18)
+			_build(key), 18)
 		buy.disabled = Game.money < u.price
 		row.add_child(buy)
-	return UI.panel(row)
+	var p := UI.panel(row)
+	p.name = key # _build(key) finds the row again
+	return p
 
 
 ## Playtest cheats, debug builds only: [1] adds $500, [2] adds 20 reputation and [4]

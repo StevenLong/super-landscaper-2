@@ -35,6 +35,7 @@ const KO_SHARE := 0.4 ## how much a knockout upsets the customer, against a deat
 ## flung by the blades it mostly splats (else knocks out). Chances of the first outcome.
 const THROWN_KO := 0.8
 const FLUNG_SPLAT := 0.75
+const DOG_REACH := 26.0 ## how close to the dog you must be to put the lead on
 const CRITTER_HIT := 16.0 ## how close a thrown stone must pass to hit a critter (they're small and moving)
 const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
@@ -145,7 +146,7 @@ func _ready() -> void:
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
 		lines.append_array(["", "Mow the lawn, then walk up and ask to be paid. Your truck's for leaving."])
 		if Game.jobs_done == 0:
-			lines.append_array(["%s %s at the truck. %s hop off to move" % ["Stick drives and turns." if Game.pad
+			lines.append_array(["%s %s at the truck. %s hop off to move" % ["Triggers drive, the stick steers." if Game.pad
 				else "W/S drive, A/D turn.", Game.key("interact"), Game.key("hop")],
 				"stones, fetch fuel or catch a dog. Hold %s to look around. %s pause." % [Game.key("look"), Game.key("pause")]])
 		hud.open(job.customer, lines, [["start", "Let's go"]], job.look, "neutral")
@@ -987,23 +988,23 @@ func _hint() -> String:
 			return Game.key("interact") + " pick up the " + _thing(near.kind)
 		if _hose and _hose.nearest(walker.global_position) > 0:
 			return Game.key("interact") + " pick up the hose"
+		if dog and is_instance_valid(dog) and not dog.limping and not dog.held:
+			if dog.following == walker:
+				return "Walk %s back to the patio   %s pick them up" % [job.dog_name, Game.key("interact")]
+			if walker.global_position.distance_to(dog.position) < DOG_REACH:
+				return "%s put %s on the lead" % [Game.key("interact"), job.dog_name]
 		if _critter_near(walker.global_position):
 			return Game.key("interact") + " pick up the " + _critter_near(walker.global_position).kind
 		if _can_rifle():
 			if Input.is_action_pressed("interact") and robbed > 0.0:
 				return "Rifling... $%d" % floori(robbed)
 			return "Hold %s rifle their pockets" % Game.key("interact")
-		if dog and is_instance_valid(dog):
-			if dog.following == walker:
-				return "Walk %s back to the patio" % job.dog_name
-			if not dog.limping and not dog.held and walker.global_position.distance_to(dog.position) < 80.0:
-				return "Walk into %s to put them on the lead, or %s pick them up" % [job.dog_name, Game.key("interact")]
 		if near_customer():
 			return Game.key("interact") + " talk to " + job.customer
 		if at_truck():
 			return Game.key("interact") + " truck"
 		if walker.global_position.distance_to(mower.global_position) < 44.0:
-			return Game.key("hop") + " get back on"
+			return Game.key("interact") + " get back on"
 		return _fired_hint() if customer.fired else ""
 	if at_truck():
 		return Game.key("interact") + " leave   (on foot, walk up to the customer to get paid)"
@@ -1146,12 +1147,18 @@ func interact() -> void:
 			open_customer_menu()
 		elif at_truck():
 			open_truck_menu()
+		elif walker.global_position.distance_to(mower.global_position) < 44.0:
+			hop_on()
 
 
 ## Grab a nearby animal. A hedgehog bare-handed: you yelp, drop it, and stand there dazed.
+## The dog: the lead goes on first; one on your lead you can pick up.
 func _pick_up_critter() -> bool:
 	var at := walker.global_position
-	if dog and is_instance_valid(dog) and not dog.limping and not dog.held and dog.position.distance_to(at) < 22.0:
+	if dog and is_instance_valid(dog) and not dog.limping and not dog.held and dog.following != walker and dog.position.distance_to(at) < DOG_REACH:
+		dog.lead(walker)
+		return true
+	if dog and is_instance_valid(dog) and not dog.held and dog.following == walker:
 		dog.hold()
 		walker.carrying = "dog"
 	else:

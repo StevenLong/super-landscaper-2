@@ -7,6 +7,7 @@ signal choice(id: String)
 const SPEECH_W := 360.0
 
 var _panel: PanelContainer
+var _back := "" ## the open panel's way out ("resume"), for back (Esc, B) or pause again
 var _say_tween: Tween
 
 
@@ -110,6 +111,14 @@ func banner(text: String) -> void:
 	tw.tween_callback(l.queue_free)
 
 
+## Back out of a panel that has a way out (the pause menu, the truck, a chat), with the
+## pad's B or Esc, or pause again.
+func _input(event: InputEvent) -> void: # before the focused button sees it
+	if _panel and _back != "" and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause") or event.is_action_pressed("hop")):
+		get_viewport().set_input_as_handled()
+		choice.emit(_back)
+
+
 func is_open() -> bool:
 	return _panel != null
 
@@ -124,6 +133,7 @@ func close() -> void:
 ## The first button takes focus so keyboard/pad works.
 func open(title: String, lines: Array, buttons: Array, face_look := {}, face_expr := "") -> void:
 	close()
+	_back = "resume" if buttons.any(func(b: Array) -> bool: return b[0] == "resume") else ""
 	_panel = PanelContainer.new()
 	_panel.theme = UI.theme()
 	var margin := MarginContainer.new()

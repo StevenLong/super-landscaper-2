@@ -85,6 +85,8 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 1
 		7:
 			m.interact()
+			assert(m.dog.following == m.walker and m.walker.carrying == "", "the lead goes on first")
+			m.interact()
 			assert(m.walker.carrying == "dog" and m.dog.held, "picked up the dog")
 			m.walker.global_position = m.dog.home_point + Vector2(0, 30)
 			_wait = 2

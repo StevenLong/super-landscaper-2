@@ -1,8 +1,8 @@
 class_name Dog
 extends Area2D
 ## The customer's dog, loose on the lawn. Bounds about at random. A moving mower
-## bowls it over (it yelps and limps home). On foot, walk into it and it follows
-## you; bring it back to its owner.
+## bowls it over (it yelps and limps home). On foot, put the lead on (main) and it
+## follows you; bring it back to its owner.
 
 signal bowled(dog: Dog, by: String) ## by "mower" (run over) or "stone"
 signal home(dog: Dog)
@@ -129,9 +129,13 @@ func _on_body_entered(body: Node2D) -> void:
 	if "cut_radius" in body:
 		if (body.velocity as Vector2).length() > 15.0:
 			bowl()
-	elif body.has_method("is_walker") and following == null:
-		following = body
-		caught.emit(self)
+
+
+## On the lead: it trots after `by` till it's home.
+func lead(by: Node2D) -> void:
+	following = by
+	fetching = null
+	caught.emit(self)
 
 
 func _draw() -> void:

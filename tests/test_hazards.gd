@@ -160,19 +160,25 @@ func _physics_process(_delta: float) -> bool:
 			m.walker.global_position = mower.global_position + Vector2(0, 30)
 			m.interact()
 			assert(mower.fuel == mower.max_fuel, "the can fills the mower")
-			# The dog gets out; walk into it and lead it home.
+			# The dog gets out; walking into it does nothing, the lead goes on with interact.
 			m.job["dog_name"] = "Biscuit"
 			m._release_dog()
 			m.dog.position = Vector2(700, 500)
 			m.walker.global_position = Vector2(700, 500)
 			_wait = 3
 		7:
+			assert(m.dog.following == null, "walking into the dog doesn't put the lead on")
+			m.dog.position = m.walker.global_position + Vector2(10, 0)
+			assert(m._hint().contains("on the lead"), "the hint offers the lead")
+			m.interact()
+			_wait = 3
+		8:
 			assert(m.dog.following == m.walker, "the dog follows you once you catch it")
 			assert(m._hint().begins_with("Walk Biscuit back"), "and the hint says where to take them")
 			_mood = m.customer.mood
 			m.walker.global_position = m.get_node("Client").position + Vector2(0, 30)
 			_wait = 180 # the dog has a way to run
-		8:
+		9:
 			assert(not is_instance_valid(m.dog) or m.dog.is_queued_for_deletion(), "the dog went home")
 			assert(m.customer.mood > _mood, "and the owner is grateful")
 			m.hop_on()
@@ -182,7 +188,7 @@ func _physics_process(_delta: float) -> bool:
 			mower.rotation = 0.0
 			Input.action_press("move_forward")
 			_wait = 40
-		9:
+		10:
 			Input.action_release("move_forward")
 			assert(m.customer.knocked_out, "the mower flattens the customer")
 			assert(m.customer.face() == "ko", "their face says so")

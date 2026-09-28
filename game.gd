@@ -161,7 +161,7 @@ const TALLY := {
 ## in anything else is a personal worst.
 const GOOD_TALLY := ["dog_returned", "fetches", "stones_picked", "stones_binned", "cans"]
 ## Button prompts follow what you last touched: keyboard keys, or an Xbox-style pad.
-const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "X"], "throw": ["Q", "B"], "look": ["Tab", "Y"], "pause": ["Esc", "Start"]}
+const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "B"], "throw": ["Q", "X"], "look": ["Tab", "Y"], "pause": ["Esc", "Start"]}
 var pad := false
 
 var best_score := 0

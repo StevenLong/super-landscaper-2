@@ -38,13 +38,15 @@ var _stride := 0.0
 var _bump_cooldown := 0.0
 var _was_touching := false
 var _low_warned := false
-var _engine: AudioStreamPlayer
+var _engine: AudioStreamPlayer2D ## heard from where the mower is: fainter and off to one side when you're away on foot
 var _clippings: CPUParticles2D
 
 
 func _ready() -> void:
-	_engine = AudioStreamPlayer.new()
+	_engine = AudioStreamPlayer2D.new()
 	_engine.bus = "SFX"
+	_engine.max_distance = 1100.0
+	_engine.attenuation = 1.5
 	add_child(_engine)
 	_clippings = CPUParticles2D.new()
 	_clippings.emitting = false
@@ -181,7 +183,10 @@ func add_fuel(amount: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	# Pad triggers too (right to go, left to back up), so the stick is free to steer.
-	throttle = clampf(Input.get_axis("move_back", "move_forward") + Input.get_axis("reverse", "accelerate"), -1.0, 1.0) if occupied else 0.0
+	# On a pad the triggers drive and the stick only steers: a stick pushed a little off
+	# true while turning shouldn't creep the mower forward or back.
+	var keys := 0.0 if Game.pad else Input.get_axis("move_back", "move_forward")
+	throttle = clampf(keys + Input.get_axis("reverse", "accelerate"), -1.0, 1.0) if occupied else 0.0
 	if power == "stamina":
 		if throttle != 0.0:
 			fuel = maxf(0.0, fuel - fuel_burn * delta)
