@@ -58,8 +58,8 @@ BLOCKS = spoils the next playtest.
 114. [BUG, small] Anything that leaves the plot vanishes the moment it crosses ("gone" frees
    it): stones and bodies over a fence, into the ha-ha, over the churchyard wall (S9-LOB,
    S9-BODY, S10-HAHA, S10-L). The dev: it should keep flying and lie out there. FIX: finish
-   the flight past the edge and leave it lying beyond, drawn but out of reach. QUESTION:
-   can you ever fetch it (the ha-ha, say)? Recommend no.
+   the flight past the edge and leave it lying beyond, drawn but out of reach. Decided
+   (2026-09-28): never fetchable.
 115. [BUG, small] One window smashes again and again, billed each time: `_building_hit`
    returns "window" for a broken pane. FIX: a broken pane is a hole, the stone goes in the
    house ("gone" indoors, a crash, no bill).
@@ -119,20 +119,29 @@ BLOCKS = spoils the next playtest.
    FIX: the ticker names one-offs as events ("Cut the hose"); records only for countables.
 130. [BUG, small] Buying on the board sends the cursor back to the top. Home: `board.gd`
    (remember the focus across the rebuild). Low value: the board is to be replaced.
-131. [DESIGN, small] No intact body to test S10-CARRY: stones kill only 20% (THROWN_KO 0.8)
-   and aiming is hard (113); a thrown critter always lands alive whatever it hits; a
-   mower-flung stone splats 75% (FLUNG_SPLAT). The dev suggests i-frames and knockback so
-   the mower doesn't splat a knocked-out critter at once. QUESTION: retest after 113 first?
-   And should a critter thrown hard into a wall be knocked out?
+131. [FEATURE, moderate] Knockouts, decided 2026-09-28. Today a moving mower always splats a
+   critter (animal.gd `_on_body_entered`), stones by hand kill 20% (THROWN_KO 0.8), a
+   thrown critter always lands alive, a mower-flung stone splats 75% (FLUNG_SPLAT).
+   Changes: running one over can knock it out, likelier the smaller the mower (push
+   mostly, petrol sometimes), the ride-on always splats; a knocked-out one is flung out
+   from under the deck (knockback) and can't be run over for about a second (i-frames), so
+   the knockout is seen and not undone on the same pass; a critter thrown hard into a wall
+   (or anything solid) is knocked out. The S10-CARRY retest doesn't wait on this: after
+   113 you can aim, and a hand-thrown stone kills one in five. Home: animal.gd, main.gd
+   `_on_squashed`, `_stone_critter`, `_on_stone_landed`.
 132. [VISUAL, large] The manor still reads McMansion: the dev wants stone, over-the-top
-   grandeur (their references). The roof fades when you're behind it but there's no lawn
-   there, and its angled ends leave unreachable grass triangles in the corners. QUESTION:
-   a solid roof with nothing behind it, or a lawn back there you have to reach? Home:
-   `art_sprites.py` mansion(), main.gd manor layout. Waits for 137 (the dev may redraw it).
+   grandeur (their references). The roof fades when you're behind it but the dev saw no
+   lawn there, and its angled ends leave unreachable grass triangles in the corners. The
+   code does lay a back lawn 260 px deep (main.gd MANOR_BACK) between the ha-ha and the
+   ridge: screenshot first to see why it wasn't found (hidden, unreachable, or too thin).
+   Decided (2026-09-28, my rec): keep the back lawn and the fade if it's really there and
+   reachable, else make it so; square the roof's ends so no corner grass is cut off.
+   Home: `art_sprites.py` mansion(), main.gd `_manor`. The redraw waits for 137.
 133. [VISUAL, small] Topiary doesn't read (S10-TOPIARY), and the chunk that comes out looks
    like a bubble popping. Waits for 137.
-134. [VISUAL, moderate] The ha-ha reads as a broken hedge (S10-HAHA). QUESTION: redraw it (a
-   lawn edge dropping to a ditch, a low wall face beyond) or drop it for railings? Also 114.
+134. [VISUAL, moderate] The ha-ha reads as a broken hedge (S10-HAHA). Decided (2026-09-28):
+   try a redraw (the lawn edge dropping into a ditch, a low wall face beyond); if it still
+   doesn't read, swap it for something familiar (railings). Also 114.
 135. [DESIGN] Parked items answered (2026-09-28): stamina levelling dropped (30, a consumable
    kept as an idea); the animal dealer kept (37, grown in 136); the menace board stays
    parked (30b, the dev didn't recall it).
