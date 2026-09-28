@@ -697,20 +697,34 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			$Borders.add_child(pier)
 
 
-## A ha-ha along the lawn's edge: a stone coping, then the drop into a shadowed ditch on
-## the park side, no fence in the view.
+## A ha-ha along the lawn's edge, as this camera sees one: the lawn stops at a coping of
+## stone blocks, the drop beyond it is in shadow (the wall's face looks away from you),
+## and the far bank climbs back up, lit, to the park. No fence in the view.
 func _add_haha(outer: Rect2, vertical: bool) -> void:
 	var d := Node2D.new()
 	d.z_index = -1
-	var lip := Rect2(outer.end.x - 6.0 if outer.position.x < 0.0 else outer.position.x, outer.position.y, 6.0, outer.size.y) if vertical \
-		else Rect2(outer.position.x, outer.end.y - 6.0, outer.size.x, 6.0)
+	var out_dir := -1.0 if (outer.position.x < 0.0 if vertical else outer.position.y < 0.0) else 1.0 # away from the lawn
+	var depth := outer.size.x if vertical else outer.size.y
+	var run := outer.size.y if vertical else outer.size.x
+	# A band `from` to `to` px out from the lawn's edge, the whole length of the run.
+	var band := func(from: float, to: float) -> Rect2:
+		var a := (outer.end.x if out_dir < 0.0 else outer.position.x) if vertical else (outer.end.y if out_dir < 0.0 else outer.position.y)
+		var lo := minf(a + out_dir * from, a + out_dir * to)
+		return Rect2(lo, outer.position.y, absf(to - from), run) if vertical else Rect2(outer.position.x, lo, run, absf(to - from))
+	var shades := [Color("1a2c16"), Color("24401e"), Color("2e5226"), Color("3a662e"), Color("447434"), Color("4e8038")]
 	d.draw.connect(func() -> void:
-		d.draw_rect(outer, Color("1f3a1c"))
-		var bank := outer.grow_individual(0, 0, 0, -outer.size.y * 0.5) if not vertical else outer
-		d.draw_rect(bank, Color("2a4a24"))
-		d.draw_rect(lip, Color("b4b4b8"))
-		d.draw_rect(Rect2(lip.position, Vector2(lip.size.x, 1) if not vertical else Vector2(1, lip.size.y)), Color("d8d8dc"))
-		d.draw_rect(Rect2(lip.end - Vector2(lip.size.x, 1) if not vertical else lip.end - Vector2(1, lip.size.y), Vector2(lip.size.x, 1) if not vertical else Vector2(1, lip.size.y)), Color("74747c")))
+		var bank := depth - 10.0 # past the coping and the shadow: the far bank, rising to the park
+		for i in shades.size():
+			d.draw_rect(band.call(10.0 + bank * i / shades.size(), 10.0 + bank * (i + 1) / shades.size()), shades[i])
+		d.draw_rect(band.call(5.0, 10.0), Color("121e10")) # the drop, in shadow
+		d.draw_rect(band.call(0.0, 5.0), Color("9a9aa0")) # the coping
+		d.draw_rect(band.call(0.0, 1.0), Color("d0d0d6"))
+		d.draw_rect(band.call(4.0, 5.0), Color("5e5e66"))
+		var s := 0.0
+		while s < run: # its blocks
+			var joint := Rect2(outer.position + (Vector2(0, s) if vertical else Vector2(s, 0)), Vector2(depth, 1) if vertical else Vector2(1, depth))
+			d.draw_rect(joint.intersection(band.call(0.0, 5.0)), Color("6e6e76"))
+			s += 12.0)
 	$Borders.add_child(d)
 
 
