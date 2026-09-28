@@ -52,7 +52,7 @@ Notepad whenever an answer is still blank.
 - 106 (packing) not started on purpose: it changes how mowers are chosen, on top of this
   session's unplayed mower feel, and its grid sizes and shapes are still open.
 
-OWED CHECKS: 25, in CHECKS.txt (3 loads, about 50 minutes).
+OWED CHECKS: 24, in CHECKS.txt (3 loads, about 50 minutes).
 
 NEXT:
 1. Play the checks; triage what they turn up.
