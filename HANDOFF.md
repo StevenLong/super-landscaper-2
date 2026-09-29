@@ -86,8 +86,9 @@ OWED CHECKS: 19, in CHECKS.txt (3 loads, about 75 minutes; LOAD 3 is everything 
 
 NEXT:
 1. Play the prototype (LOAD 3) and the S13 checks; triage.
-2. Retune the first numbers from S14-PACE and S14-RING (principal, vig, keep, PAPER, REACH).
-3. The text pass (159, with 158) over the board, payday, winter and offer text.
+2. Retune from play: S14-PACE and S14-RING (principal, vig, keep, PAPER, REACH), S14-COURT
+   (LAWYERS, MENACE, PRISON, sentence()), S14-PACK and S14-ROBOT (GRIDS, SHAPES, prices).
+3. The text pass (159, with 158): docs/TEXT.md is regenerated with all of S14's screens.
 4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after
    play. Nothing buildable is left without a call from the dev.
 
