@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-Super Landscaper: a coin-op-hard roguelite lawnmower game, remaking a college project. Godot 4.
+Super Landscaper: a coin-op-hard lawnmower game about running a small gardening business
+season after season, remaking a college project. Godot 4.
 
 ## Design lives elsewhere
 The design doc is `../game-dev/Super Landscaper.md` (the game-dev Obsidian vault, a sibling

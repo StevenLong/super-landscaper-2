@@ -93,17 +93,47 @@ Built in session 12 (unplayed, see CHECKS.txt): 141 to 146, 148 to 154, 156, 157
    and function. Open: where the variants live in code (inline arrays picked at random,
    like the personas' `lines`, is the lazy start). Likely after 160, which rewrites the
    board's text.
-160. [DESIGN, large] A season calendar of regular clients instead of one-off ads: customers
-   book you monthly, you return to the same garden, the relationship matters, and firing
-   costs a steady income; the ads become a way to find contacts or fill gaps. Touches the
-   board, the week and the loan shark's cadence, what a garden remembers between visits,
-   and 106. Needs a /grill before more board work (47, the hub).
+160. Grilled 2026-09-29: see "Grilled 2026-09-29" below (162 to 168).
 
 Also: S11-HEAP's target brackets stay for now; the dev is unsure of the look, to soak.
 S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
 
-PROPOSED ORDER: grill 160 (the dev's pick); then the text pass (159) with 158 in it; play
-the S12 checks; 155 when it's caught on screen.
+PROPOSED ORDER (revised after the 160 grill, the dev to confirm): play the S12 checks;
+the season prototype (162 to 166); then the text pass (159, with 158), since the
+prototype rewrites the board's and the summary's text; 155 when it's caught on screen.
+
+### Grilled 2026-09-29 (160: the season calendar, regular clients)
+
+Decided in the design doc (Direction, The Business, Season Prototype). The game is now a
+small business across seasons, not a roguelite run. 162 to 166 are the season prototype;
+the rest wait.
+
+162. [FEATURE, large] The calendar and the weekly payday, replacing 4 weeks of 3 jobs:
+   months April to September (start month a knob), one job a day, empty days skip; each
+   week the vig on a principal plus a living cost, overpayment cutting the principal.
+   Homes: `game.gd` (`PAYMENTS`, `JOBS_PER_WEEK`, `week`, `job_of_week`, `payday_due`,
+   `settle_payday`), `board.gd` (the payday scene). Repossession stays as is.
+163. [FEATURE, moderate] The weekly paper: at payday, book the coming week's ads into free
+   days; reputation sets how many and how good (`offer_count`, `make_job`). Waits on 162.
+164. [FEATURE, large] Regulars: after a good classifieds job, a hidden chance (visit and
+   persona) of an offer right after the results, with accept / decline / haggle; carried
+   mood as each visit's starting mood; cadence-only requests placed on free days, clashes
+   shifted a day; drop a regular; cancel below a mood floor; no tips for regulars. The
+   garden kept by its seed, the dead staying dead, one token drift between visits.
+   Homes: `game.gd`, `summary.gd`, `customer.gd` (starting mood), `main.gd`.
+165. [FEATURE, moderate] Ironman autosave between days, one per business; a job started
+   and not finished loads as the blackout (client lost, job failed, a reputation hit).
+   New: a save file (the run state is all in `game.gd` today).
+166. [FEATURE, small] A stub winter screen at the season's end (living costs out, who's
+   back), then the next April.
+167. [FEATURE, large, after the prototype] The record replacing heat: convictions weighted
+   by tier, summons after an escape, court with a bought lawyer's roll, sentences as
+   calendar days (community service on the next free day, jail at once), prison as an
+   ending by accumulation. Homes: `game.gd` (`HEAT`, `HIGH_HEAT`, `police_time`, `fine`,
+   the cooling in `settle_payday`), `main.gd` (~1737, the call), `board.gd` (WANTED).
+168. [DESIGN, large] Hired help: its own grill (wages, a helper's pace, off-screen jobs).
+   Later layers on record in the doc: upfront pay and raises, evidence surfacing, the
+   off-season events, selling up, the front page, referrals, wear and overheads.
 
 ### Grilled 2026-09-27 (91: packing the truck, robot mowers, how each mower plays)
 
