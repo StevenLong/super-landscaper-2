@@ -13,50 +13,52 @@ LOAD 1 of 3: A JOB ON FOOT      (about 20 min, a squirrel hater with a hose is b
 S12-HATER
 For a customer who wants squirrels gone: throw a squirrel hard into the fence or the house
 wall while they watch. No WANTED. Throw one at their car: WANTED.
->
+>Throwing it into the house seemed to piss the customer off.  throwing it into a hedge didn't seem to make any kind of reaction.
 
 S12-UNSEEN
 While the customer is inside, throw a hedgehog into the fence. No WANTED pops up.
->
+>Yes
 
 S12-EVICT
 Throw a squirrel over the fence while they watch. A squirrel hater is glad ("And STAY
 out!"); a customer who likes wildlife isn't.
->
+>No reaction from hater on throwing over hedge
 
 S12-BODY
 Kill a critter with a stone, pick up the body and carry it into their sight: they react.
 Put it down and pick it up again in view: no second reaction. Bare-handed, a dead hedgehog
 still pricks you (OW).
->
+>I'm struggling to kill a critter with a stone, by throwing it against a wall, or by throwing a critter into another critter. Bare-handed, an unconscious hedgehog still provokes a reaction: it still pricks you.
+
+Also, stones vanish when hitting critters, similar to how critters vanished when being thrown at other critters.
 
 S12-BODYHIT
 Throw a dead hedgehog at a live one: the live one is hit, and the body lands beside it.
->
+>Critters persist after being used as projectiles against other critters.
 
 S12-HOSE
 Mow through the middle of the hose. The far piece stays on the lawn: pick it up by either
 end and drag it out of the way.
->
+>The hose works well now, but it still has a bug I mentioned before: if you drag it onto the porch (the non-grassy area around the house), the hose disappears under it.
 
 S12-WALLDROP
 Throw a stone high at the house wall. It falls from where it hit rather than snapping to
 the ground. Does the drop look right?
->
+>yes, very good
 
 S12-PORTRAIT
 Walk past tall things so the customer loses sight of you. The portrait eases to grey (no
 flicker) with UNSEEN across it. Does it read clearly now?
->
+>I think so, I will show my partner and if she objects I'll let you know
 
 S12-DONE
 Get paid, then talk to them again: no "How am I doing?".
->
+>yes
 
 S12-BANNERS
 Get fired and have the police called by the same act (a stone at the customer, say): the
 two banners show one after the other, not on top of each other.
->
+>I can't reproduce this. I'll bring it up if it happens again
 
 
 ================================================================================
@@ -66,12 +68,18 @@ LOAD 2 of 3: THE MOWERS      (about 10 min; [1] on the board for money, buy petr
 S12-CORD
 Start the petrol mower: a cord with a red handle draws out as you hold, and PULL sits over
 the green, lit gold while the marker is in it. Easier to read?
->
+>This is a little odd. It works kind of, but it's a cord moving out in a really weird direction with nothing attached to it. 
+
+I was thinking more of an animation over the bar that shows you pulling it when you release. So, a hand and the cord over the thing, and when you release, it pulls:
+• If you release at the right time, it pulls and the thing starts.
+• If you release at the wrong time, it's the same as it is now.
 
 S12-DRY
 Run a powered mower out of fuel: it dies with a cough and the hint says out of petrol. You
 can still push it slowly. Refuel it: it needs the cord (or the key) again.
->
+>Yes, but I think at least with the ride-on, it has too many advantages. 
+
+A good disadvantage, though, would be if you run it out of petrol: you can't move it, and you have to go get the can.
 
 
 ================================================================================
@@ -80,17 +88,29 @@ LOAD 3 of 3: THE MANOR AND AN L PLOT      (about 10 min, use [2] for reputation 
 
 S12-LAG
 At the manor, watch while the customer moves from window to window: no hitch.
->
+>yes
 
 S12-CHIMNEY
 Walk behind a chimney on the manor's back lawn: nothing fades.
->
+>yes
 
 S12-HAHA
 The ha-ha's back corners: the coping and the drop turn the corner cleanly.
->
+>yes
 
 S12-LFENCE
 On an L plot, look at the fences and hedges round next door's corner. Any that still don't
 meet or stick out? A screenshot helps.
->
+>Some are better, I will screenshot when I see it again.
+
+
+
+
+================================================================================
+NOTES
+================================================================================
+
+Is there a limit to how much money you can take from a customers pockets after the job has been completed? there probably should be.
+
+Fuel usage should be linked to work being done. A fuel lawnmower sitting there idle, engine running but not doing any work, should use less fuel than one doing more work.
+
