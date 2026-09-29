@@ -150,10 +150,8 @@ func _rundown(r: Dictionary) -> Control:
 		UI.GOOD if r.outcome == "paid" else UI.BAD))
 	info.add_child(UI.label(r.comment if r.outcome == "ko" else "\"%s\"" % r.comment, 18, UI.DIM))
 	var also: Array[String] = []
-	if r.get("heat_up", false):
-		also.append("Wanted level up")
-	if r.get("cells", false):
-		also.append("A night in the cells: tomorrow's lost")
+	if r.has("court_day"):
+		also.append(("A night in the cells: court %s" if r.outcome == "nicked" else "A summons: court on %s") % Game.date_text(r.court_day))
 	if r.get("lost_regular", false):
 		also.append("They won't be booking you again")
 	if not also.is_empty():

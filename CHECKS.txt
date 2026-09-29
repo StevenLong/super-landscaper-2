@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (16 checks, 3 loads, about 55 minutes)
+PLAY CHECKS OWED  (17 checks, 3 loads, about 65 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -90,6 +90,13 @@ S14-VISIT
 Play a regular's visit (green on the calendar; step through with "On to the next job",
 since [3] skips booked days too): the same garden, "Back again" in the briefing, a gnome
 new since the last visit from the second one on, no tip however well it goes.
+>
+
+S14-COURT
+Knock a customer out so the police are called. Once caught: "court in the morning", the
+court screen, a lawyer, a verdict. Once escaped: a summons, court a few days on. Guilty
+of assault means community service ("Duty" on the calendar): the churchyard, unpaid, a
+reputation line for it. Do the sentences feel proportionate?
 >
 
 S14-BLACKOUT

@@ -1,6 +1,7 @@
-# Heat and the police: crimes add heat by tier, assault calls the police with a visible
-# countdown, and getting caught fines you (and costs a job slot for assault). A thrown
-# stone through a window is a crime; one flung by the blades isn't. Paying the week cools it.
+# The charge and the police: witnessed crimes go on the job's charge by tier, assault
+# calls the police with a visible countdown, and getting caught means court tomorrow
+# (test_season has the court). A thrown stone through a window is a crime; one flung by
+# the blades isn't.
 extends SceneTree
 
 var m: Node
@@ -24,18 +25,18 @@ func _physics_process(_delta: float) -> bool:
 		return false
 	match _step:
 		0:
-			g.heat = 0.0
+			m.charge = 0.0
 			var house: Node2D = m.get_node("Scenery/House")
 			var f := FlyingStone.new()
 			f.position = house.position + Vector2(55, house.WALL_H - 26.0)
 			m._on_stone_landed(f, "window")
-			assert(g.heat == 0.0, "a stone flung by the blades through a window is an accident")
+			assert(m.charge == 0.0, "a stone flung by the blades through a window is an accident")
 			f.thrown = true
 			m._on_stone_landed(f, "window")
-			assert(g.heat == 1.0 and m.police_left < 0.0, "thrown, it's a nuisance: +1 heat, nobody calls the police")
+			assert(m.charge == 1.0 and m.police_left < 0.0, "thrown, it's a nuisance: +1, nobody calls the police")
 			f.free()
 			m._knock_out()
-			assert(g.heat == 3.0 and m.worst_crime == 2, "knocking them out is assault: +2")
+			assert(m.charge == 3.0 and m.worst_crime == 2, "knocking them out is assault: +2")
 			assert(m._wallet >= m.job.pay * 0.2 and m._wallet <= m.job.pay * 0.6, "unpaid, their pockets hold 20 to 60% of the pay")
 			assert(m.police_left == g.police_time(0.0), "and the police are called, on a clock set by your record at the start")
 			_wait = 30
@@ -50,15 +51,15 @@ func _physics_process(_delta: float) -> bool:
 		2:
 			Input.action_release("interact")
 			assert(absf(m.robbed - m.RIFLE_RATE) < 0.5, "a second's rifling lifts a few dollars")
-			assert(g.heat == 4.0 and m.tally.get("robberies", 0) == 1, "robbery is its own crime: +1 heat, once")
+			assert(m.charge == 4.0 and m.tally.get("robberies", 0) == 1, "robbery is its own crime: +1, once")
 			m.police_left = 0.01
 			_wait = 2
 		3:
 			assert(m.over and paused, "caught")
 			m._on_choice("nicked")
 			var r: Dictionary = g.last_result
-			assert(r.outcome == "nicked" and r.fine == g.fine(2, 4.0) and r.cells and not r.has("robbed"), "a fine for assault, a night in the cells, and the cash taken back")
-			assert(r.net == -r.fine - r.fuel_cost, "the fine comes off, and nobody paid")
+			assert(r.outcome == "nicked" and r.charge == 4.0 and r.tier == 2 and r.police and not r.has("robbed"), "the charge for court, and the cash taken back")
+			assert(r.net == -r.fuel_cost, "no fine at the scene: that's for court")
 			# Get away with it and the cash is yours, at the worst rep hit in the game.
 			m.robbed = 12.0
 			m._finish(m.customer.ko_result(0.0))
@@ -68,21 +69,12 @@ func _physics_process(_delta: float) -> bool:
 			var car := StaticBody2D.new()
 			m._car = car
 			var bills: float = m.bills
-			var heat: float = g.heat
+			var charge: float = m.charge
 			m._on_mower_bumped(car, 100.0)
-			assert(m.bills == bills + m.CAR_BILL and g.heat == heat, "a knock into the car dents it: $40, an accident, no heat")
+			assert(m.bills == bills + m.CAR_BILL and m.charge == charge, "a knock into the car dents it: $40, an accident, no charge")
 			m._on_mower_bumped(car, 300.0)
-			assert(m.bills == bills + m.CAR_BILL * 3.0 and g.heat == heat + 1.0, "a ride-on at full tilt costs double, and it's a nuisance: +1 heat")
+			assert(m.bills == bills + m.CAR_BILL * 3.0 and m.charge == charge + 1.0, "a ride-on at full tilt costs double, and it's a nuisance: +1")
 			car.free()
-			# The run side: a night in the cells takes tomorrow (test_season); paying the week cools heat.
-			g.new_run(3)
-			g.heat = 3.0
-			g.record_result({"outcome": "nicked", "net": -100, "paid": 0, "rep": -12.0, "cells": true})
-			assert(g.today().has("cells"), "the cells cost tomorrow")
-			assert(g.money == -100, "the fine can put you in the red")
-			g.money = 1000
-			g.settle_payday()
-			assert(g.heat == 2.0, "a week paid on time cools heat a level")
 			assert(g.police_time(3.0) < g.police_time(0.0) and g.fine(1, 3.0) > g.fine(1, 0.0), "your record brings them faster and fines harder")
 			m.settled = {"outcome": "paid"}
 			m._knock_out()

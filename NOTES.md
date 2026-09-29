@@ -104,14 +104,9 @@ then the text pass (159, with 158) over the new board, payday, winter and offer 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
 Decided in the design doc (Direction, The Business, Season Prototype). The game is now a
-small business across seasons, not a roguelite run. 162 to 166, the season prototype, were
-built in session 14; the rest wait.
+small business across seasons, not a roguelite run. 162 to 166 (the season prototype) and
+167 (the record) were built in session 14; the rest wait.
 
-167. [FEATURE, large, after the prototype] The record replacing heat: convictions weighted
-   by tier, summons after an escape, court with a bought lawyer's roll, sentences as
-   calendar days (community service on the next free day, jail at once), prison as an
-   ending by accumulation. Homes: `game.gd` (`HEAT`, `HIGH_HEAT`, `police_time`, `fine`,
-   the cooling in `settle_payday`), `main.gd` (~1737, the call), `board.gd` (WANTED).
 168. [DESIGN, large] Hired help: its own grill (wages, a helper's pace, off-screen jobs).
    Later layers on record in the doc: upfront pay and raises, evidence surfacing, the
    off-season events, selling up, the front page, referrals, wear and overheads.

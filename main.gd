@@ -71,7 +71,8 @@ var dog: Dog = null
 var settled := {} ## the job's outcome once paid or fired; you stay until you drive off
 var mischief := 0.0 ## reputation owed for what you did after it was settled
 var police_left := -1.0 ## seconds until the police arrive once called; below zero, nobody's called
-var worst_crime := 0 ## the worst tier on the crime ladder this job (Game.HEAT)
+var worst_crime := 0 ## the worst tier on the crime ladder this job (Game.RECORD)
+var charge := 0.0 ## what witnesses saw this job, weighed (Game.RECORD): court makes it record
 
 var _next_hedgehog := 3.0
 var _next_squirrel := 8.0
@@ -102,7 +103,7 @@ var _tracks: Array = [] ## red wheel marks: [position, sideways unit, strength 0
 var _blood := 0.0 ## px of red trail the mower has left to lay after running something over
 var _blood_from := Vector2.ZERO
 var _flowers_quiet_until := 0 ## msec: one scream per burst of flowers, not one per flower
-var _heat0 := 0.0 ## your record as the job starts: it sets how fast the police come
+var _record0 := 0.0 ## your record as the job starts: it sets how fast the police come
 var _vandal := false ## wrecking things after being fired: trespass, one charge a job
 var _siren: AudioStreamPlayer
 var _wallet := 0.0 ## what's left in the customer's pockets
@@ -149,7 +150,7 @@ func _ready() -> void:
 	hud.choice.connect(_on_choice)
 
 	Sfx.music("music_mowing")
-	_heat0 = Game.heat
+	_record0 = Game.record
 	mower.bumped.connect(_on_mower_bumped)
 	if Game.in_run:
 		get_tree().paused = true
@@ -1013,7 +1014,7 @@ func _physics_process(delta: float) -> void:
 	if police_left >= 0.0:
 		police_left = maxf(0.0, police_left - delta)
 		hud.set_police(police_left)
-		_siren.volume_db = lerpf(-6.0, -26.0, police_left / Game.police_time(_heat0)) # louder as they close in
+		_siren.volume_db = lerpf(-6.0, -26.0, police_left / Game.police_time(_record0)) # louder as they close in
 		if police_left <= 0.0:
 			_nicked()
 			return
@@ -1600,11 +1601,12 @@ func hand_in() -> void:
 	settled = customer.evaluate(cov, _costs())
 	customer.paid = true
 	Sfx.play("cash", 0.0)
-	pop_text("+$%d" % settled.paid, $Client.position + Vector2(0, -40))
+	if not job.get("service", false):
+		pop_text("+$%d" % settled.paid, $Client.position + Vector2(0, -40))
 	if Game.in_run and settled.mood >= 60.0:
 		Sfx.play("voice_happy")
-	open_customer_menu(["\"%s\"" % settled.comment, "They hand over $%d%s." % [settled.paid,
-		(" (a $%d tip!)" % settled.tip) if settled.tip > 0 else ""],
+	open_customer_menu(["\"%s\"" % settled.comment, "They sign your community service sheet." if job.get("service", false)
+		else "They hand over $%d%s." % [settled.paid, (" (a $%d tip!)" % settled.tip) if settled.tip > 0 else ""],
 		"Drive off from your truck when you like. (They're watching. Behave.)"])
 
 
@@ -1680,7 +1682,12 @@ func _finish(result: Dictionary) -> void:
 	result.tally_cost = tally_cost
 	get_tree().paused = true
 	result.customer = job.get("customer", "")
-	result.heat_up = Game.heat > _heat0
+	result.charge = charge
+	result.tier = worst_crime
+	result.police = police_left >= 0.0 # called, whether or not they got here
+	if job.get("service", false) and result.outcome == "paid": # community service, signed off
+		result.rep += Game.SERVICE_REP
+		result.rep_lines.append(["Community service done", Game.SERVICE_REP])
 	if robbed > 0.0:
 		result.robbed = floori(robbed)
 		result.net += result.robbed
@@ -1733,22 +1740,22 @@ func _rifle(delta: float) -> void:
 	robbed += take
 
 
-## A crime on the ladder (Game.HEAT): heat now, and the police called for assault, or
-## for anything once your record is bad enough. Only if they know: seen at `at`, or
-## `known` (heard it, felt it, or a neighbour saw). `extra` heat is for the method.
+## A crime on the ladder (Game.RECORD): onto the job's charge, and the police called for
+## assault, or for anything once your record is bad enough. Only if they know: seen at
+## `at`, or `known` (heard it, felt it, or a neighbour saw). `extra` is for the method.
 func _crime(tier: int, at := Vector2.INF, known := false, extra := 0.0) -> void:
 	if not (known or customer.sees(at)):
 		return
-	Game.heat += Game.HEAT[tier] + extra
+	charge += Game.RECORD[tier] + extra
 	worst_crime = maxi(worst_crime, tier)
-	hud.pop("WANTED +%d" % roundi(Game.HEAT[tier] + extra))
-	if police_left < 0.0 and customer.sees(at) and (tier >= 2 or _heat0 >= Game.HIGH_HEAT): # no witness, no call
+	hud.pop("CHARGE +%d" % roundi(Game.RECORD[tier] + extra))
+	if police_left < 0.0 and customer.sees(at) and (tier >= 2 or _record0 >= Game.HIGH_RECORD): # no witness, no call
 		_call_police()
 
 
 ## Someone's rung the police: a visible countdown with sirens. Drive off before it runs out.
 func _call_police() -> void:
-	police_left = Game.police_time(_heat0)
+	police_left = Game.police_time(_record0)
 	_siren = AudioStreamPlayer.new()
 	_siren.bus = "SFX"
 	_siren.stream = preload("res://audio/siren.wav")
@@ -1763,21 +1770,15 @@ func _nicked() -> void:
 	over = true
 	_siren.stop()
 	get_tree().paused = true
-	var fine := Game.fine(worst_crime, Game.heat)
-	var lines := ["The police caught you at the scene.", "Fine: $%d, on top of the damages." % fine]
-	if worst_crime >= 2:
-		lines.append("And a night in the cells: you lose your next job.")
-	hud.open("NICKED", lines, [["nicked", "Continue"]])
+	hud.open("NICKED", ["The police caught you at the scene.", "A night in the cells, and court in the morning."], [["nicked", "Continue"]])
 
 
 func _finish_nicked() -> void:
 	var c := _costs()
 	var r := settled.duplicate() if not settled.is_empty() else (customer.ko_result(c) if customer.knocked_out else customer.walked_result(c))
 	r.outcome = "nicked"
-	r.fine = Game.fine(worst_crime, Game.heat)
-	r.cells = worst_crime >= 2
 	r.fuel_cost = c
-	r.net = r.paid - c - r.fine
+	r.net = r.paid - c
 	r.rep -= mischief
 	r.mischief = mischief
 	r.comment = "(Led away in handcuffs.)"
@@ -2139,7 +2140,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			if target == "": # just thrown across the lawn: the animal's own tier
 				tier = CRITTERS[kind].tier
 			elif target not in ["gone", "self"] and not (_wanted_hurt(kind) and target not in THEIRS):
-				# into something: one above the worse of the two, and heat for the method. Unless
+				# into something: one above the worse of the two, and a charge for the method. Unless
 				# they want it hurt: then how is no crime, bar at them, their car, window or dog.
 				tier = mini(2, maxi(tier, CRITTERS[kind].tier) + 1)
 				method = 1.0

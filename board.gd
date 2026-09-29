@@ -12,6 +12,8 @@ func _ready() -> void:
 	Sfx.music("music_menu")
 	if not Game.blackout.is_empty():
 		_blackout()
+	elif Game.today().has("court"):
+		_court()
 	elif Game.payday_pending:
 		_payday()
 	elif Game.winter_pending:
@@ -53,8 +55,8 @@ func _build(keep := "") -> void:
 		UI.GOOD if Game.reputation >= 45.0 else (UI.GOLD if Game.reputation >= 20.0 else UI.BAD)))
 	head.add_child(UI.label("Owed the shark: $%d" % Game.principal if Game.principal > 0 else "Free of the shark", 22,
 		UI.DIM if Game.principal > 0 else UI.GOOD))
-	if Game.heat > 0.0:
-		head.add_child(UI.label("WANTED " + "*".repeat(ceili(Game.heat)), 22, UI.BAD))
+	if Game.record > 0.0:
+		head.add_child(UI.label("Record: %d" % roundi(Game.record), 22, UI.BAD))
 	root.add_child(head)
 
 	var cols := UI.hbox(20)
@@ -145,8 +147,8 @@ func _month() -> Control:
 		var b: Dictionary = Game.calendar.get(d, {})
 		var what := ""
 		var color := UI.DIM
-		if b.has("cells"):
-			what = "Cells"
+		if b.has("court") or b.has("jail") or b.has("service"):
+			what = "Court" if b.has("court") else ("Jail" if b.has("jail") else "Duty") # community service
 			color = UI.BAD
 		elif b.has("seed"):
 			what = b.customer.split(" ")[-1]
@@ -170,11 +172,12 @@ func _today(box: Control) -> Button:
 		what.scroll_active = false
 		what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		what.text = ("Today: [color=#98e070]%s[/color], your regular. $%d, no tips." % [j.customer, j.pay]) if j.has("regular") \
+			else ("Today: community service, [color=#f07060]%s[/color]'s churchyard. Unpaid." % j.customer) if j.has("service") \
 			else "Today: [color=#f8d048]%s[/color], from the paper. $%d." % [j.customer, j.pay]
 		row.add_child(what)
 		go = UI.button("Go", _go, 22)
 	else:
-		var l := UI.label("Nothing booked today." if j.is_empty() else "A day in the cells.", 20, UI.DIM)
+		var l := UI.label("Nothing booked today." if j.is_empty() else "A day in jail.", 20, UI.DIM)
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(l)
 		go = UI.button("On to the next job", func() -> void:
@@ -416,6 +419,54 @@ func _winter() -> void:
 		_centred(col, "Not coming back: " + ", ".join(w.gone), 22, UI.BAD)
 	_centred(col, "You have $%d. Reputation: %s." % [Game.money, UI.rep_word(Game.reputation)], 22, UI.DIM)
 	UI.focus(_centred_button(col, "Spring, %d" % Game.year, _build))
+
+
+## Court (design doc, The Business: the record): the charge, then a lawyer or yourself,
+## each a better chance to walk free for money. Deliberately shallow.
+func _court() -> void:
+	var case: Dictionary = Game.today().court
+	var col := _screen()
+	_centred(col, "COURT", 64, UI.GOLD)
+	_centred(col, "%s. The charge: what happened at %s's." % [Game.date_text(), case.customer], 24)
+	_centred(col, ("Caught at the scene." if case.caught else "Summoned: you got away, this time.") +
+		("  Your record: %d." % roundi(Game.record) if Game.record > 0.0 else "  A first offence."), 22, UI.DIM)
+	_centred(col, "You have $%d." % Game.money, 22)
+	var first: Button = null
+	for i in Game.LAWYERS.size():
+		var l: Array = Game.LAWYERS[i]
+		var b := _centred_button(col, "%s%s: %s" % [l[0], " ($%d)" % l[1] if l[1] > 0 else "", l[3]], _verdict.bind(i))
+		b.disabled = Game.money < l[1]
+		if first == null:
+			first = b
+	UI.focus(first)
+
+
+func _verdict(lawyer: int) -> void:
+	var v := Game.court(lawyer)
+	var col := _screen()
+	if v.walked:
+		_centred(col, "NOT GUILTY", 64, UI.GOOD)
+		_centred(col, "You walk free." + (" $%d well spent." % v.fee if v.fee > 0 else ""), 26)
+	elif v.prison:
+		_centred(col, "PRISON", 64, UI.BAD)
+		_centred(col, "Your record's caught up with you. The business is done, %s." % Game.date_text(), 26)
+		_centred(col, "Total earned: $%d" % Game.total_earned, 30, UI.GOLD)
+		UI.focus(_centred_button(col, "Back to the title", func() -> void:
+			Game.in_run = false
+			get_tree().change_scene_to_file("res://title.tscn")))
+		return
+	else:
+		_centred(col, "GUILTY", 64, UI.BAD)
+		_centred(col, "Fined $%d. Your record: %d." % [v.fine, roundi(Game.record)], 26)
+		if v.jail > 0:
+			_centred(col, "%d day%s in jail, starting now." % [v.jail, "" if v.jail == 1 else "s"], 26, UI.BAD)
+		if v.service > 0:
+			_centred(col, "%d day%s of community service, on your next free day%s." % [v.service, "" if v.service == 1 else "s",
+				"" if v.service == 1 else "s"], 26, UI.GOLD)
+		if v.jail == 0 and v.service == 0:
+			_centred(col, "And no more than that. This time.", 22, UI.DIM)
+	_centred(col, "You have $%d." % Game.money, 22, UI.DIM)
+	UI.focus(_centred_button(col, "Carry on", _ready))
 
 
 ## A job started and never finished (quit, or a crash): you blacked out. Ironman.

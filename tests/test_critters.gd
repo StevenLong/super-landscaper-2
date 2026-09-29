@@ -7,7 +7,7 @@ var m: Node
 var g: Node
 var _step := 0
 var _wait := 0
-var _heat := 0.0
+var _charge0 := 0.0
 
 
 func _initialize() -> void:
@@ -29,7 +29,7 @@ func _physics_process(_delta: float) -> bool:
 		return false
 	match _step:
 		0:
-			g.heat = 0.0
+			m.charge = 0.0
 			g.upgrades.assign([])
 			m.hop_off()
 			m.walker.global_position = Vector2(500, 400)
@@ -58,8 +58,8 @@ func _physics_process(_delta: float) -> bool:
 			m._on_thrown(Vector2.UP, 0.0) # a short lob onto the grass
 			_wait = 30
 		5:
-			assert(_critters("hedgehog").size() == 1 and g.heat == 0.0, "it lands alive, and a hedgehog on the grass is no crime")
-			# Into a window: one tier above the worse of window (1) and hedgehog (0), and heat for the method.
+			assert(_critters("hedgehog").size() == 1 and m.charge == 0.0, "it lands alive, and a hedgehog on the grass is no crime")
+			# Into a window: one tier above the worse of window (1) and hedgehog (0), and a charge for the method.
 			var house: Node2D = m.get_node("Scenery/House")
 			var f := FlyingStone.new()
 			f.kind = "hedgehog"
@@ -68,7 +68,7 @@ func _physics_process(_delta: float) -> bool:
 			f.position = house.position + Vector2(295, house.WALL_H - 26.0)
 			m._on_stone_landed(f, "window")
 			f.free()
-			assert(g.heat == 3.0 and m.worst_crime == 2, "a hedgehog through a window is tier 2, +1 heat for the method")
+			assert(m.charge == 3.0 and m.worst_crime == 2, "a hedgehog through a window is tier 2, +1 for the method")
 			# A squirrel bites free after a few seconds.
 			m.walker.carrying = "squirrel"
 			m._held = 0.0
@@ -98,26 +98,26 @@ func _physics_process(_delta: float) -> bool:
 			# Thrown across the lawn, a dog is tier 1.
 			m._release_dog()
 			m.dog.hold()
-			_heat = g.heat
+			_charge0 = m.charge
 			var f := FlyingStone.new()
 			f.kind = "dog"
 			f.thrown = true
 			f.position = Vector2(640, 600)
 			m._on_stone_landed(f, "")
 			f.free()
-			assert(g.heat == _heat + 1.0 and not m.dog.held and m.dog.visible, "a thrown dog lands and runs off: tier 1")
+			assert(m.charge == _charge0 + 1.0 and not m.dog.held and m.dog.visible, "a thrown dog lands and runs off: tier 1")
 			# A squirrel into the fence: a crime only if they see it, and never for one who wants it hurt.
 			var sq := func(target: String) -> float:
-				var h0: float = g.heat
+				var h0: float = m.charge
 				var s := FlyingStone.new()
 				s.kind = "squirrel"
 				s.thrown = true
 				s.position = Vector2(640, 600)
 				m._on_stone_landed(s, target)
 				s.free()
-				return g.heat - h0
+				return m.charge - h0
 			m.customer.where = "inside"
-			assert(sq.call("fence") == 0.0, "unseen, no heat")
+			assert(sq.call("fence") == 0.0, "unseen, no charge")
 			m.customer.where = "patio"
 			assert(sq.call("fence") == 2.0, "seen: tier 1, +1 for the method")
 			var was: Dictionary = m.customer.persona

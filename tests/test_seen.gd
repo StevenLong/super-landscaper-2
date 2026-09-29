@@ -86,10 +86,10 @@ func _physics_process(_delta: float) -> bool:
 			m._on_stone_landed(f, "window")
 			f.free()
 			assert(m.tally.get("customer_hits", 0) == 1 and m.customer.mood <= mood - 35.0, "a stone through their window hits them")
-			# No witness, no police call, even at high heat. (Wake them if that stone knocked them out.)
+			# No witness, no police call, even with a long record. (Wake them if that stone knocked them out.)
 			m.customer.knocked_out = false
 			m.customer.where = "inside"
-			m._heat0 = 5.0
+			m._record0 = 5.0
 			m.police_left = -1.0
 			m._crime(1)
 			assert(m.police_left < 0.0, "unseen, nobody calls the police")
@@ -97,7 +97,7 @@ func _physics_process(_delta: float) -> bool:
 			m._crime(1, hidden)
 			assert(m.police_left < 0.0, "nor out of their sight")
 			m._crime(1, open)
-			assert(m.police_left > 0.0, "seen at high heat, they do")
+			assert(m.police_left > 0.0, "seen with a long record, they do")
 			print("PASS seen")
 			quit()
 	_step += 1

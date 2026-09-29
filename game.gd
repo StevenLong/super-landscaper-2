@@ -126,11 +126,19 @@ const REACH := 15.0 ## how far under an ad's bar a call can still get a yes
 const DAYS := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share of its price
 
-## The crime ladder (design doc, The Run): heat added by tier. 0 isn't a crime (rep only),
-## 1 a nuisance (fined if caught), 2 assault (fined, and a night in the cells costs your
-## next job), 3 the worst (not built: nothing can kill a customer yet).
-const HEAT := [0.0, 1.0, 2.0, 5.0]
-const HIGH_HEAT := 3.0 ## from here, a nuisance gets the police called too
+## The crime ladder (design doc, The Business: the record): what a conviction weighs by
+## tier. 0 isn't a crime (rep only), 1 a nuisance, 2 assault, 3 the worst (not built:
+## nothing can kill a customer yet). A job's witnessed crimes add up to its charge; only
+## court turns a charge into record.
+const RECORD := [0.0, 1.0, 2.0, 5.0]
+const HIGH_RECORD := 3.0 ## from here, a nuisance gets the police called too
+## Court and sentences (the numbers are guesses, to be felt out).
+const LAWYERS := [["Represent yourself", 0, 0.1, "a slim chance"], ["Mr. Gubbins, solicitor", 60, 0.3, "a fair chance"],
+	["Crumb & Crumb", 200, 0.5, "a good chance"], ["Sir Hilary Ashdown QC", 600, 0.75, "the best money buys"]] ## [who, fee, walk-free chance, how they sound]
+const SUMMONS_DAYS := 3 ## escaped the scene: court on the first free day this many on
+const MENACE := 8.0 ## from this record, community service becomes jail
+const PRISON := 16.0 ## a record this long is prison: the business is over
+const SERVICE_REP := 5.0 ## community service done, on top of the job's own
 
 ## The ordinary customers, in PERSONAS order (the venues bring their own).
 const SUBURBAN := ["nature", "squirrel_hater", "gardener", "busy", "perfectionist", "grump"]
@@ -189,13 +197,13 @@ var pad := false
 var best_score := 0
 var records := {} ## the most of each TALLY key in any one job, ever (saved)
 var run_over_reason := "" ## "" while running; "bankrupt" or "won" once it's over
-var heat := 0.0 ## the wanted level: only crimes add it (HEAT), a week paid on time cools it one
+var record := 0.0 ## convictions, each weighing its tier (RECORD): fines, sentences and the police follow it
 
 var start_month := 4 ## a knob: June reaches a busy calendar sooner for play-checks
 var year := 1980
 var day := 0 ## today, not yet over, in days since 1970 (Time's unix time / a day)
 var principal := 0
-var calendar := {} ## day -> what's booked: a job (a classified or a regular's visit), or {"cells": true}
+var calendar := {} ## day -> what's booked: a job (a classified, a regular's visit, community service), {"court": case} or {"jail": true}
 var paper: Array[Dictionary] = [] ## this week's ads not yet booked
 var regulars := {} ## id (their first job's seed) -> {id, job, cadence, rate, mood, drift}
 var offer := {} ## a regular's offer after the job just done, until answered
@@ -205,7 +213,7 @@ var in_job := false ## a job started and not finished: loading onto it is the bl
 var blackout := {} ## the job you blacked out on, for the board to break the news
 ## What the save keeps: the whole business.
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "upgrades",
-	"jobs_done", "heat", "run_tally", "run_tally_cost", "start_month", "year", "day", "principal",
+	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "principal",
 	"calendar", "paper", "regulars", "offer", "payday_pending", "winter_pending", "in_job", "current_job"]
 
 var _rng := RandomNumberGenerator.new()
@@ -264,7 +272,7 @@ func new_run(seed_value := 0) -> void:
 	last_result = {}
 	run_tally = {}
 	run_tally_cost = {}
-	heat = 0.0
+	record = 0.0
 	run_over_reason = ""
 	year = 1980
 	day = day_of(year, start_month, 1)
@@ -396,8 +404,7 @@ func make_job(seed_value: int, at := -1.0) -> Dictionary:
 		j.beds = 0 # the parterre is the beds
 		j.trees = rv.randi_range(2, 3)
 	elif not dregs and at < 20.0 and rv.randf() < 0.5:
-		_venue(j, "graveyard", "vicar", 1, 0.7)
-		j.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)
+		_churchyard(j, rv)
 	else:
 		_shape(j, at)
 	# The name it asks for: the dregs and the churchyard take anyone, nobody decent takes
@@ -422,6 +429,26 @@ func _shape(j: Dictionary, at: float) -> void:
 		j.shape = "forward"
 	else:
 		j.shape = "L"
+
+
+func _churchyard(j: Dictionary, rv: RandomNumberGenerator) -> void:
+	_venue(j, "graveyard", "vicar", 1, 0.7)
+	j.erase("shape")
+	j.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)
+
+
+## Community service (design doc, Levels): the council's churchyard, unpaid. Done, it
+## mends your name (SERVICE_REP).
+func service_job() -> Dictionary:
+	var j := make_job(_rng.randi(), 10.0)
+	if j.get("venue", "") != "graveyard":
+		var rv := RandomNumberGenerator.new()
+		rv.seed = j.seed + 5
+		_churchyard(j, rv)
+	j.service = true
+	j.pay = 0
+	j.brief = ["The council sent you, did they? Community service.", "Mind the graves. And no nonsense this time."]
+	return j
 
 
 ## Turn a job into a venue's: its persona, its lawn size, and its pay scaled.
@@ -522,25 +549,22 @@ func record_result(result: Dictionary) -> void:
 	cfg.save(save_path)
 	if current_job.has("regular"):
 		_visited(current_job.regular, result)
-	elif current_job.has("seed"):
+	elif current_job.has("seed") and not current_job.has("service"):
 		_maybe_offer(result)
-	if result.get("cells", false) and day + 1 <= season_end(): # a night in the cells: tomorrow's gone
-		var lost: Dictionary = calendar.get(day + 1, {})
-		calendar[day + 1] = {"cells": true}
-		if lost.has("regular") and regulars.has(lost.regular):
-			_place(lost.regular, day + 1 + regulars[lost.regular].cadence)
+	if result.get("charge", 0.0) > 0.0 and (result.outcome == "nicked" or result.get("police", false)):
+		_charge(result)
 	end_day()
 
 
 ## Seconds from the police being called to them arriving: your record shortens it.
-func police_time(at_heat: float) -> float:
-	return maxf(20.0, 60.0 - 8.0 * at_heat)
+func police_time(at_record: float) -> float:
+	return maxf(20.0, 60.0 - 8.0 * at_record)
 
 
 ## Caught for a crime of this tier: damages are billed separately, this is the charge,
 ## and your record raises it.
-func fine(tier: int, at_heat: float) -> int:
-	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_heat))
+func fine(tier: int, at_record: float) -> int:
+	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_record))
 
 
 func buy(item: String) -> bool:
@@ -610,7 +634,6 @@ func settle_payday(extra := 0) -> Dictionary:
 	var off := mini(extra, mini(money, principal))
 	money -= off
 	principal -= off
-	heat = maxf(0.0, heat - 1.0) # paid on time: things cool off
 	paper = make_paper()
 	save()
 	var outcome := "free" if off > 0 and principal == 0 else ("repossessed" if taken else "paid")
@@ -667,7 +690,7 @@ func book(ad: Dictionary) -> int:
 	return -1
 
 
-## Today's booking: a job, {"cells": true}, or empty.
+## Today's booking: a job, {"court": case}, {"jail": true}, or empty.
 func today() -> Dictionary:
 	return calendar.get(day, {})
 
@@ -690,9 +713,9 @@ func end_day() -> void:
 	save()
 
 
-## Through the days with no job to the next booking, payday or the winter.
+## Through the days with no job (or in jail) to the next booking, court, payday or the winter.
 func skip() -> void:
-	while not today().has("seed") and not payday_pending and not winter_pending:
+	while not today().has("seed") and not today().has("court") and not payday_pending and not winter_pending:
 		end_day()
 
 
@@ -761,14 +784,15 @@ func _visit(id: int) -> Dictionary:
 
 ## Put a regular's next visit on the calendar near `target`: a clash shifts it a day
 ## either way; nothing fits and that visit's missed, on to the one after.
-func _place(id: int, target: int) -> void:
+func _place(id: int, target: int) -> int:
 	var reg: Dictionary = regulars[id]
 	while target <= season_end():
 		for d: int in [target, target + 1, target - 1]:
 			if d > day and d <= season_end() and not calendar.has(d):
 				calendar[d] = _visit(id)
-				return
+				return d
 		target += reg.cadence
+	return -1
 
 
 ## A regular's visit is done: under the floor (or anything but paid) and they're gone;
@@ -814,10 +838,14 @@ func settle_winter() -> Dictionary:
 			regulars.erase(id)
 	reputation = lerpf(reputation, 50.0, 0.2)
 	rep_trend = lerpf(rep_trend, 50.0, 0.2)
+	record = maxf(0.0, record - 1.0) # a winter fades it, a little
+	var owed: Array = calendar.values().filter(func(b: Dictionary) -> bool: return b.has("court") or b.has("service"))
 	year += 1
 	day = day_of(year, start_month, 1)
 	calendar = {}
 	winter_pending = false
+	for i in owed.size(): # court and service the season ran out on come first in spring
+		calendar[day + i] = owed[i]
 	for id: int in regulars:
 		_place(id, day + posmod(id, regulars[id].cadence))
 	paper = make_paper()
@@ -870,3 +898,86 @@ func load_business() -> void:
 		rep_trend = maxf(0.0, rep_trend - BLACKOUT_REP)
 		reputation = maxf(0.0, reputation - BLACKOUT_REP * 0.5)
 		end_day()
+
+
+# ---------------------------------------------------------------- the record
+
+## The police are involved: caught at the scene, a night in the cells and court tomorrow;
+## escaped, a summons, court on the first free day SUMMONS_DAYS on. Court takes that day.
+func _charge(r: Dictionary) -> void:
+	var caught: bool = r.outcome == "nicked"
+	var case := {"charge": r.charge, "tier": r.get("tier", 1), "caught": caught, "customer": current_job.get("customer", "")}
+	var d := day + 1
+	if not caught:
+		d = day + SUMMONS_DAYS
+		while calendar.has(d) and d < season_end():
+			d += 1
+	_take_day(d, {"court": case})
+	r.court_day = d
+
+
+## Put something that won't move on a day (court, jail): a regular booked then shifts a
+## day if the calendar allows, else that visit's missed and their mood drops; a classified's lost.
+func _take_day(d: int, what: Dictionary) -> void:
+	var lost: Dictionary = calendar.get(d, {})
+	calendar[d] = what
+	if lost.has("regular") and regulars.has(lost.regular):
+		var moved := _place(lost.regular, d)
+		if moved < 0 or moved > d + 1:
+			regulars[lost.regular].mood -= 10.0
+			if moved > 0:
+				calendar[moved].start_mood = regulars[lost.regular].mood
+	elif lost.has("court") or lost.has("service"): # never lost: the next free day
+		var e := d + 1
+		while calendar.has(e):
+			e += 1
+		calendar[e] = lost
+
+
+## Today's court: pay a lawyer (LAWYERS index), then the roll. Guilty: the fine, the
+## charge onto your record, and a sentence by the charge, your record before it, and
+## whether you were caught at it. Returns {walked, fee, fine, service, jail, prison}.
+func court(lawyer: int) -> Dictionary:
+	var case: Dictionary = today().court
+	var l: Array = LAWYERS[lawyer]
+	money -= l[1]
+	var out := {"walked": false, "fee": l[1], "fine": 0, "service": 0, "jail": 0, "prison": false}
+	if _rng.randf() < l[2]:
+		out.walked = true
+		end_day()
+		return out
+	var before := record
+	record += case.charge
+	out.fine = fine(case.tier, before)
+	money -= out.fine
+	var days := sentence(case, before)
+	if record >= PRISON:
+		out.prison = true
+		run_over_reason = "prison"
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(business_path()))
+		return out
+	if before >= MENACE: # a menace on community service goes to jail
+		days = [0, days[0] + days[1]]
+	out.service = days[0]
+	out.jail = days[1]
+	for i in out.jail: # at once
+		_take_day(day + 1 + i, {"jail": true})
+	var d: int = day + 1 + out.jail
+	for i in out.service: # your next free days
+		while calendar.has(d):
+			d += 1
+		calendar[d] = service_job()
+	end_day()
+	return out
+
+
+## [community service days, jail days] for a conviction. A nuisance: nothing more than
+## the fine at first, a day of service as the record grows. Assault: service, then jail
+## as the record grows. Caught red-handed, a day more than escaping would have cost.
+func sentence(case: Dictionary, before: float) -> Array:
+	var extra := 1 if case.caught else 0
+	if case.tier <= 1:
+		return [(1 if before >= 2.0 else 0) + (extra if before >= 2.0 else 0), 0]
+	if before < 4.0:
+		return [1 + extra, 0]
+	return [0, 1 + floori(before / 4.0) + extra]

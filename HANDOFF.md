@@ -6,7 +6,7 @@ Notepad whenever an answer is still blank.
 
 ---
 
-## Session 14 (2026-09-29): the season prototype built (162 to 166)
+## Session 14 (2026-09-29): the season prototype (162 to 166), ringing the ads, the record (167)
 - **Built all five steps** of the old SEASON_PLAN (50e46fa): days from Tuesday 1 April 1980,
   a month-grid board (calendar, today's job or "On to the next job", the week's paper to
   book, regulars with Drop, the shop); Friday's vig plus keep, with buttons to pay extra
@@ -38,26 +38,39 @@ Notepad whenever an answer is still blank.
   the week. The dev's note: play below the bar, so the chance falls to 0 over `REACH` = 15
   points. My calls: the bar numbers reuse make_job's old reputation band edges; the
   caller's lines are placeholders for the text pass.
+- **The record (167)**, built after the prototype, unasked but decided in the doc: heat is
+  gone. A witnessed crime goes on the job's `charge` (the old weights, `Game.RECORD`);
+  only a conviction adds to `Game.record`. Caught: court in the morning. Escaped with the
+  police called: a summons, court on the first free day `SUMMONS_DAYS` (3) on. No police,
+  no court. Court is a calendar day: yourself or three lawyers ($60, $200, $600) for a 10,
+  30, 50 or 75% chance to walk; guilty is `fine()` at the record before, the charge onto
+  the record, and `sentence()`. Community service is `service_job()`, the churchyard
+  unpaid with +5 rep when signed off ("Duty" on the calendar); jail days block at once
+  and push a regular a day, else a missed visit and -10 mood. My numbers, all guesses:
+  a nuisance is the fine only until the record reaches 2; assault is service (a day more
+  if caught), jail from a record of 4; `MENACE` 8 turns service into jail; `PRISON` 16
+  ends the business; a winter takes 1 off the record. Court and service left when
+  September ends come first in April. New `test_court.gd`; test_season covers the rest.
 - **Not built:** "the dead stay dead" (nothing in a garden dies for good: the dog only
   limps, critters respawn; see TRIBAL). The start month is `Game.start_month`, a code knob,
   no in-game switch.
 - Arithmetic, not measured: at a Fair name the paper has 3 small ads a week at about $70
   to $85, so a perfect week clears the $150 due by about $60 to $100. Paying down $1,000
   from that is slow by design; S14-PACE asks how it feels.
-- Verified: run_all green (parse, smoke, 32 tests) under the strict gate; test_season
+- Verified: run_all green (parse, smoke, 33 tests with test_court) under the strict gate; test_season
   rewritten (money, paper, regulars, cells, save and blackout, winter), test_run_flow
   drives title to board to job to offer to a regular's visit to quit, blackout and payday.
   Screenshotted and looked at: the board (1 and 5 regulars, the right column scrolls, long
   surnames clip), payday, after payday, winter, the offer, the blackout. Not played.
 
-OWED CHECKS: 16, in CHECKS.txt (3 loads, about 55 minutes; LOAD 3 is the prototype).
+OWED CHECKS: 17, in CHECKS.txt (3 loads, about 65 minutes; LOAD 3 is the prototype and the record).
 
 NEXT:
 1. Play the prototype (LOAD 3) and the S13 checks; triage.
 2. Retune the first numbers from S14-PACE and S14-RING (principal, vig, keep, PAPER, REACH).
 3. The text pass (159, with 158) over the board, payday, winter and offer text.
 4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after
-   play; 167 (the record) is next to build once the prototype has been played.
+   play. Buildable without a call: 106 and 107 (packing the truck, the robot mower).
 
 ## Session 13 (2026-09-29): the 160 grill (a business, not a roguelite), S12 fallout built
 - **Grilled 160** (design doc, The Business and Season Prototype; NOTES 162 to 168). The dev

@@ -14,6 +14,7 @@ func _initialize() -> void:
 	_money()
 	_paper()
 	_regulars()
+	_court()
 	_save()
 	_winter()
 	print("PASS season")
@@ -158,15 +159,89 @@ func _regulars() -> void:
 			assert(g.regulars[2].mood == 40.0 and g.regulars[2].rate == 120, "grudging: the rate, and their mood drops")
 		g.drop(2)
 	g.drop(1)
-	# A night in the cells takes tomorrow, and a regular booked then moves on.
-	g.regulars[1] = {"id": 1, "job": j, "cadence": 14, "rate": 100, "mood": 60.0, "drift": []}
-	g.calendar[g.day + 1] = g._visit(1)
-	var cells_day: int = g.day + 1
-	g.calendar[g.day] = _job_for("nature")
+
+
+## Put a case on today and hear it with this lawyer until it goes `guilty` (or not).
+func _hear(case: Dictionary, lawyer: int, guilty: bool) -> Dictionary:
+	var keep: Dictionary = g.calendar.duplicate(true)
+	var state := [g.day, g.money, g.record]
+	for i in 100:
+		g.calendar = keep.duplicate(true)
+		g.day = state[0]
+		g.money = state[1]
+		g.record = state[2]
+		g.calendar[g.day] = {"court": case}
+		var v: Dictionary = g.court(lawyer)
+		if v.walked != guilty:
+			return v
+	assert(false, "a hundred hearings and never that verdict")
+	return {}
+
+
+func _court() -> void:
+	g.new_run(7)
+	var d0: int = g.day
+	# Caught: court in the morning, and a regular booked then shifts a day.
+	g.regulars[1] = {"id": 1, "job": _job_for("busy"), "cadence": 14, "rate": 100, "mood": 60.0, "drift": []}
+	g.calendar[d0 + 1] = g._visit(1)
+	g.calendar[d0] = _job_for("nature")
 	g.start_job()
-	g.record_result({"outcome": "nicked", "net": -100, "paid": 0, "rep": -12.0, "cells": true})
-	assert(g.today().has("cells") and g.day == cells_day, "tomorrow's in the cells")
-	assert(g.calendar.get(cells_day + 14, {}).get("regular", -1) == 1, "the regular's visit moved on a fortnight")
+	var r := {"outcome": "nicked", "net": 0, "paid": 0, "rep": -12.0, "charge": 2.0, "tier": 2, "police": true}
+	g.record_result(r)
+	assert(r.court_day == d0 + 1 and g.day == d0 + 1 and g.today().has("court"), "caught: court in the morning")
+	assert(g.calendar.get(d0 + 2, {}).get("regular", -1) == 1, "the regular booked then shifts a day")
+	var case: Dictionary = g.today().court
+	assert(case.caught and case.charge == 2.0 and case.tier == 2, "the charge goes to court")
+	# Guilty, a first assault, caught at it: the fine, the record, and two days' service on
+	# the next free days (past the regular).
+	g.money = 500
+	var v := _hear(case, 0, true)
+	assert(v.fine == g.fine(2, 0.0) and g.money == 500 - v.fine and g.record == 2.0, "fined $150, the record at 2")
+	assert(v.service == 2 and v.jail == 0, "assault, first time, caught: two days of community service")
+	for d: int in [d0 + 3, d0 + 4]:
+		var job: Dictionary = g.calendar.get(d, {})
+		assert(job.get("service", false) and job.pay == 0 and job.venue == "graveyard", "the churchyard, unpaid")
+	assert(g.day == d0 + 2, "court took the day")
+	# A lawyer can get you off: the fee, nothing else.
+	g.money = 1000
+	var rec: float = g.record
+	v = _hear(case, 3, false)
+	assert(v.walked and g.money == 1000 - g.LAWYERS[3][1] and g.record == rec, "not guilty: only the fee")
+	# Escaped with the police called: a summons, court a few days on.
+	g.calendar = {}
+	g.current_job = _job_for("nature")
+	r = {"outcome": "paid", "net": 0, "paid": 0, "rep": 0.0, "charge": 1.0, "tier": 1, "police": true}
+	var d1: int = g.day
+	g.record_result(r)
+	assert(r.court_day == d1 + g.SUMMONS_DAYS and g.calendar[r.court_day].court.caught == false, "a summons: court a few days on")
+	# No police, no court.
+	r = {"outcome": "paid", "net": 0, "paid": 0, "rep": 0.0, "charge": 1.0, "tier": 1, "police": false}
+	g.record_result(r)
+	assert(not r.has("court_day"), "nobody rang the police: no court")
+	# Sentences grow with the record.
+	assert(g.sentence({"tier": 1, "caught": false}, 0.0) == [0, 0], "a first nuisance: the fine only")
+	assert(g.sentence({"tier": 1, "caught": true}, 2.0) == [2, 0], "with a record, caught: service")
+	assert(g.sentence({"tier": 2, "caught": false}, 5.0) == [0, 2], "assault on a long record: jail")
+	# A menace does jail for service; a long record is prison.
+	g.calendar = {}
+	g.record = g.MENACE
+	v = _hear({"charge": 1.0, "tier": 1, "caught": false, "customer": "X"}, 0, true)
+	assert(v.service == 0 and v.jail == 1 and g.calendar[g.day].has("jail"), "a menace: jail at once, not service")
+	g.payday_pending = false
+	g.skip()
+	assert(not g.today().has("jail"), "jail days pass on their own")
+	g.record = g.PRISON - 1.0
+	v = _hear({"charge": 2.0, "tier": 2, "caught": true, "customer": "X"}, 0, true)
+	assert(v.prison and g.run_over_reason == "prison" and not g.has_business(), "prison: the business is over")
+	# Court the season ran out on comes first in spring; the winter fades the record.
+	g.new_run(7)
+	g.record = 3.0
+	g.day = g.season_end()
+	g.calendar[g.day + 1] = {"court": {"charge": 1.0, "tier": 1, "caught": true, "customer": "X"}}
+	g.money = 5000
+	g.end_day()
+	g.settle_winter()
+	assert(g.today().has("court") and g.record == 2.0, "court on 1 April, the record a little faded")
 
 
 func _save() -> void:
