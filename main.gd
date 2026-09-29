@@ -72,6 +72,8 @@ var settled := {} ## the job's outcome once paid or fired; you stay until you dr
 var mischief := 0.0 ## reputation owed for what you did after it was settled
 var police_left := -1.0 ## seconds until the police arrive once called; below zero, nobody's called
 var worst_crime := 0 ## the worst tier on the crime ladder this job (Game.RECORD)
+var cans := 0 ## petrol cans left on the truck (what was packed)
+var _fuel := {} ## what's left in each mower put back on the truck (take_out)
 var charge := 0.0 ## what witnesses saw this job, weighed (Game.RECORD): court makes it record
 
 var _next_hedgehog := 3.0
@@ -247,7 +249,8 @@ func _build_layout() -> void:
 		_park_car(Vector2(drive.position.x + drive.size.x * 0.5, g.end.y + 72.0), rv)
 	mower.position = truck_spot()
 	mower.rotation = -PI / 2.0 # facing up the drive
-	$Truck/Trailer.visible = Game.in_run and "rideon" in Game.owned
+	$Truck/Trailer.visible = Game.in_run and Game.packed.any(func(p: Dictionary) -> bool: return p.grid == "trailer")
+	cans = Game.cans_packed() if Game.in_run else 99
 	_build_street()
 	var beyond := preload("res://beyond.gd").new()
 	beyond.name = "Beyond"
@@ -1217,6 +1220,8 @@ func interact() -> void:
 			add_stone(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying)
 		elif walker.carrying == "stone":
 			_count("stones_binned")
+		elif walker.carrying == "jerrycan": # back on the truck, still full
+			cans += 1
 		Sfx.play("bump")
 		walker.carrying = ""
 		walker.queue_redraw()
@@ -1414,8 +1419,12 @@ func open_truck_menu() -> void:
 		buttons.append(["leave_ko", "Leave quietly"])
 	else:
 		buttons.append(["leave", "Drive off (no pay)"])
-	if walker and walker.carrying == "" and mower.power == "fuel":
-		buttons.append(["can", "Grab the fuel can"])
+	if walker and walker.carrying == "" and mower.power == "fuel" and cans > 0:
+		buttons.append(["can", "Grab a petrol can (%d packed)" % cans])
+	if Game.in_run and (walker == null or walker.carrying == ""): # the other mowers on the truck
+		for k: String in ["push", "petrol", "rideon"]:
+			if k != mower.sprite_kind and (k == "push" or Game.packed_has(k)):
+				buttons.append(["take_" + k, "Take out the %s" % Game.MOWERS[k].name.to_lower()])
 	buttons.append(["resume", "Keep going"])
 	var lines := []
 	if settled.get("outcome") == "paid":
@@ -1456,12 +1465,17 @@ func _on_choice(id: String) -> void:
 			Sfx.toggle(id)
 			open_pause()
 		"can":
+			cans -= 1
 			walker.carrying = "jerrycan"
 			walker.queue_redraw()
 			hud.close()
 			get_tree().paused = false
 		"nicked":
 			_finish_nicked()
+		"take_push", "take_petrol", "take_rideon":
+			take_out(id.trim_prefix("take_"))
+			hud.close()
+			get_tree().paused = false
 		"quit":
 			get_tree().paused = false
 			Game.in_run = false
@@ -1634,6 +1648,31 @@ func _fired() -> void:
 	shake(4.0)
 
 
+## Take another mower off the truck (design doc, packing the truck: swap anywhere): the
+## one you were using is recalled to the truck, wherever it stood, keeping its fuel, and
+## you're on the new one at the kerb.
+func take_out(kind: String) -> void:
+	_fuel[mower.sprite_kind] = mower.fuel
+	if walker:
+		hop_on()
+	mower.apply_spec(Game.mower_spec(kind))
+	if _fuel.has(kind):
+		mower.fuel = _fuel[kind]
+	mower.fuel_changed.emit(mower.fuel / mower.max_fuel)
+	$HUD/Fuel.stamina = mower.power == "stamina"
+	mower.position = truck_spot()
+	mower.rotation = -PI / 2.0
+	mower.velocity = Vector2.ZERO
+
+
+## Driving off with the police called, nothing packs itself: a mower standing out on the
+## lawn stays there, and it's gone. The push mower's cab is at the kerb, so it always comes.
+func _left_behind() -> String:
+	if police_left < 0.0 or walker == null or mower.sprite_kind == "push" or $Truck/RefuelZone.overlaps_body(mower):
+		return ""
+	return mower.sprite_kind
+
+
 ## Leave once paid or fired. Anything you got up to since comes off your reputation.
 func _drive_off() -> void:
 	var r := settled.duplicate()
@@ -1683,6 +1722,10 @@ func _finish(result: Dictionary) -> void:
 	get_tree().paused = true
 	result.customer = job.get("customer", "")
 	result.charge = charge
+	var lost := _left_behind() if result.outcome != "nicked" else ""
+	if lost != "" and Game.in_run:
+		Game.lose(lost)
+		result.left_behind = Game.MOWERS[lost].name
 	result.tier = worst_crime
 	result.police = police_left >= 0.0 # called, whether or not they got here
 	if job.get("service", false) and result.outcome == "paid": # community service, signed off

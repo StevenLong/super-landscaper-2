@@ -152,6 +152,8 @@ func _rundown(r: Dictionary) -> Control:
 	var also: Array[String] = []
 	if r.has("court_day"):
 		also.append(("A night in the cells: court %s" if r.outcome == "nicked" else "A summons: court on %s") % Game.date_text(r.court_day))
+	if r.has("left_behind"):
+		also.append("Your %s's still on their lawn. The police have it now" % r.left_behind.to_lower())
 	if r.get("lost_regular", false):
 		also.append("They won't be booking you again")
 	if not also.is_empty():

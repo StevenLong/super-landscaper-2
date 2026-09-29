@@ -243,16 +243,12 @@ func _mower_row(key: String) -> Control:
 	var row := UI.hbox(10)
 	var info := UI.vbox(2)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(UI.label(m.name + ("  (in use)" if Game.equipped == key else ""), 20,
-		UI.GOLD if Game.equipped == key else UI.TEXT))
+	var on_truck := key == "push" or Game.packed_has(key)
+	info.add_child(UI.label(m.name + ("  (packed)" if on_truck and key in Game.owned else ""), 20,
+		UI.GOLD if on_truck and key in Game.owned else UI.TEXT))
 	info.add_child(UI.label(m.blurb, 18, UI.DIM))
 	row.add_child(info)
 	if key in Game.owned:
-		var use := UI.button("Use", func() -> void:
-			Game.equipped = key
-			_build(key), 18)
-		use.disabled = Game.equipped == key
-		row.add_child(use)
 		if key != "push":
 			row.add_child(_sell_button(key, _build.bind(key)))
 	else:
@@ -317,9 +313,8 @@ func _sell_button(key: String, then: Callable) -> Button:
 		then.call(), 18)
 
 
-func _go() -> void:
-	Game.start_job()
-	get_tree().change_scene_to_file("res://main.tscn")
+func _go() -> void: # packing first (pack.gd), then the job
+	get_tree().change_scene_to_file("res://pack.tscn")
 
 
 ## A fresh screen with a centred column, for payday, the winter and the business's end.

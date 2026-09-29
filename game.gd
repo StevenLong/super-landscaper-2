@@ -35,10 +35,18 @@ const MOWERS := {
 }
 
 const UPGRADES := {
+	"trailer": {"name": "Trailer", "price": 100, "blurb": "Tows a ride-on. Comes free with one."},
 	"tank": {"name": "Bigger tank", "price": 120, "blurb": "+50% fuel or stamina."},
 	"gloves": {"name": "Gardening gloves", "price": 40, "blurb": "Pick up a hedgehog without the prickles."},
 	"blades": {"name": "Sharp blades", "price": 150, "blurb": "+15% cutting width."},
 }
+
+## Packing the truck (design doc, Mowers and Equipment): what comes to a job is what you
+## packed. The cab holds the push mower, always. The bed and the trailer (if you own
+## one) are grids; kit is a rectangle of cells, turned on its side to fit. A ride-on
+## only goes on the trailer. Petrol cans are cargo like the rest, as many as fit.
+const GRIDS := {"bed": Vector2i(4, 3), "trailer": Vector2i(4, 4)}
+const SHAPES := {"petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "can": Vector2i(1, 1)}
 
 const FIRST := ["Margaret", "Derek", "Priya", "Gordon", "Yvonne", "Colin", "Shirley", "Nigel",
 	"Bernadette", "Keith", "Fatima", "Trevor", "Agnes", "Barry", "Hilary", "Rajesh", "Doreen", "Clive"]
@@ -152,7 +160,8 @@ var total_earned := 0
 var reputation := 50.0 ## 0..100; callers say no as it falls (yes_chance)
 var rep_trend := 50.0 ## where behaviour is pushing reputation; reputation lags toward it
 var owned: Array[String] = ["push"]
-var equipped := "push"
+var equipped := "push" ## the mower a job starts on: the best one packed (start_job)
+var packed: Array[Dictionary] = [] ## what's in the truck: {kind, grid, at (Vector2i), turned}
 var upgrades: Array[String] = []
 var jobs_done := 0
 var in_run := false
@@ -212,7 +221,7 @@ var winter_pending := false
 var in_job := false ## a job started and not finished: loading onto it is the blackout
 var blackout := {} ## the job you blacked out on, for the board to break the news
 ## What the save keeps: the whole business.
-const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "upgrades",
+const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "principal",
 	"calendar", "paper", "regulars", "offer", "payday_pending", "winter_pending", "in_job", "current_job"]
 
@@ -265,6 +274,7 @@ func new_run(seed_value := 0) -> void:
 	rep_trend = 50.0
 	owned = ["push"]
 	equipped = "push"
+	packed = []
 	upgrades = []
 	jobs_done = 0
 	in_run = true
@@ -288,9 +298,9 @@ func new_run(seed_value := 0) -> void:
 	save()
 
 
-## The mower spec for the equipped mower, with upgrades applied.
-func mower_spec() -> Dictionary:
-	var s: Dictionary = MOWERS[equipped].duplicate()
+## The mower spec for a mower (the equipped one by default), with upgrades applied.
+func mower_spec(kind := "") -> Dictionary:
+	var s: Dictionary = MOWERS[kind if kind != "" else equipped].duplicate()
 	if "tank" in upgrades:
 		s.max_fuel *= 1.5
 	if "blades" in upgrades:
@@ -576,12 +586,22 @@ func buy(item: String) -> bool:
 			return false
 		owned.append(item)
 		equipped = item
+		if item == "rideon" and "trailer" not in upgrades: # bundled
+			upgrades.append("trailer")
+		pack_first(item)
 	else:
 		if item in upgrades:
 			return false
 		upgrades.append(item)
 	money -= price
 	return true
+
+
+## Kit left behind when you fled the police: gone, no money for it.
+func lose(item: String) -> void:
+	var cash := money
+	sell(item)
+	money = cash
 
 
 ## What kit fetches sold: everything but the push mower.
@@ -599,6 +619,7 @@ func sellable() -> Array[String]:
 
 func sell(item: String) -> void:
 	money += resale(item)
+	packed = packed.filter(func(p: Dictionary) -> bool: return p.kind != item and not (item == "trailer" and p.grid == "trailer"))
 	if MOWERS.has(item):
 		owned.erase(item)
 		if equipped == item: # onto the best you have left
@@ -695,8 +716,10 @@ func today() -> Dictionary:
 	return calendar.get(day, {})
 
 
-## Off to today's job. Saved as started: quit before it's done and it loads as the blackout.
+## Off to today's job, on the best mower packed. Saved as started: quit before it's done
+## and it loads as the blackout.
 func start_job() -> void:
+	equipped = "rideon" if packed_has("rideon") else ("petrol" if packed_has("petrol") else "push")
 	current_job = today()
 	in_job = true
 	save()
@@ -981,3 +1004,70 @@ func sentence(case: Dictionary, before: float) -> Array:
 	if before < 4.0:
 		return [1 + extra, 0]
 	return [0, 1 + floori(before / 4.0) + extra]
+
+
+# ---------------------------------------------------------------- packing the truck
+
+## A packed item's footprint: its shape, on its side if turned.
+func footprint(kind: String, turned: bool) -> Vector2i:
+	var sh: Vector2i = SHAPES[kind]
+	return Vector2i(sh.y, sh.x) if turned else sh
+
+
+## Could `kind` go at `at` in `grid` (leaving out `moving`, the item being moved)?
+func fits(kind: String, grid: String, at: Vector2i, turned: bool, moving: Dictionary = {}) -> bool:
+	if grid == "trailer" and "trailer" not in upgrades:
+		return false
+	if kind == "rideon" and grid != "trailer":
+		return false
+	var box := Rect2i(at, footprint(kind, turned))
+	if not Rect2i(Vector2i.ZERO, GRIDS[grid]).encloses(box):
+		return false
+	for p: Dictionary in packed:
+		if p != moving and p.grid == grid and box.intersects(Rect2i(p.at, footprint(p.kind, p.turned))):
+			return false
+	return true
+
+
+## The packed item covering this cell, or empty.
+func packed_at(grid: String, cell: Vector2i) -> Dictionary:
+	for p: Dictionary in packed:
+		if p.grid == grid and Rect2i(p.at, footprint(p.kind, p.turned)).has_point(cell):
+			return p
+	return {}
+
+
+## Pack `kind` into the first place it fits, the bed first. False if it can't go anywhere.
+func pack_first(kind: String) -> bool:
+	for grid: String in GRIDS:
+		for turned: bool in [false, true]:
+			var g: Vector2i = GRIDS[grid]
+			for y in g.y:
+				for x in g.x:
+					if fits(kind, grid, Vector2i(x, y), turned):
+						packed.append({"kind": kind, "grid": grid, "at": Vector2i(x, y), "turned": turned})
+						return true
+	return false
+
+
+func packed_has(kind: String) -> bool:
+	return packed.any(func(p: Dictionary) -> bool: return p.kind == kind)
+
+
+func cans_packed() -> int:
+	return packed.filter(func(p: Dictionary) -> bool: return p.kind == "can").size()
+
+
+## Kit you own that isn't on the truck (the push mower rides in the cab), and cans, always.
+func unpacked() -> Array[String]:
+	var out: Array[String] = []
+	for k in owned:
+		if k != "push" and not packed_has(k):
+			out.append(k)
+	out.append("can")
+	return out
+
+
+## What to call a packable thing.
+func kit_name(kind: String) -> String:
+	return "Petrol can" if kind == "can" else MOWERS[kind].name

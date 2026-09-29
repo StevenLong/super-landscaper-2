@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (17 checks, 3 loads, about 65 minutes)
+PLAY CHECKS OWED  (18 checks, 3 loads, about 70 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -97,6 +97,13 @@ Knock a customer out so the police are called. Once caught: "court in the mornin
 court screen, a lawyer, a verdict. Once escaped: a summons, court a few days on. Guilty
 of assault means community service ("Duty" on the calendar): the churchyard, unpaid, a
 reputation line for it. Do the sentences feel proportionate?
+>
+
+S14-PACK
+Buy a petrol mower ([1] for money): it packs itself. Go to a job: the packing screen.
+Pick it up, turn it ([R]), drop it elsewhere; pack a couple of cans; drive. At the truck,
+"Take out the push mower" swaps, and the petrol one comes back as full as it was. Is the
+packing screen worth its stop before every job?
 >
 
 S14-BLACKOUT

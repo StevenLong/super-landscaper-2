@@ -24,6 +24,9 @@ func _process(_delta: float) -> bool:
 	_frame += 1
 	if _frame % 10 != 0:
 		return false
+	if current_scene.name == "Pack": # packing the truck: test_pack has it; drive on
+		current_scene.drive()
+		return false
 	match _step:
 		0:
 			assert("COURT" in _labels(), "a court day opens the court")

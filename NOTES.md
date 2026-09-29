@@ -115,23 +115,11 @@ small business across seasons, not a roguelite run. 162 to 166 (the season proto
 
 Decided in the design doc (Mowers and Equipment: packing the truck, each mower's feel).
 
-106. [FEATURE, large] Packing the truck: a packing screen after taking a job (grids for the
-   bed and the trailer, items as rotatable shapes, starting as you left it); the cab's push
-   mower free; at the job, take kit out at the truck (the unused mower recalled); "Pack up
-   and leave" brings everything home unless the police were called; the trailer a shop
-   item, bundled with a ride-on if you haven't one; petrol cans as cargo. Homes: `game.gd`
-   (owned kit, the packed layout), a new packing scene between `board.gd` and `main.gd`,
-   `main.gd` (the truck, leaving). Question zero: GLoot (a Godot 4 inventory addon with a
-   grid and rotation) from memory, not checked; likely too general for two small grids.
-   Open parameters (my calls unless the dev says): the bed's and the trailer's grid sizes,
-   each item's shape (petrol mower, robot mower, petrol can), how the screen is driven on a
-   pad (move, rotate, drop).
 107. [FEATURE, moderate] The robot mower: set down, mows straight until it bumps something
    or the edge, turns a random way; turns back at bed edges; flings stones and squashes
-   critters as yours. Picked up and carried back like a body. Waits on 106.
+   critters as yours. Picked up and carried back like a body. 106 is built (session 14).
 
-PROPOSED ORDER: play the session 11 checks first (106 changes how mowers are chosen,
-on top of this session's mower feel); then 106 and 107.
+106 built in session 14; 107 next.
 
 ### Parked
 
