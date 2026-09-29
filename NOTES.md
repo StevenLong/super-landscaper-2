@@ -98,7 +98,7 @@ Built in session 12 (unplayed, see CHECKS.txt): 141 to 146, 148 to 154, 156, 157
 Also: S11-HEAP's target brackets stay for now; the dev is unsure of the look, to soak.
 S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
 
-PROPOSED ORDER (revised after the 160 grill, the dev to confirm): play the S12 checks;
+ORDER (revised after the 160 grill, confirmed 2026-09-29): play the S12 checks;
 the season prototype (162 to 166); then the text pass (159, with 158), since the
 prototype rewrites the board's and the summary's text; 155 when it's caught on screen.
 
