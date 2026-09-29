@@ -36,6 +36,7 @@ func _physics_process(_delta: float) -> bool:
 			f.free()
 			m._knock_out()
 			assert(g.heat == 3.0 and m.worst_crime == 2, "knocking them out is assault: +2")
+			assert(m._wallet >= m.job.pay * 0.2 and m._wallet <= m.job.pay * 0.6, "unpaid, their pockets hold 20 to 60% of the pay")
 			assert(m.police_left == g.police_time(0.0), "and the police are called, on a clock set by your record at the start")
 			_wait = 30
 		1:
@@ -84,6 +85,9 @@ func _physics_process(_delta: float) -> bool:
 			g.settle_payday()
 			assert(g.heat == 2.0, "a week paid on time cools heat a level")
 			assert(g.police_time(3.0) < g.police_time(0.0) and g.fine(1, 3.0) > g.fine(1, 0.0), "your record brings them faster and fines harder")
+			m.settled = {"outcome": "paid"}
+			m._knock_out()
+			assert(m._wallet <= m.job.pay * 0.2, "once they've paid you, small change")
 			print("PASS police")
 			quit()
 	_step += 1

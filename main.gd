@@ -1072,7 +1072,7 @@ func _hint() -> String:
 			return walk
 		return _fired_hint() if customer.fired else ""
 	if mower.engine_off and mower.fuel <= 0.0 and not at_truck():
-		return "Out of petrol: push it to the truck, or fetch a can"
+		return "Out of petrol: " + ("fetch a can" if mower.empty_speed_scale <= 0.0 else "push it to the truck, or fetch a can")
 	if mower.engine_off and mower.sprite_kind == "petrol":
 		return "Hold %s to pull the cord, let go in the green" % ("(RT)" if Game.pad else "[W]") # the throttle: a trigger or a key
 	if mower.engine_off:
@@ -1983,7 +1983,8 @@ func _stone_hit_test(p: Vector2, z := 0.0, falling := false, kind := "stone") ->
 
 func _on_stone_landed(f: FlyingStone, target: String) -> void:
 	var p := f.position
-	var alive := CRITTERS.has(f.kind) # a live animal: it lands on its feet, whatever it hit
+	var kind := f.kind # as thrown (a slam can make it a body on the way down)
+	var alive := CRITTERS.has(kind) # a live animal: it lands on its feet, whatever it hit
 	var tier := 0 # what hitting this is on the crime ladder, if it was thrown on purpose
 	match target:
 		"customer":
@@ -2025,7 +2026,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_drop_bounced(f) # it scrambles back out
 		"wall":
 			Sfx.play("thud")
-			customer.on_stone("wall", p)
+			if not _wanted_hurt(f.kind): # a critter they want hurt: the wall's nothing to them
+				customer.on_stone("wall", p)
 			if customer.sees(p): # indoors, a thud is nothing to them
 				_react()
 			_drop_bounced(f)
@@ -2050,8 +2052,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				if a is Animal and not a.dead and not a.body and a.position.distance_to(p) <= CRITTER_HIT:
 					_stone_critter(a, f.thrown)
 					break
-			if alive or f.kind.begins_with("body_"): # a body lands too, beside the one it felled
-				_drop_bounced(f)
+			_drop_bounced(f) # it lands too, beside the one it felled
 		"dog":
 			Sfx.play("yelp")
 			dog.bowl("stone")
@@ -2071,7 +2072,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 			_drop_bounced(f)
 		"roof": # it clatters down the tiles and drops off the gutter
 			Sfx.play("clonk")
-			customer.on_stone("wall", p)
+			if not _wanted_hurt(f.kind):
+				customer.on_stone("wall", p)
 			if customer.sees(p):
 				_react()
 			var foot := Vector2(p.x, _house.position.y + _house.WALL_H + 10.0)
@@ -2117,6 +2119,8 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				Sfx.play("thud")
 				if f.kind.begins_with("body_") and not _on_plot(p):
 					_count("bodies_hidden") # next door's problem now
+				elif alive and f.thrown and not _on_plot(p) and customer.on_evict(f.kind, KO_SHARE, p):
+					_react() # seen going over the hedge or fence
 				for b in $Scenery.get_children():
 					if b.has_method("flattened_count") and b.rect().has_point(p):
 						b._trample(b.to_local(p), 12.0) # flattens a flower or two where it lands
@@ -2125,11 +2129,11 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 		var method := 0.0
 		if alive:
 			if target == "": # just thrown across the lawn: the animal's own tier
-				tier = CRITTERS[f.kind].tier
-			elif target not in ["gone", "self"] and not (customer.persona.get(f.kind, -20.0) > 0.0 and target not in THEIRS):
+				tier = CRITTERS[kind].tier
+			elif target not in ["gone", "self"] and not (_wanted_hurt(kind) and target not in THEIRS):
 				# into something: one above the worse of the two, and heat for the method. Unless
 				# they want it hurt: then how is no crime, bar at them, their car, window or dog.
-				tier = mini(2, maxi(tier, CRITTERS[f.kind].tier) + 1)
+				tier = mini(2, maxi(tier, CRITTERS[kind].tier) + 1)
 				method = 1.0
 		if tier > 0:
 			_crime(tier, p, target in THEIRS, method)
@@ -2139,9 +2143,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 ## high, it falls from there. A critter thrown hard into it is knocked out.
 func _drop_bounced(f: FlyingStone) -> void:
 	if f.thrown and f.kind in ["hedgehog", "squirrel"] and f.velocity.length() > SLAM:
-		f.out = maxf(f.out, KO_TIME)
-		Sfx.play("squeak_" + f.kind)
-		_count("ko_" + f.kind)
+		_slam(f)
 	var at := lawn.keep_in(f.position - f.velocity.normalized() * 12.0, 4.0)
 	if f.z < DROP_FROM:
 		_land(at, f.kind, f.out, f.seen)
@@ -2220,7 +2222,7 @@ func _splash(p: Vector2, size := 1.0) -> void:
 
 
 func _knock_out() -> void:
-	_wallet = job.pay * randf_range(0.2, 0.6)
+	_wallet = job.pay * (randf_range(0.0, 0.2) if settled.get("outcome") == "paid" else randf_range(0.2, 0.6)) # they've just paid you out of it
 	_crime(2, Vector2.INF, true) # they felt it
 	_count("knockouts")
 	customer.knock_out()
@@ -2470,7 +2472,7 @@ func _on_squashed(a: Animal) -> void:
 ## A stone into a critter (design doc: thrown knocks out, flung splats; either way
 ## sometimes the other). Killed by a thrown stone, it's a body, not a splat.
 func _stone_critter(a: Animal, thrown: bool, roll := randf()) -> void:
-	var ko := roll < THROWN_KO if thrown else roll >= FLUNG_SPLAT
+	var ko := a.out <= 0.0 and (roll < THROWN_KO if thrown else roll >= FLUNG_SPLAT) # out cold already, a second hit kills
 	if not ko and not thrown:
 		a.squash() # the splat, as ever (_on_squashed)
 		return
@@ -2490,6 +2492,33 @@ func _stone_critter(a: Animal, thrown: bool, roll := randf()) -> void:
 		_known_bodies[a.kind] = _known_bodies.get(a.kind, 0) + 1
 		a.seen = true
 		_react()
+
+
+## A critter thrown hard into something solid is knocked out, and seen, it moves them like
+## a stoned one. One thrown already out cold dies of it, and lands as a body.
+func _slam(f: FlyingStone) -> void:
+	Sfx.play("squeak_" + f.kind)
+	var dies := f.out > 0.0
+	var seen := customer.on_squash(f.kind, 1.0 if dies else KO_SHARE, f.position)
+	if seen:
+		_react()
+	if not dies:
+		f.out = KO_TIME
+		_count("ko_" + f.kind)
+		_mischief(1.0)
+		return
+	_count("slammed_" + f.kind)
+	_mischief(3.0)
+	if seen:
+		_known_bodies[f.kind] = _known_bodies.get(f.kind, 0) + 1
+	f.seen = seen
+	f.out = 0.0
+	f.kind = "body_" + f.kind
+
+
+## Whether this is a critter the customer wants hurt (how is then nothing to them).
+func _wanted_hurt(kind: String) -> bool:
+	return CRITTERS.has(kind) and customer.persona.get(kind, -20.0) > 0.0
 
 
 ## Bodies left lying where the customer will see them from the patio, by kind: found after

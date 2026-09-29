@@ -30,11 +30,13 @@ signal bumped(what: Object, impact: float) ## a hard knock into something solid
 @export var body := Vector2(36, 28) ## length x width, as the voxel model is built
 
 const WALK := 0.6 ## a push mower walks at this share of its top speed; hold sprint for all of it
+const IDLE_BURN := 0.3 ## an engine running with the mower standing still, of fuel_burn
 const WALK_BURN := 0.6 ## walking tires you slowly (of fuel_burn)...
 const SPRINT_BURN := 1.5 ## ...sprinting fast
 const PULL_TIME := 0.9 ## seconds for the ripcord's marker to sweep the meter
 const SWEET_AT := 0.62 ## where the sweet spot starts on the meter
 const COUGH := 1.0 ## seconds lost to a missed pull
+const YANK := 0.3 ## seconds the hand takes to yank the cord on a good pull
 const STALL_BELOW := 40.0 ## a petrol mower in worse condition than this can stall on a knock...
 const STALL_CHANCE := 0.5 ## ...this often
 const GEARS := [0.3, 0.5, 0.75, 1.0] ## a ride-on's top speed in each gear, of max_speed
@@ -52,6 +54,8 @@ var engine_off := false ## a powered mower switched off: burns nothing and won't
 var pull := -1.0 ## the ripcord's marker, 0 to 1, while you draw the cord; -1 when not
 var gear := 1 ## a ride-on's gear, 1 to 4
 var _cough := 0.0
+var _yank := 0.0 ## seconds left of a good pull's yank (drawn after it's started)
+var _yank_at := 0.0 ## where on the meter it was let go
 var _cord: Node2D ## the ripcord's meter, over the mower
 var _stride := 0.0
 var _bump_cooldown := 0.0
@@ -168,6 +172,8 @@ func _ripcord(delta: float) -> void:
 		var s := sweet()
 		if pull >= s.x and pull <= s.y:
 			engine_off = false
+			_yank = YANK
+			_yank_at = pull
 			Sfx.play("ui_select", 0.0)
 		else:
 			_miss()
@@ -205,26 +211,27 @@ func stall_check(roll := randf()) -> void:
 
 
 ## The ripcord's meter over the mower: the sweet spot in green with PULL over it (lit while
-## the marker's in it), the marker in white. Below, the cord itself draws out of the engine
-## as you hold, and snaps back when you let go.
+## the marker's in it). A hand grips the cord's handle and draws it along the meter as you
+## hold; let go in the green and it yanks the cord up and away as the engine catches.
 func _draw_cord() -> void:
-	if not (engine_off and occupied and sprite_kind == "petrol" and fuel > 0.0):
+	if not (engine_off and occupied and sprite_kind == "petrol" and fuel > 0.0) and _yank <= 0.0:
 		return
 	_cord.global_rotation = 0.0
-	var engine := Vector2(0, -10)
-	var handle := engine + Vector2(6, -8) * (1.0 + 2.5 * maxf(pull, 0.0))
-	_cord.draw_line(engine, handle, Color("d8d0c0"), 1.0)
-	_cord.draw_rect(Rect2(handle - Vector2(3, 1), Vector2(6, 3)), Color("c83828"))
 	var at := Vector2(-22, -46)
 	var s := sweet()
 	_cord.draw_rect(Rect2(at - Vector2(1, 1), Vector2(46, 8)), Color(0, 0, 0, 0.7))
 	_cord.draw_rect(Rect2(at, Vector2(44, 6)), Color("5a3030") if _cough > 0.0 else Color("3a3a42"))
 	_cord.draw_rect(Rect2(at + Vector2(44 * s.x, 0), Vector2(44 * (s.y - s.x), 6)), Color("58c048"))
-	var lit := pull >= s.x and pull <= s.y
+	var t := 1.0 - _yank / YANK if _yank > 0.0 else 0.0 # through the yank, 0 to 1
+	var drawn := _yank_at if _yank > 0.0 else maxf(pull, 0.0) # at rest, the hand waits at the start
+	var lit := drawn >= s.x and drawn <= s.y
 	_cord.draw_string(ThemeDB.fallback_font, at + Vector2(44 * (s.x + s.y) / 2.0 - 20, -3), "PULL", HORIZONTAL_ALIGNMENT_CENTER, 40, 10,
 		Color("f8d048") if lit else Color("f0ead8")) # UI.GOLD, UI.TEXT
-	if pull >= 0.0:
-		_cord.draw_rect(Rect2(at + Vector2(44 * pull - 1, -2), Vector2(2, 10)), Color.WHITE)
+	var hand := at + Vector2(44 * drawn, 3) + Vector2(18, -5) * sqrt(t)
+	_cord.draw_line(at + Vector2(0, 3), hand, Color("d8d0c0"), 1.0) # the cord, from the engine end
+	_cord.draw_rect(Rect2(hand - Vector2(1, 4), Vector2(3, 8)), Color("c83828")) # the handle
+	_cord.draw_rect(Rect2(hand + Vector2(-3, -3), Vector2(7, 6)), Color("5a3020")) # a fist round it
+	_cord.draw_rect(Rect2(hand + Vector2(-2, -2), Vector2(5, 4)), Color("e0a878"))
 
 
 ## Damage from what we just drove into: only the moment of contact, and only the
@@ -290,6 +297,9 @@ func _physics_process(delta: float) -> void:
 	var keys := 0.0 if Game.pad else Input.get_axis("move_back", "move_forward")
 	throttle = clampf(keys + Input.get_axis("reverse", "accelerate"), -1.0, 1.0) if occupied else 0.0
 	sprinting = power == "stamina" and throttle > 0.0 and fuel > 0.0 and Input.is_action_pressed("sprint")
+	if _yank > 0.0:
+		_yank -= delta
+		_cord.queue_redraw()
 	if engine_off and fuel <= 0.0:
 		pass # dry: pushed along slowly, as ever, till there's petrol to start it on
 	elif engine_off and sprite_kind == "petrol":
@@ -306,15 +316,15 @@ func _physics_process(delta: float) -> void:
 			fuel = maxf(0.0, fuel - fuel_burn * (SPRINT_BURN if sprinting else WALK_BURN) * delta)
 		else:
 			fuel = minf(max_fuel, fuel + regen * delta)
-	elif not engine_off: # an engine that isn't going burns nothing
-		fuel = maxf(0.0, fuel - fuel_burn * delta)
+	elif not engine_off: # an engine that isn't going burns nothing; ticking over, a little
+		fuel = maxf(0.0, fuel - fuel_burn * (1.0 if throttle != 0.0 else IDLE_BURN) * delta)
 		if fuel <= 0.0: # run dry, it dies: refuelled, it wants starting again
 			engine_off = true
 			Sfx.play("cough")
 	fuel_changed.emit(fuel / max_fuel)
 	var running := fuel > 0.0 and condition > 0.0 and not engine_off
 
-	if occupied:
+	if occupied and (running or empty_speed_scale > 0.0): # a dead ride-on won't budge
 		var turn: float = turn_rate * (GEAR_TURN[gear - 1] if sprite_kind == "rideon" else 1.0)
 		rotation += Input.get_axis("turn_left", "turn_right") * turn * delta
 

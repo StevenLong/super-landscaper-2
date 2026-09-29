@@ -114,6 +114,14 @@ func _ready() -> void:
 	_front.draw.connect(_draw_house)
 	add_child(_front)
 	_art = load("res://art/%s.png" % VENUES[venue].art)
+	# The art below the foot is the patio: ground, so a hose or a body lies on it, not under.
+	var slabs := Node2D.new()
+	slabs.position = _front.position
+	slabs.z_index = -2
+	slabs.draw.connect(func() -> void:
+		var r := Rect2(0, ART_FOOT, _art.get_width(), _art.get_height() - ART_FOOT)
+		slabs.draw_texture_rect_region(_art, Rect2(Vector2.ZERO, r.size), r))
+	add_child(slabs)
 	if passage:
 		return
 	var g := Sprite2D.new()
@@ -125,7 +133,7 @@ func _ready() -> void:
 
 
 func _draw_house() -> void:
-	_front.draw_texture(_art, Vector2(0, -ART_FOOT))
+	_front.draw_texture_rect_region(_art, Rect2(0, -ART_FOOT, _art.get_width(), ART_FOOT), Rect2(0, 0, _art.get_width(), ART_FOOT))
 	if door_open and not back_patio: # a dark doorway, the door swung in against its frame
 		var d: Rect2 = VENUES[venue].door
 		_front.draw_rect(d, Color("1a1820"))

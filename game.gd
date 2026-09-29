@@ -27,7 +27,7 @@ const MOWERS := {
 		"name": "Ride-on mower", "price": 650, "power": "fuel", "sprite": "rideon", "body": Vector2(52, 40),
 		"max_speed": 300.0, "reverse_speed": 120.0, "accel": 340.0, "brake": 520.0,
 		"turn_rate": 1.9, "cut_radius": 26.0, "max_fuel": 80.0, "fuel_burn": 1.5,
-		"regen": 0.0, "empty_speed_scale": 0.2, "fuel_price": 0.25, "toughness": 2.0, "knock_out": 0.0,
+		"regen": 0.0, "empty_speed_scale": 0.0, "fuel_price": 0.25, "toughness": 2.0, "knock_out": 0.0,
 		"blurb": "Huge cut. Turns like a barge.",
 	},
 }
@@ -142,6 +142,7 @@ const TALLY := {
 	"squashed_hedgehog": "Hedgehogs flattened", "squashed_squirrel": "Squirrels flattened",
 	"stoned_hedgehog": "Hedgehogs stoned", "stoned_squirrel": "Squirrels sniped",
 	"ko_hedgehog": "Hedgehogs knocked out", "ko_squirrel": "Squirrels knocked out",
+	"slammed_hedgehog": "Hedgehogs dashed against things", "slammed_squirrel": "Squirrels dashed against things",
 	"bodies_hidden": "Bodies disposed of", "bodies_mulched": "Bodies mulched",
 	"dog_bowled": "Dogs bowled over", "dog_returned": "Dogs walked home",
 	"customer_hits": "Customers hit with a stone", "knockouts": "Customers knocked out cold",
