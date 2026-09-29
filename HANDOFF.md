@@ -6,6 +6,52 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 14 (2026-09-29): the season prototype built (162 to 166)
+- **Built all five steps** of the old SEASON_PLAN (50e46fa): days from Tuesday 1 April 1980,
+  a month-grid board (calendar, today's job or "On to the next job", the week's paper to
+  book, regulars with Drop, the shop); Friday's vig plus keep, with buttons to pay extra
+  off the debt; regular offers after the summary (accept, haggle for 20% more, decline);
+  carried mood as the visit's start and the face on arrival; a token drift prop per visit;
+  the ironman save (Continue / New business, the blackout on a quit job); the winter stub.
+  SEASON_PLAN.md deleted as it asked; its lessons are in TRIBAL.
+- **My calls, not the dev's (veto any):**
+  - Booking puts an ad on the week's first free day (no day picker); no unbooking.
+  - The paper covers today to Friday: Tuesday to Friday for the first week.
+  - A regular's clash tries the day, +1, then -1; none free and that visit's missed, on to
+    the next cadence (no mood hit). Only the next visit is on the calendar at a time.
+  - Anything but a paid visit, or an end mood under 35, loses a regular. "End mood"
+    subtracts what they found after you left (noticed rep x 5).
+  - Cadence and ask-chance per persona in `Game.REGULAR` (busy and toff weekly; grump
+    four-weekly and rarely asks).
+  - The winter charges 26 weeks of keep ($1,300) and no vig; the part-week after the last
+    Friday has no payday. Regulars come back at a chance of carried mood / 100; reputation
+    drifts 20% toward the middle.
+  - The blackout: -15 on the rep trend, -7.5 now; a regular blacked out on is dropped.
+  - A night in the cells now takes tomorrow (a "Cells" day on the calendar); a regular
+    booked then moves on a cadence.
+  - The business save sits beside `save_path` (`best_business.save`), so tests' own
+    save_path keeps them off the real save. Bankruptcy deletes it.
+- **Not built:** "the dead stay dead" (nothing in a garden dies for good: the dog only
+  limps, critters respawn; see TRIBAL). The start month is `Game.start_month`, a code knob,
+  no in-game switch.
+- Arithmetic, not measured: at a Fair name the paper has 3 small ads a week at about $70
+  to $85, so a perfect week clears the $150 due by about $60 to $100. Paying down $1,000
+  from that is slow by design; S14-PACE asks how it feels.
+- Verified: run_all green (parse, smoke, 32 tests) under the strict gate; test_season
+  rewritten (money, paper, regulars, cells, save and blackout, winter), test_run_flow
+  drives title to board to job to offer to a regular's visit to quit, blackout and payday.
+  Screenshotted and looked at: the board (1 and 5 regulars, the right column scrolls, long
+  surnames clip), payday, after payday, winter, the offer, the blackout. Not played.
+
+OWED CHECKS: 15, in CHECKS.txt (3 loads, about 50 minutes; LOAD 3 is the prototype).
+
+NEXT:
+1. Play the prototype (LOAD 3) and the S13 checks; triage.
+2. Retune the first numbers from S14-PACE (principal, vig, keep, ads a week).
+3. The text pass (159, with 158) over the board, payday, winter and offer text.
+4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after
+   play; 167 (the record) is next to build once the prototype has been played.
+
 ## Session 13 (2026-09-29): the 160 grill (a business, not a roguelite), S12 fallout built
 - **Grilled 160** (design doc, The Business and Season Prototype; NOTES 162 to 168). The dev
   pivoted the game: a small gardening business season after season, not a roguelite run
@@ -316,39 +362,3 @@ NEXT (NOTES has the full order):
 1. 58, the on-foot sprite flip, then 59 to 61 as a bug batch.
 2. 80, charged throws step 1.
 3. 72 with 78, the season and the payday scene: the new spine.
-
-## Session 6 (2026-09-25): the visual session, full 3/4, and the world past the garden
-- Your calls: full 3/4 (you and your partner picked (c) from three mocked-up styles, over
-  pure top-down and a tilt on fixed things); trees go 3/4 with the rest (replaces the
-  top-down tree call); the house set into the plot with its ridge on the back fence ("if
-  you can't see there, you can't go there"), which made the drive 40% shorter; 8 facings
-  for things that turn. The voxel look is provisional until you've seen it in motion. All
-  in the design doc's "Look and Sound" (game-dev aed9362, a234275, b147e5e, 4adb3de).
-  Parked there: front and back yards.
-- Built, NOTES 57 in five steps: a two-storey 3/4 house and garage (7f69cc8, e94e12f);
-  fences, hedges, truck and trailer 3/4, the road-side run fading while you're behind it
-  (2d67f27, covers 54); Y-sorting, house and garage sorting at their wall foot (a20aa1b);
-  trees with a round trunk and roots (6794c1c); mowers, you on foot, critters, the dog and
-  then the customer as voxel models at 8 facings from tools/voxel.py (9fe4c35, 33bf79f).
-- Built, rough versions of 55 and most of 46: beyond.gd puts neighbours (house, woods or an
-  empty lot), a treeline and houses across the road round every job (ff68092); detached
-  garages and the customer's car in the drive (93ff326).
-- My calls, flagged for your veto: a car dent costs $40 and -20 mood ("My CAR!"); the car
-  is in half the generated jobs, never the first; a third of garages stand 80 px apart.
-- Balance: the house footprint change cost about 9% of mowable area with patience
-  unchanged; the bot's times moved within noise (push 278 to 261 s, petrol 189 to 180,
-  ride-on 130 to 154 to 85%), so no retune.
-- The 49 FPS was the laptop's hybrid-GPU present, not the game (da715d3, 7450952, TRIBAL).
-- Tools: tools/shot.gd saves screenshots of the default job (in CLAUDE.md).
-- Verified: run_all green (17 tests; test_street gained the car and detached garage, with a
-  mutation check that its assert fires). Everything was eyeballed in screenshots; none of
-  it was played.
-
-OWED CHECKS: CHECKS.txt (16 checks, four loads, about 30 min). The six S5 checks have now
-rolled twice.
-
-NEXT:
-1. Play CHECKS.txt, especially S6-LOOK and S6-FACINGS, and live with the voxel look.
-2. A `/grill` on 21 (escalation, the biggest), 22, 25, 26, 27, 29, 38, 40 and 56 (the
-   obstacle rules: what's solid, mowable, throwable, costly).
-3. Leftovers buildable any time: 46 (drive shape), 55 (a park or playground, a better lot).

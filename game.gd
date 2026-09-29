@@ -106,7 +106,7 @@ const PERSONAS := {
 	},
 }
 
-## The season's numbers (docs/SEASON_PLAN.md: guesses, not measured; play decides).
+## The season's numbers (guesses, not measured; play decides).
 const PRINCIPAL := 1000 ## what you owe the shark at the start
 const VIG := 0.10 ## his weekly interest on what you still owe
 const LIVING := 50 ## rent and food, a week

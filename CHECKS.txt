@@ -1,9 +1,9 @@
-PLAY CHECKS OWED  (9 checks, 2 loads, about 25 minutes)
+PLAY CHECKS OWED  (15 checks, 3 loads, about 50 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
 Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
-[3] skips to the week's end (payday); in a job [0] finishes it perfectly.
+[3] skips to Friday's payday; in a job [0] finishes it perfectly.
 
 
 ================================================================================
@@ -57,4 +57,40 @@ can to it, refuel, key it on.
 S13-IDLE
 With the petrol mower running, stand still for a while, then drive: the fuel bar falls
 noticeably slower standing than moving.
+>
+
+
+================================================================================
+LOAD 3 of 3: THE SEASON PROTOTYPE      (about 25 min; New business on the title)
+================================================================================
+
+S14-CAL
+New business: the board shows Tuesday 1 April 1980 and April's calendar. Book an ad, Go,
+play it, and after the summary the board is on Wednesday with the job gone from the grid.
+Is the board readable at a glance (calendar, today, the paper, the shop)?
+>
+
+S14-PAYDAY
+[3] to Friday: payday names the vig and your keep. Pay extra off the debt; after, the
+header's "Owed the shark" and next Friday's figure are both lower.
+>
+
+S14-OFFER
+Finish a classifieds job perfectly ([0] in the job): the summary may bring a regular's
+offer (a hidden chance, likelier from a busy customer). Try the haggle. Did one come?
+>
+
+S14-VISIT
+Play a regular's visit (green on the calendar; step through with "On to the next job",
+since [3] skips booked days too): the same garden, "Back again" in the briefing, a gnome
+new since the last visit from the second one on, no tip however well it goes.
+>
+
+S14-BLACKOUT
+Start a job, pause, Quit to the title, then Continue: "YOU BLACKED OUT", the job gone.
+>
+
+S14-PACE
+Overall: does a week feel right, with the skip through empty days, one to three ads a
+week, and $150 due every Friday? Too tight, too loose, too many clicks?
 >

@@ -1,4 +1,4 @@
-# The season (design doc, The Business; docs/SEASON_PLAN.md): days from 1 April 1980,
+# The season (design doc, The Business and Season Prototype): days from 1 April 1980,
 # Friday's vig and keep, overpaying cuts the debt, short means the heavies, paid off means
 # no vig; the weekly paper booked into free days; regulars (the offer, the haggle, a
 # cadence placed round a busy week, carried mood, the floor, drift); the ironman save and

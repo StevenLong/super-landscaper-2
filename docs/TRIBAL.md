@@ -16,3 +16,9 @@ Traps and "we tried X, it failed because Y". Current rules live in CLAUDE.md.
 - A texture `load()`ed inside `_draw` and not kept anywhere draws as a solid white box: the
   resource is freed once `_draw` returns while the canvas still points at it. `stone.png`
   hid this for a while because other scripts preload it. Keep a reference (`Stone.texture`).
+- A drift prop (a regular's garden gaining a gnome between visits) is placed by `_place`
+  and silently skipped when a crowded garden has no room; a flow test on a random seed
+  failed that way once. Tests that count placed props pin the seed (`new_run(7)`).
+- "The dead stay dead" (season prototype, 2026-09-29) had nothing to act on: no garden
+  resident dies for good. The dog only limps; hedgehogs and squirrels are fresh spawns each
+  visit. It waits for something killable that belongs to the garden.
