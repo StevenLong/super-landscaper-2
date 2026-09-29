@@ -146,7 +146,7 @@ time. S12-BODY: an unconscious hedgehog still pricks bare hands, as meant. S12-D
    mower still burns about 30%; moving, the full rate. Home: `mower.gd` 310.
 
 ORDER: the fallout was built in session 13 (169 to 177, unplayed); next, the season
-(one pass over the throw code), 173, 175, 176, 177, then 174; then 162 to 166.
+prototype, 162 to 166, by docs/SEASON_PLAN.md.
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
