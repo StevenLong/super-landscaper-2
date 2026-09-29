@@ -64,9 +64,8 @@ TRIBAL.md.
   The floor: a visit ending under 35 cancels.
 - Season starts in April by default; a knob to start in June for play-checks.
 
-## For the dev before building
+## Decided by the dev (2026-09-29)
 
-1. The calendar: a month grid (my pick: the month filling up is the picture of the
-   business) or a week strip.
-2. Is every day workable, Sundays included? (My pick: yes, as you said, up to one a day.)
-3. The year on the calendar: 1980, per the 1980s lean? (My pick: yes.)
+1. The calendar is a month grid.
+2. Every day is workable, Sundays included: up to one job a day.
+3. The calendar starts in April 1980.
