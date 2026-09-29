@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (18 checks, 3 loads, about 70 minutes)
+PLAY CHECKS OWED  (19 checks, 3 loads, about 75 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -104,6 +104,13 @@ Buy a petrol mower ([1] for money): it packs itself. Go to a job: the packing sc
 Pick it up, turn it ([R]), drop it elsewhere; pack a couple of cans; drive. At the truck,
 "Take out the push mower" swaps, and the petrol one comes back as full as it was. Is the
 packing screen worth its stop before every job?
+>
+
+S14-ROBOT
+Buy a robot mower (the shop, under Upgrades) and go to a job. On foot at the truck, "Take
+out a robot mower", walk onto the lawn, [E] sets it going: straight until it bumps
+something or the lawn's edge, then off another way; it shies off beds; stones and
+hedgehogs in its way are yours. Walk up and pick it up again. Worth its $150?
 >
 
 S14-BLACKOUT

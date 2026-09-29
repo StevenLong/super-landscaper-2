@@ -46,7 +46,9 @@ const UPGRADES := {
 ## one) are grids; kit is a rectangle of cells, turned on its side to fit. A ride-on
 ## only goes on the trailer. Petrol cans are cargo like the rest, as many as fit.
 const GRIDS := {"bed": Vector2i(4, 3), "trailer": Vector2i(4, 4)}
-const SHAPES := {"petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "can": Vector2i(1, 1)}
+const SHAPES := {"petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "can": Vector2i(1, 1), "robot": Vector2i(2, 2)}
+## Robot mowers (design doc, Mowers and Equipment): own as many as you like.
+const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself. Slowly. Badly."}
 
 const FIRST := ["Margaret", "Derek", "Priya", "Gordon", "Yvonne", "Colin", "Shirley", "Nigel",
 	"Bernadette", "Keith", "Fatima", "Trevor", "Agnes", "Barry", "Hilary", "Rajesh", "Doreen", "Clive"]
@@ -162,6 +164,7 @@ var rep_trend := 50.0 ## where behaviour is pushing reputation; reputation lags 
 var owned: Array[String] = ["push"]
 var equipped := "push" ## the mower a job starts on: the best one packed (start_job)
 var packed: Array[Dictionary] = [] ## what's in the truck: {kind, grid, at (Vector2i), turned}
+var robots := 0 ## robot mowers owned
 var upgrades: Array[String] = []
 var jobs_done := 0
 var in_run := false
@@ -221,7 +224,7 @@ var winter_pending := false
 var in_job := false ## a job started and not finished: loading onto it is the blackout
 var blackout := {} ## the job you blacked out on, for the board to break the news
 ## What the save keeps: the whole business.
-const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "upgrades",
+const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "principal",
 	"calendar", "paper", "regulars", "offer", "payday_pending", "winter_pending", "in_job", "current_job"]
 
@@ -275,6 +278,7 @@ func new_run(seed_value := 0) -> void:
 	owned = ["push"]
 	equipped = "push"
 	packed = []
+	robots = 0
 	upgrades = []
 	jobs_done = 0
 	in_run = true
@@ -577,11 +581,18 @@ func fine(tier: int, at_record: float) -> int:
 	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_record))
 
 
+func price_of(item: String) -> int:
+	return ROBOT.price if item == "robot" else (MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price)
+
+
 func buy(item: String) -> bool:
-	var price: int = MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price
+	var price := price_of(item)
 	if money < price:
 		return false
-	if MOWERS.has(item):
+	if item == "robot":
+		robots += 1
+		pack_first(item)
+	elif MOWERS.has(item):
 		if item in owned:
 			return false
 		owned.append(item)
@@ -606,19 +617,26 @@ func lose(item: String) -> void:
 
 ## What kit fetches sold: everything but the push mower.
 func resale(item: String) -> int:
-	return int((MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price) * RESALE)
+	return int(price_of(item) * RESALE)
 
 
 ## Kit that can be sold or taken, dearest first (the heavies take your best).
 func sellable() -> Array[String]:
 	var out: Array[String] = []
 	out.assign(owned.filter(func(k: String) -> bool: return k != "push") + upgrades)
+	for i in robots:
+		out.append("robot")
 	out.sort_custom(func(a: String, b: String) -> bool: return resale(a) > resale(b))
 	return out
 
 
 func sell(item: String) -> void:
 	money += resale(item)
+	if item == "robot": # one of them; off the truck only if none's left at home
+		robots -= 1
+		if packed_count("robot") > robots:
+			packed.erase(packed.filter(func(p: Dictionary) -> bool: return p.kind == "robot")[-1])
+		return
 	packed = packed.filter(func(p: Dictionary) -> bool: return p.kind != item and not (item == "trailer" and p.grid == "trailer"))
 	if MOWERS.has(item):
 		owned.erase(item)
@@ -1054,8 +1072,12 @@ func packed_has(kind: String) -> bool:
 	return packed.any(func(p: Dictionary) -> bool: return p.kind == kind)
 
 
+func packed_count(kind: String) -> int:
+	return packed.filter(func(p: Dictionary) -> bool: return p.kind == kind).size()
+
+
 func cans_packed() -> int:
-	return packed.filter(func(p: Dictionary) -> bool: return p.kind == "can").size()
+	return packed_count("can")
 
 
 ## Kit you own that isn't on the truck (the push mower rides in the cab), and cans, always.
@@ -1064,10 +1086,16 @@ func unpacked() -> Array[String]:
 	for k in owned:
 		if k != "push" and not packed_has(k):
 			out.append(k)
+	for i in robots - packed_count("robot"):
+		out.append("robot")
 	out.append("can")
 	return out
 
 
 ## What to call a packable thing.
 func kit_name(kind: String) -> String:
-	return "Petrol can" if kind == "can" else MOWERS[kind].name
+	if kind == "can":
+		return "Petrol can"
+	if kind == "robot":
+		return ROBOT.name
+	return MOWERS[kind].name if MOWERS.has(kind) else UPGRADES[kind].name

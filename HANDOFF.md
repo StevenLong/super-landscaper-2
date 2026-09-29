@@ -6,7 +6,7 @@ Notepad whenever an answer is still blank.
 
 ---
 
-## Session 14 (2026-09-29): the season prototype, ringing the ads, the record, packing the truck
+## Session 14 (2026-09-29): the season prototype, ringing the ads, the record, packing, robots
 - **Built all five steps** of the old SEASON_PLAN (50e46fa): days from Tuesday 1 April 1980,
   a month-grid board (calendar, today's job or "On to the next job", the week's paper to
   book, regulars with Drop, the shop); Friday's vig plus keep, with buttons to pay extra
@@ -61,26 +61,35 @@ Notepad whenever an answer is still blank.
   a mower not at the truck is lost. My calls: the grid and shape sizes; the truck still
   refuels a mower driven up to it, and packed cans are only the fuel you carry on foot
   (the old unlimited can is now what you packed). New `test_pack.gd`.
+- **The robot mower (107)**, decided in the doc: `robot.gd`, a body with the mower's
+  fields (`cut_radius`, `knock_out`, `damage()`), so stones, critters and beds treat it as
+  a mower through the existing code: its flings and squashes count as yours. 55 px/s,
+  12 px cut; straight until it bumps something solid or would leave the lawn's rectangle,
+  then a random turn (90 to 270 degrees); it treats a bed's edge (plus its cut radius) as
+  the wire. Bought any number ($150, `Game.robots`), packed 2 x 2; taken off the truck on
+  foot ("Take out a robot mower"), set down with interact, picked up like a thing, can't
+  be thrown; left on the lawn when you flee the police, it's lost. Drawn in code (a grey
+  shell, green lid): a placeholder for the art. New `test_robot.gd`.
 - **Not built:** "the dead stay dead" (nothing in a garden dies for good: the dog only
   limps, critters respawn; see TRIBAL). The start month is `Game.start_month`, a code knob,
   no in-game switch.
 - Arithmetic, not measured: at a Fair name the paper has 3 small ads a week at about $70
   to $85, so a perfect week clears the $150 due by about $60 to $100. Paying down $1,000
   from that is slow by design; S14-PACE asks how it feels.
-- Verified: run_all green (parse, smoke, 34 tests with test_court and test_pack) under the strict gate; test_season
+- Verified: run_all green (parse, smoke, 35 tests with test_court, test_pack, test_robot) under the strict gate; test_season
   rewritten (money, paper, regulars, cells, save and blackout, winter), test_run_flow
   drives title to board to job to offer to a regular's visit to quit, blackout and payday.
   Screenshotted and looked at: the board (1 and 5 regulars, the right column scrolls, long
   surnames clip), payday, after payday, winter, the offer, the blackout. Not played.
 
-OWED CHECKS: 18, in CHECKS.txt (3 loads, about 70 minutes; LOAD 3 is the prototype, the record and packing).
+OWED CHECKS: 19, in CHECKS.txt (3 loads, about 75 minutes; LOAD 3 is everything built in S14).
 
 NEXT:
 1. Play the prototype (LOAD 3) and the S13 checks; triage.
 2. Retune the first numbers from S14-PACE and S14-RING (principal, vig, keep, PAPER, REACH).
 3. The text pass (159, with 158) over the board, payday, winter and offer text.
 4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after
-   play. Buildable without a call: 107 (the robot mower).
+   play. Nothing buildable is left without a call from the dev.
 
 ## Session 13 (2026-09-29): the 160 grill (a business, not a roguelite), S12 fallout built
 - **Grilled 160** (design doc, The Business and Season Prototype; NOTES 162 to 168). The dev

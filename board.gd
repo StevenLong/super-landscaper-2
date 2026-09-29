@@ -109,6 +109,7 @@ func _build(keep := "") -> void:
 	shop.add_child(UI.label("Upgrades", 26))
 	for key: String in Game.UPGRADES:
 		shop.add_child(_upgrade_row(key))
+	shop.add_child(_robot_row())
 	var kept := find_child(keep, true, false) if keep != "" else null
 	if kept:
 		for b: Button in kept.find_children("*", "Button", true, false):
@@ -262,6 +263,26 @@ func _mower_row(key: String) -> Control:
 	return p
 
 
+## Robot mowers: as many as you like.
+func _robot_row() -> Control:
+	var row := UI.hbox(10)
+	var info := UI.vbox(2)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_child(UI.label(Game.ROBOT.name + ("  (you have %d)" % Game.robots if Game.robots > 0 else ""), 20))
+	info.add_child(UI.label(Game.ROBOT.blurb, 18, UI.DIM))
+	row.add_child(info)
+	if Game.robots > 0:
+		row.add_child(_sell_button("robot", _build.bind("robot")))
+	var buy := UI.button("Buy $%d" % Game.ROBOT.price, func() -> void:
+		Game.buy("robot")
+		_build("robot"), 18)
+	buy.disabled = Game.money < Game.ROBOT.price
+	row.add_child(buy)
+	var p := UI.panel(row)
+	p.name = "robot" # _build("robot") finds the row again
+	return p
+
+
 func _upgrade_row(key: String) -> Control:
 	var u: Dictionary = Game.UPGRADES[key]
 	var row := UI.hbox(10)
@@ -368,7 +389,7 @@ func _payday() -> void:
 	else:
 		_centred(col, "Short by $%d. Sell something, or his heavies take what they like, your best first." % (due - Game.money), 20, UI.DIM)
 		for k in Game.sellable():
-			var kit: String = Game.MOWERS[k].name if Game.MOWERS.has(k) else Game.UPGRADES[k].name
+			var kit: String = Game.kit_name(k)
 			var row := UI.hbox(12)
 			row.add_child(UI.label(kit, 20))
 			row.add_child(_sell_button(k, _payday))
@@ -388,7 +409,7 @@ func _collect(extra: int) -> void:
 	_centred(col, "He counts it twice." if r.paid > Game.LIVING else "Paid up.", 40, UI.GOLD)
 	if r.taken:
 		var names: Array = r.taken.map(func(k: String) -> String:
-			return Game.MOWERS[k].name if Game.MOWERS.has(k) else Game.UPGRADES[k].name)
+			return Game.kit_name(k))
 		_centred(col, "His heavies load up your %s." % ", ".join(names), 24, UI.BAD)
 	if r.outcome == "free":
 		_centred(col, "PAID OFF. You're free of him.", 32, UI.GOOD)

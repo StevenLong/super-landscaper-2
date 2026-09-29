@@ -9,7 +9,7 @@ const BED_AT := Vector2(60, 240)
 const TRAILER_AT := Vector2(380, 240)
 const TRAY_AT := Vector2(760, 240)
 const ROW_H := 44
-const COLOURS := {"petrol": Color("c0503a"), "rideon": Color("d8a030"), "can": Color("b02828")}
+const COLOURS := {"petrol": Color("c0503a"), "rideon": Color("d8a030"), "can": Color("b02828"), "robot": Color("5e9e4a")}
 
 var zone := "bed" ## where the cursor is: "bed", "trailer" or "tray"
 var cell := Vector2i.ZERO ## the cursor's cell in a grid
@@ -244,5 +244,5 @@ func _item(at: Vector2, kind: String, turned: bool, colour: Color) -> void:
 	var r := Rect2(at + Vector2(3, 3), box - Vector2(6, 6))
 	draw_rect(r, colour)
 	draw_rect(r, Color(0, 0, 0, 0.5), false, 2.0)
-	var label: String = {"petrol": "PETROL", "rideon": "RIDE-ON", "can": "CAN"}[kind]
+	var label: String = {"petrol": "PETROL", "rideon": "RIDE-ON", "can": "CAN", "robot": "ROBOT"}[kind]
 	draw_string(ThemeDB.fallback_font, r.position + Vector2(6, 22), label, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 8, 20, UI.TEXT)

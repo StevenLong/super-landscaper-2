@@ -115,11 +115,7 @@ small business across seasons, not a roguelite run. 162 to 166 (the season proto
 
 Decided in the design doc (Mowers and Equipment: packing the truck, each mower's feel).
 
-107. [FEATURE, moderate] The robot mower: set down, mows straight until it bumps something
-   or the edge, turns a random way; turns back at bed edges; flings stones and squashes
-   critters as yours. Picked up and carried back like a body. 106 is built (session 14).
-
-106 built in session 14; 107 next.
+106 and 107 built in session 14.
 
 ### Parked
 

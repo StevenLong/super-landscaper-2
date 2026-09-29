@@ -132,6 +132,9 @@ func _draw_held(at: Vector2) -> void:
 			draw_circle(Vector2(cos(a) * 9.0, -30.0 + sin(a) * 3.0), 1.5, Color("f8e070"))
 	if carrying == "" or carrying == "hose": # the hose draws itself up to your hand
 		return
+	if carrying == "robot":
+		Robot.draw(self, at)
+		return
 	var c := Stone.texture(carrying)
 	if carrying in ["dog", "hedgehog", "squirrel"]: # an 8-facing sheet: held facing the way you do
 		Facing.draw(self, c, 2, 0, rotation, at)

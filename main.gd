@@ -73,6 +73,8 @@ var mischief := 0.0 ## reputation owed for what you did after it was settled
 var police_left := -1.0 ## seconds until the police arrive once called; below zero, nobody's called
 var worst_crime := 0 ## the worst tier on the crime ladder this job (Game.RECORD)
 var cans := 0 ## petrol cans left on the truck (what was packed)
+var robots_left := 0 ## robot mowers still on the truck
+var robots: Array[Robot] = [] ## robot mowers set down on the lawn
 var _fuel := {} ## what's left in each mower put back on the truck (take_out)
 var charge := 0.0 ## what witnesses saw this job, weighed (Game.RECORD): court makes it record
 
@@ -251,6 +253,7 @@ func _build_layout() -> void:
 	mower.rotation = -PI / 2.0 # facing up the drive
 	$Truck/Trailer.visible = Game.in_run and Game.packed.any(func(p: Dictionary) -> bool: return p.grid == "trailer")
 	cans = Game.cans_packed() if Game.in_run else 99
+	robots_left = Game.packed_count("robot") if Game.in_run else 0
 	_build_street()
 	var beyond := preload("res://beyond.gd").new()
 	beyond.name = "Beyond"
@@ -1071,7 +1074,8 @@ func _hint() -> String:
 		if walker.carrying == "hose":
 			return Game.key("interact") + " let go of the hose"
 		if walker.carrying != "":
-			return Game.key("interact") + (" toss it in the truck" if at_truck() else " drop it") + "   hold %s throw it" % Game.key("throw")
+			return Game.key("interact") + (" toss it in the truck" if at_truck() else (" set it going" if walker.carrying == "robot" else " drop it")) \
+				+ ("" if walker.carrying == "robot" else "   hold %s throw it" % Game.key("throw"))
 		var t := _target()
 		if t.get("hint", "") == "rifle":
 			if Input.is_action_pressed("interact") and robbed > 0.0:
@@ -1117,7 +1121,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			hop_on()
 	elif event.is_action_pressed("interact"):
 		interact()
-	elif event.is_action_pressed("throw") and walker and walker.carrying not in ["", "hose"]:
+	elif event.is_action_pressed("throw") and walker and walker.carrying not in ["", "hose", "robot"]:
 		walker.aim()
 
 
@@ -1216,12 +1220,16 @@ func interact() -> void:
 		walker.carrying = ""
 		walker.queue_redraw()
 	elif walker.carrying != "": # set it down, or in the truck
-		if not at_truck():
+		if not at_truck() and walker.carrying == "robot":
+			set_robot(walker.global_position + Vector2(20, 0).rotated(walker.rotation), Vector2.RIGHT.rotated(walker.rotation))
+		elif not at_truck():
 			add_stone(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying)
 		elif walker.carrying == "stone":
 			_count("stones_binned")
 		elif walker.carrying == "jerrycan": # back on the truck, still full
 			cans += 1
+		elif walker.carrying == "robot":
+			robots_left += 1
 		Sfx.play("bump")
 		walker.carrying = ""
 		walker.queue_redraw()
@@ -1239,6 +1247,9 @@ func _targets() -> Array[Dictionary]:
 	if walker == null or walker.carrying != "" or walker.aiming:
 		return out
 	var at := walker.global_position
+	for r in robots:
+		if r.global_position.distance_to(at) < 30.0:
+			out.append({"at": r.global_position, "hint": "pick up the robot mower", "act": _pick_up_robot.bind(r)})
 	for s in $Stones.get_children():
 		if s is Stone and not s.is_queued_for_deletion() and s.position.distance_to(at) < 18.0 and _on_plot(s.position):
 			out.append({"at": s.position, "hint": "pick up the " + _thing(s.kind), "act": _pick_up_stone.bind(s)})
@@ -1419,6 +1430,8 @@ func open_truck_menu() -> void:
 		buttons.append(["leave_ko", "Leave quietly"])
 	else:
 		buttons.append(["leave", "Drive off (no pay)"])
+	if walker and walker.carrying == "" and robots_left > 0:
+		buttons.append(["robot", "Take out a robot mower (%d packed)" % robots_left])
 	if walker and walker.carrying == "" and mower.power == "fuel" and cans > 0:
 		buttons.append(["can", "Grab a petrol can (%d packed)" % cans])
 	if Game.in_run and (walker == null or walker.carrying == ""): # the other mowers on the truck
@@ -1464,6 +1477,12 @@ func _on_choice(id: String) -> void:
 		"music", "sound":
 			Sfx.toggle(id)
 			open_pause()
+		"robot":
+			robots_left -= 1
+			walker.carrying = "robot"
+			walker.queue_redraw()
+			hud.close()
+			get_tree().paused = false
 		"can":
 			cans -= 1
 			walker.carrying = "jerrycan"
@@ -1665,6 +1684,27 @@ func take_out(kind: String) -> void:
 	mower.velocity = Vector2.ZERO
 
 
+## A robot mower set down on the lawn, facing `dir`: off it goes.
+func set_robot(at: Vector2, dir: Vector2) -> Robot:
+	var r := Robot.new()
+	r.lawn = lawn
+	r.position = lawn.keep_in(at - lawn.global_position, 14.0) + lawn.global_position
+	r.heading = dir
+	for b in $Scenery.get_children():
+		if b is BedScript:
+			r.beds.append(func(p: Vector2) -> bool: return b._inside(b.to_local(p), -r.cut_radius))
+	add_child(r)
+	robots.append(r)
+	return r
+
+
+func _pick_up_robot(r: Robot) -> void:
+	robots.erase(r)
+	r.queue_free()
+	walker.carrying = "robot"
+	walker.queue_redraw()
+
+
 ## Driving off with the police called, nothing packs itself: a mower standing out on the
 ## lawn stays there, and it's gone. The push mower's cab is at the kerb, so it always comes.
 func _left_behind() -> String:
@@ -1726,6 +1766,11 @@ func _finish(result: Dictionary) -> void:
 	if lost != "" and Game.in_run:
 		Game.lose(lost)
 		result.left_behind = Game.MOWERS[lost].name
+	if police_left >= 0.0 and result.outcome != "nicked" and not robots.is_empty() and Game.in_run: # the robots too
+		for r in robots:
+			Game.lose("robot")
+		result.left_behind = ((result.left_behind + " and ") if result.has("left_behind") else "") + \
+			("%d robot mowers" % robots.size() if robots.size() > 1 else "robot mower")
 	result.tier = worst_crime
 	result.police = police_left >= 0.0 # called, whether or not they got here
 	if job.get("service", false) and result.outcome == "paid": # community service, signed off
