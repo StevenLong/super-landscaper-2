@@ -6,6 +6,52 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 13 (2026-09-29): the 160 grill (a business, not a roguelite), S12 fallout built
+- **Grilled 160** (design doc, The Business and Season Prototype; NOTES 162 to 168). The dev
+  pivoted the game: a small gardening business season after season, not a roguelite run
+  (the 4-week run was only an on-ramp: best kit by week 2 or 3). Paperboy as the reference.
+  Settled: real months April to September, one job a day, Sundays too, a month grid, 1980;
+  the shark as a principal plus a weekly vig (paid off, you're free); a weekly living cost;
+  a weekly paper at payday; regulars offered after a good job (a hidden chance, accept /
+  decline / haggle, cadence-only requests auto-scheduled, carried mood as the
+  relationship, a floor that cancels, no tips); the garden remembers (the dead stay dead,
+  drift); ironman saves with the "blacked out" penalty for a quit job; one winter screen;
+  sell up and retire as the win, the shark's patience as the loss; heat becomes a record
+  of convictions, with summonses, a bought lawyer's roll, sentences as calendar days, and
+  prison by accumulation. Back pocket, all on record: multi-day jobs, grass length by
+  cadence, referrals, the compounding vig, wear and overheads, winter work, save-scum
+  escalation, hired help (its own grill, 168).
+- My calls the dev confirmed: the bad ending where bankruptcy fires now; jail at once,
+  community service on the next free day; old heat numbers as conviction weights; cells
+  cost the next day; the week-4 finale dropped; score is the pot at selling up.
+- S12 checks: all 16 answered. Passed: UNSEEN, WALLDROP, DONE, LAG, CHIMNEY, HAHA, DRY (with
+  175). PORTRAIT reads clear (the dev's partner to see it). BANNERS not reproduced and
+  LFENCE "some better", both on the dev to report with a screenshot. BODY: an unconscious
+  hedgehog pricking is meant. The rest became NOTES 169 to 177, all built (c28205b).
+- Found while building: a critter thrown over a hedge landed as "ground" next door, so no
+  eviction ever fired (only "gone", off a roof's back slope, did); and a hedge is clearable
+  only from about 35 to 190 px back at full power (the test checks 100 px and 8 px; the
+  range is arithmetic). If that feels too hard, the lever is the hedge's throw clearance.
+- The patio slabs were the bottom 24 rows of the house art, drawn upright; now ground
+  (z -2), so a hose or body lies on them.
+- The dev's calls, in the design doc (42636e2): a second hit on a critter out cold kills
+  it; an empty ride-on won't budge; a running engine standing still burns 30%; pockets
+  hold 0 to 20% of the pay once they've paid you; the ripcord as a hand on the meter.
+- Prototype prep: `docs/SEASON_PLAN.md` maps the code it replaces, a five-step build order
+  with a test each, and first numbers (principal $1,000, vig 10% a week, living $50 a
+  week: guesses, not measured).
+- Verified: run_all green (parse, smoke, 32 tests) under the strict gate; new
+  `test_slam.gd` fires real throws; fuel and police tests extended. Screenshotted and
+  looked at: the hose on the slabs, the ripcord at rest, drawing, mid-yank. Not played.
+
+OWED CHECKS: 9, in CHECKS.txt (2 loads, about 25 minutes).
+
+NEXT:
+1. The season prototype, 162 to 166, by `docs/SEASON_PLAN.md` (step 1: dates and the vig).
+2. Play the S13 checks when convenient; triage.
+3. The text pass (159, with 158), after the prototype rewrites the board's text.
+4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after play.
+
 ## Session 12 (2026-09-28): the S11 checks triaged and built, no witness no heat
 - All 24 S11 checks answered. Passed as written: S11-ARC ("much better"), S11-HOLE, S11-OVER,
   S11-LEAD, S11-DOOR, S11-DOGHOME, S11-HOUSE (the look), S11-MOTOR, S11-PUSH (pace right),
@@ -306,33 +352,3 @@ NEXT:
 2. A `/grill` on 21 (escalation, the biggest), 22, 25, 26, 27, 29, 38, 40 and 56 (the
    obstacle rules: what's solid, mowable, throwable, costly).
 3. Leftovers buildable any time: 46 (drive shape), 55 (a park or playground, a better lot).
-
-## Session 5 (2026-09-25): your session-4 answers, five small fixes, pad prompts
-- Your session-4 answers: 11 of 15 were yes (settings, ads, squash, dog, tally, fired,
-  splash, throws, talking, tells, pad menus mostly), several with notes; audio, street,
-  trees and view were not. All of it became NOTES 44-56 (46e2220); 47 (board left/right)
-  waits on the shop (27).
-- Your calls: my 3/4 trees are vetoed (the flat trunk reads as cardboard): trees go back
-  top-down, the house keeps its face. Audio is yours, in Ableton, later; the generated
-  sounds are placeholders. Promoted to the design doc as "Look and Sound" (game-dev
-  339e539), veto any. Perspective and scale overall go to a visual design session (44).
-- Built (c6db936): one scream per burst of flowers (1.5 s cooldown, rep still counts every
-  flower); the engine starts silent (its loops start at sample -2017/2250, so full volume
-  at play() would click; the likely cause of the job-start pop, not heard); splashes fit
-  inside the pond's water; a stoned tree's canopy sways and drops the leaves; talk is
-  slower (0.18 s a word) with talk mouths that flip open/shut against the resting face.
-- Built (e95a237): prompts follow the last device, [E] on keys, (A) on a pad, in hints,
-  the first briefing and the title help. Text, not drawn icons, until the visual session.
-- My call, flagged for your veto: Xbox button names.
-- Verified: run_all green (17 checks; new test_prompts, and test_hazards gained the splash
-  fit and the scream cooldown). The face sheet was eyeballed. None of it played or heard.
-
-OWED CHECKS: CHECKS.txt (6 checks, two loads, about 10 min).
-
-NEXT:
-1. The visual design session (NOTES 44): the same garden mocked up (a) pure top-down,
-   (b) a shallow tilt on tall things only, (c) full 3/4, with the house/drive/lawn scale
-   fixed. I lean (b). The tree redraw and 54-56 wait on it.
-2. Play CHECKS.txt whenever.
-3. A `/grill` on the queued design items: 21 (escalation, the biggest), 22, 25, 26, 27,
-   29, 38, 40, plus 56 (obstacle rules).

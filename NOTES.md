@@ -69,6 +69,7 @@ BLOCKS = spoils the next playtest.
    S11-GEARS (play): the ride-on feels worse to drive than before, maybe rightly (it was
    massively overpowered, every job fast and easy); top gear is a real risk, the wide turn
    offsets its strength on the straights. S11-PUSH: the walking pace felt right.
+   S12-DRY: the ride-on still has too many advantages (a dry one now can't move, 175).
 
 ### Notes 2026-09-28b (S11 check fallout, and a notes dump; what's left after session 12)
 
@@ -91,62 +92,14 @@ Built in session 12 (unplayed, see CHECKS.txt): 141 to 146, 148 to 154, 156, 157
    line; I show the scenario and the current text, the dev rewords it and gives variants.
    PREP done: `docs/TEXT.md` (from `tools/text_inventory.py`) lists every line by script
    and function. Open: where the variants live in code (inline arrays picked at random,
-   like the personas' `lines`, is the lazy start). Likely after 160, which rewrites the
-   board's text.
-160. Grilled 2026-09-29: see "Grilled 2026-09-29" below (162 to 168).
-
+   like the personas' `lines`, is the lazy start). After the season prototype, which
+   rewrites the board's text.
 Also: S11-HEAP's target brackets stay for now; the dev is unsure of the look, to soak.
 S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
 
-ORDER (revised after the 160 grill, confirmed 2026-09-29): play the S12 checks;
-the season prototype (162 to 166); then the text pass (159, with 158), since the
-prototype rewrites the board's and the summary's text; 155 when it's caught on screen.
-
-### Notes 2026-09-29 (S12 check fallout, and two notes)
-
-Passed as written: S12-UNSEEN, WALLDROP, DONE, LAG, CHIMNEY, HAHA. S12-PORTRAIT reads clear
-to the dev (their partner to see it; they'll say if it objects). S12-BANNERS not
-reproduced (the dev will say if it recurs). S12-LFENCE: some better, a screenshot next
-time. S12-BODY: an unconscious hedgehog still pricks bare hands, as meant. S12-DRY passed
-(dies, pushable, restart), with 175 and a 140 note from it.
-
-169. [BUG, small] A critter thrown into the house wall angers a hater ("Careful!", -5), and
-   one slammed into a wall or hedge and knocked out moves nobody (S12-HATER). Root: the
-   "wall" case calls `customer.on_stone("wall")` whatever was thrown (`main.gd` ~2029,
-   `customer.gd` 233); the slam knockout in `_drop_bounced` never tells the customer.
-   FIX (the dev's call): no wall complaint when the thrown thing is a critter they want
-   hurt; a slam knockout seen moves mood by KO_SHARE via `on_squash`, like a stoned one.
-   The window, car and dog stay crimes.
-170. [BUG, small] A stone that hits a critter vanishes (S12-BODY). Root: the "animal" case
-   drops back only a live critter or a body (`main.gd` ~2053, `if alive or body_`). FIX:
-   the stone drops beside it too.
-171. [FEATURE, small] Killing takes two hits (the dev's call; they struggled to kill at
-   all: a thrown stone knocks out 80%, `THROWN_KO`, and a slam only ever knocks out). A
-   stone, a slam or a thrown critter on a critter already out cold kills it. Home:
-   `_stone_critter`, `_drop_bounced`, the critter-on-critter hit. One throw stays mostly a
-   knockout.
-172. [BUG, moderate] Throws bounce off hedges, so nothing gets evicted over one
-   (S12-EVICT, the hedge half of S12-HATER: it bounced back onto the lawn). Root: crossing
-   the boundary below `BORDER_UP` (29 px) bounces (`main.gd` 1953). Not known: whether a
-   full throw can clear 29 px at the boundary from any distance. FIX: first a test that
-   traces the highest throw; if it can't clear, the arc or the hedge's clearance changes.
-173. [BUG, small] The hose dragged onto the porch (the paving round the house) disappears
-   under it (S12-HOSE, the rest works). Z order: `hose.gd` against the house's paving.
-   Mentioned before but never filed.
-174. [VISUAL, moderate] The ripcord, again (S12-CORD: the cord drawn out of the engine reads
-   odd, nothing attached). The dev's picture: a hand and the cord over the meter bar; on
-   release it pulls; in the sweet spot it starts, a miss as now. Home: `mower.gd` ~207.
-175. [FEATURE, small] An empty ride-on can't move at all: fetch the can (the dev's call,
-   S12-DRY). The petrol mower stays pushable. Home: `game.gd` MOWERS rideon
-   `empty_speed_scale` 0.2 to 0. S12-DRY also: the ride-on has too many advantages (140).
-176. [FEATURE, small] Pockets after payment hold less (the dev's note, then call): knocked
-   out once they've paid you, the wallet is 0 to 20% of the pay (small change); before,
-   20 to 60% as now. Home: `_knock_out`, `main.gd` 2223, `settled`.
-177. [FEATURE, small] Fuel by work (the dev's note, then call): an engine running with the
-   mower still burns about 30%; moving, the full rate. Home: `mower.gd` 310.
-
-ORDER: the fallout was built in session 13 (169 to 177, unplayed); next, the season
-prototype, 162 to 166, by docs/SEASON_PLAN.md.
+ORDER (confirmed 2026-09-29): the season prototype (162 to 166, by docs/SEASON_PLAN.md);
+then the text pass (159, with 158), since the prototype rewrites the board's and the
+summary's text; 155 when it's caught on screen.
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
