@@ -40,7 +40,7 @@ var _react_left := 0.0
 func _init(job_data: Dictionary) -> void:
 	job = job_data
 	persona = Game.PERSONAS[job.persona]
-	mood = persona.get("start_mood", 60.0)
+	mood = job.get("start_mood", persona.get("start_mood", 60.0)) # a regular brings their carried mood
 	_stint = randf_range(20.0, 35.0)
 
 
@@ -334,7 +334,7 @@ func evaluate(cov: float, fuel_cost: float) -> Dictionary:
 	var mood_f := 0.5 + mood / 100.0
 	var base: float = job.pay
 	var pay := int(round(base * quality * time_f * mood_f))
-	var tip := int(round(base * 0.25)) if (cov >= target and elapsed <= patience and mood >= 75.0) else 0
+	var tip := int(round(base * 0.25)) if (cov >= target and elapsed <= patience and mood >= 75.0 and not job.has("regular")) else 0 # regulars don't tip
 	var rep := (mood - 50.0) / 5.0 + (2.0 if cov >= target else -3.0)
 	var comment := _say("paid_good", "Lovely job. Thank you!") if mood >= 75.0 else (_say("paid_ok", "That'll do.") if mood >= 45.0 else _say("paid_bad", "Hmph. Take your money and go."))
 	return {

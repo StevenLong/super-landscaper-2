@@ -1,10 +1,12 @@
 extends Node
-## Run state (autoload "Game"). A run is a season: WEEKS weeks of JOBS_PER_WEEK jobs
-## picked from a job board, with the loan shark's payment due at each week's end. Pay the
-## last one and you've won; miss one and his heavies repossess kit; bankrupt only when
-## nothing left covers it. Score = total earned this run.
+## Business state (autoload "Game"; design doc, The Business). Seasons of real days,
+## April to September, at most one job a day. Each Friday the loan shark takes his vig on
+## what you still owe, plus the week's living cost; anything more cuts the debt. Miss it
+## and his heavies repossess kit; bankrupt only when nothing left covers it. The weekly
+## paper's ads are booked into free days, a good job can earn a regular, and the business
+## is saved between days (ironman: a job quit halfway loads as the blackout).
 
-var save_path := "user://best.cfg" ## tests point this elsewhere so they never touch the real save
+var save_path := "user://best.cfg" ## tests point this elsewhere so they never touch the real saves (the business is saved beside it)
 
 ## Mower specs. The mower scene's own exports are the petrol defaults; a run
 ## applies the equipped spec on top.
@@ -104,8 +106,22 @@ const PERSONAS := {
 	},
 }
 
-const PAYMENTS := [120, 250, 450, 750] ## the shark's payment due at the end of each week (tuning, not measured)
-const JOBS_PER_WEEK := 3
+## The season's numbers (docs/SEASON_PLAN.md: guesses, not measured; play decides).
+const PRINCIPAL := 1000 ## what you owe the shark at the start
+const VIG := 0.10 ## his weekly interest on what you still owe
+const LIVING := 50 ## rent and food, a week
+const LAST_MONTH := 9 ## the season ends with September
+const WINTER_WEEKS := 26 ## October to March: the living cost only (the vig sleeps, for now)
+const FRIDAY := 5 ## payday, in Time's weekday numbers (Sunday is 0)
+const FLOOR := 35.0 ## a regular's visit ending in a mood under this loses them
+const HAGGLE := 1.2 ## pushing for more asks this much
+const BLACKOUT_REP := 15.0 ## the reputation a blacked-out job costs (on the trend)
+## Who asks to become a regular: [chance factor, visits every so many days].
+const REGULAR := {"nature": [1.0, 14], "squirrel_hater": [1.0, 14], "gardener": [0.6, 14], "busy": [1.3, 7],
+	"perfectionist": [0.5, 7], "grump": [0.4, 28], "toff": [0.7, 7], "vicar": [1.0, 14]}
+const MONTHS := ["January", "February", "March", "April", "May", "June", "July", "August",
+	"September", "October", "November", "December"]
+const DAYS := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share of its price
 
 ## The crime ladder (design doc, The Run): heat added by tier. 0 isn't a crime (rep only),
@@ -128,7 +144,6 @@ var rep_trend := 50.0 ## where behaviour is pushing reputation; reputation lags 
 var owned: Array[String] = ["push"]
 var equipped := "push"
 var upgrades: Array[String] = []
-var week := 1 ## the week whose payment is next due
 var jobs_done := 0
 var in_run := false
 var current_job := {}
@@ -173,6 +188,23 @@ var best_score := 0
 var records := {} ## the most of each TALLY key in any one job, ever (saved)
 var run_over_reason := "" ## "" while running; "bankrupt" or "won" once it's over
 var heat := 0.0 ## the wanted level: only crimes add it (HEAT), a week paid on time cools it one
+
+var start_month := 4 ## a knob: June reaches a busy calendar sooner for play-checks
+var year := 1980
+var day := 0 ## today, not yet over, in days since 1970 (Time's unix time / a day)
+var principal := 0
+var calendar := {} ## day -> what's booked: a job (a classified or a regular's visit), or {"cells": true}
+var paper: Array[Dictionary] = [] ## this week's ads not yet booked
+var regulars := {} ## id (their first job's seed) -> {id, job, cadence, rate, mood, drift}
+var offer := {} ## a regular's offer after the job just done, until answered
+var payday_pending := false
+var winter_pending := false
+var in_job := false ## a job started and not finished: loading onto it is the blackout
+var blackout := {} ## the job you blacked out on, for the board to break the news
+## What the save keeps: the whole business.
+const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "upgrades",
+	"jobs_done", "heat", "run_tally", "run_tally_cost", "start_month", "year", "day", "principal",
+	"calendar", "paper", "regulars", "offer", "payday_pending", "winter_pending", "in_job", "current_job"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -224,7 +256,6 @@ func new_run(seed_value := 0) -> void:
 	owned = ["push"]
 	equipped = "push"
 	upgrades = []
-	week = 1
 	jobs_done = 0
 	in_run = true
 	current_job = {}
@@ -233,6 +264,18 @@ func new_run(seed_value := 0) -> void:
 	run_tally_cost = {}
 	heat = 0.0
 	run_over_reason = ""
+	year = 1980
+	day = day_of(year, start_month, 1)
+	principal = PRINCIPAL
+	calendar = {}
+	regulars = {}
+	offer = {}
+	payday_pending = false
+	winter_pending = false
+	in_job = false
+	blackout = {}
+	paper = make_offers()
+	save()
 
 
 ## The mower spec for the equipped mower, with upgrades applied.
@@ -434,8 +477,7 @@ func record_result(result: Dictionary) -> void:
 	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
 	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
 	jobs_done += 1
-	if result.get("cells", false):
-		jobs_done += 1 # a night in the cells: the next job slot is gone
+	in_job = false
 	result.rep_after = reputation
 	# Counts past your old record for a job (not firsts: everything's a first once).
 	result.records = []
@@ -450,6 +492,16 @@ func record_result(result: Dictionary) -> void:
 	cfg.set_value("best", "score", best_score)
 	cfg.set_value("best", "records", records)
 	cfg.save(save_path)
+	if current_job.has("regular"):
+		_visited(current_job.regular, result)
+	elif current_job.has("seed"):
+		_maybe_offer(result)
+	if result.get("cells", false) and day + 1 <= season_end(): # a night in the cells: tomorrow's gone
+		var lost: Dictionary = calendar.get(day + 1, {})
+		calendar[day + 1] = {"cells": true}
+		if lost.has("regular") and regulars.has(lost.regular):
+			_place(lost.regular, day + 1 + regulars[lost.regular].cadence)
+	end_day()
 
 
 ## Seconds from the police being called to them arriving: your record shortens it.
@@ -480,20 +532,6 @@ func buy(item: String) -> bool:
 	return true
 
 
-## Which job of the week is next, 1 to JOBS_PER_WEEK.
-func job_of_week() -> int:
-	return jobs_done - (week - 1) * JOBS_PER_WEEK + 1
-
-
-## The week's jobs are done and the shark's man is due.
-func payday_due() -> bool:
-	return in_run and jobs_done >= week * JOBS_PER_WEEK
-
-
-func payment() -> int:
-	return PAYMENTS[mini(week, PAYMENTS.size()) - 1]
-
-
 ## What kit fetches sold: everything but the push mower.
 func resale(item: String) -> int:
 	return int((MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price) * RESALE)
@@ -519,25 +557,288 @@ func sell(item: String) -> void:
 		upgrades.erase(item)
 
 
-## The week's end: pay the shark. Short, the heavies take kit, dearest first, until its
-## resale covers it (you keep the change). Returns {paid, taken, outcome}, outcome one of
-## "paid", "repossessed", "bankrupt" (nothing left covers it) or "won" (the last payment).
-func settle_payday() -> Dictionary:
-	var due := payment()
+
+
+## Friday's payday: the shark's vig and the week's living cost, then `extra` off what you
+## owe (as much as you can spare). Short, the heavies take kit, dearest first, until its
+## resale covers it (you keep the change). Then the coming week's paper. Returns {paid,
+## off, taken, outcome}, outcome one of "paid", "repossessed", "free" (the debt's cleared)
+## or "bankrupt" (nothing left covers it: the business is over, and so is its save).
+func settle_payday(extra := 0) -> Dictionary:
+	var owed := due()
 	var taken: Array[String] = []
 	for k in sellable():
-		if money >= due:
+		if money >= owed:
 			break
 		sell(k)
 		taken.append(k)
-	if money < due:
+	payday_pending = false
+	if money < owed:
 		money = 0
 		run_over_reason = "bankrupt"
-		return {"paid": due, "taken": taken, "outcome": "bankrupt"}
-	money -= due
-	week += 1
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(business_path()))
+		return {"paid": owed, "off": 0, "taken": taken, "outcome": "bankrupt"}
+	money -= owed
+	var off := mini(extra, mini(money, principal))
+	money -= off
+	principal -= off
 	heat = maxf(0.0, heat - 1.0) # paid on time: things cool off
-	var outcome := "won" if week > PAYMENTS.size() else ("repossessed" if taken else "paid")
-	if outcome == "won":
-		run_over_reason = "won"
-	return {"paid": due, "taken": taken, "outcome": outcome}
+	paper = make_offers()
+	save()
+	var outcome := "free" if off > 0 and principal == 0 else ("repossessed" if taken else "paid")
+	return {"paid": owed, "off": off, "taken": taken, "outcome": outcome}
+
+
+# ---------------------------------------------------------------- the calendar
+
+func day_of(y: int, m: int, d: int) -> int:
+	return floori(Time.get_unix_time_from_datetime_dict({"year": y, "month": m, "day": d}) / 86400.0)
+
+
+## {year, month, day, weekday} for a day (today by default).
+func date(d := day) -> Dictionary:
+	return Time.get_date_dict_from_unix_time(d * 86400)
+
+
+func date_text(d := day) -> String:
+	var t := date(d)
+	return "%s %d %s %d" % [DAYS[t.weekday], t.day, MONTHS[t.month - 1], t.year]
+
+
+## The season's last day: the end of September.
+func season_end() -> int:
+	return day_of(year, LAST_MONTH + 1, 1) - 1
+
+
+func vig() -> int:
+	return roundi(principal * VIG)
+
+
+## What Friday takes: the vig and the week's keep.
+func due() -> int:
+	return vig() + LIVING
+
+
+## Today through the coming Friday (or the season's end): the days this week's paper books into.
+func week_left() -> Array[int]:
+	var out: Array[int] = [day]
+	while date(out[-1]).weekday != FRIDAY and out[-1] < season_end():
+		out.append(out[-1] + 1)
+	return out
+
+
+## Book an ad from the paper into this week's first free day. Returns the day, or -1 with
+## the week full.
+func book(ad: Dictionary) -> int:
+	for d in week_left():
+		if not calendar.has(d):
+			calendar[d] = ad
+			paper.erase(ad)
+			save()
+			return d
+	return -1
+
+
+## Today's booking: a job, {"cells": true}, or empty.
+func today() -> Dictionary:
+	return calendar.get(day, {})
+
+
+## Off to today's job. Saved as started: quit before it's done and it loads as the blackout.
+func start_job() -> void:
+	current_job = today()
+	in_job = true
+	save()
+
+
+## The day's over, worked or not: Friday brings payday, September's last day the winter.
+func end_day() -> void:
+	calendar.erase(day)
+	if date().weekday == FRIDAY:
+		payday_pending = true
+	if day >= season_end():
+		winter_pending = true
+	day += 1
+	save()
+
+
+## Through the days with no job to the next booking, payday or the winter.
+func skip() -> void:
+	while not today().has("seed") and not payday_pending and not winter_pending:
+		end_day()
+
+
+## Carried mood: the next visit starts halfway between their usual and how the last ended.
+func carried(j: Dictionary, last: float) -> float:
+	return (PERSONAS[j.persona].get("start_mood", 60.0) + last) * 0.5
+
+
+## How a visit really ended: their mood, less what they found once you'd gone (the
+## aftermath's reputation is a fifth of the mood it cost).
+func end_mood(r: Dictionary) -> float:
+	var m: float = r.get("mood", 60.0)
+	for n: Array in r.get("noticed", []):
+		m += n[1] * 5.0
+	return m
+
+
+## After a good classifieds job: a hidden chance they ask you back, by how it ended and
+## who they are. A no is silence.
+func _maybe_offer(r: Dictionary) -> void:
+	var j := current_job
+	if r.outcome != "paid" or regulars.has(j.seed):
+		return
+	var m := end_mood(r)
+	var ask: Array = REGULAR[j.persona]
+	if _rng.randf() < clampf((m - 60.0) / 40.0, 0.0, 1.0) * ask[0]:
+		offer = {"id": j.seed, "job": j, "cadence": ask[1], "rate": j.pay, "mood": carried(j, m), "day": day, "drift": []}
+
+
+## Answer a regular's offer: "accept", "decline" or "haggle" (HAGGLE times the rate).
+## Returns what they said: "yes", "grudging" (yes, but their mood drops), "walk" or "no".
+func answer_offer(how: String) -> String:
+	var o := offer
+	offer = {}
+	if how == "decline" or o.is_empty():
+		save()
+		return "no"
+	var said := "yes"
+	if how == "haggle": # the better their mood, the likelier yes; near the edge, grudging
+		var yes := clampf((o.mood - 50.0) / 40.0, 0.0, 1.0)
+		var roll := _rng.randf()
+		if roll >= yes + 0.3:
+			save()
+			return "walk"
+		if roll >= yes:
+			said = "grudging"
+			o.mood -= 10.0
+		o.rate = roundi(o.rate * HAGGLE / 5.0) * 5
+	regulars[o.id] = o
+	_place(o.id, o.day + o.cadence)
+	save()
+	return said
+
+
+## A regular's visit as a job: their garden by its seed, their rate (no tips), their
+## carried mood, and whatever's crept in since.
+func _visit(id: int) -> Dictionary:
+	var reg: Dictionary = regulars[id]
+	var j: Dictionary = reg.job.duplicate(true)
+	j.regular = id
+	j.pay = reg.rate
+	j.start_mood = reg.mood
+	j.drift = reg.drift.duplicate()
+	return j
+
+
+## Put a regular's next visit on the calendar near `target`: a clash shifts it a day
+## either way; nothing fits and that visit's missed, on to the one after.
+func _place(id: int, target: int) -> void:
+	var reg: Dictionary = regulars[id]
+	while target <= season_end():
+		for d: int in [target, target + 1, target - 1]:
+			if d > day and d <= season_end() and not calendar.has(d):
+				calendar[d] = _visit(id)
+				return
+		target += reg.cadence
+
+
+## A regular's visit is done: under the floor (or anything but paid) and they're gone;
+## otherwise the mood carries, the garden drifts, and the next visit's booked.
+func _visited(id: int, r: Dictionary) -> void:
+	if not regulars.has(id):
+		return
+	var reg: Dictionary = regulars[id]
+	var m := end_mood(r)
+	if r.outcome != "paid" or m < FLOOR:
+		drop(id)
+		r.lost_regular = true
+		return
+	reg.mood = carried(reg.job, m)
+	reg.drift.append(["gnome", "flamingo"][reg.drift.size() % 2]) # ponytail: a token drift; beds, ponds, leaves when it matters
+	_place(id, day + reg.cadence)
+
+
+## Let a regular go: they and their bookings leave the calendar.
+func drop(id: int) -> void:
+	regulars.erase(id)
+	for d: int in calendar.keys():
+		if calendar[d].get("regular", -1) == id:
+			calendar.erase(d)
+
+
+## September's done: the winter as one ledger. The living cost to March (short, the
+## shark tops you up onto what you owe), who's back by their carried mood, reputation
+## drifting toward the middle, then April. Returns {cost, topped, back, gone} (names).
+func settle_winter() -> Dictionary:
+	var cost := LIVING * WINTER_WEEKS
+	var topped := maxi(0, cost - money)
+	principal += topped
+	money += topped - cost
+	var back: Array[String] = []
+	var gone: Array[String] = []
+	for id: int in regulars.keys():
+		var reg: Dictionary = regulars[id]
+		if _rng.randf() < reg.mood / 100.0:
+			back.append(reg.job.customer)
+		else:
+			gone.append(reg.job.customer)
+			regulars.erase(id)
+	reputation = lerpf(reputation, 50.0, 0.2)
+	rep_trend = lerpf(rep_trend, 50.0, 0.2)
+	year += 1
+	day = day_of(year, start_month, 1)
+	calendar = {}
+	winter_pending = false
+	for id: int in regulars:
+		_place(id, day + posmod(id, regulars[id].cadence))
+	paper = make_offers()
+	save()
+	return {"cost": cost, "topped": topped, "back": back, "gone": gone}
+
+
+# ---------------------------------------------------------------- the save
+
+## The business save, beside the best-score file (so a test's save_path covers both).
+func business_path() -> String:
+	return save_path.get_basename() + "_business.save"
+
+
+func has_business() -> bool:
+	return FileAccess.file_exists(business_path())
+
+
+## Written between days (and at the board), one file per business. Ironman: no other.
+func save() -> void:
+	if not in_run:
+		return
+	var state := {}
+	for k: String in SAVED:
+		state[k] = get(k)
+	var f := FileAccess.open(business_path(), FileAccess.WRITE)
+	f.store_var(state)
+
+
+## Back to the business as it was saved. On a job started and never finished: you
+## blacked out. The job's failed, that client's lost, your name takes the hit.
+func load_business() -> void:
+	var f := FileAccess.open(business_path(), FileAccess.READ)
+	var state: Dictionary = f.get_var()
+	for k: String in state:
+		if get(k) is Array:
+			(get(k) as Array).assign(state[k])
+		else:
+			set(k, state[k])
+	_rng.randomize()
+	in_run = true
+	run_over_reason = ""
+	last_result = {}
+	blackout = {}
+	if in_job:
+		in_job = false
+		blackout = current_job
+		if current_job.has("regular"):
+			drop(current_job.regular)
+		rep_trend = maxf(0.0, rep_trend - BLACKOUT_REP)
+		reputation = maxf(0.0, reputation - BLACKOUT_REP * 0.5)
+		end_day()

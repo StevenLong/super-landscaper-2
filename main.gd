@@ -154,6 +154,8 @@ func _ready() -> void:
 	if Game.in_run:
 		get_tree().paused = true
 		var lines: Array = job.brief.duplicate()
+		if job.has("regular"): # the face shows how the last visits left them
+			lines.push_front("Back again: $%d a visit, as agreed." % job.pay)
 		if job.get("dog", false):
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
 		lines.append_array(["", "Mow the lawn, then walk up and ask to be paid. Your truck's for leaving."])
@@ -163,7 +165,7 @@ func _ready() -> void:
 			lines.append_array(["%s %s at the truck. %s hop off to move" % ["Triggers drive, the stick steers." if Game.pad
 				else "W/S drive, A/D turn.", Game.key("interact"), Game.key("hop")],
 				"stones, fetch fuel or catch a dog. Hold %s to look around. %s pause." % [Game.key("look"), Game.key("pause")]])
-		hud.open(job.customer, lines, [["start", "Let's go"]], job.look, "neutral")
+		hud.open(job.customer, lines, [["start", "Let's go"]], job.look, customer.face() if job.has("regular") else "neutral")
 
 
 ## Lay out the garden: house along the top with a garage on one side, the drive from
@@ -368,6 +370,12 @@ func _build_layout() -> void:
 				rock.position = rr.get_center()
 				$Scenery.add_child(rock)
 				lawn.exclude_circle(rock.position, rock.radius)
+		var rd := RandomNumberGenerator.new() # what's crept in between a regular's visits: its own draws, so the rest stays put
+		rd.seed = job.seed + 7
+		for kind: String in job.get("drift", []):
+			var pd := _place(rd, taken, Vector2(14, 14), size)
+			if pd.has_area():
+				add_stone(pd.get_center(), kind)
 	lawn.exclude_rect(_house.rect())
 	lawn.exclude_rect(_house.garage_rect())
 	lawn.exclude_rect(Rect2(drive.position, drive.size))

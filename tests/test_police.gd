@@ -74,14 +74,13 @@ func _physics_process(_delta: float) -> bool:
 			m._on_mower_bumped(car, 300.0)
 			assert(m.bills == bills + m.CAR_BILL * 3.0 and g.heat == heat + 1.0, "a ride-on at full tilt costs double, and it's a nuisance: +1 heat")
 			car.free()
-			# The run side: a night in the cells takes the next job slot; paying the week cools heat.
+			# The run side: a night in the cells takes tomorrow (test_season); paying the week cools heat.
 			g.new_run(3)
 			g.heat = 3.0
 			g.record_result({"outcome": "nicked", "net": -100, "paid": 0, "rep": -12.0, "cells": true})
-			assert(g.jobs_done == 2, "the cells cost the next job slot")
+			assert(g.today().has("cells"), "the cells cost tomorrow")
 			assert(g.money == -100, "the fine can put you in the red")
 			g.money = 1000
-			g.jobs_done = 3
 			g.settle_payday()
 			assert(g.heat == 2.0, "a week paid on time cools heat a level")
 			assert(g.police_time(3.0) < g.police_time(0.0) and g.fine(1, 3.0) > g.fine(1, 0.0), "your record brings them faster and fines harder")

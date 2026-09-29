@@ -21,10 +21,42 @@ func _ready() -> void:
 	books.add_child(_money(r))
 	books.add_child(_reputation(r))
 	root.add_child(books)
-	var go := UI.button("Back to the board", func() -> void: get_tree().change_scene_to_file("res://board.tscn"), 24)
+	var go := UI.button("Back to the board", func() -> void:
+		Game.answer_offer("decline") # walking away is a no
+		get_tree().change_scene_to_file("res://board.tscn"), 24)
 	go.name = "Continue"
 	root.add_child(go)
 	UI.focus(go)
+	if not Game.offer.is_empty():
+		root.add_child(_offer(go))
+		root.move_child(go, -1)
+		UI.focus(find_child("Accept", true, false) as Control)
+
+
+## They want you back (design doc, The Business: regulars): the terms, then accept,
+## decline, or push for more. What they say replaces the buttons.
+func _offer(go: Button) -> Control:
+	var o: Dictionary = Game.offer
+	var box := UI.vbox(8)
+	var every: String = {7: "every week", 14: "every fortnight", 28: "every four weeks"}[o.cadence]
+	var ask := UI.label("%s catches you at the truck: \"Could you come %s? $%d a visit.\"" % [o.job.customer, every, o.rate], 22, UI.GOLD)
+	ask.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ask.custom_minimum_size.x = 780
+	box.add_child(ask)
+	var row := UI.hbox(12)
+	box.add_child(row)
+	var push := roundi(o.rate * Game.HAGGLE / 5.0) * 5
+	for b: Array in [["Accept", "accept", "Deal"], ["Haggle", "haggle", "Ask for $%d" % push], ["Decline", "decline", "No thanks"]]:
+		var btn := UI.button(b[2], func() -> void:
+			var said := Game.answer_offer(b[1])
+			ask.text = {"yes": "\"Lovely. See you then.\" A regular: $%d %s." % [Game.regulars.get(o.id, o).rate, every],
+				"grudging": "\"...Fine. But it had better be good.\" $%d %s, and they're not pleased." % [Game.regulars.get(o.id, o).rate, every],
+				"walk": "\"At that price? Forget it.\" They're gone.", "no": "\"Suit yourself.\""}[said]
+			row.queue_free()
+			UI.focus(go), 20)
+		btn.name = b[0]
+		row.add_child(btn)
+	return UI.panel(box)
 
 
 ## Whole points, but never a flat zero for something that did count.
@@ -121,7 +153,9 @@ func _rundown(r: Dictionary) -> Control:
 	if r.get("heat_up", false):
 		also.append("Wanted level up")
 	if r.get("cells", false):
-		also.append("A night in the cells: next job lost")
+		also.append("A night in the cells: tomorrow's lost")
+	if r.get("lost_regular", false):
+		also.append("They won't be booking you again")
 	if not also.is_empty():
 		info.add_child(UI.label("   ".join(also), 20, UI.BAD))
 	for l: Label in info.get_children(): # long lines wrap, not shove the books off the screen

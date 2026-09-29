@@ -1,5 +1,5 @@
 extends Control
-## Title screen: new run, best score, music/sound settings, quit.
+## Title screen: continue the business or start a new one, best score, music/sound settings, quit.
 
 var _help_label: Label
 
@@ -34,7 +34,12 @@ func _ready() -> void:
 	var holder := CenterContainer.new()
 	holder.add_child(btns)
 	col.add_child(holder)
-	var start := UI.button("Start a new run", _start, 26)
+	var start := UI.button("New business", _start, 26)
+	if Game.has_business(): # ironman: one business, carried on or started over
+		var go_on := UI.button("Continue", _continue, 26)
+		go_on.name = "Continue"
+		btns.add_child(go_on)
+		start.text = "New business (ends this one)"
 	btns.add_child(start)
 	btns.add_child(UI.button("How to play", _help, 22))
 	for which: String in ["music", "sound"]:
@@ -42,7 +47,7 @@ func _ready() -> void:
 		b.pressed.connect(func() -> void: b.text = _setting(which))
 		btns.add_child(b)
 	btns.add_child(UI.button("Quit", func() -> void: get_tree().quit(), 22))
-	UI.focus(start)
+	UI.focus(btns.get_child(0) as Control)
 
 	_help_label = UI.label("", 18, UI.DIM)
 	_help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -59,6 +64,11 @@ func _start() -> void:
 	get_tree().change_scene_to_file("res://board.tscn")
 
 
+func _continue() -> void:
+	Game.load_business()
+	get_tree().change_scene_to_file("res://board.tscn")
+
+
 func _help() -> void:
 	_help_label.text = "\n".join([
 		("Stick up/down: throttle.  Left/right: turn.  %s at your truck: hand in or leave." if Game.pad
@@ -67,5 +77,5 @@ func _help() -> void:
 			Game.key("hop"), Game.key("look"), Game.key("pause")],
 		"Every customer wants a different share of their lawn mowed, in a different time. They won't say.",
 		"Read the briefing. Squashed wildlife and trampled flowers go down badly (usually).",
-		"Pay buys better mowers. Reputation brings better jobs. Run out of reputation and you're finished.",
+		"Book the paper's ads into free days. Pay the shark each Friday. Please a customer and they may ask you back.",
 	])
