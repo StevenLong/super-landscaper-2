@@ -121,6 +121,8 @@ const REGULAR := {"nature": [1.0, 14], "squirrel_hater": [1.0, 14], "gardener": 
 	"perfectionist": [0.5, 7], "grump": [0.4, 28], "toff": [0.7, 7], "vicar": [1.0, 14]}
 const MONTHS := ["January", "February", "March", "April", "May", "June", "July", "August",
 	"September", "October", "November", "December"]
+const PAPER := [-25.0, -12.0, 0.0, 0.0, 12.0, 25.0] ## a week's ads against your name: two below, two around, two above
+const REACH := 15.0 ## how far under an ad's bar a call can still get a yes
 const DAYS := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share of its price
 
@@ -139,7 +141,7 @@ const MANOR := Vector2i(1760, 1340) ## taller than the biggest lawn for the appr
 
 var money := 0
 var total_earned := 0
-var reputation := 50.0 ## 0..100; the job board dries up as it falls
+var reputation := 50.0 ## 0..100; callers say no as it falls (yes_chance)
 var rep_trend := 50.0 ## where behaviour is pushing reputation; reputation lags toward it
 var owned: Array[String] = ["push"]
 var equipped := "push"
@@ -274,7 +276,7 @@ func new_run(seed_value := 0) -> void:
 	winter_pending = false
 	in_job = false
 	blackout = {}
-	paper = make_offers()
+	paper = make_paper()
 	save()
 
 
@@ -307,34 +309,56 @@ func ad_text(j: Dictionary) -> String:
 	return "[color=#7a1c14]%s[/color] %s" % [ad[0], " ".join(parts)]
 
 
-## How many offers the board shows at this reputation. At the bottom it's one job,
-## the dregs (see make_job), never none.
-func offer_count() -> int:
-	if reputation < 20.0:
-		return 1
-	if reputation < 45.0:
-		return 2
-	return 3
-
-
-func make_offers() -> Array[Dictionary]:
+## The week's paper (design doc, The Business: you ring the ad): a spread round your
+## name, not only what it earns you. Each ad is made as if for a name PAPER away from
+## yours (give or take 5), in no particular order.
+func make_paper() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for i in offer_count():
-		out.append(make_job(_rng.randi()))
+	for off: float in PAPER:
+		out.append(make_job(_rng.randi(), clampf(reputation + off + _rng.randf_range(-5.0, 5.0), 0.0, 100.0)))
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.seed < b.seed)
 	return out
 
 
+## The chance ringing this ad gets a yes: certain at or over its bar, falling away over
+## REACH below it, so you can push a little higher.
+func yes_chance(ad: Dictionary) -> float:
+	return clampf((reputation - ad.bar + REACH) / REACH, 0.0, 1.0)
+
+
+## Ring an ad: an answer at once, no cost either way. Yes books it into the week's first
+## free day; no stamps it for the week. Returns what they said.
+func ring(ad: Dictionary) -> String:
+	var chance := yes_chance(ad)
+	if _rng.randf() < chance:
+		var d := book(ad)
+		var when: String = DAYS[date(d).weekday]
+		if ad.persona == "vicar":
+			return "\"All are welcome at St. Swithin's. %s, then.\"" % when
+		if ad.persona == "grump":
+			return "\"Fine. %s. Don't be late.\"" % when
+		return ("\"Oh, I've heard of you. Come round %s.\"" if chance >= 1.0 else "\"I've heard mixed things... go on, then. %s.\"") % when
+	ad.refused = true
+	ad.reply = "\"Oh, I've heard of you. No.\"" if chance <= 0.0 else "\"Hmm. I'll keep looking, thanks.\""
+	save()
+	return ad.reply
+
+
 ## A job is plain data: who, where, how big, what they secretly want, and what it pays.
-func make_job(seed_value: int) -> Dictionary:
+## `at`: the name it's pitched at (yours by default): a better name, bigger and better-paying
+## lawns. Its `bar` is the name it asks for (yes_chance).
+func make_job(seed_value: int, at := -1.0) -> Dictionary:
+	if at < 0.0:
+		at = reputation
 	var r := RandomNumberGenerator.new()
 	r.seed = seed_value
 	var persona_key: String = SUBURBAN[r.randi() % SUBURBAN.size()]
-	var dregs := reputation <= 0.0 # nobody decent will have you: cheap and hostile
+	var dregs := at <= 0.0 # nobody decent will have you: cheap and hostile
 	if dregs:
 		persona_key = "grump"
 	var p: Dictionary = PERSONAS[persona_key]
 	# Better reputation unlocks bigger, better-paying lawns.
-	var max_size := 0 if reputation < 55.0 else (1 if reputation < 75.0 else 2)
+	var max_size := 0 if at < 55.0 else (1 if at < 75.0 else 2)
 	var size_i := r.randi_range(0, max_size)
 	var size: Vector2i = LAWN_SIZES[size_i]
 	var area := float(size.x * size.y) / (1280.0 * 720.0)
@@ -364,33 +388,37 @@ func make_job(seed_value: int) -> Dictionary:
 	# The venue, by reputation band, from its own draws so the rest stays put.
 	var rv := RandomNumberGenerator.new()
 	rv.seed = seed_value + 5
-	if not dregs and reputation >= 75.0 and rv.randf() < 0.4:
+	if not dregs and at >= 75.0 and rv.randf() < 0.4:
 		_venue(j, "mansion", "toff", 2, 1.8)
 		j.props = ["urn", "urn"] + (["urn"] if rv.randf() < 0.5 else []) + ["hose"]
 		j.size = MANOR
 		j.ponds = 1 if rv.randf() < 0.5 else 0
 		j.beds = 0 # the parterre is the beds
 		j.trees = rv.randi_range(2, 3)
-	elif not dregs and reputation < 20.0 and rv.randf() < 0.5:
+	elif not dregs and at < 20.0 and rv.randf() < 0.5:
 		_venue(j, "graveyard", "vicar", 1, 0.7)
 		j.merge({"props": [], "ponds": 0, "beds": 0, "rocks": 0, "dog": false, "stones": 3, "trees": rv.randi_range(2, 3)}, true)
 	else:
-		_shape(j)
+		_shape(j, at)
+	# The name it asks for: the dregs and the churchyard take anyone, nobody decent takes
+	# a Dire name, and a bigger lawn or a better street asks more.
+	j.bar = 0.0 if dregs or j.get("venue", "") == "graveyard" else maxf(20.0, maxf([0.0, 55.0, 75.0][size_i],
+		{"forward": 40.0, "L": 70.0}.get(j.get("shape", ""), 75.0 if j.get("venue", "") == "mansion" else 0.0)))
 	return j
 
 
 ## The plot's shape, by neighbourhood (design doc, Levels): terraces at the bottom of the
 ## ladder, semis with the house set forward in the middle, odd-shaped detached plots at
 ## the top, and a plain rectangle now and then in each. Its own draws.
-func _shape(j: Dictionary) -> void:
+func _shape(j: Dictionary, at: float) -> void:
 	var r := RandomNumberGenerator.new()
 	r.seed = j.seed + 6
 	if r.randf() < 0.3:
 		return
-	if reputation < 40.0:
+	if at < 40.0:
 		j.shape = "terrace"
 		j.size = TERRACE
-	elif reputation < 70.0:
+	elif at < 70.0:
 		j.shape = "forward"
 	else:
 		j.shape = "L"
@@ -583,7 +611,7 @@ func settle_payday(extra := 0) -> Dictionary:
 	money -= off
 	principal -= off
 	heat = maxf(0.0, heat - 1.0) # paid on time: things cool off
-	paper = make_offers()
+	paper = make_paper()
 	save()
 	var outcome := "free" if off > 0 and principal == 0 else ("repossessed" if taken else "paid")
 	return {"paid": owed, "off": off, "taken": taken, "outcome": outcome}
@@ -792,7 +820,7 @@ func settle_winter() -> Dictionary:
 	winter_pending = false
 	for id: int in regulars:
 		_place(id, day + posmod(id, regulars[id].cadence))
-	paper = make_offers()
+	paper = make_paper()
 	save()
 	return {"cost": cost, "topped": topped, "back": back, "gone": gone}
 

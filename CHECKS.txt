@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (15 checks, 3 loads, about 50 minutes)
+PLAY CHECKS OWED  (16 checks, 3 loads, about 55 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -65,9 +65,15 @@ LOAD 3 of 3: THE SEASON PROTOTYPE      (about 25 min; New business on the title)
 ================================================================================
 
 S14-CAL
-New business: the board shows Tuesday 1 April 1980 and April's calendar. Book an ad, Go,
+New business: the board shows Tuesday 1 April 1980 and April's calendar. Ring an ad, Go,
 play it, and after the summary the board is on Wednesday with the job gone from the grid.
 Is the board readable at a glance (calendar, today, the paper, the shop)?
+>
+
+S14-RING
+Ring the paper's ads top to bottom. The big ones mostly say "Oh, I've heard of you. No."
+and stay stamped; now and then one a little above you says "go on, then". Does the phone
+call make your reputation feel real, and is the reach above your level about right?
 >
 
 S14-PAYDAY
@@ -92,5 +98,5 @@ Start a job, pause, Quit to the title, then Continue: "YOU BLACKED OUT", the job
 
 S14-PACE
 Overall: does a week feel right, with the skip through empty days, one to three ads a
-week, and $150 due every Friday? Too tight, too loose, too many clicks?
+week saying yes, and $150 due every Friday? Too tight, too loose, too many clicks?
 >

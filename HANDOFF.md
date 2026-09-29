@@ -31,6 +31,13 @@ Notepad whenever an answer is still blank.
     booked then moves on a cadence.
   - The business save sits beside `save_path` (`best_business.save`), so tests' own
     save_path keeps them off the real save. Bankruptcy deletes it.
+- **Ringing the ads** (the dev's call, after the build; design doc, The Business): the
+  paper prints six ads spread round your name (`PAPER`: two below, two around, two above);
+  each has a bar from its size, plot and venue (the dregs and churchyard 0, else at least
+  20); ringing is instant and free, a yes books the first free day, a no stamps the ad for
+  the week. The dev's note: play below the bar, so the chance falls to 0 over `REACH` = 15
+  points. My calls: the bar numbers reuse make_job's old reputation band edges; the
+  caller's lines are placeholders for the text pass.
 - **Not built:** "the dead stay dead" (nothing in a garden dies for good: the dog only
   limps, critters respawn; see TRIBAL). The start month is `Game.start_month`, a code knob,
   no in-game switch.
@@ -43,11 +50,11 @@ Notepad whenever an answer is still blank.
   Screenshotted and looked at: the board (1 and 5 regulars, the right column scrolls, long
   surnames clip), payday, after payday, winter, the offer, the blackout. Not played.
 
-OWED CHECKS: 15, in CHECKS.txt (3 loads, about 50 minutes; LOAD 3 is the prototype).
+OWED CHECKS: 16, in CHECKS.txt (3 loads, about 55 minutes; LOAD 3 is the prototype).
 
 NEXT:
 1. Play the prototype (LOAD 3) and the S13 checks; triage.
-2. Retune the first numbers from S14-PACE (principal, vig, keep, ads a week).
+2. Retune the first numbers from S14-PACE and S14-RING (principal, vig, keep, PAPER, REACH).
 3. The text pass (159, with 158) over the board, payday, winter and offer text.
 4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after
    play; 167 (the record) is next to build once the prototype has been played.

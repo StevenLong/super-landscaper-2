@@ -1,8 +1,10 @@
 extends Control
 ## Between jobs (design doc, The Business): the month's calendar with today's job, the
-## week's paper to book into free days, your regulars, the shop and your van's mower rack.
+## week's paper to ring, your regulars, the shop and your van's mower rack.
 ## Friday brings payday (the loan shark's man), September's end the winter, and a job
 ## you never finished the blackout.
+
+var _call := "" ## what the last ad you rang said, shown by the paper
 
 
 func _ready() -> void:
@@ -65,10 +67,26 @@ func _build(keep := "") -> void:
 	cols.add_child(left)
 	left.add_child(_month())
 	var first := _today(left)
-	left.add_child(UI.label("This week's paper" if not Game.paper.is_empty() else "Nothing else in this week's paper.", 22))
+	var heading := UI.hbox(14)
+	heading.add_child(UI.label("This week's paper" if not Game.paper.is_empty() else "Nothing else in this week's paper.", 22))
+	if _call != "": # what the last one you rang said
+		var said := UI.label(_call, 18, UI.GOLD)
+		said.name = "Call"
+		said.clip_text = true
+		said.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		heading.add_child(said)
+	left.add_child(heading)
+	var ads := ScrollContainer.new() # a long paper scrolls, following the cursor
+	ads.follow_focus = true
+	ads.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	ads.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left.add_child(ads)
+	var list := UI.vbox(6)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ads.add_child(list)
 	var full := Game.week_left().all(func(d: int) -> bool: return Game.calendar.has(d))
 	for o in Game.paper:
-		left.add_child(_ad(o, full))
+		list.add_child(_ad(o, full))
 
 	# Right: your regulars, then the shop and rack.
 	var scroll := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
@@ -169,7 +187,8 @@ func _today(box: Control) -> Button:
 
 
 ## An ad as a classified on newsprint: no picture, just the words and the hints buried
-## in them. You meet the customer at the briefing. Booking puts it on the week's first free day.
+## in them. You meet the customer at the briefing. Ringing gets an answer at once
+## (Game.ring): yes books the week's first free day, no stamps the ad.
 func _ad(o: Dictionary, full: bool) -> Control:
 	var row := UI.hbox(14)
 	var ad := RichTextLabel.new()
@@ -182,13 +201,17 @@ func _ad(o: Dictionary, full: bool) -> Control:
 	ad.add_theme_font_size_override("normal_font_size", UI.px(18))
 	ad.text = Game.ad_text(o)
 	row.add_child(ad)
-	var book := UI.button("Book", func() -> void:
-		Game.book(o)
-		_build(), 20)
-	book.name = "Book"
-	book.disabled = full
-	book.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(book)
+	if o.get("refused", false): # stamped for the week, what's above you kept in view
+		ad.text += "\n[color=#b03020]NO: %s[/color]" % o.reply
+		ad.modulate.a = 0.7
+	else:
+		var ring := UI.button("Ring", func() -> void:
+			_call = Game.ring(o)
+			_build(), 20)
+		ring.name = "Ring"
+		ring.disabled = full
+		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(ring)
 	var paper := StyleBoxFlat.new()
 	paper.bg_color = Color("e8e0c8")
 	paper.border_color = Color("b8ac8c")
@@ -276,12 +299,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	elif event.keycode == KEY_4: # down the ladder, for the churchyard
 		Game.reputation = maxf(1.0, Game.reputation - 20.0)
 		Game.rep_trend = maxf(1.0, Game.rep_trend - 20.0)
-		Game.paper = Game.make_offers()
+		Game.paper = Game.make_paper()
 		_build()
 	elif event.keycode == KEY_2:
 		Game.reputation = minf(100.0, Game.reputation + 20.0)
 		Game.rep_trend = minf(100.0, Game.rep_trend + 20.0)
-		Game.paper = Game.make_offers()
+		Game.paper = Game.make_paper()
 		_build()
 
 

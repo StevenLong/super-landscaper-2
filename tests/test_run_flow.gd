@@ -40,7 +40,7 @@ func _process(_delta: float) -> bool:
 			assert(game.in_run and game.date_text() == "Tuesday 1 April 1980" and game.owned == ["push"], "fresh business")
 			game.new_run(7) # the same business every time
 			current_scene._build()
-			assert(game.paper.size() == 3, "fair reputation: three ads in the paper")
+			assert(game.paper.size() == 6, "six ads in the paper")
 			for o: Dictionary in game.paper:
 				var text: String = game.ad_text(o)
 				assert(text.contains("$%d cash" % o.pay) and text.contains(o.customer.split(" ")[0][0]), "an ad gives the pay and who to ring: %s" % text)
@@ -49,8 +49,10 @@ func _process(_delta: float) -> bool:
 				assert(game.PERSONAS[k].ads.size() >= 2, "every kind of customer has ads")
 			assert(current_scene.find_child("Today", true, false).text == "On to the next job", "nothing booked yet")
 			var ad: Dictionary = game.paper[0]
-			_press("Book")
-			assert(game.today() == ad and game.paper.size() == 2, "booked into today")
+			ad.bar = 0.0 # a sure yes
+			_press("Ring")
+			assert(game.today() == ad and game.paper.size() == 5, "they said yes: booked into today")
+			assert(current_scene.find_child("Call", true, false).text.contains("Tuesday"), "and what they said is shown")
 			assert(current_scene.find_child("Calendar", true, false) != null, "the month's calendar")
 			assert(current_scene.find_child("Today", true, false).text == "Go", "today's job to go to")
 			_press("Today")
@@ -124,10 +126,12 @@ func _process(_delta: float) -> bool:
 			assert(game.regulars.is_empty() and game.day == _visit_day + 1, "that client's lost, and the day")
 			current_scene._ready() # carry on
 			game.reputation = 0.0
-			game.paper = game.make_offers()
+			game.paper = game.make_paper()
 			current_scene._build()
-			assert(game.paper.size() == 1 and game.paper[0].persona == "grump", "no reputation: the dregs, one hostile job")
-			assert(current_scene.find_children("Book", "Button", true, false).size() == 1, "and it can be booked")
+			var never: Dictionary = game.paper.filter(func(o: Dictionary) -> bool: return o.bar > 0.0)[0]
+			current_scene._call = game.ring(never)
+			current_scene._build()
+			assert(current_scene.find_children("Ring", "Button", true, false).size() == 5, "no reputation: a no, stamped, and no more ringing it")
 			game.money = 70 # plus the petrol mower's resale covers $150
 			game.payday_pending = true
 			current_scene._ready()

@@ -56,19 +56,40 @@ func _money() -> void:
 	assert(g.has_business(), "saved")
 	r = g.settle_payday()
 	assert(r.outcome == "bankrupt" and g.run_over_reason == "bankrupt" and not g.has_business(), "bankrupt: the business is over")
-	# Zero reputation: still one job, the dregs.
+	# Zero reputation: the paper's still full, but only the dregs and the churchyard say yes.
 	g.new_run(7)
 	g.reputation = 0.0
-	var dregs: Array = g.make_offers()
-	assert(dregs.size() == 1 and dregs[0].persona == "grump", "the dregs: one hostile job")
+	var ruined: Array = g.make_paper()
+	assert(ruined.all(func(o: Dictionary) -> bool: return g.yes_chance(o) == (1.0 if o.bar == 0.0 else 0.0)), "a ruined name: yes from the bottom, no from the rest")
+	assert(ruined.any(func(o: Dictionary) -> bool: return o.persona == "grump" and o.bar == 0.0), "the dregs still answer")
 
 
 func _paper() -> void:
 	g.new_run(7)
-	assert(g.paper.size() == 3 and g.week_left().size() == 4, "a fair name: three ads for Tuesday to Friday")
-	var first: Dictionary = g.paper[0]
+	assert(g.paper.size() == 6 and g.week_left().size() == 4, "six ads for Tuesday to Friday")
+	# A spread: over many papers, a Fair name sees ads above its level and below it.
+	var bars := {}
+	for i in 30:
+		for o: Dictionary in g.make_paper():
+			bars[o.bar] = true
+	assert(bars.has(20.0) and bars.has(40.0) and (bars.has(55.0) or bars.has(70.0)), "bars below, around and above a Fair name: %s" % [bars.keys()])
+	# The chance: certain at the bar, a third of the way at 10 under, none past REACH.
+	var ad: Dictionary = g.paper[0].duplicate()
+	for pair: Array in [[50.0, 1.0], [60.0, 1.0 / 3.0], [65.0, 0.0], [80.0, 0.0]]:
+		ad.bar = pair[0]
+		assert(is_equal_approx(g.yes_chance(ad), pair[1]), "a Fair name against a bar of %d" % pair[0])
+	# Ringing: a sure yes books it; a sure no stamps it and it stays in view.
+	var sure: Dictionary = g.paper[0]
+	sure.bar = 0.0
+	var said: String = g.ring(sure)
+	assert(said.contains("Tuesday") and g.today() == sure and sure not in g.paper, "yes: booked into today: %s" % said)
+	var never: Dictionary = g.paper[0]
+	never.bar = 100.0
+	said = g.ring(never)
+	assert(said == "\"Oh, I've heard of you. No.\"" and never.refused and never in g.paper and g.today() == sure, "no: stamped, still in the paper")
+	var first: Dictionary = g.paper[1]
 	var d: int = g.book(first)
-	assert(d == g.day and g.today() == first and first not in g.paper, "booking fills the first free day")
+	assert(d == g.day + 1 and g.calendar[d] == first and first not in g.paper, "booking fills the first free day")
 	var left: Array = g.paper.duplicate()
 	g.money = 1000
 	while not g.payday_pending:
