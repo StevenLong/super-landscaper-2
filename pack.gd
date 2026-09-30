@@ -63,6 +63,7 @@ func _origin(grid: String) -> Vector2:
 # ---------------------------------------------------------------- input
 
 func _unhandled_input(event: InputEvent) -> void:
+	var view := get_viewport() # before act(): driving off leaves the tree at once
 	if event is InputEventMouseButton and event.pressed:
 		_click(event.position, event.button_index)
 	elif event.is_action_pressed("ui_left"):
@@ -82,7 +83,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		turn()
 	else:
 		return
-	get_viewport().set_input_as_handled()
+	view.set_input_as_handled()
 	queue_redraw()
 
 

@@ -79,7 +79,10 @@ func _process(_delta: float) -> bool:
 			s._move(Vector2i.RIGHT)
 			assert(s.zone == "tray", "on to the tray")
 			s.row = s._tray().size() - 1
-			s.act()
+			var go := InputEventAction.new() # through input, not act(): driving off used to crash there
+			go.action = "ui_accept"
+			go.pressed = true
+			root.push_input(go)
 		1:
 			assert(current_scene.name == "Main", "off to the job")
 			assert(g.equipped == "petrol" and current_scene.mower.sprite_kind == "petrol", "on the best mower packed")
