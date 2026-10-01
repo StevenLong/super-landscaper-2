@@ -101,6 +101,86 @@ ORDER (2026-09-29, the prototype built in S14): play the prototype (CHECKS.txt L
 then the text pass (159, with 158) over the new board, payday, winter and offer text;
 155 when it's caught on screen.
 
+### Notes 2026-10-01 (S13 and S14 check fallout: LOAD 1 to 3 played, and the dev's notes)
+
+Fixed during the play (session 15): the packing screen's crash on driving off (17dec2f);
+fence and wall corners at next door's corner and the churchyard wall (dc5e08f).
+
+178. [BUG, small, BLOCKS] The truck menu runs off the screen, "Drive off" is first (picked by
+   accident more than once) and "Keep going" is cut off. Root: `hud.gd` `open()` lays the
+   buttons in one HBoxContainer; `main.gd` `open_truck_menu()` adds drive-off first and can
+   add 6+ buttons. FIX: a vertical list, "Keep going" first and focused, drive-off last.
+179. [BUG, small, BLOCKS] The paper's last ad can't be scrolled fully into view on a pad.
+   `board.gd` ~81: `follow_focus` scrolls only the focused button into view, not its whole
+   ad row (likely; not reproduced). FIX: on focus, `ensure_control_visible` the row.
+180. [BUG, small] A customer on a back patio gets hit by a mower cutting the grass their
+   upper body hides. Root: `main.gd` ~1039, a 22 px circle 10 px above their feet, so a
+   mower on the lawn just above the patio trips it. FIX: test from the feet only (or the
+   mower must be on the paving); their body above the waist isn't a hitbox.
+181. [BUG, small, BLOCKS] The robot commits crimes for you: off screen it bowled the dog and
+   the police came. Root: `dog.bowled` with by == "mower" (`main.gd` ~2353) can't tell the
+   robot from your mower, so `_crime(2)` and `_call_police()`. The dev's call: robots never
+   commit crimes on your behalf. FIX: the robot's hits on the dog, critters and the customer
+   aren't crimes and don't count as yours. QUESTION: interim behaviour (see 189).
+182. [DESIGN, small] The police called, then you ask to be paid and get fired: mixed
+   messages. QUESTION: once they ring the police, are they done with you (fired there and
+   then, asking for pay gets "I've called the police!")?
+183. [FEATURE, small] No way to save and quit from the board. The game saves itself on the
+   board after every day (ironman); quitting mid-job is the blackout, and the pause menu
+   doesn't say so. FIX: a pause on the board (Save and quit to title, Quit game); the job's
+   "Quit to title" warns that you'll black out.
+184. [VISUAL, small] The portrait mixes where they are with whether they see you: at a
+   window and unable to see you it switches to "inside", so the glass vanishes and the face
+   fades. Root: `main.gd` ~1021 sets `Face.view` to "inside" when unseen. FIX: two discrete
+   states, where (patio, window, inside) and seen/unseen (the band and grey), set
+   separately; inside and not at a window stays visible, greyed, not faded away.
+185. [VISUAL, small] At a window the customer is drawn in front of the glass, not behind it.
+   Root: `house.gd` ~145 draws the head on `_front` over the pane. FIX: draw it under the
+   glass and glazing bars.
+186. [FEATURE, moderate] The customer teleports between inside and the patio, and between
+   windows. The dev wants them to walk out through the door, and walk (hidden) from window
+   to window. Home: `customer.gd` ~141 (where flips), `client.gd`.
+187. [FEATURE, moderate] Haggling and paying off debt use fixed amounts; the dev wants to
+   pick a figure. Haggle: ask a bit less to feel safer or more if you're bold (the chance
+   follows the ask). Debt: pay exactly what you can spare. Homes: `summary.gd` `_offer()`,
+   `board.gd` `_payday()`. FIX: a pad-friendly stepper (left/right, hold to speed up) in
+   `ui.gd`, used by both.
+188. [FEATURE, small] Payday: show what the payment does, not a definition. The vig is
+   interest only (`Game.vig()` on the principal); only the extra comes off the debt. FIX:
+   each choice shows paid, interest covered, debt left after. Goes with 187.
+189. [DESIGN, large] Robot mowers, to grill (S14-ROBOT: not worth the risk, non-functional).
+   The dev's direction: smart, slow, expensive, predictable; perfect stripes N-S or E-W;
+   stop for critters or ignore them; go round what they'd break; maybe their own damage
+   bar; stones maybe always destroyed, not flung. Tiers open: cheap ping-pong ones run till
+   they die, dear ones upgradeable; consumable vs permanent vs destroyable. All on the table.
+190. [FEATURE, moderate] A regular's offer is a win and should look like one: the summary,
+   Continue, then its own screen with their message and accept / haggle / decline. Declining
+   still gives a little rep (being wanted is reputation). Home: `summary.gd` `_offer()`.
+191. [FEATURE, moderate] Packing screen (S14-PACK): the cursor takes a whole item as one
+   stop (all its cells highlighted; the next move goes to the neighbouring item or cell);
+   empty cells and small kit stay per cell. A pad button (Start) drives off from anywhere.
+   The tray list is disliked; it changes with the shop (the dev's later idea: loading
+   reuses the grids another way). Home: `pack.gd`.
+192. [DESIGN, small] S13-HEDGE: a squirrel cleared over the hedge but landing out of view
+   gets no reaction. QUESTION: should seeing the throw be enough?
+193. [DESIGN, large] Pace and escalation (S14-PACE, the dev's biggest concern). One big job
+   and you're set: the loan's paid, tens of thousands by month two, nothing to buy, no
+   pressure. The week fills with the same big venue reshuffled: well paid, easy, samey.
+   S14-RING ties in: the bars are 3 or 4 steps (0, 20, 55, 75), no gradual climb. The dev's
+   lead, unsure: escalation inside the jobs (more critters and trouble per visit, maybe the
+   longer you stay), not only outside them; or back toward the coin-op shape. Needs a grill
+   before any retune of PAPER, REACH, the vig or pay.
+194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays (the
+   corner fix is dc5e08f). Collect screenshots here; side runs still leave a thin strip of
+   outside grass between the fence and the lawn (judged fine, unconfirmed).
+Also: S14-CAL, the board reads but will be redone when things split out (no item). S13-CORD
+reads a bit better (no item). The rest of S13 and S14 passed.
+
+PROPOSED ORDER: 178, 179, 181, 180, 182, 183 (small, the first three spoil play); 184, 185;
+then 187 with 188, 190, 191; then grill 193 (pace) and 189 (robots); 186 when the customer
+gets walking. Rationale: clear what breaks a playtest first; the pace grill decides what
+the economy screens (187, 188) are even for, but they're cheap and the dev asked for them.
+
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
 Decided in the design doc (Direction, The Business, Season Prototype). The game is now a
