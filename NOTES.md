@@ -121,10 +121,11 @@ fence and wall corners at next door's corner and the churchyard wall (dc5e08f).
    the police came. Root: `dog.bowled` with by == "mower" (`main.gd` ~2353) can't tell the
    robot from your mower, so `_crime(2)` and `_call_police()`. The dev's call: robots never
    commit crimes on your behalf. FIX: the robot's hits on the dog, critters and the customer
-   aren't crimes and don't count as yours. QUESTION: interim behaviour (see 189).
-182. [DESIGN, small] The police called, then you ask to be paid and get fired: mixed
-   messages. QUESTION: once they ring the police, are they done with you (fired there and
-   then, asking for pay gets "I've called the police!")?
+   aren't crimes and don't count as yours. Superseded by 189's behaviour (it stops for
+   critters), which makes this moot; build together.
+182. [BUG, small] The police called, then you ask to be paid and get fired: mixed
+   messages. The dev's call (2026-10-01): ringing the police fires you there and then;
+   asking for pay after gets "I've called the police!".
 183. [FEATURE, small] No way to save and quit from the board. The game saves itself on the
    board after every day (ironman); quitting mid-job is the blackout, and the pause menu
    doesn't say so. FIX: a pause on the board (Save and quit to title, Quit game); the job's
@@ -148,7 +149,11 @@ fence and wall corners at next door's corner and the churchyard wall (dc5e08f).
 188. [FEATURE, small] Payday: show what the payment does, not a definition. The vig is
    interest only (`Game.vig()` on the principal); only the extra comes off the debt. FIX:
    each choice shows paid, interest covered, debt left after. Goes with 187.
-189. [DESIGN, large] Robot mowers, to grill (S14-ROBOT: not worth the risk, non-functional).
+189. [FEATURE, large] Robot mowers (S14-ROBOT: not worth the risk, non-functional). The worst
+   of it: it wanders into a corner and ping-pongs there forever, achieving nothing. The
+   dev's call (2026-10-01), like a real one: it knows the garden's shape; it cuts straight
+   lines, steadily side to side (or corner to corner); it never runs over critters, it
+   stops for them. QUESTION: stones, bumped aside or destroyed? Earlier thoughts, open:
    The dev's direction: smart, slow, expensive, predictable; perfect stripes N-S or E-W;
    stop for critters or ignore them; go round what they'd break; maybe their own damage
    bar; stones maybe always destroyed, not flung. Tiers open: cheap ping-pong ones run till
@@ -162,7 +167,8 @@ fence and wall corners at next door's corner and the churchyard wall (dc5e08f).
    The tray list is disliked; it changes with the shop (the dev's later idea: loading
    reuses the grids another way). Home: `pack.gd`.
 192. [DESIGN, small] S13-HEDGE: a squirrel cleared over the hedge but landing out of view
-   gets no reaction. QUESTION: should seeing the throw be enough?
+   gets no reaction. The dev's call (2026-10-01): they react to whichever they see, the
+   throw or the landing. Not urgent.
 193. [DESIGN, large] Pace and escalation (S14-PACE, the dev's biggest concern). One big job
    and you're set: the loan's paid, tens of thousands by month two, nothing to buy, no
    pressure. The week fills with the same big venue reshuffled: well paid, easy, samey.
@@ -173,11 +179,14 @@ fence and wall corners at next door's corner and the churchyard wall (dc5e08f).
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays (the
    corner fix is dc5e08f). Collect screenshots here; side runs still leave a thin strip of
    outside grass between the fence and the lawn (judged fine, unconfirmed).
+195. [BUG, small] The siren is far too loud once the police arrive. Root: `main.gd` ~1033
+   ramps it from -26 dB to -6 dB as the countdown runs out. FIX: a lower ceiling.
 Also: S14-CAL, the board reads but will be redone when things split out (no item). S13-CORD
 reads a bit better (no item). The rest of S13 and S14 passed.
 
-PROPOSED ORDER: 178, 179, 181, 180, 182, 183 (small, the first three spoil play); 184, 185;
-then 187 with 188, 190, 191; then grill 193 (pace) and 189 (robots); 186 when the customer
+PROPOSED ORDER: 178, 179, 195, 180, 182, 183 (small, the first three spoil play); 184, 185;
+then 189 with 181 (the robot's straight lines); 187 with 188, 190, 191, 192; then grill
+193 (pace); 186 when the customer
 gets walking. Rationale: clear what breaks a playtest first; the pace grill decides what
 the economy screens (187, 188) are even for, but they're cheap and the dev asked for them.
 
