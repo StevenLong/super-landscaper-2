@@ -85,6 +85,20 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 90
 		6:
 			assert(m.tally.get("own_head", 0) == 1 and m.walker.dazed > 0.0, "what goes up comes down on your head")
+			# A squirrel thrown out of the garden, landing where they can't see: they react
+			# only if they watched it leave your hand.
+			m.customer.where = "patio"
+			var f := FlyingStone.new()
+			f.kind = "squirrel"
+			f.thrown = true
+			f.position = Vector2(-3000, -3000) # well out of sight
+			var mood: float = m.customer.mood
+			m._on_stone_landed(f, "gone")
+			assert(m.customer.mood == mood, "unseen throw, unseen landing: nothing")
+			f.throw_seen = true
+			m._on_stone_landed(f, "gone")
+			assert(m.customer.mood != mood, "they saw you throw it: that's enough")
+			f.free()
 			print("PASS throw")
 			quit()
 	_step += 1

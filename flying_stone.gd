@@ -17,6 +17,7 @@ var kind := "stone" ## what's flying (Stone.KINDS): it lands as one
 var out := 0.0 ## a critter knocked out: seconds it has left out cold, carried through the flight
 var thrown := false ## by hand, on purpose: what it hits can be a crime (a flung one is an accident)
 var seen := false ## a body the customer has already seen (Animal.seen), carried through the flight
+var throw_seen := false ## the customer watched it leave your hand (seeing that is enough to react to an eviction)
 var hit_test: Callable
 var _age := 0.0
 

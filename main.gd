@@ -1147,6 +1147,7 @@ func _on_thrown(dir: Vector2, power: float) -> void:
 	f.thrown = true
 	f.out = _out
 	f.seen = _held_seen
+	f.throw_seen = customer.sees(walker.global_position)
 	if CRITTERS.has(walker.carrying):
 		_count("animals_thrown")
 	walker.carrying = ""
@@ -2013,6 +2014,12 @@ func _count(key: String, cost := 0.0) -> void:
 
 ## Send a stone flying along the ground (flung by blades or thrown by hand).
 ## Something into the air from `from`, `z0` up, at `speed` tilted `pitch` above the ground.
+## Where a customer has to be looking to see a critter thrown out: anywhere, if they
+## watched it leave your hand; else where it came down.
+func _evict_at(f: FlyingStone, p: Vector2) -> Vector2:
+	return Vector2.INF if f.throw_seen else p
+
+
 func throw_stone(from: Vector2, dir: Vector2, speed: float, pitch: float, kind := "stone", z0 := THROW_Z) -> FlyingStone:
 	var f := FlyingStone.new()
 	f.kind = kind
@@ -2196,7 +2203,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				_land(lawn.keep_in(p, 8.0), "dog") # it scrabbles at the fence instead
 			elif f.kind.begins_with("body_"):
 				_count("bodies_hidden") # next door's problem now
-			elif alive and f.thrown and customer.on_evict(f.kind, KO_SHARE, p): # seen going over
+			elif alive and f.thrown and customer.on_evict(f.kind, KO_SHARE, _evict_at(f, p)): # seen going over
 				_react()
 		"fence":
 			Sfx.play("thud")
@@ -2250,7 +2257,7 @@ func _on_stone_landed(f: FlyingStone, target: String) -> void:
 				Sfx.play("thud")
 				if f.kind.begins_with("body_") and not _on_plot(p):
 					_count("bodies_hidden") # next door's problem now
-				elif alive and f.thrown and not _on_plot(p) and customer.on_evict(f.kind, KO_SHARE, p):
+				elif alive and f.thrown and not _on_plot(p) and customer.on_evict(f.kind, KO_SHARE, _evict_at(f, p)):
 					_react() # seen going over the hedge or fence
 				for b in $Scenery.get_children():
 					if b.has_method("flattened_count") and b.rect().has_point(p):
