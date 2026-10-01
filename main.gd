@@ -699,13 +699,23 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			var from := -BORDER_UP
 			if (key == "left" and nl) or (key == "right" and nr):
 				from = n.end.y - b - BORDER_UP # it starts at next door's corner, and takes it
-			var to := n.end.y - BORDER_UP if key == "notch_v" else h + b - BORDER_UP
-			box = Rect2(box.position.x, from, box.size.x, to - from)
+			var to := h + b - BORDER_UP
+			if key == "notch_v": # down to next door's run, or to its foot where none crosses (the church)
+				to = n.end.y - (BORDER_UP if sides.has("notch_h") else 0.0)
+			# The art's a column down the strip's middle: a notch's goes on the corner line,
+			# where the runs either side of it end.
+			var x := (n.end.x if nl else n.position.x) - b * 0.5 if key == "notch_v" else box.position.x
+			box = Rect2(x, from, box.size.x, to - from)
 		else: # its front face, standing on the run's outer edge (the lawn edge at the top)
 			strip.texture = {"hedge": preload("res://art/hedge_h.png"), "fence": preload("res://art/fence_h.png"),
 				"railings": preload("res://art/railings_h.png"), "wall": preload("res://art/wall_h.png")}[s[0]]
 			var foot := box.end.y if key.begins_with("bottom") else (n.end.y if key == "notch_h" else 0.0)
-			box = Rect2(box.position.x, foot - strip.texture.get_height(), box.size.x, strip.texture.get_height())
+			# End on the side runs' middle line, where their art stands, not past it or short of it.
+			var x0 := box.position.x - (b if key == "notch_h" and nl else 0.0)
+			var x1 := box.end.x + (b if key == "notch_h" and nr else 0.0)
+			x0 = maxf(x0, -b * 0.5)
+			x1 = minf(x1, w + b * 0.5)
+			box = Rect2(x0, foot - strip.texture.get_height(), x1 - x0, strip.texture.get_height())
 		strip.stretch_mode = TextureRect.STRETCH_TILE
 		strip.position = box.position
 		strip.size = box.size
