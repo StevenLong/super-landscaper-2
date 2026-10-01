@@ -45,6 +45,13 @@ func _initialize() -> void:
 	c = Customer.new(job.merged({"indoors": 1.0}, true))
 	c.tick(36.0)
 	assert(c.where != "patio", "a stay-at-home customer goes in when their stint on the patio ends")
+	# Indoors they walk to a window, past the others, unseen till they're at it.
+	c.where = "inside"
+	c._stroll(370, "window")
+	c.tick(1.0)
+	assert(c.where == "inside" and not c.sees() and c.stroll_x() > c.door_x and c.stroll_x() < 370.0, "on the way, glimpsed between the door and the window")
+	c.tick(5.0)
+	assert(c.where == "window" and c.window_x == 370 and c.stroll_x() < 0.0, "then at the window")
 
 	m = load("res://main.tscn").instantiate()
 	m.hedgehog_every = 9999.0
@@ -71,7 +78,7 @@ func _physics_process(_delta: float) -> bool:
 			m.mower.global_position = open
 			m.customer.where = "window"
 			m.customer.window_x = 40
-			_wait = 2
+			_wait = 70 # they walk in through the door first
 		2:
 			assert(not m.get_node("Client").visible and house.peek_x == 40, "at a window: off the patio, their head at the glass")
 			assert(m.get_node("HUD/Face").view == "window", "the portrait shows the pane")

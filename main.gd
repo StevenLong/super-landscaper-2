@@ -45,6 +45,7 @@ const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
 const ROAD := 150
 const BORDER_UP := 29.0 ## how far a hedge or fence rises in the 3/4 view (art/hedge_h.png face)
+const DOOR_PACE := 50.0 ## px/s the customer walks between their door and the patio
 const SIREN_LOUDEST := -16.0 ## dB as the police arrive (was -6: far too loud, S14 play)
 const GRAVEL := Color(1.0, 0.88, 0.68) ## tints the grey gravel tile for the drive
 const TERRACE_FRONT := 64.0 ## a terrace's scrap of front garden, between the house and the road
@@ -95,7 +96,9 @@ var _cone_x := -1 ## the window it was worked out for
 var _held_seen := false ## the body in your hands is one they've already seen (Animal.seen)
 var _focus: Node2D ## brackets round what interact would do (_draw_focus)
 var _knocking := false ## knocked, waiting for them to answer
-var _where := "patio" ## where the customer was last frame, to hear the door when they go in
+var _where := "patio" ## where the customer was last frame, to walk them through the door
+var _door_walk := false ## the customer's walking between the patio and their door
+var _door_tw: Tween
 var _out := 0.0 ## seconds the critter in your hands has left out cold (0: awake)
 var _known_bodies := {} ## kind -> bodies they've already seen made or carried: not news later
 var _shake := 0.0
@@ -231,6 +234,8 @@ func _build_layout() -> void:
 	$Client.set_look(job.look)
 	_house.peek_tex = $Client._tex
 	customer.windows = _house.windows()
+	var door: Rect2 = _house.VENUES[_house.venue].door
+	customer.door_x = door.get_center().x - _house.GLASS.size.x * 0.5
 
 	# The drive runs from the garage door to the road; its mouth crosses the pavement.
 	var drive: Control = $Driveway
@@ -1017,8 +1022,9 @@ func _physics_process(delta: float) -> void:
 	hud.set_clock(customer.elapsed)
 	$HUD/Face.expression = customer.face()
 	# Where they are: on the patio, at a window (the house draws them at the glass), or in.
-	$Client.visible = customer.where == "patio"
+	$Client.visible = customer.where == "patio" or _door_walk
 	_house.peek_x = customer.window_x if customer.where == "window" and not customer.knocked_out else -1
+	_house.pass_x = customer.stroll_x() # walking indoors, glimpsed through the glass
 	# Greyed while they can't see you (design doc: line of sight), so you know you're unseen.
 	$HUD/Face.view = customer.where
 	$HUD/Face.seen = customer.sees(actor().global_position)
@@ -1579,6 +1585,9 @@ func _knock() -> void:
 		return
 	customer.come_out()
 	_where = "patio" # answering the door, not stepping out on their own: no door sound
+	if _door_tw:
+		_door_tw.kill() # whatever walk they were on, they're at the door now
+	_door_walk = false
 	_house.door_open = true
 	$Client.position = _house.door_point()
 	$Client.visible = true
@@ -1589,16 +1598,34 @@ func _knock() -> void:
 
 
 ## Chat over, they step out of the doorway onto the patio and the door shuts behind them.
-## Going back in off screen, the door's heard shutting.
+## In and out on their own they walk it too: from the patio to the door and in (the door
+## shuts behind them), or out of the door to their spot. Never a jump.
 func _after_door() -> void:
-	if _house.door_open and not _knocking and not hud.is_open():
+	if _house.door_open and not _knocking and not hud.is_open() and not _door_walk:
 		_house.door_open = false
 		Sfx.play("door")
 		$Client.create_tween().tween_property($Client, "position", _house.patio_point(), 0.6)
 	if customer.where != _where:
-		if _where == "patio" and customer.where != "patio":
-			Sfx.play("door")
+		if _where == "patio" and not customer.knocked_out: # in through the door
+			_walk_door($Client.position, _house.door_point())
+		elif customer.where == "patio": # out of the door
+			_walk_door(_house.door_point(), _house.patio_point())
 		_where = customer.where
+
+
+func _walk_door(from: Vector2, to: Vector2) -> void:
+	_door_walk = true
+	_house.door_open = true
+	$Client.position = from
+	if _door_tw:
+		_door_tw.kill() # turned round halfway
+	var tw := $Client.create_tween()
+	_door_tw = tw
+	tw.tween_property($Client, "position", to, maxf(0.3, from.distance_to(to) / DOOR_PACE))
+	tw.tween_callback(func() -> void:
+		_door_walk = false
+		_house.door_open = false
+		Sfx.play("door"))
 
 
 ## Walked up to the customer (or knocked, if they're in): ask for your money, or how

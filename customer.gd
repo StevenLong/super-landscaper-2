@@ -25,6 +25,14 @@ var paid := false ## once paid they stop watching the clock
 var where := "patio" ## "patio" watching, "inside" (sees nothing), or at a "window" (a cone out of it)
 var window_x := -1 ## which window (house.gd windows()) while at one
 var windows: Array = [40, 120, 290, 370] ## main sets the building's
+var door_x := 205.0 ## main sets it: the front door, along the front the way windows are
+const STROLL := 70.0 ## px/s indoors, walking past the windows to another (or to the door)
+var stroll_from := 0.0 ## an indoor walk along the front, unseen but glimpsed through the glass
+var stroll_to := 0.0
+var _stroll_time := 0.0
+var _stroll_left := 0.0
+var _stroll_then := "" ## "window" or "patio" when it ends
+var _at_x := 205.0 ## where along the front they last were indoors
 var nags := 0 ## the first comes as the tip goes, with a sigh
 var _nag_at := 0.0
 var _glances := 0
@@ -61,6 +69,7 @@ func indoors() -> float:
 ## Out onto the patio. Nothing is found just by stepping out: what they didn't see
 ## happen, they don't know about until you've gone (aftermath()).
 func come_out() -> void:
+	_stroll_left = 0.0 # something brings them straight out
 	if where == "patio":
 		return
 	where = "patio"
@@ -108,9 +117,19 @@ func tick(delta: float) -> String:
 	if fired or paid: # settled: they come out and watch you leave
 		come_out()
 		return ""
-	_stint -= delta
-	if _stint <= 0.0:
-		_move()
+	if _stroll_left > 0.0:
+		_stroll_left -= delta
+		if _stroll_left <= 0.0:
+			_at_x = stroll_to
+			if _stroll_then == "window":
+				where = "window"
+				window_x = int(stroll_to)
+			else:
+				come_out()
+	else:
+		_stint -= delta
+		if _stint <= 0.0:
+			_move()
 	# Patience running low: a glance at the watch, no words (waits out any reaction).
 	if _glances < GLANCES.size() and elapsed >= job.patience * GLANCES[_glances] and _react_left <= 0.0:
 		_glances += 1
@@ -133,20 +152,40 @@ func tick(delta: float) -> String:
 
 
 ## Time for a change of scene: in for a cup of tea, back out, or peering from a window.
+## Indoors they walk it, past the windows: to a window, or to the door and out.
 func _move() -> void:
 	var going_in := randf() < indoors()
 	if where == "patio":
 		_stint = randf_range(15.0, 30.0)
 		if going_in:
 			where = "inside"
+			_at_x = door_x
 			_stint = randf_range(10.0, 25.0)
 		return
+	_stint = randf_range(8.0, 15.0)
 	if going_in and randf() < 0.5:
-		where = "window" if where == "inside" else "inside"
-		window_x = windows[randi() % windows.size()] if where == "window" else -1
-		_stint = randf_range(8.0, 15.0)
+		if where == "inside":
+			_stroll(windows[randi() % windows.size()], "window")
+		else: # back from the glass, still in
+			where = "inside"
+			window_x = -1
 		return
-	come_out()
+	_stroll(door_x, "patio")
+
+
+func _stroll(to_x: float, then: String) -> void:
+	where = "inside"
+	window_x = -1
+	stroll_from = _at_x
+	stroll_to = to_x
+	_stroll_time = maxf(0.5, absf(to_x - _at_x) / STROLL)
+	_stroll_left = _stroll_time
+	_stroll_then = then
+
+
+## Mid-walk indoors, where along the front they are; -1 when they aren't walking.
+func stroll_x() -> float:
+	return lerpf(stroll_to, stroll_from, _stroll_left / _stroll_time) if _stroll_left > 0.0 else -1.0
 
 
 func on_progress(new_coverage: float) -> void:

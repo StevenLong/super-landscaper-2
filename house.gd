@@ -42,6 +42,12 @@ var peek_x := -1: ## the window the customer is watching from, or -1
 			peek_x = v
 			if _front:
 				_front.queue_redraw()
+var pass_x := -1.0: ## walking past the windows indoors, at this x (as windows()), or -1
+	set(v):
+		if v != pass_x:
+			pass_x = v
+			if _front:
+				_front.queue_redraw()
 var peek_tex: Texture2D ## the customer's sprite sheet (client.gd), for their head and shoulders at the glass
 var door_open := false: ## the front door stands open (they've answered it)
 	set(v):
@@ -147,6 +153,15 @@ func _draw_house() -> void:
 		# Behind the glass, not stuck on it: the pane (sheen and glazing bars) again, see-through, over them.
 		var pane := Rect2(GLASS.position + Vector2(peek_x, 0), GLASS.size)
 		_front.draw_texture_rect_region(_art, pane, Rect2(pane.position + Vector2(0, ART_FOOT), pane.size), Color(1, 1, 1, PANE_OVER))
+	if pass_x >= 0.0 and peek_tex: # walking by inside: only what shows through each pane
+		var head := Rect2(9, 2 * 94 + 12, 30, 24)
+		var at := Rect2(GLASS.position + Vector2(pass_x, GLASS.size.y - head.size.y), head.size)
+		for wx: int in windows():
+			var pane := Rect2(GLASS.position + Vector2(wx, 0), GLASS.size)
+			var cut := at.intersection(pane)
+			if cut.has_area():
+				_front.draw_texture_rect_region(peek_tex, cut, Rect2(head.position + cut.position - at.position, cut.size))
+				_front.draw_texture_rect_region(_art, cut, Rect2(cut.position + Vector2(0, ART_FOOT), cut.size), Color(1, 1, 1, PANE_OVER))
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
 	for id in broken:
