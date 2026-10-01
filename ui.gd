@@ -67,6 +67,29 @@ static func button(text: String, on_press: Callable, size := 20) -> Button:
 	return b
 
 
+## A sum to pick, lo to hi in steps: a slider (left/right or the pad, or drag it) and the
+## figure beside it. The top end is always exactly hi. on_change(value) as it moves.
+static func amount(lo: int, hi: int, step: int, value: int, on_change: Callable) -> HBoxContainer:
+	var row := hbox(14)
+	var s := HSlider.new()
+	s.name = "Amount"
+	s.min_value = lo
+	s.max_value = hi
+	s.step = step
+	s.value = value
+	s.custom_minimum_size = Vector2(360, 32)
+	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var l := label("$%d" % value, 24, GOLD)
+	l.custom_minimum_size.x = 90
+	s.value_changed.connect(func(v: float) -> void:
+		l.text = "$%d" % roundi(v)
+		Sfx.play("ui_move", 0.0)
+		on_change.call(roundi(v)))
+	row.add_child(s)
+	row.add_child(l)
+	return row
+
+
 ## Focus a control next frame, if it's still around by then (menus can close fast).
 static func focus(c: Control) -> void:
 	(func() -> void:

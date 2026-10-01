@@ -124,7 +124,10 @@ const LAST_MONTH := 9 ## the season ends with September
 const WINTER_WEEKS := 26 ## October to March: the living cost only (the vig sleeps, for now)
 const FRIDAY := 5 ## payday, in Time's weekday numbers (Sunday is 0)
 const FLOOR := 35.0 ## a regular's visit ending in a mood under this loses them
-const HAGGLE := 1.2 ## pushing for more asks this much
+const HAGGLE := 1.2 ## pushing for more asks this much, by default (you pick the figure)
+const ASK_MAX := 1.5 ## the most you can ask, times their rate
+const ASK_SLOPE := 2.5 ## each 10% asked under (over) HAGGLE adds (takes) this tenth to the chance of a yes
+const OFFER_REP := 2.0 ## reputation for being asked to become a regular, even if you say no
 const BLACKOUT_REP := 15.0 ## the reputation a blacked-out job costs (on the trend)
 ## Who asks to become a regular: [chance factor, visits every so many days].
 const REGULAR := {"nature": [1.0, 14], "squirrel_hater": [1.0, 14], "gardener": [0.6, 14], "busy": [1.3, 7],
@@ -786,17 +789,23 @@ func _maybe_offer(r: Dictionary) -> void:
 		offer = {"id": j.seed, "job": j, "cadence": ask[1], "rate": j.pay, "mood": carried(j, m), "day": day, "drift": []}
 
 
-## Answer a regular's offer: "accept", "decline" or "haggle" (HAGGLE times the rate).
-## Returns what they said: "yes", "grudging" (yes, but their mood drops), "walk" or "no".
-func answer_offer(how: String) -> String:
+## Answer a regular's offer: "accept", "decline" or "haggle" for `ask` a visit (HAGGLE
+## times the rate if not given). Returns what they said: "yes", "grudging" (yes, but
+## their mood drops), "walk" or "no". Declining still earns a little name: you were wanted.
+func answer_offer(how: String, ask := 0) -> String:
 	var o := offer
 	offer = {}
 	if how == "decline" or o.is_empty():
+		if not o.is_empty():
+			rep_trend = minf(100.0, rep_trend + OFFER_REP)
+			reputation = minf(100.0, reputation + OFFER_REP)
 		save()
 		return "no"
 	var said := "yes"
-	if how == "haggle": # the better their mood, the likelier yes; near the edge, grudging
-		var yes := clampf((o.mood - 50.0) / 40.0, 0.0, 1.0)
+	if how == "haggle": # the better their mood, the likelier yes; near the edge, grudging; ask less, likelier
+		if ask <= 0:
+			ask = roundi(o.rate * HAGGLE / 5.0) * 5
+		var yes := clampf((o.mood - 50.0) / 40.0 + (HAGGLE - float(ask) / o.rate) * ASK_SLOPE, 0.0, 1.0)
 		var roll := _rng.randf()
 		if roll >= yes + 0.3:
 			save()
@@ -804,7 +813,7 @@ func answer_offer(how: String) -> String:
 		if roll >= yes:
 			said = "grudging"
 			o.mood -= 10.0
-		o.rate = roundi(o.rate * HAGGLE / 5.0) * 5
+		o.rate = ask
 	regulars[o.id] = o
 	_place(o.id, o.day + o.cadence)
 	save()

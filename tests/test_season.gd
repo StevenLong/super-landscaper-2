@@ -159,6 +159,15 @@ func _regulars() -> void:
 			assert(g.regulars[2].mood == 40.0 and g.regulars[2].rate == 120, "grudging: the rate, and their mood drops")
 		g.drop(2)
 	g.drop(1)
+	# You name the figure: asking only a little over their rate, a fairly happy one says yes.
+	for i in 20:
+		g.offer = {"id": 3, "job": j, "cadence": 14, "rate": 100, "mood": 70.0, "day": g.day, "drift": []}
+		assert(g.answer_offer("haggle", 100) == "yes" and g.regulars[3].rate == 100, "a modest ask, a sure yes")
+		g.drop(3)
+	# Turning them down still does your name good: you were wanted.
+	g.offer = {"id": 4, "job": j, "cadence": 14, "rate": 100, "mood": 70.0, "day": g.day, "drift": []}
+	var rep: float = g.reputation
+	assert(g.answer_offer("decline") == "no" and g.reputation == rep + g.OFFER_REP and not g.regulars.has(4), "declined: a little reputation")
 
 
 ## Put a case on today and hear it with this lawyer until it goes `guilty` (or not).

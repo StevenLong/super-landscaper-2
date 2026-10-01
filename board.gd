@@ -409,11 +409,27 @@ func _payday() -> void:
 	_centred(col, "Rent and food: $%d. You have $%d." % [Game.LIVING, Game.money], 26, UI.GOOD if Game.money >= due else UI.BAD)
 	var go: Button
 	if Game.money >= due:
-		go = _centred_button(col, "Hand over $%d" % due, _collect.bind(0))
+		# Pick what comes off the debt; the sum says what the payment does. The vig is
+		# only interest: nothing but the extra comes off what you owe.
 		var spare := mini(Game.money - due, Game.principal)
-		for extra: int in ([100] if spare > 100 else []) + ([spare] if spare > 0 else []):
-			_centred_button(col, "Hand over $%d: $%d off the debt%s" % [due + extra, extra,
-				" (all of it)" if extra == Game.principal else ""], _collect.bind(extra))
+		var holder := CenterContainer.new()
+		if spare > 0:
+			_centred(col, "Off the debt:", 22)
+			col.add_child(holder)
+		var sums := UI.label("", 22)
+		sums.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(sums)
+		var extra := [0]
+		go = _centred_button(col, "", func() -> void: _collect(extra[0]))
+		go.name = "Pay"
+		var pay := go
+		var tell := func(off: int) -> void:
+			extra[0] = off
+			pay.text = "Hand over $%d" % (due + off)
+			sums.text = ("$%d interest + $%d rent and food + $%d off the debt. Owed after: $%d." % [Game.vig(), Game.LIVING, off, Game.principal - off]) 				if Game.principal > 0 else "$%d rent and food." % Game.LIVING
+		if spare > 0:
+			holder.add_child(UI.amount(0, spare, maxi(5, roundi(spare / 40.0 / 5.0) * 5), 0, tell))
+		tell.call(0)
 	else:
 		_centred(col, "Short by $%d. Sell something, or his heavies take what they like, your best first." % (due - Game.money), 20, UI.DIM)
 		for k in Game.sellable():

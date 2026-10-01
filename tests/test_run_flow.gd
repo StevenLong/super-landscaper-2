@@ -95,7 +95,9 @@ func _process(_delta: float) -> bool:
 			_visit_day = game.day - 1 + 14
 			change_scene_to_file("res://summary.tscn")
 		5:
-			assert(_labels().any(func(t: String) -> bool: return t.contains("Could you come every fortnight?")), "they ask you back")
+			assert(not _labels().any(func(t: String) -> bool: return t.contains("Could you come")), "the summary first")
+			_press("Continue")
+			assert(_labels().any(func(t: String) -> bool: return t.contains("Could you come every fortnight?")), "then they ask you back, on a screen of its own")
 			_press("Haggle")
 			var j: Dictionary = game.current_job
 			assert(game.regulars.has(j.seed) and game.regulars[j.seed].rate == roundi(j.pay * 1.2 / 5.0) * 5, "happy: they take the higher rate")

@@ -21,42 +21,79 @@ func _ready() -> void:
 	books.add_child(_money(r))
 	books.add_child(_reputation(r))
 	root.add_child(books)
-	var go := UI.button("Back to the board", func() -> void:
-		Game.answer_offer("decline") # walking away is a no
-		get_tree().change_scene_to_file("res://board.tscn"), 24)
+	var offered := not Game.offer.is_empty()
+	var go := UI.button("Continue" if offered else "Back to the board", func() -> void:
+		if offered:
+			_offer_screen()
+		else:
+			get_tree().change_scene_to_file("res://board.tscn"), 24)
 	go.name = "Continue"
 	root.add_child(go)
 	UI.focus(go)
-	if not Game.offer.is_empty():
-		root.add_child(_offer(go))
-		root.move_child(go, -1)
-		UI.focus(find_child("Accept", true, false) as Control)
 
 
-## They want you back (design doc, The Business: regulars): the terms, then accept,
-## decline, or push for more. What they say replaces the buttons.
-func _offer(go: Button) -> Control:
+## They want you back (design doc, The Business: regulars): a win, so its own screen.
+## Their face and their words; take it, push for more (you name the figure: ask less and
+## they're likelier to say yes), or turn them down politely, which still does your name good.
+func _offer_screen() -> void:
+	for c in get_children():
+		remove_child(c)
+		c.queue_free()
 	var o: Dictionary = Game.offer
-	var box := UI.vbox(8)
+	var bg := ColorRect.new()
+	bg.color = UI.BG
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(bg)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
+	var root := UI.vbox(18)
+	center.add_child(root)
+	var title := UI.label("THEY WANT YOU BACK", 40, UI.GOLD)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	root.add_child(title)
+	var top := UI.hbox(18)
+	root.add_child(top)
+	var face := Face.new()
+	face.custom_minimum_size = Vector2(132, 132)
+	face.set_look(o.job.look)
+	face.expression = "delighted"
+	top.add_child(face)
 	var every: String = {7: "every week", 14: "every fortnight", 28: "every four weeks"}[o.cadence]
-	var ask := UI.label("%s catches you at the truck: \"Could you come %s? $%d a visit.\"" % [o.job.customer, every, o.rate], 22, UI.GOLD)
-	ask.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	ask.custom_minimum_size.x = 780
-	box.add_child(ask)
-	var row := UI.hbox(12)
-	box.add_child(row)
-	var push := roundi(o.rate * Game.HAGGLE / 5.0) * 5
-	for b: Array in [["Accept", "accept", "Deal"], ["Haggle", "haggle", "Ask for $%d" % push], ["Decline", "decline", "No thanks"]]:
+	var said := UI.label("%s catches you at the truck: \"Could you come %s? $%d a visit.\"" % [o.job.customer, every, o.rate], 22)
+	said.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	said.custom_minimum_size.x = 620
+	said.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(said)
+	var asked := [roundi(o.rate * Game.HAGGLE / 5.0) * 5]
+	var choices := UI.vbox(12)
+	root.add_child(choices)
+	var buttons := UI.hbox(12)
+	var go := UI.button("Back to the board", func() -> void: get_tree().change_scene_to_file("res://board.tscn"), 24)
+	go.name = "Continue"
+	for b: Array in [["Accept", "accept", "Deal: $%d" % o.rate], ["Haggle", "haggle", "Ask for $%d" % asked[0]], ["Decline", "decline", "Sorry, I'm booked up"]]:
 		var btn := UI.button(b[2], func() -> void:
-			var said := Game.answer_offer(b[1])
-			ask.text = {"yes": "\"Lovely. See you then.\" A regular: $%d %s." % [Game.regulars.get(o.id, o).rate, every],
-				"grudging": "\"...Fine. But it had better be good.\" $%d %s, and they're not pleased." % [Game.regulars.get(o.id, o).rate, every],
-				"walk": "\"At that price? Forget it.\" They're gone.", "no": "\"Suit yourself.\""}[said]
-			row.queue_free()
+			var reply := Game.answer_offer(b[1], asked[0])
+			var rate: int = Game.regulars.get(o.id, o).rate
+			said.text = {"yes": "\"Lovely. See you then.\" A regular: $%d %s." % [rate, every],
+				"grudging": "\"...Fine. But it had better be good.\" $%d %s, and they're not pleased." % [rate, every],
+				"walk": "\"At that price? Forget it.\" They're gone.",
+				"no": "\"Shame. Well, you know where we are.\" Being asked does your name good: +%d reputation." % roundi(Game.OFFER_REP)}[reply]
+			face.expression = {"yes": "happy", "grudging": "annoyed", "walk": "furious", "no": "neutral"}[reply]
+			choices.queue_free()
+			root.add_child(go)
 			UI.focus(go), 20)
 		btn.name = b[0]
-		row.add_child(btn)
-	return UI.panel(box)
+		buttons.add_child(btn)
+	var ask_btn: Button = buttons.get_node("Haggle")
+	var row := UI.hbox(14)
+	row.add_child(UI.label("Ask for:", 22))
+	row.add_child(UI.amount(o.rate + 5, roundi(o.rate * Game.ASK_MAX / 5.0) * 5, 5, asked[0], func(v: int) -> void:
+		asked[0] = v
+		ask_btn.text = "Ask for $%d" % v))
+	choices.add_child(row)
+	choices.add_child(buttons)
+	UI.focus(buttons.get_node("Accept") as Control)
 
 
 ## Whole points, but never a flat zero for something that did count.
