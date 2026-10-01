@@ -48,7 +48,7 @@ const UPGRADES := {
 const GRIDS := {"bed": Vector2i(4, 3), "trailer": Vector2i(4, 4)}
 const SHAPES := {"petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "can": Vector2i(1, 1), "robot": Vector2i(2, 2)}
 ## Robot mowers (design doc, Mowers and Equipment): own as many as you like.
-const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself. Slowly. Badly."}
+const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself, in neat stripes. Slowly."}
 
 const FIRST := ["Margaret", "Derek", "Priya", "Gordon", "Yvonne", "Colin", "Shirley", "Nigel",
 	"Bernadette", "Keith", "Fatima", "Trevor", "Agnes", "Barry", "Hilary", "Rajesh", "Doreen", "Clive"]

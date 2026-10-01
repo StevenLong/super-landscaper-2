@@ -1,7 +1,8 @@
 # The robot mower (design doc, Mowers and Equipment): bought as many as you like, packed
-# 2 x 2; at the job taken off the truck, set down, it mows on its own inside the lawn,
-# stones and critters its problem and so yours; picked up again; left on the lawn when
-# you flee the police, it's gone.
+# 2 x 2; at the job taken off the truck, set down, it plans the whole lawn in straight
+# lanes and mows it; it grinds a stone up (a knock to it, nothing to you), stops for a
+# body in its way and then gives up on that spot; it's never a crime. Picked up again,
+# its wear comes with it; left on the lawn when you flee the police, it's gone.
 extends SceneTree
 
 var g: Node
@@ -9,6 +10,7 @@ var m: Node
 var _frame := 0
 var _step := 0
 var _cut := 0.0
+var _at := Vector2.ZERO
 
 
 func _initialize() -> void:
@@ -66,25 +68,50 @@ func _physics_process(_delta: float) -> bool:
 			assert(m.robots.size() == 1 and m.walker.carrying == "", "set down")
 			_cut = m.lawn.cut_fraction()
 			var r: Robot = m.robots[0]
-			r.heading = Vector2.RIGHT
+			# The plan: every open cell of the lawn, none off it, in lanes running the way it faced.
+			var planned := {}
+			for p: Vector2 in r.route:
+				assert(m.lawn._cell(p) != Lawn.EXCLUDED, "never planned off the lawn: %s" % p)
+				planned[r._cell(p)] = true
+			var cells := Vector2i(Vector2(m.lawn.size_px) / Robot.LANE)
+			for y in cells.y:
+				for x in cells.x:
+					assert(r._grid.is_point_solid(Vector2i(x, y)) or planned.has(Vector2i(x, y)), "the plan covers every open spot: %s" % Vector2i(x, y))
+			assert(r.route[0].y == r.route[1].y and r.route[1].y == r.route[2].y and r.route[2].x > r.route[0].x, "straight lanes, the way it was set down facing")
 			m.add_stone(r.global_position + Vector2(40, 0)) # right in its way
-		8:
+		5:
 			var r: Robot = m.robots[0]
 			assert(m.lawn.cut_fraction() > _cut, "it mows by itself")
-			assert(Rect2(Vector2.ZERO, m.lawn.size_px).has_point(r.global_position - m.lawn.global_position), "and stays on the lawn")
-			assert(m.tally.get("stones_mowed", 0) == 1, "the stone in its way went through its blades: yours")
+			assert(not m.tally.has("stones_mowed") and m.get_node("Stones").get_children().all(func(s: Node) -> bool: return not s is FlyingStone),
+				"the stone in its way is ground up, not flung, and none of it's yours")
+			assert(r.condition == 100.0 - Robot.STONE_KNOCK, "a knock to the robot")
+			# A body lying ahead: it stops, it doesn't go over it.
+			var ahead := r.global_position + Vector2.RIGHT.rotated(r.rotation) * 30.0
+			m.spawn_animal("hedgehog", ahead, ahead + Vector2(0, 1)).kill()
+			_cut = m.lawn.cut_fraction()
+		7:
+			var r: Robot = m.robots[0]
+			assert(r.velocity == Vector2.ZERO and m.lawn.cut_fraction() == _cut, "stopped for the body")
+			_at = r.global_position
+		22:
+			var r: Robot = m.robots[0]
+			assert(r.global_position.distance_to(_at) > 8.0, "kept waiting, it gave that spot up and went round")
+			assert(m.charge == 0.0 and m.police_left < 0.0 and not m.tally.has("squashed_hedgehog"), "and none of it was a crime")
+			assert(Rect2(Vector2.ZERO, m.lawn.size_px).has_point(r.global_position - m.lawn.global_position), "on the lawn all along")
 			# Pick it up again.
+			_cut = r.condition
 			m.walker.global_position = r.global_position + Vector2(-10, 0)
 			r.set_physics_process(false)
-		9:
+		23:
 			var t: Dictionary = m._target()
 			assert(t.get("hint", "") == "pick up the robot mower", "empty hands by it: pick it up")
 			t.act.call()
 			assert(m.robots.is_empty() and m.walker.carrying == "robot", "in your hands again")
 			m.interact() # and down again
+			assert(m.robots[0].condition == _cut and _cut < 100.0, "with its wear")
 			m._call_police()
 			m.walker.global_position = m.get_node("Truck").position + Vector2(0, -60)
-		10:
+		24:
 			m._on_choice("leave")
 			assert(g.robots == 1 and g.packed_count("robot") == 1, "fled: the one on the lawn is gone, the one on the truck came home")
 			assert(g.last_result.left_behind.contains("robot mower"), "and the summary says so")

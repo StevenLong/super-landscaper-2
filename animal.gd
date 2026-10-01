@@ -80,7 +80,7 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(b: Node2D) -> void:
 	if dead or not ("cut_radius" in b):
 		return # only mowers squash; people on foot just step round
-	if (b.velocity as Vector2).length() < 15.0:
+	if (b.velocity as Vector2).length() < 15.0 or b is Robot: # a robot never runs anything over
 		if out > 0.0 or body:
 			return # lying there: it can't get out of the way, but a stopped mower can't hurt it
 		# A stopped mower is just an obstacle: turn back the way we came.

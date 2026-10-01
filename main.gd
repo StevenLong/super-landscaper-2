@@ -76,6 +76,7 @@ var worst_crime := 0 ## the worst tier on the crime ladder this job (Game.RECORD
 var cans := 0 ## petrol cans left on the truck (what was packed)
 var robots_left := 0 ## robot mowers still on the truck
 var robots: Array[Robot] = [] ## robot mowers set down on the lawn
+var _held_robot := 100.0 ## the condition of the robot in your hands (fresh off the truck)
 var _fuel := {} ## what's left in each mower put back on the truck (take_out)
 var charge := 0.0 ## what witnesses saw this job, weighed (Game.RECORD): court makes it record
 
@@ -1491,6 +1492,7 @@ func _on_choice(id: String) -> void:
 			open_pause()
 		"robot":
 			robots_left -= 1
+			_held_robot = 100.0
 			walker.carrying = "robot"
 			walker.queue_redraw()
 			hud.close()
@@ -1702,15 +1704,29 @@ func set_robot(at: Vector2, dir: Vector2) -> Robot:
 	r.lawn = lawn
 	r.position = lawn.keep_in(at - lawn.global_position, 14.0) + lawn.global_position
 	r.heading = dir
-	for b in $Scenery.get_children():
-		if b is BedScript:
-			r.beds.append(func(p: Vector2) -> bool: return b._inside(b.to_local(p), -r.cut_radius))
+	r.condition = _held_robot
+	r.blocked = _robot_blocked
 	add_child(r)
 	robots.append(r)
 	return r
 
 
+## Anything alive or breakable near p (global) stops a robot mower: you, your mower, the
+## dog, the customer, a critter or a body, another robot, anything but a plain stone.
+func _robot_blocked(p: Vector2) -> bool:
+	var near := func(n: Node2D) -> bool: return n != null and is_instance_valid(n) and n.global_position.distance_to(p) < 18.0
+	if near.call(walker) or near.call(mower) or near.call(dog) or (customer.where == "patio" and near.call($Client)):
+		return true
+	if robots.any(near) or $Animals.get_children().any(near):
+		return true
+	for s in $Stones.get_children():
+		if s is Stone and s.kind != "stone" and near.call(s):
+			return true
+	return false
+
+
 func _pick_up_robot(r: Robot) -> void:
+	_held_robot = r.condition # its wear comes with it
 	robots.erase(r)
 	r.queue_free()
 	walker.carrying = "robot"
@@ -1925,6 +1941,11 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 	if s.is_queued_for_deletion():
 		return
 	s.queue_free()
+	if m is Robot: # ground up where it lies, a knock to the robot, and none of it yours
+		Sfx.play("crunch")
+		_burst(s.position, ["b4b4b8", "7a7a82", "d8d0c0"])
+		m.damage(Robot.STONE_KNOCK)
+		return
 	var k: Dictionary = Stone.KINDS[s.kind]
 	_count(s.kind + "s_mowed", k.get("bill", 0.0))
 	if k.has("bill"):

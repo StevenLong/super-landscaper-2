@@ -126,7 +126,7 @@ func bowl(by := "mower") -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if limping or held:
 		return
-	if "cut_radius" in body:
+	if "cut_radius" in body and not body is Robot: # a robot stops for the dog
 		if (body.velocity as Vector2).length() > 15.0:
 			bowl()
 
