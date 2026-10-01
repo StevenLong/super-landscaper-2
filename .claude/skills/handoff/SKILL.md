@@ -34,6 +34,8 @@ Add it at the top of the session list, below the ledger block.
 ## 4. Maintain the ledger (CHECKS.txt)
 `CHECKS.txt` is the owed-checks ledger and the file the dev fills in. A SessionStart hook
 (`.claude/hooks/open_checks.sh`) opens it in Notepad whenever any `>` answer line is blank.
+- The dev writes free-form playtest notes in a NOTES section at the top. Triage them into
+  NOTES.md (the triage skill), then empty the section but keep its header.
 - Read answers first: only the `>` lines are answers. Read every one before saying what
   passed; a vague "all good" elsewhere does not clear a check.
 - Remove answered checks (the session entry records the verdict). Leave unanswered ones.
