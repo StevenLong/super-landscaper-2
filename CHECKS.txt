@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (19 checks, 3 loads, about 75 minutes)
+PLAY CHECKS OWED  (14 checks, 3 loads, about 40 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -7,117 +7,92 @@ Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20
 
 
 ================================================================================
-LOAD 1 of 2: A JOB ON FOOT      (about 15 min, a squirrel hater with a hedge is best)
+NOTES
 ================================================================================
 
-S13-WALL
-For a customer who wants squirrels gone: throw a squirrel hard into the house wall while
-they watch. No "Careful!"; the knockout makes them laugh.
->
-
-S13-HEDGE
-Stand a few steps back from a hedge (not right against it) and throw a squirrel over at
-full power while a hater watches: it lands next door and they're glad. From right against
-the hedge it bounces back. Does clearing a hedge feel fair?
->
-
-S13-KILL
-Knock a critter out with a stone, then hit it again while it's out cold (another stone,
-or throw it hard at a wall): it dies and lies there as a body.
->
-
-S13-STONE
-A stone that hits a critter drops beside it instead of vanishing.
->
-
-S13-PATIO
-Drag the hose onto the paving in front of the house: it lies on top of the slabs.
->
-
-S13-POCKETS
-Get paid, then knock the customer out and rifle them: only small change. (Knock one out
-before paying you, for comparison, if you like.)
->
 
 
 ================================================================================
-LOAD 2 of 2: THE MOWERS      (about 10 min; [1] on the board for money, buy petrol and ride-on)
+LOAD 1 of 3: A JOB      (about 15 min; any garden, a dog helps; a back patio for PORCH)
 ================================================================================
 
-S13-CORD
-Start the petrol mower: a hand grips the cord on the bar and draws it as you hold; let go
-in the green and it yanks away as the engine starts. Does it read now?
+S15-TRUCK
+On foot at the truck with kit packed: the menu is a vertical list, "Keep going" first
+and highlighted, the drive-off last, nothing off the screen.
 >
 
-S13-RIDEDRY
-Run the ride-on dry: it won't move or turn, and the hint says fetch a can. Carry a petrol
-can to it, refuel, key it on.
+S15-DOOR
+Watch the customer go in and come out: they walk between the patio and the door, which
+opens and shuts. Indoors they walk from window to window, glimpsed through the panes they
+pass, then stand behind the glass (the glass over their face). Does it read?
 >
 
-S13-IDLE
-With the petrol mower running, stand still for a while, then drive: the fuel bar falls
-noticeably slower standing than moving.
+S15-PORTRAIT
+The portrait: at a window and unable to see you, the glass stays and it greys with
+UNSEEN; indoors away from the windows it greys with INSIDE. It switches, no fade.
+>
+
+S15-PORCH
+On a back patio (terrace or semi): mow right up behind the customer, over the grass their
+body hides. No knockout unless you drive onto their feet.
+>
+
+S15-POLICE
+Run the dog over while they watch: the police are called and you're fired there and
+then ("I've called the police!"). As the countdown runs out, is the siren still too loud?
+>
+
+S15-HEDGE
+Throw a critter over the hedge while they watch you throw it, landing out of their
+sight: they still react.
+>
+
+S15-FENCE
+Next door's corner on an L plot, and the churchyard's short wall: the runs meet at the
+post, the wall reaches the church, and no strip of grass by the corner post you can't cut.
+>
+
+S15-QUIT
+Pause in a job: "Quit to title" says you'll black out.
 >
 
 
 ================================================================================
-LOAD 3 of 3: THE SEASON PROTOTYPE      (about 25 min; New business on the title)
+LOAD 2 of 3: THE ROBOT      (about 10 min; [1] on the board, buy a robot under Upgrades)
 ================================================================================
 
-S14-CAL
-New business: the board shows Tuesday 1 April 1980 and April's calendar. Ring an ad, Go,
-play it, and after the summary the board is on Wednesday with the job gone from the grid.
-Is the board readable at a glance (calendar, today, the paper, the shop)?
+S15-ROBOT
+Take a robot off the truck and set it down facing along the lawn: straight stripes lane
+by lane, round trees and beds; it stops for a critter, the dog or you (and goes round if
+kept waiting); it grinds stones (its bar drops); never a crime. Worth $150 now? It's slow
+on its own (about 15 minutes for a small lawn): too slow?
 >
 
-S14-RING
-Ring the paper's ads top to bottom. The big ones mostly say "Oh, I've heard of you. No."
-and stay stamped; now and then one a little above you says "go on, then". Does the phone
-call make your reputation feel real, and is the reach above your level about right?
+
+================================================================================
+LOAD 3 of 3: THE BOARD AND THE MONEY      (about 15 min; Continue or New business)
+================================================================================
+
+S15-PAPER
+With a pad, go down the paper to the last ad: it's fully in view (stamped ones too).
 >
 
-S14-PAYDAY
-[3] to Friday: payday names the vig and your keep. Pay extra off the debt; after, the
-header's "Owed the shark" and next Friday's figure are both lower.
+S15-SAVEQUIT
+On the board, Esc or Start jumps to "Save and quit"; Continue on the title picks up there.
 >
 
-S14-OFFER
-Finish a classifieds job perfectly ([0] in the job): the summary may bring a regular's
-offer (a hidden chance, likelier from a busy customer). Try the haggle. Did one come?
+S15-PAY
+[3] to payday: slide what comes off the debt; the line shows interest, rent and food, off
+the debt, owed after. Can you pay exactly as much as you can spare?
 >
 
-S14-VISIT
-Play a regular's visit (green on the calendar; step through with "On to the next job",
-since [3] skips booked days too): the same garden, "Back again" in the briefing, a gnome
-new since the last visit from the second one on, no tip however well it goes.
+S15-OFFER
+Finish jobs perfectly ([0]) until a regular asks: the summary, Continue, then their own
+screen with their face. Slide the ask and haggle; next time decline ("booked up", +2
+reputation). Does it feel like a win?
 >
 
-S14-COURT
-Knock a customer out so the police are called. Once caught: "court in the morning", the
-court screen, a lawyer, a verdict. Once escaped: a summons, court a few days on. Guilty
-of assault means community service ("Duty" on the calendar): the churchyard, unpaid, a
-reputation line for it. Do the sentences feel proportionate?
->
-
-S14-PACK
-Buy a petrol mower ([1] for money): it packs itself. Go to a job: the packing screen.
-Pick it up, turn it ([R]), drop it elsewhere; pack a couple of cans; drive. At the truck,
-"Take out the push mower" swaps, and the petrol one comes back as full as it was. Is the
-packing screen worth its stop before every job?
->
-
-S14-ROBOT
-Buy a robot mower (the shop, under Upgrades) and go to a job. On foot at the truck, "Take
-out a robot mower", walk onto the lawn, [E] sets it going: straight until it bumps
-something or the lawn's edge, then off another way; it shies off beds; stones and
-hedgehogs in its way are yours. Walk up and pick it up again. Worth its $150?
->
-
-S14-BLACKOUT
-Start a job, pause, Quit to the title, then Continue: "YOU BLACKED OUT", the job gone.
->
-
-S14-PACE
-Overall: does a week feel right, with the skip through empty days, one to three ads a
-week saying yes, and $150 due every Friday? Too tight, too loose, too many clicks?
+S15-PACK
+The packing screen: the cursor on the petrol mower outlines it whole and one step leaves
+it; Start (or [P]) drives off from anywhere.
 >

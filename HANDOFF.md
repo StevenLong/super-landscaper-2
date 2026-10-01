@@ -6,6 +6,52 @@ Notepad whenever an answer is still blank.
 
 ---
 
+## Session 15 (2026-10-01): S13 and S14 played and triaged, the fallout built, the robot redone
+- **Played (dev):** all 19 checks answered. Passed: S13-WALL, KILL, STONE, PATIO,
+  POCKETS, CORD (a bit better), RIDEDRY, IDLE; S14-PAYDAY, VISIT, COURT, BLACKOUT (seen
+  for free through a crash). Raised issues, all triaged into NOTES 178 to 195: S13-HEDGE,
+  S14-CAL (readable, to be redone later), RING, OFFER, PACK, ROBOT (useless: it ping-ponged
+  in a corner and bowled the dog off screen, police and all), PACE.
+- **Fixed during play:** pack.gd crashed driving off (17dec2f: `change_scene_to_file`
+  takes the scene out of the tree at once in 4.2+, so get the viewport first); fence and
+  wall corners (dc5e08f: the side runs' art is a column mid-strip, so ends met nothing).
+- **The dev's calls** (folded into the design doc, 3ae9a5f and 7cc843c in game-dev, veto
+  there): the robot like a real one (knows the garden, straight stripes, never runs
+  critters over, stops; destroys stones for a little wear); ringing the police fires you;
+  seeing the throw is enough to react; pick the figure for the haggle and the debt; payday
+  shows what a payment does instead of defining the vig; the regular's offer as a win on its
+  own screen, a polite no still earns a little name; the customer walks, never jumps;
+  the portrait's where and seen as separate discrete states; packing cursor per item.
+- **Built after** (178 to 192, 195, all pushed, unplayed): see the commits 550b718 to
+  e2fb9e2. **My calls, veto any:** the robot plans on a 20 px AStarGrid2D from the lawn
+  grid, lanes along the way it's set down facing, waits 2 s then gives a spot up, -10 a
+  stone, broken for the job at 0, crosses a drive to reach the rest of the lawn; the haggle
+  slider runs to 1.5x their rate, each 10% under 1.2x adds 25% to the yes; declining gives
+  +2 reputation; the debt slider steps $5 to $25 by what you can spare, its top end exact;
+  the siren peaks at -16 dB (was -6); a customer's hitbox is 16 px round their feet; the
+  portrait switches after 0.2 s held, no fade; they walk the door at 50 px/s and indoors at
+  70 px/s, glimpsed through the panes; Start or [P] drives from packing (Esc stays put back).
+- **Process:** the dev's free-form notes go in a NOTES section at the top of CHECKS.txt;
+  the handoff skill now triages and empties it (6b7dcf0).
+- Verified: run_all green (parse, smoke, 37 tests); new or changed assertions in
+  test_pack (drive through real input; item stops), test_controls (the paper's last ad),
+  test_police (fired on the call, not when out cold), test_robot (rewritten: plan covers
+  every open cell, lanes straight, stone ground, stops for a body then goes round, wear
+  carried), test_season (ask odds, decline rep), test_run_flow (the offer screen),
+  test_seen (stroll), test_throw (seen throw). Screenshotted and looked at: the truck menu,
+  the board, payday, the offer and its decline, the portrait states, the face at and
+  passing behind the glass, the door walk, the packing cursor, a robot's stripes after a
+  few game minutes, fence corners on six L plots and two churchyards. Not played.
+
+OWED CHECKS: 14, in CHECKS.txt (3 loads, about 40 minutes).
+
+NEXT:
+1. Play LOAD 1 to 3 of CHECKS.txt; keep catching broken fences (194).
+2. Grill 193 (pace and escalation, the dev's biggest concern) before retuning PAPER,
+   REACH, the vig or pay; it may also reshape S14-RING's stratified bars.
+3. Then 189's open parts (robot tiers), and the text pass (159, with 158).
+4. Grills still waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96.
+
 ## Session 14 (2026-09-29): the season prototype, ringing the ads, the record, packing, robots
 - **Built all five steps** of the old SEASON_PLAN (50e46fa): days from Tuesday 1 April 1980,
   a month-grid board (calendar, today's job or "On to the next job", the week's paper to
@@ -362,43 +408,3 @@ NEXT:
 1. Play the checks; triage what they turn up.
 2. 80b, throwing step 2 (arcs), once S8-THROW has been played.
 3. 75b (the loop drive joining the road, the golf course), 46, 55.
-
-## Session 7 (2026-09-26): check triage and the big grill (the season, crime, venues, throwing)
-- Checks: all 16 answered, CHECKS.txt cleared. Passed: the six S5 checks, S6-DEPTH, HEDGE,
-  GARAGE, WINDOW, CUSTOMER, CAR (mostly). Problems triaged into NOTES 58 to 71: the on-foot
-  sprite flips upside down (58, BLOCKS; diagnosed from code, not reproduced: walker.gd
-  rotates every frame but redraws only every 9 px of stride), the knocked-out customer
-  still turns (59), the car hitbox is 110 tall where the sprite's footprint is 66 (60),
-  stones vanish on walls (61), and a 3/4 art pass (66 to 71: pond and beds, tree bases,
-  fences, chimney, garage depth, featureless ground next door).
-- Your calls (vetoable, all in the design doc, game-dev 948250a onward):
-  - The run is a 4-week season, 3 jobs a week, a loan shark's payment each week ($120,
-    $250, $450, $750, a guess); a miss sends his heavies to repossess kit; you can sell kit;
-    zero rep gives the dregs, not "File for bankruptcy"; paying week 4 wins. Runs are years
-    (leaning: the 1980s, starting 1980). Only the payments ramp: the rep tiers are the
-    difficulty curve, unchecked.
-  - Impatience keeps its rules, gains signals (watch glance, sigh, escalating nags).
-  - Heat is separate from rep, only for crimes; a four-tier crime ladder with
-    proportional punishment (fines, a lost job slot, season over only for killing); heat
-    shortens a visible police countdown and cools a level per week paid; no job-start
-    arrest roll. Rifling pockets trickles cash while held. Animals thrown into things tier
-    the crime up.
-  - Seen versus evidence: the customer moves between patio, inside and windows; unseen
-    acts are judged by what's left; the portrait greys out.
-  - Venues by rep band (mansion and graveyard first), community service later.
-  - Between jobs: a walkable hub is the destination; a menu plus a payday scene for now.
-  - Objects: small (carry, throw, mow), medium (shoved), big (solid); charged throws
-    locked in place with a landing marker, vertical angle as step 2.
-  - 8 facings left to soak (a diagonal sprite points about 31 deg while you travel 45).
-  - The car: mower ramming dents it too, harder hits cost more.
-- Promoted from NOTES to the design doc: 21, 22, 25, 26, 27, 29, 38, 40, 56, 63, 64, 65.
-  Build items 72 to 81 replace them. Parked: 21b (job types), 27b (the drive), 30b grown
-  into the menace board.
-- No code changed. Verified: run_all green (exit 0).
-
-OWED CHECKS: none (CHECKS.txt says nothing owed).
-
-NEXT (NOTES has the full order):
-1. 58, the on-foot sprite flip, then 59 to 61 as a bug batch.
-2. 80, charged throws step 1.
-3. 72 with 78, the season and the payday scene: the new spine.
