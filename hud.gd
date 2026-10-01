@@ -6,6 +6,7 @@ signal choice(id: String)
 
 const SPEECH_W := 360.0
 const BANNER_MS := 2350 ## a banner's whole life: in, held, faded
+const WRAP := 820.0 ## a panel line wider than this wraps
 
 var _banner_free := 0 ## ticks (msec) when the banner showing now is gone
 
@@ -164,8 +165,14 @@ func open(title: String, lines: Array, buttons: Array, face_look := {}, face_exp
 	row.add_child(col)
 	col.add_child(UI.label(title, 30, UI.GOLD))
 	for l in lines:
-		col.add_child(UI.label(str(l), 20))
-	var btns := HBoxContainer.new()
+		var lab := UI.label(str(l), 20)
+		if lab.get_minimum_size().x > WRAP: # a long line wraps rather than widening the panel off the screen
+			lab.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			lab.custom_minimum_size.x = WRAP
+		col.add_child(lab)
+	var btns: BoxContainer = HBoxContainer.new()
+	if buttons.size() > 3: # a long list stacks
+		btns = VBoxContainer.new()
 	btns.add_theme_constant_override("separation", 12)
 	col.add_child(btns)
 	var first: Button = null

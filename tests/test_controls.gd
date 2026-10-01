@@ -109,6 +109,17 @@ func _physics_process(_delta: float) -> bool:
 			var focused := root.gui_get_focus_owner()
 			assert(focused != null and current_scene.find_child("petrol", true, false).is_ancestor_of(focused),
 				"after buying, the cursor stays in that row, on %s" % [focused])
+			# The paper on a pad: the last Ring brings the stamped ad below it into view too.
+			g.paper[-1].refused = true
+			g.paper[-1].reply = "No."
+			current_scene._build()
+			var rings := current_scene.find_children("Ring", "Button", true, false)
+			rings[-1].grab_focus()
+			_wait = 5
+		8:
+			var last: Control = current_scene.find_children("Ring", "Button", true, false)[0].get_parent().get_parent().get_parent().get_child(-1)
+			var view: ScrollContainer = last.get_parent().get_parent()
+			assert(last.get_global_rect().end.y <= view.get_global_rect().end.y + 1.0, "the last ad scrolled into view")
 			print("PASS controls")
 			quit()
 	_step += 1

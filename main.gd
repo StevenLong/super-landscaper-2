@@ -45,6 +45,7 @@ const BORDER := 24 ## hedge/fence thickness, drawn just outside the lawn
 const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
 const ROAD := 150
 const BORDER_UP := 29.0 ## how far a hedge or fence rises in the 3/4 view (art/hedge_h.png face)
+const SIREN_LOUDEST := -16.0 ## dB as the police arrive (was -6: far too loud, S14 play)
 const GRAVEL := Color(1.0, 0.88, 0.68) ## tints the grey gravel tile for the drive
 const TERRACE_FRONT := 64.0 ## a terrace's scrap of front garden, between the house and the road
 const NEXT_DOOR := Color(0.72, 0.8, 0.7) ## next door's lawn, a touch duller than the one you mow
@@ -1030,14 +1031,15 @@ func _physics_process(delta: float) -> void:
 	if police_left >= 0.0:
 		police_left = maxf(0.0, police_left - delta)
 		hud.set_police(police_left)
-		_siren.volume_db = lerpf(-6.0, -26.0, police_left / Game.police_time(_record0)) # louder as they close in
+		_siren.volume_db = lerpf(SIREN_LOUDEST, -26.0, police_left / Game.police_time(_record0)) # louder as they close in
 		if police_left <= 0.0:
 			_nicked()
 			return
 
-	# Running over the customer on their patio. Don't.
+	# Running over the customer on their patio. Don't. Only their feet count: on a back
+	# patio their body stands up over the lawn behind them, which you can still mow.
 	if customer.where == "patio" and not customer.knocked_out and mower.velocity.length() > 40.0 \
-			and mower.global_position.distance_to($Client.position + Vector2(0, -10)) < 22.0:
+			and mower.global_position.distance_to($Client.position) < 16.0:
 		_knock_out()
 
 	if _dog_in > 0.0:
@@ -1433,13 +1435,7 @@ func open_pause() -> void:
 
 func open_truck_menu() -> void:
 	get_tree().paused = true
-	var buttons := []
-	if not settled.is_empty():
-		buttons.append(["drive_off", "Drive off"])
-	elif customer.knocked_out:
-		buttons.append(["leave_ko", "Leave quietly"])
-	else:
-		buttons.append(["leave", "Drive off (no pay)"])
+	var buttons := [["resume", "Keep going"]] # first, so it's what a stray press picks
 	if walker and walker.carrying == "" and robots_left > 0:
 		buttons.append(["robot", "Take out a robot mower (%d packed)" % robots_left])
 	if walker and walker.carrying == "" and mower.power == "fuel" and cans > 0:
@@ -1448,7 +1444,12 @@ func open_truck_menu() -> void:
 		for k: String in ["push", "petrol", "rideon"]:
 			if k != mower.sprite_kind and (k == "push" or Game.packed_has(k)):
 				buttons.append(["take_" + k, "Take out the %s" % Game.MOWERS[k].name.to_lower()])
-	buttons.append(["resume", "Keep going"])
+	if not settled.is_empty(): # the way out last
+		buttons.append(["drive_off", "Drive off"])
+	elif customer.knocked_out:
+		buttons.append(["leave_ko", "Leave quietly"])
+	else:
+		buttons.append(["leave", "Drive off (no pay)"])
 	var lines := []
 	if settled.get("outcome") == "paid":
 		lines = ["\"%s\"" % settled.comment, "They handed over $%d%s." % [settled.paid,
@@ -1853,6 +1854,7 @@ func _crime(tier: int, at := Vector2.INF, known := false, extra := 0.0) -> void:
 
 ## Someone's rung the police: a visible countdown with sirens. Drive off before it runs out.
 func _call_police() -> void:
+	customer.fire("That's it. I've called the police!") # they're done with you (not once they've paid)
 	police_left = Game.police_time(_record0)
 	_siren = AudioStreamPlayer.new()
 	_siren.bus = "SFX"
@@ -2330,9 +2332,11 @@ func _splash(p: Vector2, size := 1.0) -> void:
 
 func _knock_out() -> void:
 	_wallet = job.pay * (randf_range(0.0, 0.2) if settled.get("outcome") == "paid" else randf_range(0.2, 0.6)) # they've just paid you out of it
+	customer.knock_out() # out cold first: they ring the police when they come round, too dazed to fire you
 	_crime(2, Vector2.INF, true) # they felt it
+	if police_left < 0.0:
+		_call_police()
 	_count("knockouts")
-	customer.knock_out()
 	$Client.knock_out()
 	Sfx.play("thud")
 	shake(6.0)

@@ -89,6 +89,14 @@ func _build(keep := "") -> void:
 	var full := Game.week_left().all(func(d: int) -> bool: return Game.calendar.has(d))
 	for o in Game.paper:
 		list.add_child(_ad(o, full))
+	# Following focus shows only the Ring button: show its whole ad, and from the last one
+	# the stamped ads below it, which have no button to reach them by.
+	var ringing := list.get_children().filter(func(p: Node) -> bool: return p.find_child("Ring", true, false) != null)
+	for p: Control in ringing:
+		var also: Control = list.get_child(-1) if p == ringing[-1] else p
+		p.find_child("Ring", true, false).focus_entered.connect(func() -> void:
+			ads.ensure_control_visible.call_deferred(p)
+			ads.ensure_control_visible.call_deferred(also))
 
 	# Right: your regulars, then the shop and rack.
 	var scroll := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
