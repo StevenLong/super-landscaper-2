@@ -47,6 +47,12 @@ func _build(keep := "") -> void:
 	head.add_child(UI.label(Game.date_text(), 30, UI.GOLD))
 	head.add_child(UI.label("Money: $%d" % Game.money, 26))
 	head.add_child(UI.label("Friday: $%d" % Game.due(), 22, UI.BAD if Game.money < Game.due() else UI.TEXT))
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(gap)
+	var leave := UI.button("Save and quit", _save_and_quit, 18) # the board's always saved: this just says so
+	leave.name = "Quit"
+	head.add_child(leave)
 	root.add_child(head)
 	head = UI.hbox(26)
 	var trend := Game.rep_trend - Game.reputation
@@ -310,6 +316,20 @@ func _upgrade_row(key: String) -> Control:
 	var p := UI.panel(row)
 	p.name = key # _build(key) finds the row again
 	return p
+
+
+func _save_and_quit() -> void:
+	Game.save()
+	Game.in_run = false
+	get_tree().change_scene_to_file("res://title.tscn")
+
+
+## Pause (Esc, Start) on the board goes to Save and quit.
+func _unhandled_input(event: InputEvent) -> void:
+	var leave := find_child("Quit", true, false) as Button
+	if leave and event.is_action_pressed("pause"):
+		UI.focus(leave)
+		get_viewport().set_input_as_handled()
 
 
 ## Playtest cheats, debug builds only: [1] adds $500, [2] adds 20 reputation and [4]

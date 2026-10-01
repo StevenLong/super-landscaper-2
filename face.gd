@@ -14,8 +14,7 @@ const HAIRS := [["484050", "282430", "141018"], ["a07040", "704820", "4a2c14"], 
 const SHIRTS := [["4878c8", "305090"], ["c84848", "903030"], ["48a058", "307040"], ["e8c048", "b08828"],
 	["9058b8", "683888"], ["e8e8e0", "b0b0a8"], ["34323c", "1e1c24"]]
 const CLERICAL := 6 ## the black shirt, never picked at random (game.gd looks use the first six)
-const GREY_TIME := 0.25 ## seconds to grey out (or back) as they lose sight of you
-const UNSEEN := "UNSEEN" ## across the greyed portrait, so it says what the grey means
+const HOLD := 0.2 ## seconds a change of sight must last before the portrait switches, so passing tall things doesn't flicker
 
 @export var pixel_scale := 3
 
@@ -32,11 +31,12 @@ var talking := false: ## flaps the mouth between the two frames
 		_mouth_open = false
 		queue_redraw()
 
-var view := "patio": ## where they are (Customer.where): greyed indoors, behind glass at a window
+var view := "patio": ## where they are (Customer.where): behind glass at a window, greyed indoors
 	set(v):
 		if v != view:
 			view = v
 			queue_redraw()
+var seen := true ## whether they can see you: false greys the face and says so, at once (after HOLD)
 
 var _tex: Texture2D
 var _style := 0
@@ -44,7 +44,8 @@ var _collar := false ## a dog collar at the throat (the vicar)
 var _shake := 0.0
 var _mouth_open := false
 var _flap := 0.0
-var _grey := 0.0 ## 0 seen, 1 greyed out: eased, so passing tall things doesn't flicker
+var _unseen := false ## what's drawn: seen held for HOLD before it flips
+var _held := 0.0
 
 
 func set_look(look: Dictionary) -> void:
@@ -81,9 +82,11 @@ static func swapped(path: String, look: Dictionary, region := Rect2i()) -> Image
 
 
 func _process(delta: float) -> void:
-	var grey := move_toward(_grey, 1.0 if view == "inside" else 0.0, delta / GREY_TIME)
-	if grey != _grey:
-		_grey = grey
+	var unseen := not seen or view == "inside" # indoors, away from a window, they see nothing
+	_held = _held + delta if unseen != _unseen else 0.0
+	if _held >= HOLD:
+		_unseen = unseen
+		_held = 0.0
 		queue_redraw()
 	if _shake > 0.0:
 		_shake -= delta
@@ -106,19 +109,19 @@ func _draw() -> void:
 		return
 	var jitter := Vector2(randf_range(-2, 2), randf_range(-2, 2)) if _shake > 0.0 else Vector2.ZERO
 	var i := FRAMES.find(expression) + (FRAMES.size() if _mouth_open else 0)
-	var tint := Color.WHITE.lerp(Color(0.4, 0.4, 0.45), _grey) # can't see you, you can't see them
+	var tint := Color(0.4, 0.4, 0.45) if _unseen else Color.WHITE # can't see you, you can't see them
 	draw_texture_rect_region(_tex, Rect2(Vector2(6, 6) + jitter, Vector2(s, s)),
 		Rect2(i * CELL, _style * CELL, CELL, CELL), tint)
 	if _collar: # the white tab at the throat, over the neck in tools/make_faces.py
 		draw_rect(Rect2(Vector2(6, 6) + jitter + Vector2(17, 32) * pixel_scale, Vector2(6, 2) * pixel_scale), Color("f4f0e6") * tint)
-	if _grey > 0.0: # a band along the bottom says what the grey means
-		var band := Rect2(6, 6 + s - 28, s, 28)
-		draw_rect(band, Color(0.07, 0.05, 0.09, 0.8 * _grey))
-		draw_string(get_theme_default_font(), Vector2(6, band.end.y - 6), UNSEEN, HORIZONTAL_ALIGNMENT_CENTER, s, 20,
-			Color(Color("f0ead8"), _grey)) # UI.TEXT: UI would pull in the Sfx autoload
 	if view == "window": # a pane of glass between you: a sheen and the glazing bars
 		var pane := Rect2(6, 6, s, s)
 		draw_rect(pane, Color(0.7, 0.85, 1.0, 0.18))
 		draw_line(Vector2(6 + s / 2.0, 6), Vector2(6 + s / 2.0, 6 + s), Color("e8e0d0"), 4.0)
 		draw_line(Vector2(6, 6 + s / 2.0), Vector2(6 + s, 6 + s / 2.0), Color("e8e0d0"), 4.0)
 		draw_rect(pane, Color("e8e0d0"), false, 4.0)
+	if _unseen: # on top of the glass: a band along the bottom says what the grey means, and where they are
+		var band := Rect2(6, 6 + s - 28, s, 28)
+		draw_rect(band, Color(0.07, 0.05, 0.09, 0.8))
+		draw_string(get_theme_default_font(), Vector2(6, band.end.y - 6), "INSIDE" if view == "inside" else "UNSEEN",
+			HORIZONTAL_ALIGNMENT_CENTER, s, 20, Color("f0ead8")) # UI.TEXT: UI would pull in the Sfx autoload

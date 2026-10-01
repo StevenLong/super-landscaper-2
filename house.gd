@@ -16,6 +16,7 @@ const GLASS := Rect2(0, -62, 30, 36) ## a ground-floor window's glass, from its 
 const WALL_TOP := 158.0 ## the front wall's height (tools/art_sprites.py wall_top); the roof starts here
 const ROOF_D := 77.0 ## the roof rises this far and runs this far back to the ridge (45 degrees, half of WALL_H - WALL_TOP)
 const FLOOR_UP := 79.0 ## an upstairs pane sits this far above the one below it
+const PANE_OVER := 0.45 ## how much of the glass shows over a face at the window
 const UPSTAIRS := 1000 ## added to a window's x (windows()) for the pane above it
 ## The building by venue: its art, the side building's, its width, and the x of each
 ## ground-floor window (tools/art_sprites.py draws them there).
@@ -143,6 +144,9 @@ func _draw_house() -> void:
 		# Head and shoulders at the glass, facing out (the sheet's south row), cut off by the sill.
 		var head := Rect2(9, 2 * 94 + 12, 30, 24) # tools/voxel.py client(): 48 x 94 cells
 		_front.draw_texture_rect_region(peek_tex, Rect2(GLASS.position + Vector2(peek_x, GLASS.size.y - head.size.y), head.size), head)
+		# Behind the glass, not stuck on it: the pane (sheen and glazing bars) again, see-through, over them.
+		var pane := Rect2(GLASS.position + Vector2(peek_x, 0), GLASS.size)
+		_front.draw_texture_rect_region(_art, pane, Rect2(pane.position + Vector2(0, ART_FOOT), pane.size), Color(1, 1, 1, PANE_OVER))
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
 	for id in broken:

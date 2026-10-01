@@ -1019,7 +1019,8 @@ func _physics_process(delta: float) -> void:
 	$Client.visible = customer.where == "patio"
 	_house.peek_x = customer.window_x if customer.where == "window" and not customer.knocked_out else -1
 	# Greyed while they can't see you (design doc: line of sight), so you know you're unseen.
-	$HUD/Face.view = customer.where if customer.sees(actor().global_position) else "inside"
+	$HUD/Face.view = customer.where
+	$HUD/Face.seen = customer.sees(actor().global_position)
 	_show_cone()
 	_carried_into_view()
 	if customer.fired and settled.is_empty():
@@ -1430,7 +1431,7 @@ func _stone_near(p: Vector2) -> Stone:
 func open_pause() -> void:
 	get_tree().paused = true
 	hud.open("Paused", wants_lines(), [["resume", "Resume"], ["music", "Music: %s" % ("on" if Sfx.music_on else "off")],
-		["sound", "Sound: %s" % ("on" if Sfx.sound_on else "off")], ["quit", "Quit to title"]])
+		["sound", "Sound: %s" % ("on" if Sfx.sound_on else "off")], ["quit", "Quit to title (you'll black out: the job's lost)" if Game.in_run else "Quit to title"]])
 
 
 func open_truck_menu() -> void:

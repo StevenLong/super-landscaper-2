@@ -67,7 +67,7 @@ func _physics_process(_delta: float) -> bool:
 			m.mower.global_position = hidden
 			_wait = 2
 		1:
-			assert(m.get_node("HUD/Face").view == "inside", "out of their sight, the portrait greys")
+			assert(not m.get_node("HUD/Face").seen and m.get_node("HUD/Face").view == "patio", "out of their sight: unseen, still on the patio")
 			m.mower.global_position = open
 			m.customer.where = "window"
 			m.customer.window_x = 40
