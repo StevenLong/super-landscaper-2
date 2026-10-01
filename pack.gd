@@ -78,6 +78,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		act()
 	elif event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel"):
 		put_back()
+	elif event.is_action_pressed("pause"): # Start or [P] (Esc is put back, above): off from anywhere
+		drive()
 	elif (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R) \
 			or (event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y):
 		turn()
@@ -87,11 +89,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	queue_redraw()
 
 
-## Step the cursor; off a grid's side it crosses to the next grid or the tray.
+## Step the cursor; off a grid's side it crosses to the next grid or the tray. Empty-
+## handed on a packed item, the item is one stop: the step leaves from its far edge.
 func _move(d: Vector2i) -> void:
 	Sfx.play("ui_move", 0.0)
 	var zones: Array[String] = _grids()
 	zones.append("tray")
+	var p := Game.packed_at(zone, cell) if zone != "tray" and held.is_empty() else {}
+	if not p.is_empty():
+		var f := Game.footprint(p.kind, p.turned)
+		cell = Vector2i(clampi(cell.x, p.at.x, p.at.x + f.x - 1) if d.x == 0 else (p.at.x + f.x - 1 if d.x > 0 else p.at.x),
+			clampi(cell.y, p.at.y, p.at.y + f.y - 1) if d.y == 0 else (p.at.y + f.y - 1 if d.y > 0 else p.at.y))
 	if zone == "tray":
 		if d.y != 0:
 			row = clampi(row + d.y, 0, _tray().size() - 1)
@@ -225,16 +233,18 @@ func _draw() -> void:
 	# The cursor, with whatever you're holding.
 	if zone != "tray":
 		var o := _origin(zone)
-		if held.is_empty():
-			draw_rect(Rect2(o + Vector2(cell) * CELL, Vector2(CELL, CELL)), UI.GOLD, false, 3.0)
+		if held.is_empty(): # round the whole item it's on, or the one cell
+			var p := Game.packed_at(zone, cell)
+			var box := Rect2(o + Vector2(p.at) * CELL, Vector2(Game.footprint(p.kind, p.turned)) * CELL) if not p.is_empty() 				else Rect2(o + Vector2(cell) * CELL, Vector2(CELL, CELL))
+			draw_rect(box, UI.GOLD, false, 3.0)
 		else:
 			var at := _drop_at()
 			var ok := Game.fits(held.kind, zone, at, held.turned)
 			_item(o + Vector2(at) * CELL, held.kind, held.turned, (UI.GOOD if ok else UI.BAD) * Color(1, 1, 1, 0.8))
 	elif not held.is_empty():
 		_item(TRAY_AT + Vector2(460, row * ROW_H), held.kind, held.turned, COLOURS[held.kind] * Color(1, 1, 1, 0.8))
-	var keys := "Move: arrows/stick   %s pick up / drop   %s turn   %s put back" % [
-		Game.key("interact"), "(Y)" if Game.pad else "[R]", Game.key("hop")]
+	var keys := "Move: arrows/stick   %s pick up / drop   %s turn   %s put back   %s drive" % [
+		Game.key("interact"), "(Y)" if Game.pad else "[R]", Game.key("hop"), "(Start)" if Game.pad else "[P]"]
 	draw_string(font, Vector2(60, 680), keys, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UI.DIM)
 	if _say != "":
 		draw_string(font, Vector2(60, 640), _say, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UI.BAD)

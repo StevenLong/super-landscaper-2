@@ -62,6 +62,9 @@ func _process(_delta: float) -> bool:
 			s.act()
 			var p: Dictionary = g.packed[0]
 			assert(p.turned and p.at == Vector2i(1, 1) and s.held.is_empty(), "turned and dropped where it fits")
+			s.cell = Vector2i(1, 1)
+			s._move(Vector2i.RIGHT)
+			assert(s.zone == "tray", "on a packed item it's one stop: right from its left edge goes past it, off the bed")
 			# A can from the tray, dropped on the mower: won't fit; put back, it's gone.
 			s.zone = "tray"
 			s.row = s._tray().find("can")
