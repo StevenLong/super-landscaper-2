@@ -100,6 +100,7 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 10
 		6:
 			var board := current_scene
+			board._show("shop")
 			var row: Control = board.find_child("petrol", true, false)
 			assert(row != null, "the petrol mower's row")
 			var buy: Button = row.find_children("*", "Button", true, false)[0]
@@ -109,27 +110,39 @@ func _physics_process(_delta: float) -> bool:
 			var focused := root.gui_get_focus_owner()
 			assert(focused != null and current_scene.find_child("petrol", true, false).is_ancestor_of(focused),
 				"after buying, the cursor stays in that row, on %s" % [focused])
-			# The paper on a pad: the last Ring brings the stamped ad below it into view too.
-			g.paper[-1].refused = true
-			g.paper[-1].reply = "No."
-			current_scene._build()
-			var rings := current_scene.find_children("Ring", "Button", true, false)
-			rings[-1].grab_focus()
-			_wait = 5
-		8:
-			var last: Control = current_scene.find_children("Ring", "Button", true, false)[0].get_parent().get_parent().get_parent().get_child(-1)
-			var view: ScrollContainer = last.get_parent().get_parent()
-			assert(last.get_global_rect().end.y <= view.get_global_rect().end.y + 1.0, "the last ad scrolled into view")
-			# Everything bought (rows with Sell and Buy both): the shop still fits the screen.
+			# Everything bought (rows with Sell and Buy both), and a busy paper: every page fits the screen.
 			for k: String in ["rideon", "robot", "robot"]:
 				g.buy(k)
-			current_scene._build()
+			for i in 6:
+				g.paper.append(g.make_job(100 + i))
+				g.paper[-1].day = g.day + 1
+			current_scene._show("calendar")
 			_wait = 5
-		9:
-			var w := root.get_visible_rect().size.x
-			for b: Button in current_scene.find_children("*", "Button", true, false):
-				assert(b.get_global_rect().end.x <= w + 1.0, "%s fits on the screen (ends at %d)" % [b.text, b.get_global_rect().end.x])
+		8, 9, 10:
+			_fits()
+			current_scene._show(["paper", "shop", "calendar"][_step - 8])
+			_wait = 5
+		11:
+			_fits()
+			# Shift and Ctrl turn the board's pages.
+			var shift := InputEventKey.new()
+			shift.keycode = KEY_SHIFT
+			shift.physical_keycode = KEY_SHIFT
+			shift.pressed = true
+			current_scene._unhandled_input(shift)
+			assert(current_scene._view == "paper", "Shift turns to the paper")
+			assert(current_scene.find_children("*", "RichTextLabel", true, false).size() == current_scene.PER_PAGE, "a page of the paper at a time")
+			current_scene.find_child("NextPage", true, false).pressed.emit()
+			assert(current_scene._page == 1 and not current_scene.find_child("PrevPage", true, false).disabled, "and the next page")
 			print("PASS controls")
 			quit()
 	_step += 1
 	return false
+
+
+## Every button on the board's page is on the screen.
+func _fits() -> void:
+	var r := root.get_visible_rect().size
+	for b: Button in current_scene.find_children("*", "Button", true, false):
+		var e := b.get_global_rect().end
+		assert(e.x <= r.x + 1.0 and e.y <= r.y + 1.0, "%s (%s page) fits on the screen (ends at %s)" % [b.text, current_scene._view, e])

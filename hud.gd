@@ -33,8 +33,12 @@ func _process(_delta: float) -> void:
 	s.position = f.position + Vector2(f.size.x - SPEECH_W, f.size.y + 6.0)
 
 
-func set_clock(seconds: float) -> void:
-	$Clock.text = "%d:%02d" % [floori(seconds / 60.0), int(seconds) % 60]
+## The time: of day on a booked job ("2:40pm, by 6pm"), else minutes and seconds in.
+func set_clock(seconds: float, job: Dictionary) -> void:
+	if job.has("from"):
+		$Clock.text = "%s, by %s" % [Game.time_text(job.from + floori(seconds * Game.MPS)), Game.time_text(job.by)]
+	else:
+		$Clock.text = "%d:%02d" % [floori(seconds / 60.0), int(seconds) % 60]
 
 
 ## The police countdown, top centre, flashing red and blue: visible on purpose.

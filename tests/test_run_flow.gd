@@ -43,7 +43,7 @@ func _process(_delta: float) -> bool:
 			assert(game.in_run and game.date_text() == "Tuesday 1 April 1980" and game.owned == ["push"], "fresh business")
 			game.new_run(7) # the same business every time
 			current_scene._build()
-			assert(game.paper.size() == 6, "six ads in the paper")
+			assert(game.paper.size() == game.PAPER_SIZE[4], "April's paper")
 			for o: Dictionary in game.paper:
 				var text: String = game.ad_text(o)
 				assert(text.contains("$%d cash" % o.pay) and text.contains(o.customer.split(" ")[0][0]), "an ad gives the pay and who to ring: %s" % text)
@@ -53,11 +53,17 @@ func _process(_delta: float) -> bool:
 			assert(current_scene.find_child("Today", true, false).text == "On to the next job", "nothing booked yet")
 			var ad: Dictionary = game.paper[0]
 			ad.bar = 0.0 # a sure yes
+			ad.day = game.day # today, ten till three
+			ad.from = 600
+			ad.by = 900
+			current_scene._show("paper")
 			_press("Ring")
-			assert(game.today() == ad and game.paper.size() == 5, "they said yes: booked into today")
-			assert(current_scene.find_child("Call", true, false).text.contains("Tuesday"), "and what they said is shown")
-			assert(current_scene.find_child("Calendar", true, false) != null, "the month's calendar")
-			assert(current_scene.find_child("Today", true, false).text == "Go", "today's job to go to")
+			assert(game.today() == ad and game.paper.size() == game.PAPER_SIZE[4] - 1, "they said yes: booked into today")
+			assert(game.minute == game.DAY_START + game.RING_TIME, "the call took its time")
+			assert(current_scene.find_child("Call", true, false).text.contains("today after 10am"), "and what they said is shown")
+			current_scene._show("calendar")
+			assert(current_scene.find_child("Calendar", true, false) != null, "the corkboard's calendar")
+			assert(current_scene.find_child("Today", true, false).text == "Go: there at 10am", "today's job to go to, there when it opens")
 			_press("Today")
 		2:
 			assert(current_scene.name == "Main", "going loads the job")
@@ -77,7 +83,7 @@ func _process(_delta: float) -> bool:
 			assert(game.last_result.outcome == "paid", "a mowed lawn is accepted and you drive off (the scene is already on its way out)")
 		4:
 			assert(current_scene.name == "Summary", "back at base, the job's summary")
-			assert(game.date_text() == "Wednesday 2 April 1980" and not game.in_job, "the day's done")
+			assert(game.date_text() == "Tuesday 1 April 1980" and game.minute >= 600 and not game.in_job, "the day goes on, from when you got there")
 			var labels := _labels()
 			assert(labels.any(func(t: String) -> bool: return t.begins_with("Last job: Job done")), "how it ended")
 			assert(game.last_result.has("rep_before") and game.last_result.has("rep_after"), "the rundown knows the rep change")
@@ -91,8 +97,8 @@ func _process(_delta: float) -> bool:
 			assert(labels.count("All told") == 1 and not labels.any(func(t: String) -> bool: return t.begins_with("Reputation ")), "one reputation total, not two")
 			# The offer's a hidden chance: make sure of one, and see it again.
 			var j: Dictionary = game.current_job
-			game.offer = {"id": j.seed, "job": j, "cadence": 14, "rate": j.pay, "mood": 90.0, "day": game.day - 1, "drift": []}
-			_visit_day = game.day - 1 + 14
+			game.offer = {"id": j.seed, "job": j, "cadence": 14, "rate": j.pay, "mood": 90.0, "day": game.day, "drift": []}
+			_visit_day = game.day + 14
 			change_scene_to_file("res://summary.tscn")
 		5:
 			assert(not _labels().any(func(t: String) -> bool: return t.contains("Could you come")), "the summary first")
@@ -105,8 +111,9 @@ func _process(_delta: float) -> bool:
 			_press("Continue")
 		6:
 			assert(current_scene.name == "Board", "then the board")
-			assert("Your regulars" in _labels(), "your regulars listed")
-			assert(game.calendar.get(_visit_day, {}).get("regular", -1) == game.current_job.seed, "their first visit a fortnight on")
+			current_scene._show("paper")
+			assert("Your regulars" in _labels(), "your regulars listed, by the paper")
+			assert(game.bookings(_visit_day).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == game.current_job.seed), "their first visit a fortnight on")
 			assert(game.money > 0 and game.run_tally.get("windows", 0) == 1, "the job paid, the season adds it up")
 			game.money = 1000
 			assert(game.buy("petrol") and game.equipped == "petrol", "buying a mower equips it")
@@ -114,7 +121,9 @@ func _process(_delta: float) -> bool:
 			assert(game.money == 1000 - game.MOWERS.petrol.price, "the price came off")
 			# To the regular's day, with things crept into the garden since.
 			game.day = _visit_day
-			game.calendar[_visit_day].drift = ["flamingo", "flamingo", "flamingo"]
+			game.minute = game.DAY_START
+			game.calendar[_visit_day][0].drift = ["flamingo", "flamingo", "flamingo"]
+			current_scene._view = "calendar"
 			current_scene._ready()
 			_press("Today")
 		7:
@@ -134,9 +143,13 @@ func _process(_delta: float) -> bool:
 			game.paper = game.make_paper()
 			current_scene._build()
 			var never: Dictionary = game.paper.filter(func(o: Dictionary) -> bool: return o.bar > 0.0)[0]
+			never.day = game.day + 1
+			game.paper.erase(never)
+			game.paper.push_front(never) # on the first page
 			current_scene._call = game.ring(never)
-			current_scene._build()
-			assert(current_scene.find_children("Ring", "Button", true, false).size() == 5, "no reputation: a no, stamped, and no more ringing it")
+			current_scene._show("paper")
+			var stamped := current_scene.find_children("*", "RichTextLabel", true, false).filter(func(r: RichTextLabel) -> bool: return r.text.contains("NO:"))
+			assert(never.refused and stamped.size() == 1 and stamped[0].get_parent().find_child("Ring", true, false) == null, "no reputation: a no, stamped, and no more ringing it")
 			game.money = 70 # plus the petrol mower's resale covers $150
 			game.payday_pending = true
 			current_scene._ready()

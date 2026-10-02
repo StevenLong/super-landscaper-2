@@ -1,10 +1,20 @@
 extends Control
-## Between jobs (design doc, The Business): the month's calendar with today's job, the
-## week's paper to ring, your regulars, the shop and your van's mower rack.
-## Friday brings payday (the loan shark's man), September's end the winter, and a job
-## you never finished the blackout.
+## Between jobs (design doc, The Business): the corkboard the office will open (design
+## doc, Time is the scarce thing). Three pages: the calendar (today's jobs, the next two
+## weeks), the week's paper to ring, and the shop. The day's clock runs along the top and
+## lights up what an action will cost before you take it. Friday brings payday (the loan
+## shark's man), September's end the winter, and a job you never finished the blackout.
+
+const VIEWS := ["calendar", "paper", "shop"]
+const PER_PAGE := 3 ## ads to a page of the paper
+const CORK := Color("8a6238")
+const NOTE := Color("efe6cc")
+const INK := Color("2a2420")
 
 var _call := "" ## what the last ad you rang said, shown by the paper
+var _view := "calendar"
+var _page := 0 ## the paper's page
+var _clock: DayClock
 
 
 func _ready() -> void:
@@ -39,14 +49,17 @@ func _build(keep := "") -> void:
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 20)
 	add_child(margin)
-	var root := UI.vbox(10)
+	var root := UI.vbox(8)
 	margin.add_child(root)
 
-	# Header, two rows so it never runs off the side: the date and money, then your name.
+	# Header, two rows so it never runs off the side: the day, the time and money, then your name.
 	var head := UI.hbox(26)
 	head.add_child(UI.label(Game.date_text(), 30, UI.GOLD))
-	head.add_child(UI.label("Money: $%d" % Game.money, 26))
-	head.add_child(UI.label("Friday: $%d" % Game.due(), 22, UI.BAD if Game.money < Game.due() else UI.TEXT))
+	var now := UI.label(Game.time_text(Game.minute), 30, UI.BAD if Game.minute >= Game.DAY_END else UI.TEXT)
+	now.name = "Now"
+	head.add_child(now)
+	head.add_child(UI.label("$%d" % Game.money, 26))
+	head.add_child(UI.label("Friday: $%d" % Game.due(), 20, UI.BAD if Game.money < Game.due() else UI.DIM))
 	var gap := Control.new()
 	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(gap)
@@ -57,26 +70,203 @@ func _build(keep := "") -> void:
 	head = UI.hbox(26)
 	var trend := Game.rep_trend - Game.reputation
 	var arrow := "  (rising)" if trend > 3.0 else ("  (sliding)" if trend < -3.0 else "")
-	head.add_child(UI.label("Reputation: %s%s" % [UI.rep_word(Game.reputation), arrow], 22,
+	head.add_child(UI.label("Reputation: %s%s" % [UI.rep_word(Game.reputation), arrow], 20,
 		UI.GOOD if Game.reputation >= 45.0 else (UI.GOLD if Game.reputation >= 20.0 else UI.BAD)))
-	head.add_child(UI.label("Owed the shark: $%d" % Game.principal if Game.principal > 0 else "Free of the shark", 22,
+	head.add_child(UI.label("Owed the shark: $%d" % Game.principal if Game.principal > 0 else "Free of the shark", 20,
 		UI.DIM if Game.principal > 0 else UI.GOOD))
 	if Game.record > 0.0:
-		head.add_child(UI.label("Record: %d" % roundi(Game.record), 22, UI.BAD))
+		head.add_child(UI.label("Record: %d" % roundi(Game.record), 20, UI.BAD))
 	root.add_child(head)
 
+	_clock = DayClock.new()
+	_clock.name = "DayClock"
+	_clock.custom_minimum_size = Vector2(0, 54)
+	root.add_child(_clock)
+
+	# The pages, as tabs: Shift and Ctrl (RB and LB) turn them too.
+	var tabs := UI.hbox(10)
+	for v: String in VIEWS:
+		var open := Game.paper.filter(func(o: Dictionary) -> bool: return Game.cant_book(o) == "" and not o.get("refused", false)).size()
+		var t := UI.button({"calendar": "Calendar", "paper": "Paper (%d to ring)" % open, "shop": "Shop"}[v], _show.bind(v), 20)
+		t.name = "Tab_" + v
+		if v == _view:
+			t.add_theme_color_override("font_color", UI.GOLD)
+			t.add_theme_color_override("font_focus_color", UI.GOLD)
+		tabs.add_child(t)
+	var hint := UI.label("%s %s turn the page" % [Game.key("gear_down"), Game.key("gear_up")], 18, UI.DIM)
+	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tabs.add_child(hint)
+	root.add_child(tabs)
+	if not Game.missed.is_empty():
+		var m := UI.label("You never turned up for %s. They'll remember." % ", ".join(Game.missed), 20, UI.BAD)
+		m.name = "Missed"
+		m.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		root.add_child(m)
+		Game.missed.clear()
+
+	var first: Control
+	match _view:
+		"paper":
+			first = _paper_view(root)
+		"shop":
+			first = _shop_view(root, keep)
+		_:
+			first = _today(root)
+			root.add_child(_corkboard())
+	UI.focus(first)
+
+
+func _show(view: String) -> void:
+	_view = view
+	_page = 0
+	_build()
+	UI.focus(find_child("Tab_" + view, true, false))
+
+
+## Light up on the clock what pressing this would use: from now to `to`.
+func _preview(c: Control, to: int) -> void:
+	for s: String in ["focus_entered", "mouse_entered"]:
+		c.connect(s, func() -> void: _clock.cost_to = to; _clock.queue_redraw())
+	for s: String in ["focus_exited", "mouse_exited"]:
+		c.connect(s, func() -> void: _clock.cost_to = -1; _clock.queue_redraw())
+
+
+## Today: each job to go to (when you'd get there), and calling it a day. Returns the
+## first button.
+func _today(box: Control) -> Button:
+	var col := UI.vbox(6)
+	var jobs := Game.jobs_today()
+	var first: Button = null
+	if jobs.is_empty():
+		var row := UI.hbox(14)
+		var l := UI.label("A day in jail." if Game.today().has("jail") else "Nothing booked today.", 20, UI.DIM)
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(l)
+		first = UI.button("On to the next job", func() -> void:
+			Game.skip()
+			_ready(), 20)
+		first.name = "Today"
+		row.add_child(first)
+		col.add_child(row)
+	else:
+		for b: Dictionary in jobs:
+			var row := UI.hbox(14)
+			var what := RichTextLabel.new()
+			what.bbcode_enabled = true
+			what.fit_content = true
+			what.scroll_active = false
+			what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			what.text = _job_line(b)
+			row.add_child(what)
+			var go: Button
+			if Game.can_go(b):
+				var at := Game.arrival(b)
+				go = UI.button("Go: there at %s" % Game.time_text(at), _go.bind(b), 20)
+				_preview(go, at)
+			else:
+				go = UI.button("Too late", func() -> void: pass, 20)
+				go.disabled = true
+			go.name = "Today" if b == jobs[0] else "Go"
+			row.add_child(go)
+			col.add_child(row)
+			if first == null and not go.disabled:
+				first = go
+		var end := UI.button("Call it a day" + (" (miss %d)" % jobs.size()), func() -> void:
+			Game.end_day()
+			_ready(), 20)
+		end.name = "EndDay"
+		var holder := UI.hbox(0)
+		holder.alignment = BoxContainer.ALIGNMENT_END
+		holder.add_child(end)
+		col.add_child(holder)
+		if first == null:
+			first = end
+	box.add_child(UI.panel(col))
+	return first
+
+
+func _job_line(b: Dictionary) -> String:
+	var when := "%s to %s" % [Game.time_text(b.from), Game.time_text(b.by)]
+	if b.has("regular"):
+		return "[color=#98e070]%s[/color], your regular, %s. $%d, no tips." % [b.customer, when, b.pay]
+	if b.has("service"):
+		return "Community service, [color=#f07060]%s[/color]'s churchyard, %s. Unpaid." % [b.customer, when]
+	return "[color=#f8d048]%s[/color], from the paper, %s. $%d." % [b.customer, when, b.pay]
+
+
+## A time as short as it'll go, for a calendar note: 9, 9:30, 12.
+func _hours(m: int) -> String:
+	var h := (floori(m / 60.0) + 11) % 12 + 1
+	return str(h) if m % 60 == 0 else "%d:%02d" % [h, m % 60]
+
+
+## The corkboard: the next fortnight from today, a note for every day with what's booked
+## on it and when. Today ringed.
+func _corkboard() -> Control:
+	var grid := GridContainer.new()
+	grid.name = "Calendar"
+	grid.columns = 7
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	for d in range(Game.day, Game.day + 7):
+		var n: String = Game.DAYS[Game.date(d).weekday].left(3)
+		var friday: bool = Game.date(d).weekday == Game.FRIDAY
+		grid.add_child(_ink(n + ("  payday" if friday else ""), Color("f8e0a0") if friday else Color("e8d8b8")))
+	for d in range(Game.day, Game.day + 14):
+		var cell := PanelContainer.new()
+		cell.custom_minimum_size = Vector2(0, 112)
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var style := StyleBoxFlat.new()
+		style.bg_color = NOTE
+		style.border_color = Color("c08a10") if d == Game.day else Color("5a3c20")
+		style.set_border_width_all(3 if d == Game.day else 1)
+		style.set_content_margin_all(4)
+		cell.add_theme_stylebox_override("panel", style)
+		var notes := UI.vbox(0)
+		cell.add_child(notes)
+		var t := Game.date(d)
+		notes.add_child(_ink("%d%s" % [t.day, " " + Game.MONTHS[t.month - 1].left(3) if t.day == 1 or d == Game.day else ""], Color("7a6a50")))
+		var l := Game.bookings(d)
+		for i in mini(l.size(), 3 if l.size() > 4 else 4):
+			var b: Dictionary = l[i]
+			var text := "Court" if b.has("court") else ("Jail" if b.has("jail") else ("%s-%s %s" % [_hours(b.from), _hours(b.by), "Duty" if b.has("service") else b.customer.split(" ")[-1]]))
+			notes.add_child(_ink(text, Color("b03020") if b.has("court") or b.has("jail") or b.has("service") else (Color("2e6a1e") if b.has("regular") else INK)))
+		if l.size() > 4:
+			notes.add_child(_ink("+%d more" % (l.size() - 3), Color("7a6a50")))
+		grid.add_child(cell)
+	var board := PanelContainer.new()
+	var cork := StyleBoxFlat.new()
+	cork.bg_color = CORK
+	cork.border_color = Color("5a3c20")
+	cork.set_border_width_all(4)
+	cork.set_content_margin_all(8)
+	board.add_theme_stylebox_override("panel", cork)
+	board.add_child(grid)
+	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	return board
+
+
+## A line in ink on paper: no drop shadow, clipped so a long name never widens the board.
+func _ink(text: String, color := INK) -> Label:
+	var l := UI.label(text, 20, color)
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
+	l.clip_text = true
+	return l
+
+
+## The week's paper, a few ads to a page, and your regulars beside it. Returns the first
+## Ring button (or a page button).
+func _paper_view(root: Control) -> Control:
 	var cols := UI.hbox(20)
 	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(cols)
-
-	# Left: the calendar, today, and the paper.
 	var left := UI.vbox(8)
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.size_flags_stretch_ratio = 2.0
 	cols.add_child(left)
-	left.add_child(_month())
-	var first := _today(left)
 	var heading := UI.hbox(14)
-	heading.add_child(UI.label("This week's paper" if not Game.paper.is_empty() else "Nothing else in this week's paper.", 22))
+	heading.add_child(UI.label("This week's paper" if Game.paper.any(func(o: Dictionary) -> bool: return o.day >= Game.day)
+		else "Nothing else in this week's paper.", 22))
 	if _call != "": # what the last one you rang said
 		var said := UI.label(_call, 18, UI.GOLD)
 		said.name = "Call"
@@ -84,153 +274,78 @@ func _build(keep := "") -> void:
 		said.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		heading.add_child(said)
 	left.add_child(heading)
-	var ads := ScrollContainer.new() # a long paper scrolls, following the cursor
-	ads.follow_focus = true
-	ads.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	ads.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	left.add_child(ads)
-	var list := UI.vbox(6)
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ads.add_child(list)
-	var full := Game.week_left().all(func(d: int) -> bool: return Game.calendar.has(d))
-	for o in Game.paper:
-		list.add_child(_ad(o, full))
-	# Following focus shows only the Ring button: show its whole ad, and from the last one
-	# the stamped ads below it, which have no button to reach them by.
-	var ringing := list.get_children().filter(func(p: Node) -> bool: return p.find_child("Ring", true, false) != null)
-	for p: Control in ringing:
-		var also: Control = list.get_child(-1) if p == ringing[-1] else p
-		p.find_child("Ring", true, false).focus_entered.connect(func() -> void:
-			ads.ensure_control_visible.call_deferred(p)
-			ads.ensure_control_visible.call_deferred(also))
+	var ads := Game.paper.filter(func(o: Dictionary) -> bool: return o.day >= Game.day) # a day gone, its ad's gone
+	var pages := maxi(1, ceili(ads.size() / float(PER_PAGE)))
+	_page = clampi(_page, 0, pages - 1)
+	for o: Dictionary in ads.slice(_page * PER_PAGE, _page * PER_PAGE + PER_PAGE):
+		left.add_child(_ad(o))
+	var nav := UI.hbox(14)
+	var prev := UI.button("< Page back", func() -> void:
+		_page -= 1
+		_build()
+		UI.focus(find_child("PrevPage", true, false)), 20)
+	prev.name = "PrevPage"
+	prev.disabled = _page == 0
+	nav.add_child(prev)
+	var where := UI.label("Page %d of %d" % [_page + 1, pages], 20, UI.DIM)
+	where.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	nav.add_child(where)
+	var next := UI.button("Turn the page >", func() -> void:
+		_page += 1
+		_build()
+		UI.focus(find_child("NextPage", true, false)), 20)
+	next.name = "NextPage"
+	next.disabled = _page >= pages - 1
+	nav.add_child(next)
+	left.add_child(nav)
 
-	# Right: your regulars, then the shop and rack.
-	var scroll := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
-	scroll.follow_focus = true
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(scroll)
-	var shop := UI.vbox(6)
-	shop.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(shop)
-	if not Game.regulars.is_empty():
-		shop.add_child(UI.label("Your regulars", 26))
-		for id: int in Game.regulars:
-			shop.add_child(_regular_row(id))
-	shop.add_child(UI.label("Your mowers", 26))
-	for key: String in Game.MOWERS:
-		shop.add_child(_mower_row(key))
-	shop.add_child(UI.label("Upgrades", 26))
-	for key: String in Game.UPGRADES:
-		shop.add_child(_upgrade_row(key))
-	shop.add_child(_robot_row())
-	for l: Label in shop.find_children("*", "Label", true, false): # wrap, so no row's words widen the column off the screen
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var kept := find_child(keep, true, false) if keep != "" else null
-	if kept:
-		for b: Button in kept.find_children("*", "Button", true, false):
-			if not b.disabled:
-				first = b
-				break
-	UI.focus(first)
-
-
-## The month as a grid, Monday first: what's booked each day, today ringed, Fridays gold.
-func _month() -> Control:
-	var t := Game.date()
-	var first := Game.day_of(t.year, t.month, 1)
-	var last := Game.day_of(t.year + (1 if t.month == 12 else 0), t.month % 12 + 1, 1) - 1
-	var box := UI.vbox(2)
-	box.add_child(UI.label("%s %d" % [Game.MONTHS[t.month - 1], t.year], 22, UI.GOLD))
-	var grid := GridContainer.new()
-	grid.name = "Calendar"
-	grid.columns = 7
-	grid.add_theme_constant_override("h_separation", 3)
-	grid.add_theme_constant_override("v_separation", 3)
-	box.add_child(grid)
-	for n: String in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]:
-		grid.add_child(UI.label(n, 16, UI.GOLD if n == "Fri" else UI.DIM))
-	for i in (Game.date(first).weekday + 6) % 7: # blanks before the 1st
-		grid.add_child(Control.new())
-	for d in range(first, last + 1):
-		var cell := PanelContainer.new()
-		cell.custom_minimum_size = Vector2(90, 30)
-		var style := StyleBoxFlat.new()
-		style.bg_color = UI.PANEL if d >= Game.day else UI.BG
-		style.border_color = UI.GOLD if d == Game.day else UI.PANEL_EDGE
-		style.set_border_width_all(2 if d == Game.day else (1 if d >= Game.day else 0))
-		style.set_content_margin_all(3)
-		cell.add_theme_stylebox_override("panel", style)
-		var b: Dictionary = Game.calendar.get(d, {})
-		var what := ""
-		var color := UI.DIM
-		if b.has("court") or b.has("jail") or b.has("service"):
-			what = "Court" if b.has("court") else ("Jail" if b.has("jail") else "Duty") # community service
-			color = UI.BAD
-		elif b.has("seed"):
-			what = b.customer.split(" ")[-1]
-			color = UI.GOOD if b.has("regular") else UI.TEXT
-		var l := UI.label("%d %s" % [Game.date(d).day, what], 16, color if d >= Game.day else UI.DIM)
-		l.clip_text = true # a long surname never widens the grid
-		cell.add_child(l)
-		grid.add_child(cell)
-	return box
-
-
-## Today: the job to go to, or nothing booked and on to the next. Returns the button.
-func _today(box: Control) -> Button:
-	var j := Game.today()
-	var row := UI.hbox(14)
-	var go: Button
-	if j.has("seed"):
-		var what := RichTextLabel.new()
-		what.bbcode_enabled = true
-		what.fit_content = true
-		what.scroll_active = false
-		what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		what.text = ("Today: [color=#98e070]%s[/color], your regular. $%d, no tips." % [j.customer, j.pay]) if j.has("regular") \
-			else ("Today: community service, [color=#f07060]%s[/color]'s churchyard. Unpaid." % j.customer) if j.has("service") \
-			else "Today: [color=#f8d048]%s[/color], from the paper. $%d." % [j.customer, j.pay]
-		row.add_child(what)
-		go = UI.button("Go", _go, 22)
-	else:
-		var l := UI.label("Nothing booked today." if j.is_empty() else "A day in jail.", 20, UI.DIM)
-		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(l)
-		go = UI.button("On to the next job", func() -> void:
-			Game.skip()
-			_ready(), 20)
-	go.name = "Today"
-	row.add_child(go)
-	box.add_child(UI.panel(row))
-	return go
+	var right := UI.vbox(6)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cols.add_child(right)
+	right.add_child(UI.label("Your regulars", 22))
+	if Game.regulars.is_empty():
+		var none := UI.label("None yet. A good job from the paper might earn one.", 18, UI.DIM)
+		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		right.add_child(none)
+	for id: int in Game.regulars:
+		right.add_child(_regular_row(id))
+	var ring := left.find_child("Ring", true, false)
+	return ring if ring else (next if not next.disabled else (prev if not prev.disabled else find_child("Tab_paper", true, false)))
 
 
 ## An ad as a classified on newsprint: no picture, just the words and the hints buried
-## in them. You meet the customer at the briefing. Ringing gets an answer at once
-## (Game.ring): yes books the week's first free day, no stamps the ad.
-func _ad(o: Dictionary, full: bool) -> Control:
+## in them, and when they want it. You meet the customer at the briefing. Ringing gets an
+## answer at once (Game.ring) and takes the call's time: yes books it on its day, no stamps it.
+func _ad(o: Dictionary) -> Control:
 	var row := UI.hbox(14)
 	var ad := RichTextLabel.new()
 	ad.bbcode_enabled = true
 	ad.fit_content = true
 	ad.scroll_active = false
-	ad.custom_minimum_size.x = 540
+	ad.custom_minimum_size.x = 480
 	ad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ad.add_theme_color_override("default_color", Color("2a2420"))
+	ad.add_theme_color_override("default_color", INK)
 	ad.add_theme_font_size_override("normal_font_size", UI.px(18))
 	ad.text = Game.ad_text(o)
+	var busy := Game.jobs_on(o.day)
+	if busy > 0:
+		ad.text += "\n[color=#2e6a1e]You've %d job%s that day.[/color]" % [busy, "" if busy == 1 else "s"]
 	row.add_child(ad)
+	var why := Game.cant_book(o)
 	if o.get("refused", false): # stamped for the week, what's above you kept in view
 		ad.text += "\n[color=#b03020]NO: %s[/color]" % o.reply
 		ad.modulate.a = 0.7
+	elif why != "":
+		ad.text += "\n[color=#b03020]%s.[/color]" % why
+		ad.modulate.a = 0.7
 	else:
-		var ring := UI.button("Ring", func() -> void:
+		var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
 			_call = Game.ring(o)
-			_build(), 20)
+			_build()
+			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Tab_paper", true, false)), 20)
 		ring.name = "Ring"
-		ring.disabled = full
 		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_preview(ring, Game.minute + Game.RING_TIME)
 		row.add_child(ring)
 	var paper := StyleBoxFlat.new()
 	paper.bg_color = Color("e8e0c8")
@@ -242,17 +357,94 @@ func _ad(o: Dictionary, full: bool) -> Control:
 	return p
 
 
+## The shop: your mowers, upgrades and robots. Returns the first button (or the row kept).
+func _shop_view(root: Control, keep: String) -> Control:
+	var scroll := ScrollContainer.new() # a long list scrolls, following the cursor
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(scroll)
+	var shop := GridContainer.new() # two columns, so it fits without scrolling far
+	shop.columns = 2
+	shop.add_theme_constant_override("h_separation", 16)
+	shop.add_theme_constant_override("v_separation", 6)
+	shop.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(shop)
+	for key: String in Game.MOWERS:
+		shop.add_child(_mower_row(key))
+	for key: String in Game.UPGRADES:
+		shop.add_child(_upgrade_row(key))
+	shop.add_child(_robot_row())
+	for c: Control in shop.get_children():
+		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for l: Label in shop.find_children("*", "Label", true, false): # wrap, so no row's words widen the column off the screen
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var first: Control = null
+	var kept := find_child(keep, true, false) if keep != "" else null
+	for b: Button in (kept if kept else shop).find_children("*", "Button", true, false):
+		if not b.disabled:
+			first = b
+			break
+	return first if first else find_child("Tab_shop", true, false)
+
+
 func _regular_row(id: int) -> Control:
 	var reg: Dictionary = Game.regulars[id]
 	var row := UI.hbox(10)
 	var every: String = {7: "weekly", 14: "fortnightly", 28: "four-weekly"}[reg.cadence]
-	var l := UI.label("%s, %s, $%d" % [reg.job.customer, every, reg.rate], 18, UI.GOOD)
+	var l := UI.label("%s, %s, %s, $%d" % [reg.job.customer, every, _hours(reg.job.from) + "-" + _hours(reg.job.by), reg.rate], 18, UI.GOOD)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(l)
 	row.add_child(UI.button("Drop", func() -> void:
 		Game.drop(id)
 		_build(), 18))
 	return UI.panel(row)
+
+
+## The day's clock, 8am to 8pm: today's windows as bars, now as a gold line, the past
+## shaded, and (cost_to) what the focused button would use lit up.
+class DayClock extends Control:
+	var cost_to := -1
+
+	func _x(m: int) -> float:
+		return clampf(float(m - Game.DAY_START) / (Game.DAY_END - Game.DAY_START), 0.0, 1.0) * size.x
+
+	func _draw() -> void:
+		var font := get_theme_default_font()
+		var top := 22.0
+		var h := size.y - top
+		draw_rect(Rect2(0, top, size.x, h), UI.PANEL)
+		for hh in range(8, 21, 2):
+			var x := _x(hh * 60)
+			draw_line(Vector2(x, top), Vector2(x, size.y), UI.PANEL_EDGE, 1.0)
+			var t: String = Game.time_text(hh * 60)
+			var w := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+			draw_string(font, Vector2(clampf(x - w / 2.0, 0.0, size.x - w), 17), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UI.DIM)
+		draw_rect(Rect2(0, top, _x(Game.minute), h), Color(0, 0, 0, 0.4))
+		var lanes: Array[int] = []
+		for b: Dictionary in Game.jobs_today():
+			var lane := 0
+			while lane < lanes.size() and lanes[lane] > b.from:
+				lane += 1
+			if lane == lanes.size():
+				lanes.append(0)
+			lanes[lane] = b.by
+			var color := UI.BAD if b.has("service") else (UI.GOOD if b.has("regular") else UI.GOLD)
+			draw_rect(Rect2(_x(b.from), top + 3 + (lane % 3) * 10, _x(b.by) - _x(b.from), 8), color)
+		if cost_to > Game.minute:
+			var x0 := _x(Game.minute)
+			var x1 := maxf(_x(cost_to), x0 + 3.0)
+			draw_rect(Rect2(x0, top, x1 - x0, h), Color(UI.GOLD, 0.5))
+			var mins := cost_to - Game.minute
+			var t := "+%d min" % mins if mins < 60 else "+%dh%s" % [floori(mins / 60.0), " %dm" % (mins % 60) if mins % 60 else ""]
+			var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+			var at := Vector2(minf(x1 + 6.0, size.x - tw - 6.0), size.y - 7)
+			draw_rect(Rect2(at.x - 4, top + 2, tw + 8, h - 4), UI.BG)
+			draw_string(font, at, t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UI.GOLD)
+		draw_rect(Rect2(0, top, size.x, h), UI.PANEL_EDGE, false, 2.0)
+		var now := _x(Game.minute)
+		draw_line(Vector2(now, top - 2), Vector2(now, size.y), UI.GOLD, 3.0)
 
 
 func _mower_row(key: String) -> Control:
@@ -326,11 +518,15 @@ func _save_and_quit() -> void:
 	get_tree().change_scene_to_file("res://title.tscn")
 
 
-## Pause (Esc, Start) on the board goes to Save and quit.
+## Pause (Esc, Start) on the board goes to Save and quit; Shift and Ctrl (RB and LB)
+## turn its pages.
 func _unhandled_input(event: InputEvent) -> void:
 	var leave := find_child("Quit", true, false) as Button
 	if leave and event.is_action_pressed("pause"):
 		UI.focus(leave)
+		get_viewport().set_input_as_handled()
+	elif leave and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")):
+		_show(VIEWS[posmod(VIEWS.find(_view) + (1 if event.is_action_pressed("gear_up") else -1), VIEWS.size())])
 		get_viewport().set_input_as_handled()
 
 
@@ -364,7 +560,8 @@ func _sell_button(key: String, then: Callable) -> Button:
 		then.call(), 18)
 
 
-func _go() -> void: # packing first (pack.gd), then the job
+func _go(b: Dictionary) -> void: # packing first (pack.gd), then the job
+	Game.next_job = b
 	get_tree().change_scene_to_file("res://pack.tscn")
 
 

@@ -193,6 +193,8 @@ func _rundown(r: Dictionary) -> Control:
 		also.append("Your %s's still on their lawn. The police have it now" % r.left_behind.to_lower())
 	if r.get("lost_regular", false):
 		also.append("They won't be booking you again")
+	if r.get("sooner", false):
+		also.append("The grass is growing: they want you back sooner")
 	if not also.is_empty():
 		info.add_child(UI.label("   ".join(also), 20, UI.BAD))
 	for l: Label in info.get_children(): # long lines wrap, not shove the books off the screen

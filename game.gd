@@ -1,6 +1,7 @@
 extends Node
 ## Business state (autoload "Game"; design doc, The Business). Seasons of real days,
-## April to September, at most one job a day. Each Friday the loan shark takes his vig on
+## April to September, on one clock (design doc, Time is the scarce thing): a booking is a
+## window in the day, as many a day as you dare. Each Friday the loan shark takes his vig on
 ## what you still owe, plus the week's living cost; anything more cuts the debt. Miss it
 ## and his heavies repossess kit; bankrupt only when nothing left covers it. The weekly
 ## paper's ads are booked into free days, a good job can earn a regular, and the business
@@ -136,7 +137,18 @@ const REGULAR := {"nature": [1.0, 14], "squirrel_hater": [1.0, 14], "gardener": 
 	"perfectionist": [0.5, 7], "grump": [0.4, 28], "toff": [0.7, 7], "vicar": [1.0, 14]}
 const MONTHS := ["January", "February", "March", "April", "May", "June", "July", "August",
 	"September", "October", "November", "December"]
-const PAPER := [-25.0, -12.0, 0.0, 0.0, 12.0, 25.0] ## a week's ads against your name: two below, two around, two above
+const PAPER := [-25.0, -12.0, 0.0, 0.0, 12.0, 25.0] ## a week's ads against your name: two below, two around, two above (repeating as the paper swells)
+const PAPER_SIZE := {4: 5, 5: 8, 6: 10, 7: 10, 8: 7, 9: 5} ## ads a week by month: the paper swells as the grass grows
+const PEAK := [5, 6, 7] ## the months regulars want you back sooner (half their cadence, a week at least)
+## The day's clock (design doc, Time is the scarce thing). Minutes since midnight. Guesses.
+const DAY_START := 480 ## 8am
+const DAY_END := 1200 ## 8pm: no driving to a job after this
+const MPS := 0.4 ## in a job, minutes of the day a real second: a small lawn's 5 minutes of patience is 2 hours
+const SLACK := 1.5 ## a booking's window is their patience times this: you needn't go the moment it opens
+const DRIVE := 30 ## minutes to drive to a job
+const RING_TIME := 10 ## minutes a phone call takes
+const NO_SHOW_REP := 6.0 ## a classified you never turned up to (on the trend)
+const NO_SHOW_MOOD := 10.0 ## a regular's visit missed
 const REACH := 15.0 ## how far under an ad's bar a call can still get a yes
 const DAYS := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share of its price
@@ -219,9 +231,12 @@ var record := 0.0 ## convictions, each weighing its tier (RECORD): fines, senten
 var start_month := 4 ## a knob: June reaches a busy calendar sooner for play-checks
 var year := 1980
 var day := 0 ## today, not yet over, in days since 1970 (Time's unix time / a day)
+var minute := DAY_START ## now, in minutes since midnight
 var principal := 0
-var calendar := {} ## day -> what's booked: a job (a classified, a regular's visit, community service), {"court": case} or {"jail": true}
-var paper: Array[Dictionary] = [] ## this week's ads not yet booked
+var calendar := {} ## day -> what's booked, earliest first: jobs (a classified, a regular's visit, community service), or a day taken whole by {"court": case} or {"jail": true}
+var paper: Array[Dictionary] = [] ## this week's ads not yet booked, each with its day and window
+var next_job := {} ## the booking picked on the board, for packing and the job
+var missed: Array[String] = [] ## who you didn't turn up for, for the board to say
 var regulars := {} ## id (their first job's seed) -> {id, job, cadence, rate, mood, drift}
 var offer := {} ## a regular's offer after the job just done, until answered
 var payday_pending := false
@@ -230,7 +245,7 @@ var in_job := false ## a job started and not finished: loading onto it is the bl
 var blackout := {} ## the job you blacked out on, for the board to break the news
 ## What the save keeps: the whole business.
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
-	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "principal",
+	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
 	"calendar", "paper", "regulars", "offer", "payday_pending", "winter_pending", "in_job", "current_job"]
 
 var _rng := RandomNumberGenerator.new()
@@ -295,8 +310,11 @@ func new_run(seed_value := 0) -> void:
 	run_over_reason = ""
 	year = 1980
 	day = day_of(year, start_month, 1)
+	minute = DAY_START
 	principal = PRINCIPAL
 	calendar = {}
+	next_job = {}
+	missed = []
 	regulars = {}
 	offer = {}
 	payday_pending = false
@@ -334,6 +352,9 @@ func ad_text(j: Dictionary) -> String:
 	var names: PackedStringArray = j.customer.split(" ")
 	var who := names[0] if j.seed % 2 == 0 else "%s. %s" % [names[0][0], names[-1]]
 	parts.append("$%d cash. Ring %s." % [j.pay, "the vicarage" if j.persona == "vicar" else who])
+	if j.has("from"):
+		parts.append("[color=#7a1c14]%s%s to %s.[/color]" % ["%s, " % day_word(j.day) if j.has("day") else "",
+			time_text(j.from), time_text(j.by)])
 	return "[color=#7a1c14]%s[/color] %s" % [ad[0], " ".join(parts)]
 
 
@@ -342,9 +363,12 @@ func ad_text(j: Dictionary) -> String:
 ## yours (give or take 5), in no particular order.
 func make_paper() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for off: float in PAPER:
-		out.append(make_job(_rng.randi(), clampf(reputation + off + _rng.randf_range(-5.0, 5.0), 0.0, 100.0)))
-	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.seed < b.seed)
+	var week := week_left()
+	for i in PAPER_SIZE.get(date().month, 5):
+		var o := make_job(_rng.randi(), clampf(reputation + PAPER[i % PAPER.size()] + _rng.randf_range(-5.0, 5.0), 0.0, 100.0))
+		o.day = week[_rng.randi() % week.size()]
+		out.append(o)
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return [a.day, a.from] < [b.day, b.from])
 	return out
 
 
@@ -354,13 +378,13 @@ func yes_chance(ad: Dictionary) -> float:
 	return clampf((reputation - ad.bar + REACH) / REACH, 0.0, 1.0)
 
 
-## Ring an ad: an answer at once, no cost either way. Yes books it into the week's first
-## free day; no stamps it for the week. Returns what they said.
+## Ring an ad: an answer at once, the call's time either way. Yes books it on its day;
+## no stamps it for the week. Returns what they said.
 func ring(ad: Dictionary) -> String:
+	minute += RING_TIME
 	var chance := yes_chance(ad)
-	if _rng.randf() < chance:
-		var d := book(ad)
-		var when: String = DAYS[date(d).weekday]
+	if _rng.randf() < chance and book(ad) >= 0:
+		var when := "%s after %s" % [day_word(ad.day) if ad.day > day + 1 else day_word(ad.day).to_lower(), time_text(ad.from)]
 		if ad.persona == "vicar":
 			return "\"All are welcome at St. Swithin's. %s, then.\"" % when
 		if ad.persona == "grump":
@@ -431,7 +455,18 @@ func make_job(seed_value: int, at := -1.0) -> Dictionary:
 	# a Dire name, and a bigger lawn or a better street asks more.
 	j.bar = 0.0 if dregs or j.get("venue", "") == "graveyard" else maxf(20.0, maxf([0.0, 55.0, 75.0][size_i],
 		{"forward": 40.0, "L": 70.0}.get(j.get("shape", ""), 75.0 if j.get("venue", "") == "mansion" else 0.0)))
+	_window(j)
 	return j
+
+
+## When they want it done: a window sized from their patience (SLACK times it, on the
+## day's clock), opening on the half hour somewhere it fits in the day. Its own draws.
+func _window(j: Dictionary) -> void:
+	var r := RandomNumberGenerator.new()
+	r.seed = j.seed + 7
+	var length := clampi(roundi(j.patience * MPS * SLACK / 30.0) * 30, 60, DAY_END - DAY_START)
+	j.from = DAY_START + 30 * r.randi_range(0, floori((DAY_END - DAY_START - length) / 30.0))
+	j.by = j.from + length
 
 
 ## The plot's shape, by neighbourhood (design doc, Levels): terraces at the bottom of the
@@ -467,6 +502,8 @@ func service_job() -> Dictionary:
 		_churchyard(j, rv)
 	j.service = true
 	j.pay = 0
+	j.from = DAY_START + 60 # the council's hours, the day's taken
+	j.by = DAY_START + 540
 	j.brief = ["The council sent you, did they? Community service.", "Mind the graves. And no nonsense this time."]
 	return j
 
@@ -573,7 +610,10 @@ func record_result(result: Dictionary) -> void:
 		_maybe_offer(result)
 	if result.get("charge", 0.0) > 0.0 and (result.outcome == "nicked" or result.get("police", false)):
 		_charge(result)
-	end_day()
+	# The day goes on: it's as late as you left.
+	if current_job.has("from"):
+		minute = maxi(minute, current_job.from + roundi(float(result.get("elapsed", 0.0)) * MPS))
+	save()
 
 
 ## Seconds from the police being called to them arriving: your record shortens it.
@@ -703,6 +743,19 @@ func date_text(d := day) -> String:
 	return "%s %d %s %d" % [DAYS[t.weekday], t.day, MONTHS[t.month - 1], t.year]
 
 
+## A day as you'd say it: today, tomorrow, or its weekday.
+func day_word(d: int) -> String:
+	return "Today" if d == day else ("Tomorrow" if d == day + 1 else DAYS[date(d).weekday])
+
+
+## Minutes since midnight as a clock reads: 9:30am, 12pm.
+func time_text(m: int) -> String:
+	var h := floori(m / 60.0) % 24
+	var ampm := "am" if h < 12 else "pm"
+	var hh := (h + 11) % 12 + 1
+	return "%d%s" % [hh, ampm] if m % 60 == 0 else "%d:%02d%s" % [hh, m % 60, ampm]
+
+
 ## The season's last day: the end of September.
 func season_end() -> int:
 	return day_of(year, LAST_MONTH + 1, 1) - 1
@@ -725,41 +778,138 @@ func week_left() -> Array[int]:
 	return out
 
 
-## Book an ad from the paper into this week's first free day. Returns the day, or -1 with
-## the week full.
+## What's booked on a day, earliest first.
+func bookings(d := day) -> Array:
+	return calendar.get(d, [])
+
+
+## A day taken whole: court, jail, community service.
+func blocked(d: int) -> bool:
+	return bookings(d).any(func(b: Dictionary) -> bool: return b.has("court") or b.has("jail") or b.has("service"))
+
+
+func day_free(d: int) -> bool:
+	return bookings(d).is_empty()
+
+
+## Put a booking on a day, in time order.
+func _add(d: int, b: Dictionary) -> void:
+	var l: Array = bookings(d).duplicate()
+	b.day = d
+	l.append(b)
+	l.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return x.get("from", 0) < y.get("from", 0))
+	calendar[d] = l
+
+
+## Why an ad can't be booked, or "" if it can: its day's gone, taken whole, or its
+## window shuts before you could get there.
+func cant_book(ad: Dictionary) -> String:
+	if ad.day < day:
+		return "Gone"
+	if blocked(ad.day):
+		return "Day taken"
+	if ad.day == day and not can_go(ad):
+		return "Too late"
+	return ""
+
+
+## Book an ad from the paper on its day, however full (the gamble's yours). Returns the
+## day, or -1 if it can't be (cant_book).
 func book(ad: Dictionary) -> int:
-	for d in week_left():
-		if not calendar.has(d):
-			calendar[d] = ad
-			paper.erase(ad)
-			save()
-			return d
-	return -1
+	if cant_book(ad) != "":
+		return -1
+	_add(ad.day, ad)
+	paper.erase(ad)
+	save()
+	return ad.day
 
 
-## Today's booking: a job, {"court": case}, {"jail": true}, or empty.
+## Today's first booking: a job, {"court": case}, {"jail": true}, or empty.
 func today() -> Dictionary:
-	return calendar.get(day, {})
+	var l := bookings()
+	return l[0] if not l.is_empty() else {}
 
 
-## Off to today's job, on the best mower packed. Saved as started: quit before it's done
-## and it loads as the blackout.
-func start_job() -> void:
+## How many jobs are booked on a day.
+func jobs_on(d: int) -> int:
+	return bookings(d).filter(func(b: Dictionary) -> bool: return b.has("seed")).size()
+
+
+## Today's jobs still to go to, earliest first.
+func jobs_today() -> Array:
+	return bookings().filter(func(b: Dictionary) -> bool: return b.has("seed"))
+
+
+## When you'd get to a booking if you set off now: the drive, or its window opening.
+func arrival(b: Dictionary) -> int:
+	return maxi(minute + DRIVE, b.get("from", 0))
+
+
+## Whether you can still get there inside its window, before the day's out.
+func can_go(b: Dictionary) -> bool:
+	return minute < DAY_END and minute + DRIVE <= b.get("by", DAY_END)
+
+
+## Off to a job (the one picked on the board, else today's first), on the best mower
+## packed. You arrive when arrival() says, and their patience is what's left of the
+## window: `late` seconds of it gone already. Saved as started: quit before it's done and
+## it loads as the blackout.
+func start_job(b := {}) -> void:
+	if b.is_empty():
+		b = next_job if not next_job.is_empty() else today()
+	next_job = {}
 	equipped = "rideon" if packed_has("rideon") else ("petrol" if packed_has("petrol") else "push")
-	current_job = today()
+	current_job = b.duplicate(true)
+	if b.has("from"):
+		var at := arrival(b)
+		current_job.patience = (b.by - b.from) / MPS
+		current_job.late = (at - b.from) / MPS
+		minute = at
+	_unbook(b)
 	in_job = true
 	save()
 
 
-## The day's over, worked or not: Friday brings payday, September's last day the winter.
+## Take a booking off today's list.
+func _unbook(b: Dictionary) -> void:
+	var l: Array = bookings().filter(func(x: Dictionary) -> bool: return x != b)
+	if l.is_empty():
+		calendar.erase(day)
+	else:
+		calendar[day] = l
+
+
+## The day's over, worked or not: whatever's left you never turned up to. Friday brings
+## payday, September's last day the winter.
 func end_day() -> void:
+	for b: Dictionary in jobs_today():
+		_no_show(b)
 	calendar.erase(day)
 	if date().weekday == FRIDAY:
 		payday_pending = true
 	if day >= season_end():
 		winter_pending = true
 	day += 1
+	minute = DAY_START
 	save()
+
+
+## A booking you never turned up to: a classified's word gets round; a regular's mood
+## drops and their next visit's booked; community service waits for your next free day.
+func _no_show(b: Dictionary) -> void:
+	if b.has("service"):
+		var d := day + 1
+		while not day_free(d):
+			d += 1
+		_add(d, b)
+		return
+	missed.append(b.customer)
+	if b.has("regular") and regulars.has(b.regular):
+		var reg: Dictionary = regulars[b.regular]
+		reg.mood -= NO_SHOW_MOOD
+		_place(b.regular, day + cadence_now(reg))
+	else:
+		rep_trend = maxf(0.0, rep_trend - NO_SHOW_REP)
 
 
 ## Through the days with no job (or in jail) to the next booking, court, payday or the winter.
@@ -820,7 +970,7 @@ func answer_offer(how: String, ask := 0) -> String:
 			o.mood -= 10.0
 		o.rate = ask
 	regulars[o.id] = o
-	_place(o.id, o.day + o.cadence)
+	_place(o.id, o.day + cadence_now(o))
 	save()
 	return said
 
@@ -837,14 +987,21 @@ func _visit(id: int) -> Dictionary:
 	return j
 
 
-## Put a regular's next visit on the calendar near `target`: a clash shifts it a day
-## either way; nothing fits and that visit's missed, on to the one after.
+## How often a regular wants you just now: at the season's peak, twice as often (a week
+## at least), since the grass grows.
+func cadence_now(reg: Dictionary) -> int:
+	return maxi(7, floori(reg.cadence / 2.0)) if date().month in PEAK else reg.cadence
+
+
+## Put a regular's next visit on the calendar near `target`, however busy the day (their
+## window's their usual one): only a day taken whole shifts it a day either way; nothing
+## fits and that visit's missed, on to the one after.
 func _place(id: int, target: int) -> int:
 	var reg: Dictionary = regulars[id]
 	while target <= season_end():
 		for d: int in [target, target + 1, target - 1]:
-			if d > day and d <= season_end() and not calendar.has(d):
-				calendar[d] = _visit(id)
+			if d > day and d <= season_end() and not blocked(d):
+				_add(d, _visit(id))
 				return d
 		target += reg.cadence
 	return -1
@@ -863,15 +1020,20 @@ func _visited(id: int, r: Dictionary) -> void:
 		return
 	reg.mood = carried(reg.job, m)
 	reg.drift.append(["gnome", "flamingo"][reg.drift.size() % 2]) # ponytail: a token drift; beds, ponds, leaves when it matters
-	_place(id, day + reg.cadence)
+	var every := cadence_now(reg)
+	r.sooner = every < reg.cadence
+	_place(id, day + every)
 
 
 ## Let a regular go: they and their bookings leave the calendar.
 func drop(id: int) -> void:
 	regulars.erase(id)
 	for d: int in calendar.keys():
-		if calendar[d].get("regular", -1) == id:
+		var l: Array = bookings(d).filter(func(b: Dictionary) -> bool: return b.get("regular", -1) != id)
+		if l.is_empty():
 			calendar.erase(d)
+		else:
+			calendar[d] = l
 
 
 ## September's done: the winter as one ledger. The living cost to March (short, the
@@ -894,13 +1056,16 @@ func settle_winter() -> Dictionary:
 	reputation = lerpf(reputation, 50.0, 0.2)
 	rep_trend = lerpf(rep_trend, 50.0, 0.2)
 	record = maxf(0.0, record - 1.0) # a winter fades it, a little
-	var owed: Array = calendar.values().filter(func(b: Dictionary) -> bool: return b.has("court") or b.has("service"))
+	var owed: Array = []
+	for l: Array in calendar.values():
+		owed.append_array(l.filter(func(b: Dictionary) -> bool: return b.has("court") or b.has("service")))
 	year += 1
 	day = day_of(year, start_month, 1)
+	minute = DAY_START
 	calendar = {}
 	winter_pending = false
 	for i in owed.size(): # court and service the season ran out on come first in spring
-		calendar[day + i] = owed[i]
+		calendar[day + i] = [owed[i]]
 	for id: int in regulars:
 		_place(id, day + posmod(id, regulars[id].cadence))
 	paper = make_paper()
@@ -941,6 +1106,7 @@ func load_business() -> void:
 		else:
 			set(k, state[k])
 	_rng.randomize()
+	_upgrade_save()
 	in_run = true
 	run_over_reason = ""
 	last_result = {}
@@ -955,6 +1121,27 @@ func load_business() -> void:
 		end_day()
 
 
+## A business saved before the day's clock (one booking a day, no windows): each day's
+## booking into a list, and every job and ad given its window.
+func _upgrade_save() -> void:
+	for d: int in calendar:
+		if calendar[d] is Dictionary:
+			calendar[d] = [calendar[d]]
+		for b: Dictionary in calendar[d]:
+			if b.has("seed") and not b.has("from"):
+				_window(b)
+	for reg: Dictionary in regulars.values():
+		if not reg.job.has("from"):
+			_window(reg.job)
+	for o: Dictionary in paper:
+		if not o.has("from"):
+			_window(o)
+		if not o.has("day"):
+			o.day = day
+	if current_job.has("seed") and not current_job.has("from"):
+		_window(current_job)
+
+
 # ---------------------------------------------------------------- the record
 
 ## The police are involved: caught at the scene, a night in the cells and court tomorrow;
@@ -965,28 +1152,30 @@ func _charge(r: Dictionary) -> void:
 	var d := day + 1
 	if not caught:
 		d = day + SUMMONS_DAYS
-		while calendar.has(d) and d < season_end():
+		while not day_free(d) and d < season_end():
 			d += 1
 	_take_day(d, {"court": case})
 	r.court_day = d
 
 
-## Put something that won't move on a day (court, jail): a regular booked then shifts a
+## Put something that takes the whole day (court, jail): a regular booked then shifts a
 ## day if the calendar allows, else that visit's missed and their mood drops; a classified's lost.
 func _take_day(d: int, what: Dictionary) -> void:
-	var lost: Dictionary = calendar.get(d, {})
-	calendar[d] = what
-	if lost.has("regular") and regulars.has(lost.regular):
-		var moved := _place(lost.regular, d)
-		if moved < 0 or moved > d + 1:
-			regulars[lost.regular].mood -= 10.0
-			if moved > 0:
-				calendar[moved].start_mood = regulars[lost.regular].mood
-	elif lost.has("court") or lost.has("service"): # never lost: the next free day
-		var e := d + 1
-		while calendar.has(e):
-			e += 1
-		calendar[e] = lost
+	var lost := bookings(d)
+	calendar[d] = [what]
+	for b: Dictionary in lost:
+		if b.has("regular") and regulars.has(b.regular):
+			var moved := _place(b.regular, d)
+			if moved < 0 or moved > d + 1:
+				regulars[b.regular].mood -= NO_SHOW_MOOD
+				for v: Dictionary in bookings(moved):
+					if v.get("regular", -1) == b.regular:
+						v.start_mood = regulars[b.regular].mood
+		elif b.has("court") or b.has("service"): # never lost: the next free day
+			var e := d + 1
+			while not day_free(e):
+				e += 1
+			calendar[e] = [b]
 
 
 ## Today's court: pay a lawyer (LAWYERS index), then the roll. Guilty: the fine, the
@@ -1019,9 +1208,9 @@ func court(lawyer: int) -> Dictionary:
 		_take_day(day + 1 + i, {"jail": true})
 	var d: int = day + 1 + out.jail
 	for i in out.service: # your next free days
-		while calendar.has(d):
+		while not day_free(d):
 			d += 1
-		calendar[d] = service_job()
+		calendar[d] = [service_job()]
 	end_day()
 	return out
 

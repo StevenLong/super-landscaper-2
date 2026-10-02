@@ -26,7 +26,7 @@ func _initialize() -> void:
 	g.sell("robot")
 	assert(g.robots == 1 and g.packed_count("robot") == 1, "then one off the truck")
 	g.buy("robot")
-	g.calendar[g.day] = g.make_job(3)
+	g.calendar[g.day] = [g.make_job(3)]
 	g.start_job()
 	change_scene_to_file("res://main.tscn")
 

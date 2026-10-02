@@ -19,7 +19,7 @@ func _initialize() -> void:
 	g = root.get_node("Game")
 	g.save_path = "user://test_best.cfg"
 	g.new_run(7)
-	g.calendar[g.day] = g.make_job(3)
+	g.calendar[g.day] = [g.make_job(3)]
 	g.start_job()
 	change_scene_to_file("res://main.tscn")
 

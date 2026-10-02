@@ -49,6 +49,7 @@ func _init(job_data: Dictionary) -> void:
 	job = job_data
 	persona = Game.PERSONAS[job.persona]
 	mood = job.get("start_mood", persona.get("start_mood", 60.0)) # a regular brings their carried mood
+	elapsed = job.get("late", 0.0) # turned up partway through their window: that much of their patience gone
 	_stint = randf_range(20.0, 35.0)
 
 

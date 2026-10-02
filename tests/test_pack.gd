@@ -36,7 +36,7 @@ func _initialize() -> void:
 	g.packed.assign([])
 	g.buy("petrol")
 	g.upgrades.erase("trailer")
-	g.calendar[g.day] = g.make_job(3)
+	g.calendar[g.day] = [g.make_job(3)]
 	change_scene_to_file("res://pack.tscn")
 
 

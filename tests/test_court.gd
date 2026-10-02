@@ -12,7 +12,7 @@ func _initialize() -> void:
 	game = root.get_node("Game")
 	game.save_path = "user://test_best.cfg"
 	game.new_run(7)
-	game.calendar[game.day] = {"court": {"charge": 2.0, "tier": 2, "caught": false, "customer": "Keith Figgis"}}
+	game.calendar[game.day] = [{"court": {"charge": 2.0, "tier": 2, "caught": false, "customer": "Keith Figgis"}}]
 	change_scene_to_file("res://board.tscn")
 
 
@@ -38,9 +38,9 @@ func _process(_delta: float) -> bool:
 			if "GUILTY" in said:
 				assert(said.any(func(t: String) -> bool: return t.contains("community service")), "a first assault, summoned: service")
 			# Today's community service.
-			game.calendar = {game.day: game.service_job()}
+			game.calendar = {game.day: [game.service_job()]}
 			current_scene._ready()
-			assert(current_scene.find_child("Today", true, false).text == "Go", "service to go to")
+			assert(current_scene.find_child("Today", true, false).text.begins_with("Go"), "service to go to")
 			current_scene.find_child("Today", true, false).pressed.emit()
 		1:
 			assert(current_scene.name == "Main" and current_scene.job.service and current_scene.job.venue == "graveyard", "the churchyard")

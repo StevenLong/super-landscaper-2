@@ -171,6 +171,8 @@ func _ready() -> void:
 			lines.push_front("Back again: $%d a visit, as agreed." % job.pay)
 		if job.get("dog", false):
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
+		if job.has("by"): # the window's what's left of their patience
+			lines.append(("You're late. " if job.get("late", 0.0) > job.patience * 0.5 else "") + "Done by %s, please." % Game.time_text(job.by))
 		lines.append_array(["", "Mow the lawn, then walk up and ask to be paid. Your truck's for leaving."])
 		if Game.jobs_done == 0:
 			if mower.power == "stamina":
@@ -1045,7 +1047,7 @@ func _physics_process(delta: float) -> void:
 		_react()
 		if customer.nags == 1:
 			Sfx.play("sigh", 0.0) # the tip just went
-	hud.set_clock(customer.elapsed)
+	hud.set_clock(customer.elapsed, job)
 	$HUD/Face.expression = customer.face()
 	# Where they are: on the patio, at a window (the house draws them at the glass), or in.
 	$Client.visible = customer.where == "patio" or _door_walk
@@ -1684,6 +1686,8 @@ func wants_lines() -> Array:
 	var pace := "quickly" if p.patience < 0.95 else ("no rush" if p.patience > 1.25 else "in good time")
 	var finish := "every blade" if job.target >= 0.9 else ("roughly will do" if job.target <= 0.75 else "a tidy job")
 	lines.append("Wants it: %s, %s." % [pace, finish])
+	if job.has("by"):
+		lines.append("Done by %s." % Game.time_text(job.by))
 	if job.get("dog", false):
 		lines.append("%s the dog likes to escape." % job.dog_name)
 	return lines
