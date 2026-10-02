@@ -25,6 +25,7 @@ var on_plot := true ## on the property, not out next door (main._cross)
 var visited := true ## has been in the garden: once it wanders off out of sight, it's gone
 var body := false ## killed by a stone, not the blades: intact, lying there
 var seen := false ## a body the customer has already seen: carrying it past them again is no news
+var scared := 0.0 ## seconds left running from a horn: away, twice as fast, no pauses
 var _pause := 0.0
 var _dart := 0.0
 var _t := 0.0
@@ -53,7 +54,8 @@ func _physics_process(delta: float) -> void:
 			heading = Vector2.RIGHT.rotated(randf() * TAU)
 		queue_redraw()
 		return
-	if kind == "squirrel":
+	scared = maxf(0.0, scared - delta)
+	if kind == "squirrel" and scared <= 0.0:
 		if _pause > 0.0:
 			_pause -= delta
 			queue_redraw()
@@ -63,7 +65,7 @@ func _physics_process(delta: float) -> void:
 			_dart = randf_range(0.4, 1.2)
 			_pause = randf_range(0.2, 0.9)
 			heading = heading.rotated(randf_range(-0.9, 0.9))
-	var next := position + heading * speed * delta
+	var next := position + heading * speed * (2.0 if scared > 0.0 else 1.0) * delta
 	if grace > 0.0:
 		grace -= delta
 	elif blocked.is_valid() and blocked.call(next):
@@ -92,6 +94,15 @@ func _on_body_entered(b: Node2D) -> void:
 		run_over.emit(self, b)
 		return
 	squash()
+
+
+## A horn from `from` (global): it turns and runs away. Not when it's out cold or dead.
+func scare(from: Vector2) -> void:
+	if dead or body or out > 0.0:
+		return
+	heading = (global_position - from).normalized()
+	scared = 2.5
+	_pause = 0.0
 
 
 ## Out cold for a few seconds, where it lies.

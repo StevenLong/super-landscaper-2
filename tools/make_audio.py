@@ -385,6 +385,17 @@ def menu_song():
     song(96, lead, bass, "k...h...s...h...", "music_menu", lead_duty=0.5)
 
 
+def horn():
+    """The ride-on's horn: two flat square tones together, a short parp."""
+    total = n(0.45)
+    out = []
+    for i in range(total):
+        t = i / RATE
+        s = square(t * 349, 0.5) * 0.5 + square(t * 440, 0.4) * 0.4
+        out.append(s * env(i, total, 0.01, 0.06))
+    write("horn", lowpass(out, 0.25))
+
+
 def main():
     engine(28.0, 28, 0.35, "engine_petrol")
     engine(20.0, 20, 0.5, "engine_rideon")
@@ -416,6 +427,7 @@ def main():
     knock()
     door()
     cough()
+    horn()
 
 
 if __name__ == "__main__":

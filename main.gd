@@ -46,6 +46,7 @@ const FOOTPATH := 40 ## the pavement between the front hedge and the kerb
 const ROAD := 150
 const BORDER_UP := 29.0 ## how far a hedge or fence rises in the 3/4 view (art/hedge_h.png face)
 const DOOR_PACE := 50.0 ## px/s the customer walks between their door and the patio
+const HORN_REACH := 160.0 ## px round the ride-on a honk sends critters running (not the dog)
 const SIREN_LOUDEST := -16.0 ## dB as the police arrive (was -6: far too loud, S14 play)
 const GRAVEL := Color(1.0, 0.88, 0.68) ## tints the grey gravel tile for the drive
 const TERRACE_FRONT := 64.0 ## a terrace's scrap of front garden, between the house and the road
@@ -98,6 +99,7 @@ var _held_seen := false ## the body in your hands is one they've already seen (A
 var _focus: Node2D ## brackets round what interact would do (_draw_focus)
 var _knocking := false ## knocked, waiting for them to answer
 var _where := "patio" ## where the customer was last frame, to walk them through the door
+var _horn_cool := 0.0 ## seconds till the horn honks again
 var _door_walk := false ## the customer's walking between the patio and their door
 var _door_tw: Tween
 var _out := 0.0 ## seconds the critter in your hands has left out cold (0: awake)
@@ -1000,6 +1002,16 @@ func shake(amount: float) -> void:
 
 
 ## Floating text in the world, rising and fading: bills, thanks, that sort of thing.
+## The ride-on's horn: critters near it turn and run (the dog takes no notice).
+func honk() -> void:
+	_horn_cool = 0.6
+	Sfx.play("horn", 0.0)
+	pop_text("HONK!", mower.global_position + Vector2(0, -30))
+	for a in $Animals.get_children():
+		if a is Animal and a.global_position.distance_to(mower.global_position) < HORN_REACH:
+			a.scare(mower.global_position)
+
+
 func pop_text(text: String, at: Vector2, color := Color("f8d048")) -> void:
 	var l := Label.new()
 	l.text = text
@@ -1018,6 +1030,9 @@ func pop_text(text: String, at: Vector2, color := Color("f8d048")) -> void:
 func _physics_process(delta: float) -> void:
 	if over:
 		return
+	_horn_cool = maxf(0.0, _horn_cool - delta)
+	if walker == null and mower.sprite_kind == "rideon" and _horn_cool <= 0.0 and Input.is_action_just_pressed("horn"):
+		honk()
 	var nag := customer.tick(delta)
 	if nag != "":
 		_react()
@@ -1124,7 +1139,7 @@ func _hint() -> String:
 		return _fired_hint()
 	var off := ("   %s engine off" % Game.key("interact")) if mower.power == "fuel" else ""
 	if mower.sprite_kind == "rideon":
-		return "Gear %d   %s up, %s down" % [mower.gear, Game.key("gear_up"), Game.key("gear_down")] + off
+		return "Gear %d   %s up, %s down   %s horn" % [mower.gear, Game.key("gear_up"), Game.key("gear_down"), Game.key("horn")] + off
 	if off != "" and mower.velocity.length() < 5.0:
 		return off.strip_edges()
 	return ""
@@ -2487,7 +2502,12 @@ func _spawn_spot(kind: String) -> Dictionary:
 	for i in 40: # not where a building stands against the boundary (a terrace, the church)
 		var c: Dictionary = pool[randi() % pool.size()]
 		var p := (c.from as Vector2).lerp(c.to, randf_range(0.05, 0.95))
-		if not _blocked(p + (c.inward as Vector2) * 12.0) and not _blocked(p + (c.inward as Vector2) * 24.0):
+		var inward: Vector2 = c.inward
+		var clear := true # its way in, as wide as a critter, not grazing a wall's corner
+		for d: float in [12.0, 24.0]:
+			for side: float in [-10.0, 0.0, 10.0]:
+				clear = clear and not _blocked(p + inward * d + inward.orthogonal() * side)
+		if clear:
 			e = c
 			at = p
 			break
