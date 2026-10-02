@@ -420,7 +420,8 @@ func _regular_row(id: int) -> Control:
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(l)
-	row.add_child(UI.button("Drop", func() -> void:
+	var owed := roundi(reg.get("prepaid", 0) * reg.get("prepaid_each", 0.0))
+	row.add_child(UI.button("Drop" + (" (owe $%d)" % owed if owed > 0 else ""), func() -> void:
 		Game.drop(id)
 		_build(), 18))
 	return UI.panel(row)

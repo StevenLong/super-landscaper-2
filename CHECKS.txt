@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (10 checks, 3 loads, about 60 minutes)
+PLAY CHECKS OWED  (11 checks, 3 loads, about 60 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -75,6 +75,14 @@ S17-LATE
 Arrive partway through someone's window (book one that opens early, go late): they're
 already partway through their patience, glancing at their watch sooner. Does it read
 that you're late, and is the cost fair?
+>
+
+S17-TERMS
+Regulars change softly (193b): keep a few regulars for a few weeks. After a good visit,
+ask for a raise from the summary; let one go sour (a so-so visit or two). Do the changes
+(fewer visits, a cheaper rate, more visits, a better rate) feel earned and readable? Is
+the raise a gamble worth taking? (Upfront pay only comes from regulars back after a
+winter, so it's verified below, not owed.)
 >
 
 S17-BOARD
@@ -186,6 +194,15 @@ VERIFIED  The verifier's third run (on the clock): the calendar's lists, windows
           page left the cursor on a dead button, 4 or more overlapping windows drew over
           each other, a long late job ran the clock past midnight, a peak regular's list
           entry didn't say they come more often in summer.
+VERIFIED  193b, regulars change softly, by test (test_season _soft, new test_terms): sour
+          means fewer visits, then cheaper once four-weekly; under the floor, cheaper and a
+          strike, twice running and they're gone; pleased after 3 visits, now and then more
+          visits or a better rate; the raise (a happy one takes a modest ask, a big ask of a
+          so-so one gets "can't afford it", rate kept); a month up front only from one back
+          after a winter, paid now at 90%, the visits pay nothing on the day, dropping them
+          owes the rest back; back after a winter, rate up 10%. test_terms drives the raise
+          and upfront screens through the real summary and checks the board's Drop and
+          today's line; screenshots of the summary, the raise and the upfront screens.
 TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
           and slow on big lawns either way (filed under 189).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.

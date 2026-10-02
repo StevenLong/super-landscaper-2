@@ -21,25 +21,32 @@ func _ready() -> void:
 	books.add_child(_money(r))
 	books.add_child(_reputation(r))
 	root.add_child(books)
-	var offered := not Game.offer.is_empty()
+	var offered := not Game.offer.is_empty() or not Game.upfront.is_empty()
+	var row := UI.hbox(14)
+	root.add_child(row)
 	var go := UI.button("Continue" if offered else "Back to the board", func() -> void:
-		if offered:
+		if not Game.offer.is_empty():
 			_offer_screen()
+		elif not Game.upfront.is_empty():
+			_upfront_screen()
 		else:
 			get_tree().change_scene_to_file("res://board.tscn"), 24)
 	go.name = "Continue"
-	root.add_child(go)
+	row.add_child(go)
+	var id: int = Game.current_job.get("regular", -1)
+	if r.get("can_raise", false) and Game.regulars.has(id) and not offered: # a good visit: try your luck
+		var raise := UI.button("Ask for a raise", _raise_screen.bind(id), 24)
+		raise.name = "Raise"
+		row.add_child(raise)
 	UI.focus(go)
 
 
-## They want you back (design doc, The Business: regulars): a win, so its own screen.
-## Their face and their words; take it, push for more (you name the figure: ask less and
-## they're likelier to say yes), or turn them down politely, which still does your name good.
-func _offer_screen() -> void:
+## A screen of its own with a title and a customer's face beside their words. Returns
+## [root column, face, words].
+func _page(title_text: String, look: Dictionary, expression: String, words: String) -> Array:
 	for c in get_children():
 		remove_child(c)
 		c.queue_free()
-	var o: Dictionary = Game.offer
 	var bg := ColorRect.new()
 	bg.color = UI.BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -49,22 +56,102 @@ func _offer_screen() -> void:
 	add_child(center)
 	var root := UI.vbox(18)
 	center.add_child(root)
-	var title := UI.label("THEY WANT YOU BACK", 40, UI.GOLD)
+	var title := UI.label(title_text, 40, UI.GOLD)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root.add_child(title)
 	var top := UI.hbox(18)
 	root.add_child(top)
 	var face := Face.new()
 	face.custom_minimum_size = Vector2(132, 132)
-	face.set_look(o.job.look)
-	face.expression = "delighted"
+	face.set_look(look)
+	face.expression = expression
 	top.add_child(face)
-	var every: String = {7: "every week", 14: "every fortnight", 28: "every four weeks"}[o.cadence]
-	var said := UI.label("%s catches you at the truck: \"Could you come %s? $%d a visit.\"" % [o.job.customer, every, o.rate], 22)
+	var said := UI.label(words, 22)
 	said.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	said.custom_minimum_size.x = 620
 	said.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(said)
+	return [root, face, said]
+
+
+## Back to the board, focused.
+func _back(root: Control) -> void:
+	var go := UI.button("Back to the board", func() -> void: get_tree().change_scene_to_file("res://board.tscn"), 24)
+	go.name = "Continue"
+	root.add_child(go)
+	UI.focus(go)
+
+
+## A good visit from a regular: ask for more (design doc, Regulars change softly). You
+## name the figure; ask a lot and they may not afford you.
+func _raise_screen(id: int) -> void:
+	var reg: Dictionary = Game.regulars[id]
+	var p := _page("A RAISE?", reg.job.look, "happy", "%s pays you $%d a visit. They look pleased with the lawn. Ask for more?" % [reg.job.customer, reg.rate])
+	var root: VBoxContainer = p[0]
+	var asked := [roundi(reg.rate * 1.1 / 5.0) * 5]
+	var choices := UI.vbox(12)
+	root.add_child(choices)
+	var buttons := UI.hbox(12)
+	var ask := UI.button("Ask for $%d" % asked[0], func() -> void:
+		var reply := Game.ask_raise(id, asked[0])
+		p[2].text = {"yes": "\"Fair enough. $%d it is.\"", "grudging": "\"...If I must. $%d.\" They're not pleased.",
+			"no": "\"I can't afford that, I'm afraid.\" Still $%d a visit, and they're a little put out."}[reply] % Game.regulars[id].rate
+		p[1].expression = {"yes": "happy", "grudging": "annoyed", "no": "neutral"}[reply]
+		choices.queue_free()
+		_back(root), 20)
+	ask.name = "AskRaise"
+	buttons.add_child(ask)
+	var leave := UI.button("Leave it", func() -> void: get_tree().change_scene_to_file("res://board.tscn"), 20)
+	leave.name = "Leave"
+	buttons.add_child(leave)
+	var row := UI.hbox(14)
+	row.add_child(UI.label("Ask for:", 22))
+	row.add_child(UI.amount(reg.rate + 5, roundi(reg.rate * Game.ASK_MAX / 5.0) * 5, 5, asked[0], func(v: int) -> void:
+		asked[0] = v
+		ask.text = "Ask for $%d" % v))
+	choices.add_child(row)
+	choices.add_child(buttons)
+	UI.focus(ask)
+
+
+## A loyal regular offers a month up front: money now, the visits owed.
+func _upfront_screen() -> void:
+	var u: Dictionary = Game.upfront
+	var reg: Dictionary = Game.regulars[u.id]
+	var p := _page("A MONTH UP FRONT", reg.job.look, "delighted", "%s: \"Shall I pay you for the next %d visit%s now? $%d.\" (Drop them before those are done and you owe the rest back.)"
+		% [reg.job.customer, u.visits, "" if u.visits == 1 else "s", u.amount])
+	var root: VBoxContainer = p[0]
+	var buttons := UI.hbox(12)
+	root.add_child(buttons)
+	var take := UI.button("Take it: $%d" % u.amount, func() -> void:
+		Game.take_upfront()
+		p[2].text = "$%d in your pocket. %d visit%s owed." % [u.amount, u.visits, "" if u.visits == 1 else "s"]
+		buttons.queue_free()
+		_back(root), 20)
+	take.name = "Accept"
+	buttons.add_child(take)
+	var no := UI.button("No thanks", func() -> void:
+		Game.upfront = {}
+		Game.save()
+		p[2].text = "\"As you like.\""
+		buttons.queue_free()
+		_back(root), 20)
+	no.name = "Decline"
+	buttons.add_child(no)
+	UI.focus(take)
+
+
+## They want you back (design doc, The Business: regulars): a win, so its own screen.
+## Their face and their words; take it, push for more (you name the figure: ask less and
+## they're likelier to say yes), or turn them down politely, which still does your name good.
+func _offer_screen() -> void:
+	var o: Dictionary = Game.offer
+	var every: String = {7: "every week", 14: "every fortnight", 28: "every four weeks"}[o.cadence]
+	var p := _page("THEY WANT YOU BACK", o.job.look, "delighted", "%s catches you at the truck: \"Could you come %s? $%d a visit.%s\"" % [o.job.customer, every, o.rate,
+		" More often till August, mind: the grass is growing." if Game.cadence_now(o) < o.cadence else ""])
+	var root: VBoxContainer = p[0]
+	var face: Face = p[1]
+	var said: Label = p[2]
 	var asked := [roundi(o.rate * Game.HAGGLE / 5.0) * 5]
 	var choices := UI.vbox(12)
 	root.add_child(choices)
@@ -193,10 +280,27 @@ func _rundown(r: Dictionary) -> Control:
 		also.append("Your %s's still on their lawn. The police have it now" % r.left_behind.to_lower())
 	if r.get("lost_regular", false):
 		also.append("They won't be booking you again")
-	if r.get("sooner", false):
-		also.append("The grass is growing: they want you back sooner")
+	if r.has("owed_back") and r.owed_back > 0:
+		also.append("You owe back $%d they paid up front" % r.owed_back)
+	match r.get("terms", ""):
+		"fewer":
+			also.append("They'll have you less often now")
+		"cheaper":
+			also.append("They want it cheaper: $%d a visit" % Game.regulars.get(Game.current_job.get("regular", -1), {}).get("rate", 0))
 	if not also.is_empty():
 		info.add_child(UI.label("   ".join(also), 20, UI.BAD))
+	var good: Array[String] = []
+	if r.get("sooner", false):
+		good.append("The grass is growing: they want you back sooner")
+	match r.get("terms", ""):
+		"more":
+			good.append("Pleased: they want you more often")
+		"better":
+			good.append("Pleased: they've put you up to $%d" % Game.regulars.get(Game.current_job.get("regular", -1), {}).get("rate", 0))
+	if Game.current_job.get("prepaid", false):
+		good.append("Paid up front")
+	if not good.is_empty():
+		info.add_child(UI.label("   ".join(good), 20, UI.GOOD))
 	for l: Label in info.get_children(): # long lines wrap, not shove the books off the screen
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size.x = 640

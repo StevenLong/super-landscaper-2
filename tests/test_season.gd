@@ -217,9 +217,12 @@ func _regulars() -> void:
 	_play(70.0)
 	var next: Dictionary = g.bookings(d0 + 13)[0]
 	assert(next.get("regular", -1) == j.seed and next.start_mood == 65.0 and next.drift == ["gnome"], "the next week: mood (60 + 70) / 2, a gnome crept in")
-	# A bad one loses them.
+	# A bad one: they want it cheaper. A second running loses them.
 	g.day = d0 + 13
 	var r := _play(30.0)
+	assert(not r.has("lost_regular") and r.terms == "cheaper" and g.regulars[j.seed].rate == roundi(j.pay * 0.9 / 5.0) * 5, "under the floor once: cheaper")
+	g.day = d0 + 20
+	r = _play(30.0)
 	assert(r.lost_regular and not g.regulars.has(j.seed) and g.calendar.values().all(func(l: Array) -> bool: return l.all(func(b: Dictionary) -> bool: return b.get("regular", -1) != j.seed)),
 		"under the floor: gone, bookings and all")
 	# The haggle: a happy client says yes to 20% more; an unhappy one never plainly.
@@ -238,10 +241,88 @@ func _regulars() -> void:
 		g.offer = {"id": 3, "job": j, "cadence": 14, "rate": 100, "mood": 70.0, "day": g.day, "drift": []}
 		assert(g.answer_offer("haggle", 100) == "yes" and g.regulars[3].rate == 100, "a modest ask, a sure yes")
 		g.drop(3)
+	_soft(j)
 	# Turning them down still does your name good: you were wanted.
 	g.offer = {"id": 4, "job": j, "cadence": 14, "rate": 100, "mood": 70.0, "day": g.day, "drift": []}
 	var rep: float = g.reputation
 	assert(g.answer_offer("decline") == "no" and g.reputation == rep + g.OFFER_REP and not g.regulars.has(4), "declined: a little reputation")
+
+
+## Regulars change softly (design doc, Time is the scarce thing): terms move with how a
+## visit ends, you can ask for a raise, a loyal one may pay a month up front.
+func _soft(j: Dictionary) -> void:
+	var reg := {"id": 7, "job": j, "cadence": 14, "rate": 100, "mood": 60.0, "drift": []}
+	g.regulars[7] = reg
+	assert(g._terms(reg, 45.0) == "fewer" and reg.cadence == 28, "sour: four-weekly now")
+	assert(g._terms(reg, 45.0) == "cheaper" and reg.rate == 90 and reg.cadence == 28, "sour again, already four-weekly: cheaper")
+	assert(g._terms(reg, 70.0) == "" and reg.strikes == 0, "a fair visit: nothing changes")
+	reg.visits = 3
+	var seen := {}
+	for i in 40:
+		reg.cadence = 14
+		reg.rate = 100
+		seen[g._terms(reg, 95.0)] = true
+	assert(seen.has("more") and seen.has("") and not seen.has("better"), "pleased, fortnightly: sometimes more visits")
+	reg.cadence = 7
+	for i in 40:
+		g._terms(reg, 95.0)
+	assert(reg.rate > 100 and reg.cadence == 7, "pleased and weekly already: a better rate")
+	# Asking for a raise: a happy one takes a modest ask; past what they'll stand, a no, rate kept.
+	reg.rate = 100
+	reg.mood = 90.0
+	for i in 20:
+		reg.rate = 100
+		assert(g.ask_raise(7, 105) == "yes" and reg.rate == 105, "a happy regular, a modest raise")
+	var said := {}
+	for i in 30:
+		reg.rate = 100
+		reg.mood = 50.0
+		var s: String = g.ask_raise(7, 150)
+		said[s] = true
+		if s == "no":
+			assert(reg.rate == 100 and reg.mood == 45.0, "can't afford you: the old rate, a little put out")
+	assert(said.has("no"), "ask a lot of a so-so regular and they can't afford it")
+	# A month up front, only from one back after a winter, and owed back if you drop them.
+	g.calendar = {}
+	g.upfront = {}
+	reg.mood = 90.0
+	reg.cadence = 7
+	reg.rate = 100
+	reg.prepaid = 0
+	var r := {}
+	for i in 30:
+		g.current_job = g._visit(7)
+		r = {"outcome": "paid", "mood": 100.0}
+		g._visited(7, r)
+	assert(g.upfront.is_empty(), "a first-season regular never offers a month up front")
+	reg.seasons = 1
+	for i in 60:
+		if not g.upfront.is_empty():
+			break
+		reg.prepaid = 0
+		g.current_job = g._visit(7)
+		g._visited(7, {"outcome": "paid", "mood": 100.0})
+	assert(g.upfront.id == 7 and g.upfront.visits == 4, "loyal and delighted: four weekly visits up front")
+	var cash: int = g.money
+	var amount: int = g.upfront.amount
+	g.take_upfront()
+	assert(g.money == cash + amount and reg.prepaid == 4 and amount < 4 * reg.rate, "paid now, at a discount")
+	var d: int = g.calendar.keys().min()
+	g.day = d
+	g.minute = g.DAY_START
+	g.start_job()
+	assert(g.current_job.pay == 0 and g.current_job.prepaid, "a prepaid visit pays nothing on the day")
+	g.record_result({"outcome": "paid", "net": 0, "paid": 0, "rep": 2.0, "mood": 70.0})
+	assert(reg.prepaid == 3, "three to go")
+	cash = g.money
+	assert(g.drop(7) == roundi(amount * 3 / 4.0) and g.money == cash - roundi(amount * 3 / 4.0), "dropped: the three not done go back")
+	# Loyalty compounds: back after a winter, their rate creeps up.
+	g.regulars[8] = {"id": 8, "job": j, "cadence": 14, "rate": 100, "mood": 100.0, "drift": []}
+	g.day = g.season_end()
+	g.money = 5000
+	g.end_day()
+	var w: Dictionary = g.settle_winter()
+	assert(g.regulars[8].rate == 110 and g.regulars[8].seasons == 1 and w.back[0].contains("$110"), "back in spring, $10 more")
 
 
 ## Put a case on today and hear it with this lawyer until it goes `guilty` (or not).

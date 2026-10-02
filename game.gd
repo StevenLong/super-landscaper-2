@@ -126,7 +126,12 @@ const LIVING := 50 ## rent and food, a week
 const LAST_MONTH := 9 ## the season ends with September
 const WINTER_WEEKS := 26 ## October to March: the living cost only (the vig sleeps, for now)
 const FRIDAY := 5 ## payday, in Time's weekday numbers (Sunday is 0)
-const FLOOR := 35.0 ## a regular's visit ending in a mood under this loses them
+const FLOOR := 35.0 ## a regular's visit ending under this: they want it cheaper; twice running and they're gone
+const SOUR := 50.0 ## a regular's visit ending under this: they want you less often
+const PLEASED := 85.0 ## a regular of a few visits ending over this may offer more (visits, or a better rate)
+const RAISE_MOOD := 60.0 ## a regular's visit ending this well: you can ask for a raise
+const LOYAL_RAISE := 1.1 ## a regular back after the winter: their rate creeps up this much
+const UPFRONT_OFF := 0.9 ## a month up front comes at this share of the visits' pay
 const HAGGLE := 1.2 ## pushing for more asks this much, by default (you pick the figure)
 const ASK_MAX := 1.5 ## the most you can ask, times their rate
 const ASK_SLOPE := 2.5 ## each 10% asked under (over) HAGGLE adds (takes) this tenth to the chance of a yes
@@ -239,6 +244,7 @@ var next_job := {} ## the booking picked on the board, for packing and the job
 var missed: Array[String] = [] ## who you didn't turn up for, for the board to say
 var regulars := {} ## id (their first job's seed) -> {id, job, cadence, rate, mood, drift}
 var offer := {} ## a regular's offer after the job just done, until answered
+var upfront := {} ## a loyal regular's offer of a month up front {id, visits, amount}, until answered
 var payday_pending := false
 var winter_pending := false
 var in_job := false ## a job started and not finished: loading onto it is the blackout
@@ -246,7 +252,7 @@ var blackout := {} ## the job you blacked out on, for the board to break the new
 ## What the save keeps: the whole business.
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
-	"calendar", "paper", "regulars", "offer", "payday_pending", "winter_pending", "in_job", "current_job"]
+	"calendar", "paper", "regulars", "offer", "upfront", "payday_pending", "winter_pending", "in_job", "current_job"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -317,6 +323,7 @@ func new_run(seed_value := 0) -> void:
 	missed = []
 	regulars = {}
 	offer = {}
+	upfront = {}
 	payday_pending = false
 	winter_pending = false
 	in_job = false
@@ -863,6 +870,9 @@ func start_job(b := {}) -> void:
 	next_job = {}
 	equipped = "rideon" if packed_has("rideon") else ("petrol" if packed_has("petrol") else "push")
 	current_job = b.duplicate(true)
+	if b.has("regular") and regulars.has(b.regular) and regulars[b.regular].get("prepaid", 0) > 0:
+		current_job.pay = 0 # paid up front
+		current_job.prepaid = true
 	if b.has("from"):
 		var at := arrival(b)
 		current_job.patience = (b.by - b.from) / MPS
@@ -978,6 +988,64 @@ func answer_offer(how: String, ask := 0) -> String:
 	return said
 
 
+## Money to the nearest $5.
+func _round5(x: float) -> int:
+	return roundi(x / 5.0) * 5
+
+
+## Ask a regular for a raise to `ask` a visit, after a good visit (the haggle, design doc
+## Regulars change softly): the happier they are and the less you ask, the likelier a yes;
+## near the edge, yes but sore; past it, they can't afford you and say so, a little put
+## out. Returns "yes", "grudging" or "no".
+func ask_raise(id: int, ask: int) -> String:
+	var reg: Dictionary = regulars[id]
+	var yes := clampf((reg.mood - 50.0) / 40.0 + (HAGGLE - float(ask) / reg.rate) * ASK_SLOPE, 0.0, 1.0)
+	var roll := _rng.randf()
+	var said := "yes"
+	if roll >= yes + 0.3:
+		reg.mood -= 5.0
+		said = "no"
+	else:
+		if roll >= yes:
+			reg.mood -= 10.0
+			said = "grudging"
+		reg.rate = ask
+	_rebook(id)
+	save()
+	return said
+
+
+## A month of a loyal regular's visits paid now, at a discount: take it, and those visits
+## pay nothing on the day. Drop them (or lose them) before they're done and you owe the
+## rest back.
+func take_upfront() -> void:
+	var u := upfront
+	upfront = {}
+	if u.is_empty() or not regulars.has(u.id):
+		return
+	var reg: Dictionary = regulars[u.id]
+	money += u.amount
+	reg.prepaid = u.visits
+	reg.prepaid_each = float(u.amount) / u.visits
+	save()
+
+
+## What you owe a regular you're losing for visits they paid up front.
+func _repay(reg: Dictionary) -> int:
+	var owed := roundi(reg.get("prepaid", 0) * reg.get("prepaid_each", 0.0))
+	money -= owed
+	return owed
+
+
+## Their booked visits take their terms as they stand now (rate, start mood).
+func _rebook(id: int) -> void:
+	for l: Array in calendar.values():
+		for b: Dictionary in l:
+			if b.get("regular", -1) == id:
+				b.pay = regulars[id].rate
+				b.start_mood = regulars[id].mood
+
+
 ## A regular's visit as a job: their garden by its seed, their rate (no tips), their
 ## carried mood, and whatever's crept in since.
 func _visit(id: int) -> Dictionary:
@@ -1010,26 +1078,64 @@ func _place(id: int, target: int) -> int:
 	return -1
 
 
-## A regular's visit is done: under the floor (or anything but paid) and they're gone;
-## otherwise the mood carries, the garden drifts, and the next visit's booked.
+## A regular's visit is done. Anything but paid, or a second visit running under the
+## floor, and they're gone. Otherwise their terms move softly with how it ended (_terms),
+## the mood carries, the garden drifts, and the next visit's booked. A good one and you
+## can ask for a raise; a loyal one may offer a month up front.
 func _visited(id: int, r: Dictionary) -> void:
 	if not regulars.has(id):
 		return
 	var reg: Dictionary = regulars[id]
 	var m := end_mood(r)
-	if r.outcome != "paid" or m < FLOOR:
+	reg.visits = reg.get("visits", 0) + 1
+	if current_job.get("prepaid", false):
+		reg.prepaid -= 1
+	if r.outcome != "paid" or (m < FLOOR and reg.get("strikes", 0) >= 1):
+		r.owed_back = _repay(reg)
 		drop(id)
 		r.lost_regular = true
 		return
+	r.terms = _terms(reg, m)
+	r.can_raise = m >= RAISE_MOOD
 	reg.mood = carried(reg.job, m)
+	if reg.get("seasons", 0) >= 1 and m >= 80.0 and reg.get("prepaid", 0) <= 0 and _rng.randf() < 0.3:
+		var n := maxi(1, floori(28.0 / reg.cadence))
+		upfront = {"id": id, "visits": n, "amount": _round5(n * reg.rate * UPFRONT_OFF)}
 	reg.drift.append(["gnome", "flamingo"][reg.drift.size() % 2]) # ponytail: a token drift; beds, ponds, leaves when it matters
 	var every := cadence_now(reg)
 	r.sooner = every < reg.cadence
 	_place(id, day + every)
 
 
-## Let a regular go: they and their bookings leave the calendar.
-func drop(id: int) -> void:
+## How a regular's terms move after a visit ending in mood `m` (design doc, Regulars
+## change softly): under the floor, a cheaper rate (and a strike: twice running loses
+## them); sour, fewer visits (cheaper once they're four-weekly); pleased, after a few
+## visits, now and then more visits or a better rate. Returns what changed, or "".
+func _terms(reg: Dictionary, m: float) -> String:
+	if m < FLOOR:
+		reg.strikes = 1
+		reg.rate = _round5(reg.rate * 0.9)
+		return "cheaper"
+	reg.strikes = 0
+	if m < SOUR:
+		if reg.cadence < 28:
+			reg.cadence *= 2
+			return "fewer"
+		reg.rate = _round5(reg.rate * 0.9)
+		return "cheaper"
+	if m >= PLEASED and reg.visits >= 3 and _rng.randf() < 0.5:
+		if reg.cadence > 7:
+			reg.cadence = floori(reg.cadence / 2.0)
+			return "more"
+		reg.rate = _round5(reg.rate * 1.1)
+		return "better"
+	return ""
+
+
+## Let a regular go: they and their bookings leave the calendar, and what they paid up
+## front for visits not yet done goes back. Returns that.
+func drop(id: int) -> int:
+	var owed := _repay(regulars[id]) if regulars.has(id) else 0
 	regulars.erase(id)
 	for d: int in calendar.keys():
 		var l: Array = bookings(d).filter(func(b: Dictionary) -> bool: return b.get("regular", -1) != id)
@@ -1037,6 +1143,7 @@ func drop(id: int) -> void:
 			calendar.erase(d)
 		else:
 			calendar[d] = l
+	return owed
 
 
 ## September's done: the winter as one ledger. The living cost to March (short, the
@@ -1052,9 +1159,12 @@ func settle_winter() -> Dictionary:
 	for id: int in regulars.keys():
 		var reg: Dictionary = regulars[id]
 		if _rng.randf() < reg.mood / 100.0:
-			back.append(reg.job.customer)
+			reg.seasons = reg.get("seasons", 0) + 1 # loyalty compounds: their rate creeps up
+			reg.rate = _round5(reg.rate * LOYAL_RAISE)
+			back.append("%s ($%d)" % [reg.job.customer, reg.rate])
 		else:
 			gone.append(reg.job.customer)
+			_repay(reg) # what they paid up front for next year goes back
 			regulars.erase(id)
 	reputation = lerpf(reputation, 50.0, 0.2)
 	rep_trend = lerpf(rep_trend, 50.0, 0.2)

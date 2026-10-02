@@ -169,7 +169,7 @@ func _ready() -> void:
 		get_tree().paused = true
 		var lines: Array = job.brief.duplicate()
 		if job.has("regular"): # the face shows how the last visits left them
-			lines.push_front("Back again: $%d a visit, as agreed." % job.pay)
+			lines.push_front("Back again: paid up front." if job.get("prepaid", false) else "Back again: $%d a visit, as agreed." % job.pay)
 		if job.get("dog", false):
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
 		if job.has("by"): # the window's what's left of their patience
