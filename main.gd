@@ -1742,7 +1742,7 @@ func set_robot(at: Vector2, dir: Vector2) -> Robot:
 ## Anything alive or breakable near p (global) stops a robot mower: you, your mower, the
 ## dog, the customer, a critter or a body, another robot, anything but a plain stone.
 func _robot_blocked(p: Vector2) -> bool:
-	var near := func(n: Node2D) -> bool: return n != null and is_instance_valid(n) and n.global_position.distance_to(p) < 18.0
+	var near := func(n: Variant) -> bool: return is_instance_valid(n) and (n as Node2D).global_position.distance_to(p) < 18.0 # untyped: a typed param rejects a freed node (the dog, handed home) before the check
 	if near.call(walker) or near.call(mower) or near.call(dog) or (customer.where == "patio" and near.call($Client)):
 		return true
 	if robots.any(near) or $Animals.get_children().any(near):

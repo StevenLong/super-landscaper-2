@@ -54,6 +54,10 @@ func _physics_process(_delta: float) -> bool:
 			m = current_scene
 			m.hedgehog_every = 9999.0
 			m.squirrel_every = 9999.0
+			m.dog = Dog.new() # handed home: freed, the reference left behind
+			m.dog.free()
+			assert(not m._robot_blocked(Vector2.ZERO), "a freed dog blocks nothing (and doesn't crash)")
+			m.dog = null
 			m._on_choice("start")
 			assert(m.robots_left == 2, "two robots on the truck")
 			m.hop_off()
