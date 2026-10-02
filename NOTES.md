@@ -108,22 +108,45 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    and only 8 to 25% of a big one (1600 x 900 or more) in 5 minutes: slow. S15-ROBOT: $150
    is pocket change after the first month, and cheap doesn't make it good: price it with
    the tiers and 193's pace.
-193. [DESIGN, large] Pace and escalation (S14-PACE, the dev's biggest concern). One big job
-   and you're set: the loan's paid, tens of thousands by month two, nothing to buy, no
-   pressure. The week fills with the same big venue reshuffled: well paid, easy, samey.
-   S14-RING ties in: the bars are 3 or 4 steps (0, 20, 55, 75), no gradual climb. The dev's
-   lead, unsure: escalation inside the jobs (more critters and trouble per visit, maybe the
-   longer you stay), not only outside them; or back toward the coin-op shape. Needs a grill
-   before any retune of PAPER, REACH, the vig or pay.
+193. Grilled 2026-10-02: time is the scarce thing (design doc, The Business). Build steps:
+193a. [FEATURE, large] The day clock: a booking is a window and the customer's patience is
+   that window, on one clock that runs in the job (late arrival leaves less); free booking,
+   several jobs a day, a drive chunk between; the paper swelling with the season and
+   regulars asking extra visits at the peak. The corkboard screen (big calendar, several
+   entries a day, the paper to page through, the phone) replaces the board's calendar,
+   built as the screen the office will open; actions that cost time preview it on the
+   clock. Then play: does overbooking feel like a gamble?
+193b. [FEATURE, moderate] Regulars change softly: terms move with carried mood, the season and
+   your rates (raise at a visit through the haggle, some can't afford you); the floor in
+   steps (fewer visits, cheaper, then lost); loyalty compounding; upfront pay only from
+   loyal regulars. After 193a is played.
+193c. [FEATURE, moderate] Event days (hedgehog mating season, a flock of birds, mad squirrels)
+   and critters by month; with 79b and 136, the variety that keeps jobs fresh.
+193d. Retunes after 193a (mine, measured): reputation climbs to the top band in about 3
+   good jobs (computed, not simmed), which free booking makes day one; PAPER's count by
+   month; REACH and the bars (S14-RING: steps of 0, 20, 55, 75); the vig; pay; the clock
+   rate. Today a manor pays about $790 against a $150 week.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect
    screenshots here; side runs still leave a thin strip of outside grass between the fence
    and the lawn (judged fine, unconfirmed; S15-FENCE asks).
 206. [DESIGN, small] The horn (199, built): does using it a lot annoy the customer? The dev
    was unsure; left out for now.
+207. [DESIGN, large] Taking things from gardens pays (the dev, 2026-10-02, during the 193
+   grill): a critter or an ornament taken has a use, sold (the hedgehog dealer, 136) or set
+   in your own garden, even furniture lifted piece by piece over a regular's visits while
+   they aren't looking. Needs a minimal market so hoarding one thing can't become the best
+   move (hedgehog numbers up, price down). CONFLICT to settle: the doc's "afterwards,
+   ownership decides" rule finds a missing gnome after you leave; the dev's lean is unseen
+   means never known for ordinary things (a gnome, a flamingo, flowers), a chance they
+   notice at most, and the dog always noticed. Grill with 136.
+208. [DESIGN, large] Your own garden (the dev, 2026-10-02, during the 193 grill; a soft
+   opinion): nothing takes time while you're in it, the day moves only when you leave.
+   Seeds got on a job or elsewhere, planted there, grow over several days: leave, come back
+   to see a little growth, leave again. For the hub grill.
 Also: S14-CAL, the board reads but will be redone when things split out (no item).
 
-PROPOSED ORDER: grill 193 (pace and escalation) first, then 189 (robot tiers, price, speed),
-then 168 (hired help).
+PROPOSED ORDER: build 193a and play it; grill 189 (robots) and 168 (hired help) after,
+priced as ways to buy time.
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
