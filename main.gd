@@ -1740,12 +1740,12 @@ func set_robot(at: Vector2, dir: Vector2) -> Robot:
 
 
 ## Anything alive or breakable near p (global) stops a robot mower: you, your mower, the
-## dog, the customer, a critter or a body, another robot, anything but a plain stone.
-func _robot_blocked(p: Vector2) -> bool:
+## dog, the customer, a critter or a body, another robot (not `me`), anything but a plain stone.
+func _robot_blocked(p: Vector2, me: Robot = null) -> bool:
 	var near := func(n: Variant) -> bool: return is_instance_valid(n) and (n as Node2D).global_position.distance_to(p) < 18.0 # untyped: a typed param rejects a freed node (the dog, handed home) before the check
 	if near.call(walker) or near.call(mower) or near.call(dog) or (customer.where == "patio" and near.call($Client)):
 		return true
-	if robots.any(near) or $Animals.get_children().any(near):
+	if robots.any(func(r: Robot) -> bool: return r != me and near.call(r)) or $Animals.get_children().any(near):
 		return true
 	for s in $Stones.get_children():
 		if s is Stone and s.kind != "stone" and near.call(s):
@@ -1948,6 +1948,9 @@ func _on_mower_bumped(what: Object, impact: float) -> void:
 		if impact > RAM_SPEED:
 			_crime(1, what.position)
 		_react()
+		return
+	if what is Robot: # rammed: a knock to it too, the heavier the mower the harder
+		what.damage(impact / 25.0 * mower.toughness)
 		return
 	if what != _car or _car == null:
 		return
