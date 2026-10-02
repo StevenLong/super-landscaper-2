@@ -148,31 +148,13 @@ Fixed during the play (session 16): a robot crashed the job once the dog was han
 Passed: S15-TRUCK, SAVEQUIT, PAY, OFFER; S15-PORTRAIT and PAPER pass bar 203 and 196.
 Built in session 16: 196 (the shop's text wraps); 200 to 202 (the robots, c3a079e and after).
 
-197. [FEATURE, small] The truck's reach is too wide; mark where you stand to refuel. Home:
-   `main.gd` `at_truck()`, `$Truck/RefuelZone` (180 x 150 at (0, -80), set near line 255),
-   which also opens the truck menu. FIX: shrink the zone and paint it faintly on the
-   ground (z < 0) by the truck. Decided: one smaller zone for both refuel and the menu.
-198. [DESIGN, small] Ride-on: start with two gears (today's bottom two, 0.3 and 0.5 of top
-   speed), a third as an upgrade. Home: `mower.gd` GEARS, `game.gd` upgrades. Decided: two
-   upgrades, the third gear (0.75) then the fourth (1.0), so today's top speed stays
-   reachable. Prices are my call when built (veto then).
-199. [DESIGN, moderate] Ride-on horn: scares critters near it; heavy use might annoy the
-   customer (the dev's unsure of that part). Decided: build the scare now on H, the
-   customer's annoyance left for later.
-203. [VISUAL, small] The face at the window reads as a translucent customer in front of
-   the glass; the glass should be what's see-through (S15-PORTRAIT). Home: `house.gd`
-   `_draw_house`, which draws the face over the opaque pane art then the pane again at
-   PANE_OVER 0.45. FIX: a dark room inside the pane, the face over it, then only a faint
-   sheen and the glazing bars on top; same for the walk past.
-204. [VISUAL, small] The customer slides backwards to the door, still facing you
-   (S15-DOOR). Home: `client.gd` `_draw`, which always turns `_toward` the watched mower.
-   FIX: while walking, face the way they walk; watch you again once they stop.
-205. [FEATURE, small] Packing: take an item straight off the truck, without carrying it
-   back to the tray (S15-PACK, otherwise much better). Home: `pack.gd` `_unhandled_input`,
-   `put_back`. Decided: the put-back key with empty hands on an item sends it home.
+Built in session 16 too (all decided, my small calls in the commits, veto any): 197 (a
+100 x 64 bay from the drive's end to the truck, painted faint yellow), 198 (third gear $150,
+fourth $250), 199 (the horn: 160 px, critters run at double speed for 2.5 s, not the dog;
+the customer's annoyance at it is still open), 203, 204, 205.
 
-PROPOSED ORDER: the small pass, 204, 203, 205, 197; 198 and 199; then the grills (193, then
-189's tiers and price).
+PROPOSED ORDER: the grills: 193 (pace and escalation) first, then 189 (robot tiers, price,
+speed), then 168 (hired help).
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 

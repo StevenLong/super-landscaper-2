@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (3 checks, about 20 minutes)
+PLAY CHECKS OWED  (6 checks, about 30 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -13,7 +13,7 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 3: A JOB      (about 10 min; an L plot, a dog helps)
+LOAD 1 of 3: A JOB      (about 15 min; an L plot, a dog helps; [1] for a ride-on first)
 ================================================================================
 
 S15-TRUCK
@@ -41,6 +41,22 @@ S15-FENCE
 On an L plot, mow right into the corner where your hedge or fence meets next door's: is
 there a strip of grass by the corner post you can't cut? (How the corners look is
 verified, below.)
+>
+
+S16-WINDOW
+Watch the customer go in and come out, stand at a window, and walk past the windows
+inside: they face the way they walk, and at the window they're behind the glass (bars
+over them, a faint tint). Does it read as a window now?
+>
+
+S16-BAY
+The truck's reach is the faint yellow bay from the drive's end to the truck: refuel and
+open the truck menu standing in it. Right size? Visible enough, without shouting?
+>
+
+S16-RIDEON
+On the ride-on (buy the third gear on the board to compare): is two gears enough to
+start? The horn ([H]): does the honk sound right, and is scattering critters useful?
 >
 
 
@@ -140,6 +156,26 @@ VERIFIED  The verifier's first run (an agent told to break the batch; it ran its
           things stick out past their no-mow area, so a robot stalled beside them, now
           given up for good after the first time. Also: the far side of a drive now gets
           mown (63% to 92% in 4 minutes on a split lawn; before, it gave up there).
+VERIFIED  204, facing: test_seen checks they face the door walking to it (fails on the old
+          code); screenshot of the indoor walk-past: their head side-on, facing the way
+          they go.
+VERIFIED  203, the window: screenshot, enlarged: the face solid behind the glazing bars, the
+          glass's own blue at 20% over it (it was the whole pane at 45%, so a ghost).
+VERIFIED  205, send home: test_pack puts a packed can home empty-handed and packs it again;
+          screenshot of the packing screen after sending the petrol mower home, the key line
+          ("put back / send home") fits.
+VERIFIED  197, the bay: screenshots on a house drive and the churchyard path: the bay shows
+          (it was hidden under the drive's mouth, which drew above the ground layer: fixed);
+          test_pack checks the bay is small and holds where the mower parks; the whole suite
+          still refuels and opens the truck menu from it.
+VERIFIED  198, gears: test_mower_feel: two gears, no fourth before the third, then three,
+          then four; screenshot of the shop rows (the fourth greyed until the third).
+VERIFIED  199, horn: test_horn: through the real key, a near hedgehog runs away, a far
+          squirrel and one out cold don't, and on foot there's no horn; screenshot of the
+          hint line ("[H] horn") and the HONK.
+VERIFIED  A rare spawn bug found on the way: about 1 critter in 1500 came in grazing the
+          house's back corner on a terrace (test_shapes failed 1 run in 7). Spawns now need
+          room for the critter's whole width: 0 in 6000.
 TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
           and slow on big lawns either way (filed under 189).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.
