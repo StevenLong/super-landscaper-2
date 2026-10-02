@@ -4,11 +4,52 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 2 runs, 8 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 4 runs, 29 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
-per run: about 215k to 240k tokens, 13 to 15 minutes (both 2026-10-02).
+per run: about 95k to 240k tokens, 9 to 15 minutes (all 2026-10-02).
 
 ---
+
+## Session 17 (2026-10-02): the 193 grill (time is the scarce thing), the clock built
+- **Grilled 193** (pace and escalation, the dev's biggest concern), all in the design doc
+  (The Business, "Time is the scarce thing", rejected options listed): the squeeze changes
+  as the business grows, money in April, time in summer, stakes from season 2; money's
+  lasting use is buying time (so 189 robots and 168 help get priced as that); difficulty
+  is not the dial. One clock (a booking is a window, patience is that window); outside a
+  job actions cost time and walking doesn't, shown before you commit; demand follows the
+  season; regulars change softly, never churn; loyalty compounds; upfront pay only from
+  loyal regulars; jobs stay fresh by variety and event days, not more on screen. The
+  dev's reasons: the money number isn't the fun; Vampire Survivors' power curve doesn't
+  fit (kit makes jobs easier); a hub without a clock is a task list. Build order the
+  dev's call: the clock first, with the corkboard screen built as the screen the office
+  will open.
+- **Filed from the dev's dumps**: 207 (taking things from gardens pays, a market so
+  hoarding can't win; conflicts with "afterwards, ownership decides") and 208 (your own
+  garden: time frozen inside, seeds growing across visits).
+- **Built** (my calls in the doc's "as built" bullets, veto any): 193a the day's clock and
+  the corkboard (600a03f), 193b regulars change softly, the raise, upfront pay, loyalty
+  (1e68685), 193c critters by month and event days (7158b48). Old saves load and get
+  their windows. New tests: test_terms; big additions to test_season; tools/shot_board.gd
+  for the board's screenshots.
+- **Verifier, 2 runs** (3 and 4 of the tally): run 3 on the clock, 13 real finds (worst:
+  being nicked didn't end the day; time after being paid was free; Ring could turn a sure
+  yes into a no; court lost classifieds silently; the board ran off screen when busy);
+  run 4 on terms and events, 8 real finds (worst: upfront money paid back twice and below
+  zero at the winter; a stale offer crashed a summary; an event day's critters leaked into
+  a new regular's every visit). All fixed with a test (65b7e12, da85a9c). 0 false alarms.
+- Verified: run_all green (parse, smoke, 39 tests). Screenshots looked at: each board page,
+  crowded (8 regulars, 6 jobs, an event day), the job's HUD clock and briefing, the raise
+  and upfront screens. Not played: whether the clock is fun is the dev's (LOAD 3).
+- Not done: 193d's retunes wait for play (reputation tops out in about 3 jobs, now day
+  one with free booking; the dev says the exact number doesn't matter, it just shouldn't
+  saturate so early). S15-POLICE and S15-FENCE have now rolled two sessions.
+
+OWED CHECKS: 12, in CHECKS.txt (3 loads, about 60 minutes; LOAD 3 is the clock).
+
+NEXT:
+1. Play LOAD 3 (the clock, the terms, event days); LOAD 1 and 2 when there's time.
+2. 193d's retunes from what play says (reputation's climb, the paper's size, pay, the vig).
+3. Grill 189 (robots) and 168 (hired help) together, as ways to buy time; then 207 with 136.
 
 ## Session 16 (2026-10-02): verify-first, the verifier, the robots fixed, the small pass built
 - **Played (dev):** S15 mostly answered. Passed: TRUCK, SAVEQUIT, PAY, OFFER; PORTRAIT and
@@ -370,50 +411,3 @@ NEXT:
 1. Play the checks; triage what they turn up.
 2. Build 108, 109, 110 (each mower's feel), then 106 and 107 (packing, the robot mower).
 3. /grill on 96 (subquests), then 94 (strimmer) with fire, and 100 (weeds).
-
-## Session 9 (2026-09-27): S8 checks cleared, triage 82 to 100, fixes, throw arcs, talking
-- S8 checks: all 21 passed. Comments became NOTES 82 to 89; the dev's idea dump 90 to 100.
-  The dev answered the triage questions: grit for stones the blades grind up, a car bump
-  is a crime only at speed, pad triggers plus the stick, wants in the pause menu and in
-  "How am I doing?", the truck keeps "Drive off (no pay)"; stones knock critters out
-  (thrown: KO, else a body; flung: splat, else KO), and a stone kill leaves a body you can
-  hide or mow. The dev shared manor reference images for 88 (summarised in NOTES 88).
-- Built, all unplayed: 98 (header in two rows; the real overflow was the rundown's rep
-  line shoving the shop off, so rundown lines wrap), 84, 85, 89, 92, 87, 82, 86, 97,
-  80b (throw arcs), 95 and 93 (talk to the customer), 99 (ticker, records), 83 (the hose).
-- Verified: run_all green (exit 0) with new tests: stunned, talk, records, hose, plus
-  extended critters, throw, hazards, police, venues, mower drive. Each visual change was
-  screenshotted headful and looked at. Nothing play-checked yet.
-- Promoted to the design doc (vetoable): paid face to face, wants stay readable, car bump
-  vs ram, personal bests and worsts, stones knock critters out, the hose on its tap, pad
-  triggers. Throwing step 2 was already there.
-- Calls I made while building (vetoable, not in the design doc):
-  - Knockouts: thrown 80% KO / 20% body, flung 75% splat / 25% KO; KO lasts 6 s and costs
-    40% of a death's mood; an unseen KO leaves nothing to find. Seen mulching a body
-    counts as a death again. A body in the pond is hidden too.
-  - Arcs: gravity 600; tilt 6 to 90 degrees at 60 a second, starting about 29 and kept
-    between throws; power scaled so 45 degrees carries the old reach. Heights: fence or
-    hedge 29, a person 30, car 36, truck 60, parked mower 20, critters 10, dog 16, rocks
-    and headstones 24, the canopy a ball round the crown, a 45 degree roof, over the ridge
-    gone. New side effect: a low throw at the fence now bounces back instead of leaving.
-  - The ball never hits the dog. A ram is a crime above impact 200 (petrol near top
-    speed, the ride-on).
-  - Talking: within 36 px of the patio spot (the door's there); knocking brings them out.
-    "Wants it" comes from persona patience and target.
-  - Records: the most per job of each count, saved; firsts don't count; best for dogs
-    walked home, fetches, stones picked or binned, cans; everything else is a worst.
-  - Hose: orange so it reads on grass, tap on the side away from the garage, 18 links of
-    16 px, cut once (the far end shredded).
-  - Vicar: "Reverend" plus surname, a clerical shirt (never picked at random), a collar
-    tab drawn on the portrait only (not the standing sprite).
-- New cheat: none. New tally names: knocked out, bodies disposed of and mulched, stones on
-  your own head.
-
-OWED CHECKS: 16, in CHECKS.txt (3 loads, about 30 minutes).
-
-NEXT:
-1. Play the S9 checks; triage what they turn up.
-2. /grill on 88 (venue shapes and the manor, from the reference images); it decides 46,
-   55 and 75b.
-3. /grill on 91 (mower types that play differently) and 96 (subquests); 94 and 100 when
-   there's room.

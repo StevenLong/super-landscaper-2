@@ -108,20 +108,7 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    and only 8 to 25% of a big one (1600 x 900 or more) in 5 minutes: slow. S15-ROBOT: $150
    is pocket change after the first month, and cheap doesn't make it good: price it with
    the tiers and 193's pace.
-193. Grilled 2026-10-02: time is the scarce thing (design doc, The Business). Build steps:
-193a. [BUILT 2026-10-02, unplayed: CHECKS S17] The day clock: a booking is a window and the customer's patience is
-   that window, on one clock that runs in the job (late arrival leaves less); free booking,
-   several jobs a day, a drive chunk between; the paper swelling with the season and
-   regulars asking extra visits at the peak. The corkboard screen (big calendar, several
-   entries a day, the paper to page through, the phone) replaces the board's calendar,
-   built as the screen the office will open; actions that cost time preview it on the
-   clock. Then play: does overbooking feel like a gamble?
-193b. [BUILT 2026-10-02, unplayed: CHECKS S17-TERMS] Regulars change softly: terms move with carried mood, the season and
-   your rates (raise at a visit through the haggle, some can't afford you); the floor in
-   steps (fewer visits, cheaper, then lost); loyalty compounding; upfront pay only from
-   loyal regulars. After 193a is played.
-193c. [BUILT 2026-10-02, unplayed: CHECKS S17-EVENTS; birds wait for 79b] Event days (hedgehog mating season, a flock of birds, mad squirrels)
-   and critters by month; with 79b and 136, the variety that keeps jobs fresh.
+193. Grilled 2026-10-02: time is the scarce thing (design doc, The Business). 193a to 193c built in session 17; left:
 193d. Retunes after 193a (mine, measured): reputation climbs to the top band in about 3
    good jobs (computed, not simmed), which free booking makes day one; PAPER's count by
    month; REACH and the bars (S14-RING: steps of 0, 20, 55, 75); the vig; pay; the clock

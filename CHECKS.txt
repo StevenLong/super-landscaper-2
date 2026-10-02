@@ -106,75 +106,6 @@ VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
 
-VERIFIED  Crash: a robot mower after the dog went home (dcfaf99). test_robot frees a dog
-          and runs the robot's check; the old code throws your exact error, the fix passes.
-VERIFIED  S15-PORCH: only their feet count. New test_porch drives through the space their
-          body covers (no knockout), then onto their feet (out cold); the old hitbox fails
-          it. The grass behind them is ordinary lawn, nothing stops it being cut.
-VERIFIED  S15-HEDGE: test_throw lands a thrown squirrel out of sight: no reaction unless
-          they saw it leave your hand. The "saw it" flag is set from what they can see at
-          the moment you throw (read in the code, not driven by the test).
-VERIFIED  S15-QUIT: screenshot of the pause menu in a job: the last button reads "Quit to
-          title (you'll black out: the job's lost)", fits its box.
-VERIFIED  S15-FENCE, the look: screenshots of three L plots and two churchyards, overview
-          and each corner. L plots: hedge runs meet at the corners. Churchyard: both walls
-          reach the church. Found: the churchyard's left wall carries on past the side
-          chapel into the open grass behind the church (about 150 px of stub ending in
-          nothing). Fixed since (below).
-VERIFIED  196, the shop running off the board: reproduced by screenshot with a robot owned
-          (the robot row, with Sell and Buy both, widened the column; Save and quit went
-          off the edge). Shop text now wraps. Screenshots with nothing, one robot, and
-          everything owned all fit; test_controls now checks every board button is on
-          screen with everything bought (the old code fails it).
-VERIFIED  200 to 202, the robots (c3a079e and the fix after it). By test (test_robot_jam,
-          new, and test_robot): it plans only uncut cells, skips what's cut since, only
-          ever moves cell to cell by the grid, two nose to nose get past each other, one
-          stuck short of a waypoint gives it up, a cut lawn turns them green, a ram knocks
-          it by the mower's weight. By simulation (two robots, 12 game minutes, 4 gardens):
-          they reach 84% by minute 8 on a 1280 x 720 lawn (the old robots: 75%), but
-          that's the first build; the verifier then found more (below) and the numbers
-          after its fixes are from its own repro scripts.
-VERIFIED  The verifier's first run (an agent told to break the batch; it ran its own
-          scripts on many gardens): board fit, the dog crash, ramming, crimes and squashes,
-          the gnome all held. It found four real bugs, all now fixed and rechecked with its
-          scripts: (1) a robot with grass it couldn't reach by the grid drove at it in a
-          straight line and gave up one cell at a time for ever, never going green (house,
-          drive, churchyard headstones); (2) those straight lines crossed beds: 59 to 62
-          flowers flattened on a mansion parterre, now 0; (3) two robots in a narrow gap
-          blocked each other for up to a minute at a time, now 2.5 s at most; (4) solid
-          things stick out past their no-mow area, so a robot stalled beside them, now
-          given up for good after the first time. Also: the far side of a drive now gets
-          mown (63% to 92% in 4 minutes on a split lawn; before, it gave up there).
-VERIFIED  204, facing: test_seen checks they face the door walking to it (fails on the old
-          code); screenshot of the indoor walk-past: their head side-on, facing the way
-          they go.
-VERIFIED  203, the window: screenshot, enlarged: the face solid behind the glazing bars, the
-          glass's own blue at 20% over it (it was the whole pane at 45%, so a ghost).
-VERIFIED  205, send home: test_pack puts a packed can home empty-handed and packs it again;
-          screenshot of the packing screen after sending the petrol mower home, the key line
-          ("put back / send home") fits.
-VERIFIED  197, the bay: screenshots on a house drive and the churchyard path: the bay shows
-          (it was hidden under the drive's mouth, which drew above the ground layer: fixed);
-          test_pack checks the bay is small and holds where the mower parks; the whole suite
-          still refuels and opens the truck menu from it.
-VERIFIED  198, gears: test_mower_feel: two gears, no fourth before the third, then three,
-          then four; screenshot of the shop rows (the fourth greyed until the third).
-VERIFIED  199, horn: test_horn: through the real key, a near hedgehog runs away, a far
-          squirrel and one out cold don't, and on foot there's no horn; screenshot of the
-          hint line ("[H] horn") and the HONK.
-VERIFIED  A rare spawn bug found on the way: about 1 critter in 1500 came in grazing the
-          house's back corner on a terrace (test_shapes failed 1 run in 7). Spawns now need
-          room for the critter's whole width: 0 in 6000.
-VERIFIED  The verifier's second run (on the small pass): facing, the bay, gears, horn and the
-          suite held. It found four real bugs, all fixed and rechecked: (1) mine: pressing
-          Drive on the packing screen sent home whatever the cursor rested on, for good
-          (test_pack now guards it); (2) a customer at a smashed window, or walking past one,
-          was invisible (the hole drew over them): now they show in the hole, shards over
-          them (screenshot); (3) selling the third gear left the fourth owned but useless:
-          now it goes too (test_mower_feel); (4) on terraces, 2 to 6% of critters came in
-          by walking out of the house next door: now 0 (its own sampler, 4 layouts x 3).
-VERIFIED  194, the churchyard wall: the side wall by the vestry starts at the vestry's back,
-          flush with its roof (screenshots of both churchyards).
 VERIFIED  193a, the day's clock, by test (test_season, new clock section): windows on the
           half hour inside 8am to 8pm, sized from patience; arriving is the drive or the
           window opening, whichever's later; patience is the window and the customer's
@@ -230,8 +161,3 @@ VERIFIED  The verifier's fourth run (soft terms and event days): the terms' step
           "less often" and "sooner"; rates stuck at $25 under cuts (a cut or rise now
           always moves it $5 at least); a month up front at the summer peak covered two
           weeks (now four).
-TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
-          and slow on big lawns either way (filed under 189).
-CHANGED   Process: checks are owed only for what needs you; this section lists the rest.
-          A verifier agent will try to break each build batch; its score is kept in
-          HANDOFF.md.
