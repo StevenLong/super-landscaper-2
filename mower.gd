@@ -52,7 +52,8 @@ var sprinting := false ## a push mower, pushed flat out (hold sprint)
 var engine_off := false ## a powered mower switched off: burns nothing and won't go. The petrol starts by
 ## ripcord (each job, after a stall, after you switch it off); the ride-on on its key (interact)
 var pull := -1.0 ## the ripcord's marker, 0 to 1, while you draw the cord; -1 when not
-var gear := 1 ## a ride-on's gear, 1 to 4
+var gear := 1 ## a ride-on's gear, 1 to gears
+var gears := 2 ## how many of GEARS it has: two, a third and fourth as upgrades (Game.mower_spec)
 var _cough := 0.0
 var _yank := 0.0 ## seconds left of a good pull's yank (drawn after it's started)
 var _yank_at := 0.0 ## where on the meter it was let go
@@ -262,6 +263,7 @@ func apply_spec(spec: Dictionary) -> void:
 	for k in ["power", "max_speed", "reverse_speed", "accel", "brake", "turn_rate", "cut_radius",
 			"max_fuel", "fuel_burn", "regen", "empty_speed_scale", "toughness", "knock_out"]:
 		set(k, spec[k])
+	gears = spec.get("gears", 2)
 	sprite_kind = spec.sprite
 	body = spec.body
 	_apply_visual()
@@ -308,7 +310,7 @@ func _physics_process(delta: float) -> void:
 		throttle = 0.0 # sat on it, key off
 	if sprite_kind == "rideon" and occupied:
 		if Input.is_action_just_pressed("gear_up"):
-			gear = mini(gear + 1, GEARS.size())
+			gear = mini(gear + 1, gears)
 		if Input.is_action_just_pressed("gear_down"):
 			gear = maxi(gear - 1, 1)
 	if power == "stamina":

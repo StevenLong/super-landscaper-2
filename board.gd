@@ -313,7 +313,7 @@ func _upgrade_row(key: String) -> Control:
 		var buy := UI.button("Buy $%d" % u.price, func() -> void:
 			Game.buy(key)
 			_build(key), 18)
-		buy.disabled = Game.money < u.price
+		buy.disabled = Game.money < u.price or (key == "gear4" and "gear3" not in Game.upgrades)
 		row.add_child(buy)
 	var p := UI.panel(row)
 	p.name = key # _build(key) finds the row again

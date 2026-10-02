@@ -70,8 +70,15 @@ func _physics_process(_delta: float) -> bool:
 			assert(not mower.engine_off, "in poor condition, not every knock...")
 			mower.stall_check(0.1)
 			assert(mower.engine_off, "...but one can, and it needs the cord again")
-			# The ride-on: four gears.
-			mower.apply_spec(g.MOWERS.rideon)
+			# The ride-on: two gears to start, a third and fourth as upgrades.
+			g.upgrades.erase("gear3")
+			g.upgrades.erase("gear4")
+			assert(g.mower_spec("rideon").gears == 2 and not g.buy("gear4"), "two gears, and no fourth before the third")
+			g.money = 1000
+			assert(g.buy("gear3") and g.mower_spec("rideon").gears == 3, "the third")
+			assert(g.buy("gear4") and g.mower_spec("rideon").gears == 4, "then the fourth")
+			g.upgrades.erase("gear4")
+			mower.apply_spec(g.mower_spec("rideon")) # with the third gear, above
 			mower.condition = 100.0
 			mower.global_position = Vector2(640, 650)
 			mower.rotation = -PI / 2.0
@@ -94,7 +101,7 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 1
 		10:
 			Input.action_release("gear_up")
-			assert(mower.gear == 3 and m._hint().contains("Gear 3"), "and another, shown in the hint")
+			assert(mower.gear == 3 and m._hint().contains("Gear 3"), "and another (bought), shown in the hint")
 			_wait = 60
 		11:
 			assert(absf(mower.velocity.length() - mower.max_speed * mower.GEARS[2]) < 2.0, "third gear's faster: %.0f" % mower.velocity.length())

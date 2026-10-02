@@ -4,7 +4,7 @@
 # next to that job's patience. Compare plots and mowers against each other more than
 # against patience: the bot routes round obstacles cell by cell and is slower than the old
 # straight-line bot on the default lawn (petrol to 85%: 262 s here, 179 s then). It pulls
-# the cord first time, drives the ride-on in top gear (second to turn), sprints the push
+# the cord first time, drives the ride-on in top gear (second to turn; so with both gear upgrades), sprints the push
 # mower while fresh, and ignores the police.
 #   "$GODOT" --headless --fixed-fps 60 --path . -s tests/sim_balance.gd
 # Only some plots or mowers: SIM_PLOTS=terrace,manor SIM_MOWERS=push (comma lists).

@@ -39,6 +39,8 @@ const UPGRADES := {
 	"tank": {"name": "Bigger tank", "price": 120, "blurb": "+50% fuel or stamina."},
 	"gloves": {"name": "Gardening gloves", "price": 40, "blurb": "Pick up a hedgehog without the prickles."},
 	"blades": {"name": "Sharp blades", "price": 150, "blurb": "+15% cutting width."},
+	"gear3": {"name": "Third gear", "price": 150, "blurb": "Ride-on: a faster gear."},
+	"gear4": {"name": "Fourth gear", "price": 250, "blurb": "Ride-on: its top speed. After the third."},
 }
 
 ## Packing the truck (design doc, Mowers and Equipment): what comes to a job is what you
@@ -312,6 +314,7 @@ func mower_spec(kind := "") -> Dictionary:
 		s.max_fuel *= 1.5
 	if "blades" in upgrades:
 		s.cut_radius *= 1.15
+	s.gears = 2 + int("gear3" in upgrades) + int("gear3" in upgrades and "gear4" in upgrades) # a ride-on's
 	return s
 
 
@@ -604,7 +607,7 @@ func buy(item: String) -> bool:
 			upgrades.append("trailer")
 		pack_first(item)
 	else:
-		if item in upgrades:
+		if item in upgrades or (item == "gear4" and "gear3" not in upgrades):
 			return false
 		upgrades.append(item)
 	money -= price
