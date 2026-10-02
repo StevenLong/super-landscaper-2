@@ -16,7 +16,7 @@ const GLASS := Rect2(0, -62, 30, 36) ## a ground-floor window's glass, from its 
 const WALL_TOP := 158.0 ## the front wall's height (tools/art_sprites.py wall_top); the roof starts here
 const ROOF_D := 77.0 ## the roof rises this far and runs this far back to the ridge (45 degrees, half of WALL_H - WALL_TOP)
 const FLOOR_UP := 79.0 ## an upstairs pane sits this far above the one below it
-const PANE_OVER := 0.45 ## how much of the glass shows over a face at the window
+const PANE_OVER := 0.2 ## how much of the glass's own colour shows over a face behind it (its bars and frame show whole)
 const UPSTAIRS := 1000 ## added to a window's x (windows()) for the pane above it
 ## The building by venue: its art, the side building's, its width, and the x of each
 ## ground-floor window (tools/art_sprites.py draws them there).
@@ -48,6 +48,7 @@ var pass_x := -1.0: ## walking past the windows indoors, at this x (as windows()
 			pass_x = v
 			if _front:
 				_front.queue_redraw()
+var pass_east := true ## walking past indoors towards larger x (else smaller): their head side-on that way
 var peek_tex: Texture2D ## the customer's sprite sheet (client.gd), for their head and shoulders at the glass
 var door_open := false: ## the front door stands open (they've answered it)
 	set(v):
@@ -112,6 +113,7 @@ func smash(window_x: int) -> void:
 ## whatever is behind the garage (or the house) behind it, not in front.
 var _front: Node2D
 var _art: Texture2D ## kept: a texture only load()ed while drawing is freed and draws white
+var _glazing: Texture2D ## the ground-floor panes as seen over someone behind them: bars and frame whole, the glass faint
 
 
 func _ready() -> void:
@@ -139,6 +141,24 @@ func _ready() -> void:
 	add_child(g)
 
 
+## The art with each ground-floor pane's glass made nearly clear (its own blue at PANE_OVER),
+## the glazing bars and frame left whole: drawn over a face so it's behind the glass.
+func _see_through() -> Texture2D:
+	if _glazing == null:
+		var img := _art.get_image()
+		img.convert(Image.FORMAT_RGBA8)
+		for wx: int in windows():
+			var r := Rect2i(Rect2(GLASS.position + Vector2(wx, ART_FOOT), GLASS.size))
+			for y in range(r.position.y, r.end.y):
+				for x in range(r.position.x, r.end.x):
+					var c := img.get_pixel(x, y)
+					if c.b > c.r + 0.12: # glass (blues), not the cream bars or the frame
+						c.a = PANE_OVER
+						img.set_pixel(x, y, c)
+		_glazing = ImageTexture.create_from_image(img)
+	return _glazing
+
+
 func _draw_house() -> void:
 	_front.draw_texture_rect_region(_art, Rect2(0, -ART_FOOT, _art.get_width(), ART_FOOT), Rect2(0, 0, _art.get_width(), ART_FOOT))
 	if door_open and not back_patio: # a dark doorway, the door swung in against its frame
@@ -150,18 +170,18 @@ func _draw_house() -> void:
 		# Head and shoulders at the glass, facing out (the sheet's south row), cut off by the sill.
 		var head := Rect2(9, 2 * 94 + 12, 30, 24) # tools/voxel.py client(): 48 x 94 cells
 		_front.draw_texture_rect_region(peek_tex, Rect2(GLASS.position + Vector2(peek_x, GLASS.size.y - head.size.y), head.size), head)
-		# Behind the glass, not stuck on it: the pane (sheen and glazing bars) again, see-through, over them.
+		# Behind the glass, not stuck on it: the bars and frame over them, the glass a faint sheen.
 		var pane := Rect2(GLASS.position + Vector2(peek_x, 0), GLASS.size)
-		_front.draw_texture_rect_region(_art, pane, Rect2(pane.position + Vector2(0, ART_FOOT), pane.size), Color(1, 1, 1, PANE_OVER))
-	if pass_x >= 0.0 and peek_tex: # walking by inside: only what shows through each pane
-		var head := Rect2(9, 2 * 94 + 12, 30, 24)
+		_front.draw_texture_rect_region(_see_through(), pane, Rect2(pane.position + Vector2(0, ART_FOOT), pane.size))
+	if pass_x >= 0.0 and peek_tex: # walking by inside, side-on: only what shows through each pane
+		var head := Rect2(9, (0 if pass_east else 4) * 94 + 12, 30, 24)
 		var at := Rect2(GLASS.position + Vector2(pass_x, GLASS.size.y - head.size.y), head.size)
 		for wx: int in windows():
 			var pane := Rect2(GLASS.position + Vector2(wx, 0), GLASS.size)
 			var cut := at.intersection(pane)
 			if cut.has_area():
 				_front.draw_texture_rect_region(peek_tex, cut, Rect2(head.position + cut.position - at.position, cut.size))
-				_front.draw_texture_rect_region(_art, cut, Rect2(cut.position + Vector2(0, ART_FOOT), cut.size), Color(1, 1, 1, PANE_OVER))
+				_front.draw_texture_rect_region(_see_through(), cut, Rect2(cut.position + Vector2(0, ART_FOOT), cut.size))
 	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
 	var glass := Color("a8d0e8")
 	for id in broken:

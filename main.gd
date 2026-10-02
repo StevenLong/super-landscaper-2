@@ -1025,6 +1025,7 @@ func _physics_process(delta: float) -> void:
 	# Where they are: on the patio, at a window (the house draws them at the glass), or in.
 	$Client.visible = customer.where == "patio" or _door_walk
 	_house.peek_x = customer.window_x if customer.where == "window" and not customer.knocked_out else -1
+	_house.pass_east = customer.stroll_to >= customer.stroll_from
 	_house.pass_x = customer.stroll_x() # walking indoors, glimpsed through the glass
 	# Greyed while they can't see you (design doc: line of sight), so you know you're unseen.
 	$HUD/Face.view = customer.where

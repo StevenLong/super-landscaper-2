@@ -78,8 +78,13 @@ func _physics_process(_delta: float) -> bool:
 			m.mower.global_position = open
 			m.customer.where = "window"
 			m.customer.window_x = 40
-			_wait = 70 # they walk in through the door first
+			_wait = 15 # they walk in through the door first
 		2:
+			var client: Node2D = m.get_node("Client")
+			var way: Vector2 = house.door_point() - client.position
+			assert(way.length() > 2.0 and Facing.of(client._toward) == Facing.of(way.angle()), "walking to the door, they face it (not you)")
+			_wait = 55
+		3:
 			assert(not m.get_node("Client").visible and house.peek_x == 40, "at a window: off the patio, their head at the glass")
 			assert(m.get_node("HUD/Face").view == "window", "the portrait shows the pane")
 			var eye: Vector2 = m._window_eye()
