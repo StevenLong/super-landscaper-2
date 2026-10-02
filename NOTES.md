@@ -116,11 +116,11 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    entries a day, the paper to page through, the phone) replaces the board's calendar,
    built as the screen the office will open; actions that cost time preview it on the
    clock. Then play: does overbooking feel like a gamble?
-193b. [FEATURE, moderate] Regulars change softly: terms move with carried mood, the season and
+193b. [BUILT 2026-10-02, unplayed: CHECKS S17-TERMS] Regulars change softly: terms move with carried mood, the season and
    your rates (raise at a visit through the haggle, some can't afford you); the floor in
    steps (fewer visits, cheaper, then lost); loyalty compounding; upfront pay only from
    loyal regulars. After 193a is played.
-193c. [FEATURE, moderate] Event days (hedgehog mating season, a flock of birds, mad squirrels)
+193c. [BUILT 2026-10-02, unplayed: CHECKS S17-EVENTS; birds wait for 79b] Event days (hedgehog mating season, a flock of birds, mad squirrels)
    and critters by month; with 79b and 136, the variety that keeps jobs fresh.
 193d. Retunes after 193a (mine, measured): reputation climbs to the top band in about 3
    good jobs (computed, not simmed), which free booking makes day one; PAPER's count by
@@ -145,7 +145,7 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    to see a little growth, leave again. For the hub grill.
 Also: S14-CAL, the board reads but will be redone when things split out (no item).
 
-PROPOSED ORDER: play 193a (CHECKS LOAD 3); then 193b; grill 189 (robots) and 168 (hired
+PROPOSED ORDER: play LOAD 3 of CHECKS (the clock, terms, events), then 193d's retunes; grill 189 (robots) and 168 (hired
 help), priced as ways to buy time.
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)

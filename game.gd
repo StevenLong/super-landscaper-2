@@ -145,6 +145,17 @@ const MONTHS := ["January", "February", "March", "April", "May", "June", "July",
 const PAPER := [-25.0, -12.0, 0.0, 0.0, 12.0, 25.0] ## a week's ads against your name: two below, two around, two above (repeating as the paper swells)
 const PAPER_SIZE := {4: 5, 5: 8, 6: 10, 7: 10, 8: 7, 9: 5} ## ads a week by month: the paper swells as the grass grows
 const PEAK := [5, 6, 7] ## the months regulars want you back sooner (half their cadence, a week at least)
+## Critters by month (design doc, Jobs stay fresh): the usual gap between arrivals times
+## these, [hedgehogs, squirrels]; under 1 is more of them. Guesses.
+const SEASON_CRITTERS := {4: [1.3, 1.0], 5: [1.0, 1.0], 6: [1.0, 1.1], 7: [0.9, 1.1], 8: [0.8, 0.9], 9: [0.75, 0.7]}
+## Event days: now and then one kind's out in force, at every job that day, and the
+## morning's news says so. The gaps times these; room for more of them at once.
+const DAY_EVENTS := {
+	"hedgehogs": {"months": [5, 6, 7], "news": "Hedgehogs everywhere today: it's their courting season.", "hedgehog": 0.35, "squirrel": 1.0},
+	"squirrels": {"months": [8, 9], "news": "The squirrels have lost their minds today, burying for the winter.", "hedgehog": 1.0, "squirrel": 0.35, "squirrel_speed": 1.5},
+}
+const EVENT_CHANCE := 0.12 ## of a day in an event's months
+const EVENT_CROWD := 8 ## critters at once on an event day (5 usually)
 ## The day's clock (design doc, Time is the scarce thing). Minutes since midnight. Guesses.
 const DAY_START := 480 ## 8am
 const DAY_END := 1200 ## 8pm: no driving to a job after this
@@ -839,6 +850,17 @@ func today() -> Dictionary:
 	return l[0] if not l.is_empty() else {}
 
 
+## A day's event (DAY_EVENTS), or "": the same for a day however often you ask.
+func day_event(d := day) -> String:
+	var r := RandomNumberGenerator.new()
+	r.seed = d * 7919 + 13
+	var month: int = date(d).month
+	var keys := DAY_EVENTS.keys().filter(func(k: String) -> bool: return month in DAY_EVENTS[k].months)
+	if keys.is_empty() or r.randf() >= EVENT_CHANCE:
+		return ""
+	return keys[r.randi() % keys.size()]
+
+
 ## How many jobs are booked on a day.
 func jobs_on(d: int) -> int:
 	return bookings(d).filter(func(b: Dictionary) -> bool: return b.has("seed")).size()
@@ -873,6 +895,17 @@ func start_job(b := {}) -> void:
 	if b.has("regular") and regulars.has(b.regular) and regulars[b.regular].get("prepaid", 0) > 0:
 		current_job.pay = 0 # paid up front
 		current_job.prepaid = true
+	# The critters: the month's, and the day's event if there is one.
+	var ev := day_event()
+	var e: Dictionary = DAY_EVENTS.get(ev, {})
+	var m: Array = SEASON_CRITTERS.get(date().month, [1.0, 1.0])
+	if current_job.has("hedgehog_every"):
+		current_job.hedgehog_every *= m[0] * e.get("hedgehog", 1.0)
+		current_job.squirrel_every *= m[1] * e.get("squirrel", 1.0)
+	if ev != "":
+		current_job.event = ev
+		current_job.max_animals = EVENT_CROWD
+		current_job.squirrel_speed = e.get("squirrel_speed", 1.0)
 	if b.has("from"):
 		var at := arrival(b)
 		current_job.patience = (b.by - b.from) / MPS

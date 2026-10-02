@@ -142,6 +142,12 @@ func _today(box: Control) -> Button:
 	scroll.add_child(list)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_child(scroll)
+	var ev := Game.day_event()
+	if ev != "": # the morning's news, for every job today
+		var news := UI.label("In the paper: " + Game.DAY_EVENTS[ev].news, 20, UI.GOLD)
+		news.name = "News"
+		col.add_child(news)
+		col.move_child(news, 0)
 	var jobs := Game.jobs_today()
 	scroll.custom_minimum_size.y = 42 * clampi(jobs.size(), 1, 3)
 	var first: Button = null

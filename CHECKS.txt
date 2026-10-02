@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (11 checks, 3 loads, about 60 minutes)
+PLAY CHECKS OWED  (12 checks, 3 loads, about 60 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -83,6 +83,14 @@ ask for a raise from the summary; let one go sour (a so-so visit or two). Do the
 (fewer visits, a cheaper rate, more visits, a better rate) feel earned and readable? Is
 the raise a gamble worth taking? (Upfront pay only comes from regulars back after a
 winter, so it's verified below, not owed.)
+>
+
+S17-EVENTS
+Event days (193c): about one day in eight from May, the board's morning news says the
+hedgehogs are courting (May to July) or the squirrels have lost their minds (August,
+September, faster too), and every job that day gets about three times as many. Also
+fewer hedgehogs in April, more of both in autumn. Does an event day play differently,
+or is it just more on screen? (Cheat [3] skips days to find one.)
 >
 
 S17-BOARD
@@ -203,6 +211,11 @@ VERIFIED  193b, regulars change softly, by test (test_season _soft, new test_ter
           owes the rest back; back after a winter, rate up 10%. test_terms drives the raise
           and upfront screens through the real summary and checks the board's Drop and
           today's line; screenshots of the summary, the raise and the upfront screens.
+VERIFIED  193c, by test (test_season): a day's event never changes, only falls in its
+          months, comes about one day in eight, both kinds turn up; a job on a squirrel day
+          gets a third of the gap between squirrels on top of the month's, room for 8
+          critters, squirrels 1.5x as fast. Screenshots: the board's news line on a crowded
+          event day (still fits), and the briefing saying it.
 TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
           and slow on big lawns either way (filed under 189).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.

@@ -160,6 +160,30 @@ func _clock() -> void:
 	assert(g.cadence_now({"cadence": 14}) == 7 and g.cadence_now({"cadence": 28}) == 14 and g.cadence_now({"cadence": 7}) == 7, "June: twice as often, a week at least")
 	g.day = g.day_of(1980, 9, 2)
 	assert(g.cadence_now({"cadence": 14}) == 14, "September: as agreed")
+	# Critters by month and event days: the same day always has the same event, only in its
+	# months, about one day in eight; a job that day gets more of that critter.
+	var events := {}
+	for i in 400:
+		var day_n: int = g.day_of(1980, 4, 1) + i % 183
+		assert(g.day_event(day_n) == g.day_event(day_n), "a day's event never changes")
+		var ev: String = g.day_event(day_n)
+		if ev != "":
+			assert(g.date(day_n).month in g.DAY_EVENTS[ev].months, "an event in its months only")
+			events[day_n] = ev
+	assert(events.size() > 8 and events.size() < 40 and "hedgehogs" in events.values() and "squirrels" in events.values(), "some days, both kinds: %d" % events.size())
+	for day_n: int in events:
+		if events[day_n] == "squirrels":
+			g.day = day_n
+			break
+	g.minute = g.DAY_START
+	var plain: Dictionary = g.make_job(77)
+	g.calendar = {g.day: [plain.duplicate(true)]}
+	g.start_job()
+	var mon: Array = g.SEASON_CRITTERS[g.date().month]
+	assert(is_equal_approx(g.current_job.squirrel_every, plain.squirrel_every * mon[1] * 0.35) and is_equal_approx(g.current_job.hedgehog_every, plain.hedgehog_every * mon[0]),
+		"a squirrel day: three times the squirrels, on top of the month's")
+	assert(g.current_job.event == "squirrels" and g.current_job.max_animals == g.EVENT_CROWD and g.current_job.squirrel_speed == 1.5, "room for more, and frantic")
+	g.in_job = false
 	# Court takes the whole day: two bookings on it move or go.
 	g.calendar = {}
 	g.day = g.day_of(1980, 4, 8)

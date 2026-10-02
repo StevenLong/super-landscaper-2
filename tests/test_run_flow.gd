@@ -144,9 +144,8 @@ func _process(_delta: float) -> bool:
 			game.reputation = 0.0
 			game.paper = game.make_paper()
 			current_scene._build()
-			var never: Dictionary = game.paper.filter(func(o: Dictionary) -> bool: return o.bar > 0.0)[0]
+			var never: Dictionary = game.make_job(999, 60.0) # an ad for a Good name
 			never.day = game.day + 1
-			game.paper.erase(never)
 			game.paper.push_front(never) # on the first page
 			current_scene._call = game.ring(never)
 			current_scene._show("paper")

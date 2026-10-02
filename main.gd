@@ -134,6 +134,7 @@ func _ready() -> void:
 	customer = Customer.new(job)
 	hedgehog_every = job.get("hedgehog_every", hedgehog_every)
 	squirrel_every = job.get("squirrel_every", squirrel_every)
+	max_animals = job.get("max_animals", max_animals) # an event day has room for more
 	if Game.in_run:
 		mower.apply_spec(Game.mower_spec())
 	_build_layout()
@@ -172,6 +173,8 @@ func _ready() -> void:
 			lines.push_front("Back again: paid up front." if job.get("prepaid", false) else "Back again: $%d a visit, as agreed." % job.pay)
 		if job.get("dog", false):
 			lines.append("(%s the dog likes to escape. Mind them.)" % job.dog_name)
+		if job.has("event"): # the day's news
+			lines.append("(%s)" % Game.DAY_EVENTS[job.event].news)
 		if job.has("by"): # the window's what's left of their patience
 			lines.append(("You're late. " if job.get("late", 0.0) > job.patience * 0.5 else "") + "Done by %s, please." % Game.time_text(job.by))
 		lines.append_array(["", "Mow the lawn, then walk up and ask to be paid. Your truck's for leaving."])
@@ -2637,6 +2640,8 @@ func spawn_animal(kind: String, at := Vector2.INF, toward := Vector2.INF, grace 
 	a.squashed.connect(_on_squashed)
 	a.run_over.connect(_on_run_over)
 	$Animals.add_child(a)
+	if kind == "squirrel":
+		a.speed *= job.get("squirrel_speed", 1.0) # an event day's frantic ones
 	return a
 
 
