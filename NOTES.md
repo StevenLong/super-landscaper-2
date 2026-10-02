@@ -113,6 +113,8 @@ writes them.
    any): lanes along the way it's set down facing; it waits 2 s for something in its way,
    then gives that spot up and goes round; -10 condition a stone, broken for the rest of
    the job at 0, fresh next job; it crosses a drive to reach the rest of the lawn.
+   S15-ROBOT (2026-10-02): $150 is pocket change after the first month, and cheap doesn't
+   make it good: price it with the tiers (and 193's pace), once 200 and 201 make it useful.
 193. [DESIGN, large] Pace and escalation (S14-PACE, the dev's biggest concern). One big job
    and you're set: the loan's paid, tens of thousands by month two, nothing to buy, no
    pressure. The week fills with the same big venue reshuffled: well paid, easy, samey.
@@ -127,6 +129,60 @@ Also: S14-CAL, the board reads but will be redone when things split out (no item
 reads a bit better (no item). The rest of S13 and S14 passed.
 
 PROPOSED ORDER: play what session 15 built; grill 193 (pace); 189's tiers after.
+
+### Notes 2026-10-02 (S15 check fallout, LOAD 1 to 3 mostly played, and the dev's notes)
+
+Fixed during the play (session 16): a robot crashed the job once the dog was handed home
+(dcfaf99: the blocked check passed the freed dog through a typed lambda param).
+Passed: S15-TRUCK, SAVEQUIT, PAY, OFFER; S15-PORTRAIT and PAPER pass bar 203 and 196.
+
+196. [BUG, small, BLOCKS] Board: the shop runs off the right of the screen, and the Save
+   and quit button with it, seen after buying a robot (S15-PAPER). Home: `board.gd`
+   `_robot_row`. Guess (unverified): it's the only row with both Sell and Buy, and its
+   name and blurb labels don't wrap, so it sets the column's width. FIX: wrap or clip the
+   labels; screenshot the board with robots owned to confirm.
+197. [FEATURE, small] The truck's reach is too wide; mark where you stand to refuel. Home:
+   `main.gd` `at_truck()`, `$Truck/RefuelZone` (180 x 150 at (0, -80), set near line 255),
+   which also opens the truck menu. FIX: shrink the zone and paint it faintly on the
+   ground (z < 0) by the truck. QUESTION: one zone for both refuel and the menu?
+198. [DESIGN, small] Ride-on: start with two gears (today's bottom two, 0.3 and 0.5 of top
+   speed), a third as an upgrade. Home: `mower.gd` GEARS, `game.gd` upgrades. QUESTION:
+   the third gear is 0.75 or 1.0, or two upgrades (third, then fourth)? Its price?
+199. [DESIGN, moderate] Ride-on horn: scares critters near it; heavy use might annoy the
+   customer (the dev's unsure of that part). QUESTION: build the scare now and leave the
+   annoyance for later? Its key (a letter, per the key rules)?
+200. [BUG, moderate, BLOCKS] Robots mow grass that's already cut, so they add nothing. Home:
+   `robot.gd` `plan()`, which plans every open cell whatever its state. FIX: plan only
+   cells still uncut (lawn `_cell` == UNCUT), crossing cut ones by A* only to reach the
+   next; when the route runs out, replan on what's still uncut (you and other robots cut
+   too), and stop (green light) when none is left.
+201. [BUG, moderate, BLOCKS] Robots deadlock: two parked facing each other, or facing
+   something forever. Stopping for a gnome until you clear it is fine (the dev's call: it
+   keeps you watching them); deadlock isn't. Home: `robot.gd` `_skip`. Guess
+   (unverified): when its own cell is solid, or the detour's first step still sees the
+   blocker ahead, `_skip` returns without a new route, and it waits on the same spot
+   forever; two robots each wait for the other. FIX: reproduce two robots head on in
+   test_robot, then fix `_skip` (give way by order, or route round the other robot).
+   QUESTION: what was it facing "forever" that looked like a stone (stones are ground up)?
+   A gnome, a rock, the ball?
+202. [FEATURE, small] Ramming a robot with the ride-on (maybe any mower) damages both.
+   Home: `mower.gd` collision loop (near line 248, it already finds the collider and knocks
+   its own condition); `Robot.damage()`. QUESTION: any mower, by impact like other knocks?
+203. [VISUAL, small] The face at the window reads as a translucent customer in front of
+   the glass; the glass should be what's see-through (S15-PORTRAIT). Home: `house.gd`
+   `_draw_house`, which draws the face over the opaque pane art then the pane again at
+   PANE_OVER 0.45. FIX: a dark room inside the pane, the face over it, then only a faint
+   sheen and the glazing bars on top; same for the walk past.
+204. [VISUAL, small] The customer slides backwards to the door, still facing you
+   (S15-DOOR). Home: `client.gd` `_draw`, which always turns `_toward` the watched mower.
+   FIX: while walking, face the way they walk; watch you again once they stop.
+205. [FEATURE, small] Packing: take an item straight off the truck, without carrying it
+   back to the tray (S15-PACK, otherwise much better). Home: `pack.gd` `_unhandled_input`,
+   `put_back`. FIX: the put-back key with empty hands on an item sends it home.
+
+PROPOSED ORDER: 196 (it's blocking, and small); the robot pass, 200, 201, 202 (the robot's
+useless until it finds uncut grass and gets out of jams); the small pass, 204, 203, 205,
+197; 198 and 199 once answered; then the grills (193, then 189's tiers and price).
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
