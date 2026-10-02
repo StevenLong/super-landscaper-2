@@ -165,9 +165,15 @@ func turn() -> void:
 		Sfx.play("ui_move", 0.0)
 
 
-## Put what's in your hands back where it came from (or back in the tray).
+## Put what's in your hands back where it came from (or back in the tray). Empty-handed on
+## a packed item: it comes off the truck, straight home.
 func put_back() -> void:
 	if held.is_empty():
+		var p := Game.packed_at(zone, cell) if zone != "tray" else {}
+		if not p.is_empty():
+			Game.packed.erase(p)
+			_say = "%s left at home." % Game.kit_name(p.kind)
+			Sfx.play("ui_select", 0.0)
 		return
 	if not held.from.is_empty():
 		Game.packed.append(held.from)
@@ -243,7 +249,7 @@ func _draw() -> void:
 			_item(o + Vector2(at) * CELL, held.kind, held.turned, (UI.GOOD if ok else UI.BAD) * Color(1, 1, 1, 0.8))
 	elif not held.is_empty():
 		_item(TRAY_AT + Vector2(460, row * ROW_H), held.kind, held.turned, COLOURS[held.kind] * Color(1, 1, 1, 0.8))
-	var keys := "Move: arrows/stick   %s pick up / drop   %s turn   %s put back   %s drive" % [
+	var keys := "Move: arrows/stick   %s pick up / drop   %s turn   %s put back / send home   %s drive" % [
 		Game.key("interact"), "(Y)" if Game.pad else "[R]", Game.key("hop"), "(Start)" if Game.pad else "[P]"]
 	draw_string(font, Vector2(60, 680), keys, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UI.DIM)
 	if _say != "":

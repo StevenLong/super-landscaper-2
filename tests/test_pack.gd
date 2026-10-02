@@ -77,6 +77,15 @@ func _process(_delta: float) -> bool:
 			s.cell = Vector2i(0, 0)
 			s.act()
 			assert(g.cans_packed() == 1, "into the corner")
+			# Empty-handed, put back on a packed item: straight off the truck, home.
+			s.put_back()
+			assert(g.cans_packed() == 0 and s.held.is_empty() and s._say == "Petrol can left at home.", "off the truck, home: %s" % s._say)
+			s.zone = "tray" # and on again, for the drive below
+			s.row = s._tray().find("can")
+			s.act()
+			s.zone = "bed"
+			s.act()
+			assert(g.cans_packed() == 1, "back in the corner")
 			# Moving right off the bed with no trailer reaches the tray; the last row drives.
 			s.cell = Vector2i(3, 0)
 			s._move(Vector2i.RIGHT)
