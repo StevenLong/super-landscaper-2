@@ -656,6 +656,11 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	var n := _notch
 	var nl := n.has_area() and n.position.x <= 0.0 # next door's corner is on the left
 	var nr := n.has_area() and not nl
+	var side_from := n.end.y # where the side run on the notch's side starts: its foot...
+	if _house.venue == "graveyard": # ...or the vestry's back, where it stands against that side
+		var v: Rect2 = _house.garage_rect()
+		if (nl and v.position.x <= 0.5) or (nr and v.end.x >= w - 0.5):
+			side_from = maxf(side_from, v.position.y)
 	var sides := {
 		# The back run is one strip the garden's full width, behind the house: where it's
 		# taller than the roof's overhang its top shows over the ridge. Critters come in
@@ -663,8 +668,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		"top": [top, Rect2(n.end.x if nl else -b, -b, (w + b - n.end.x) if nl else ((n.position.x + b) if nr else w + 2.0 * b), b), [], Vector2.DOWN],
 		"top_l": [top, Rect2(), [Vector2(n.end.x if nl else 0.0, 0), Vector2(fp.position.x, 0)], Vector2.DOWN],
 		"top_r": [top, Rect2(), [Vector2(fp.end.x, 0), Vector2(n.position.x if nr else w, 0)], Vector2.DOWN],
-		"left": [edge, Rect2(-b, -b, b, h + 2.0 * b), [Vector2(0, n.end.y if nl else 0.0), Vector2(0, h)], Vector2.RIGHT],
-		"right": [edge, Rect2(w, -b, b, h + 2.0 * b), [Vector2(w, n.end.y if nr else 0.0), Vector2(w, h)], Vector2.LEFT],
+		"left": [edge, Rect2(-b, -b, b, h + 2.0 * b), [Vector2(0, side_from if nl else 0.0), Vector2(0, h)], Vector2.RIGHT],
+		"right": [edge, Rect2(w, -b, b, h + 2.0 * b), [Vector2(w, side_from if nr else 0.0), Vector2(w, h)], Vector2.LEFT],
 		"bottom_l": [road, Rect2(-b, h, d0 + b, b), [Vector2(0, h), Vector2(d0, h)], Vector2.UP],
 		"bottom_r": [road, Rect2(d1, h, w - d1 + b, b), [Vector2(d1, h), Vector2(w, h)], Vector2.UP],
 	}
@@ -712,6 +717,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			var from := -BORDER_UP
 			if (key == "left" and nl) or (key == "right" and nr):
 				from = n.end.y - b - BORDER_UP # it starts at next door's corner, and takes it
+				if side_from > n.end.y:
+					from = side_from # at the vestry's back wall, flush with its roof (as notch_v with the nave)
 			var to := h + b - BORDER_UP
 			if key == "notch_v": # down to next door's run, or to its foot where none crosses (the church)
 				to = n.end.y - (BORDER_UP if sides.has("notch_h") else 0.0)
