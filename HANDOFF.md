@@ -10,6 +10,48 @@ per run: about 215k to 240k tokens, 13 to 15 minutes (both 2026-10-02).
 
 ---
 
+## Session 16 (2026-10-02): verify-first, the verifier, the robots fixed, the small pass built
+- **Played (dev):** S15 mostly answered. Passed: TRUCK, SAVEQUIT, PAY, OFFER; PORTRAIT and
+  PAPER pass bar the window glass (203) and the shop overflow (196). Raised: DOOR (slid
+  backwards, 204), ROBOT (re-mowed cut grass, jammed; $150 cheap), PACK (send home, 205),
+  and notes triaged into 196 to 206. A crash (robot after the dog went home) fixed at once
+  (dcfaf99).
+- **Process, the dev's call:** verify everything I can myself; a play check is owed only
+  for what needs a person (feel, fun, pace, loudness, "does it read"); the rest goes in
+  CHECKS.txt's VERIFIED section. The dev dogfoods daily, so no frame-by-frame rigs for
+  motion. In CLAUDE.md (Verify) and the handoff skill (06731a4).
+- **The verifier agent** (`.claude/agents/verifier.md`, in the repo so both machines have
+  it; loads by name from the next session, this one ran it as general-purpose reading that
+  file): 2 runs, 8 real finds, 0 false alarms. Run 1 (robots): unreachable grass driven at
+  in straight lines for ever, 59 to 62 flowers flattened on a parterre, a corridor
+  deadlock, solid shapes bigger than their no-mow areas. Run 2 (small pass): my own
+  regression (Drive on the packing screen unpacked the item under the cursor), a customer
+  invisible at a smashed window, an orphaned fourth gear, critters walking out of next
+  door's terrace houses. All fixed and rechecked with its scripts. The dev wants its value
+  tracked: the tally is in the ledger block. Keep it to one run per build batch.
+- **Built** (all pushed; my calls in the design doc and the commits, veto any): 196, 200 to
+  202 (the robots), 197 (truck bay), 198 (gears), 199 (horn), 203, 204, 205, the churchyard
+  wall stub (194). Also a rare spawn bug (critters grazing the house corner; test_shapes
+  flaked 1 in 7).
+- **Promoted to the design doc** (the dev's calls this session): the customer faces the way
+  they walk and is behind the glass at a window; two ride-on gears, the third and fourth as
+  upgrades; the horn scares critters (annoyance open, 206); the truck's reach is one painted
+  bay; send home on the packing screen; robots mow only uncut grass, stop when done, never
+  deadlock, rammed takes damage both ways (stopping at a gnome is fine).
+- **Lessons:** never run a background job that stashes project files (one got killed
+  mid-stash; restored). A new agent type in `.claude/agents` only loads at session start.
+- Verified: run_all green (parse, smoke, 40 tests; new test_porch, test_robot_jam,
+  test_horn; additions in test_controls, test_pack, test_seen, test_mower_feel,
+  test_robot, test_prompts). Robot coverage measured by sim; screenshots looked at for the
+  board, window, bay, packing, horn, fences. Not played.
+
+OWED CHECKS: 6, in CHECKS.txt (2 loads, about 30 minutes).
+
+NEXT:
+1. Grill 193 (pace and escalation), now, after clearing context.
+2. Then grill 189 (robot tiers, price, speed) and 168 (hired help).
+3. Play LOAD 1 and 2 of CHECKS.txt when there's time.
+
 ## Session 15 (2026-10-01): S13 and S14 played and triaged, the fallout built, the robot redone
 - **Played (dev):** all 19 checks answered. Passed: S13-WALL, KILL, STONE, PATIO,
   POCKETS, CORD (a bit better), RIDEDRY, IDLE; S14-PAYDAY, VISIT, COURT, BLACKOUT (seen
@@ -375,40 +417,3 @@ NEXT:
    55 and 75b.
 3. /grill on 91 (mower types that play differently) and 96 (subquests); 94 and 100 when
    there's room.
-
-## Session 8 (2026-09-26): the whole grill order built (season, crime, objects, venues, art)
-- Built, all unplayed: bug batch 58 to 61, charged throws step 1 (80), the season and
-  payday (72, 78), impatience signals (73), heat and the police (74, with 62's car ram),
-  rifling pockets (76), seen versus evidence (77), objects by size (79), critters in hand
-  (81), the mansion and churchyard (75 first cut), and the 3/4 art pass (66 to 71).
-- Verified: run_all green (exit 0) with new tests: throw, season, police, seen, objects,
-  critters, venues. Every feature was also screenshotted headful and looked at. Nothing
-  play-checked yet: 21 checks in CHECKS.txt.
-- Calls I made while building (vetoable, not in the design doc):
-  - Police are called for tier 2, or tier 1 once the job started at heat 3+, and only if
-    the customer can see (robbery always). Countdown 60 s, 8 s less per heat level, floor
-    20. Fines $50 (tier 1) / $150 (tier 2), x(1 + 0.25 per heat). A fine can put money
-    negative. Vandalism after being fired counts once a job.
-  - Only thrown stones are crimes; blade-flung ones are accidents (rep only).
-  - Short on payday, the heavies take dearest kit first until covered and you keep the
-    change; kit resells at half price. Heat cools a level per week paid.
-  - Customer indoors share by persona: perfectionist 0.1, gardener 0.25, nature 0.3, grump
-    0.35, squirrel hater 0.4, toff 0.5, busy 0.7.
-  - Venues: 40% of offers at 75+ rep are a mansion (1.8x pay); 50% under 20 rep (not the
-    dregs) are the churchyard (0.7x). Mansion windows cost 3x, urns $120.
-  - Props per garden: gnomes (more for the gardener), 30% flamingo, 20% cone, 60% hose,
-    a ball if there's a dog, 0 to 2 boulders.
-- Side effects: the mower's collision is now its foreshortened footprint, so the ride-on
-  got quicker in sim_balance (50% at 86 s, was 99 s). audio/splash.wav no longer matches
-  tools/make_audio.py exactly; left as committed. Trap noted in docs/TRIBAL.md: a texture
-  load()ed in _draw draws as a white box.
-- New cheat: [4] on the board takes 20 rep off (to reach the churchyard).
-- Parked items reviewed (parked about 6 sessions): 19 (stripe blending) dropped; 30, 30b
-  and 37 kept, still parked.
-
-OWED CHECKS: 21, in CHECKS.txt (5 loads, about 35 minutes).
-
-NEXT:
-1. Play the checks; triage what they turn up.
-2. 80b, throwing step 2 (arcs), once S8-THROW has been played.
-3. 75b (the loop drive joining the road, the golf course), 46, 55.

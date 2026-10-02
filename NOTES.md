@@ -99,30 +99,15 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
 
 155 when it's caught on screen.
 
-### Notes 2026-10-01 (S13 and S14 check fallout: LOAD 1 to 3 played, and the dev's notes)
+### Open after session 16 (2026-10-02; what's left of the S13 to S15 fallout)
 
-Fixed during the play (session 15): the packing screen's crash on driving off (17dec2f);
-fence and wall corners at next door's corner and the churchyard wall (dc5e08f).
-Built after (session 15, unplayed): 178 to 188, 190 to 192, 195; and 189's robot as
-decided (stripes, stops for critters, grinds stones). See CHECKS.txt once the handoff
-writes them.
-
-189. [DESIGN, moderate] Robot mowers, what's still open after the rework: tiers (cheap
-   bouncers that run till they die, dear ones upgradeable or cleverer round critters),
-   consumable vs permanent vs destroyable, speed and price. My calls in the rework (veto
-   any): lanes along the way it's set down facing; it waits 2 s for something in its way,
-   then gives that spot up and goes round; -10 condition a stone, broken for the rest of
-   the job at 0, fresh next job; it crosses a drive to reach the rest of the lawn.
-   Session 16 calls (veto any): it plans only uncut grass it can reach by the grid and only
-   ever drives by the grid (the drive is crossable, never mowed); a spot any robot has
-   stood in counts as done for all of them (the strip by the fence none can reach); a
-   spot given up on twice, or blocked by something solid, is given up for good (so a gnome
-   no longer keeps it on for ever); patience is 2 to 2.5 s, jittered so two robots don't
-   give up in step; a ram knocks it impact / 25 x the mower's toughness (a ride-on flat out
-   about 24). Measured: two robots take about 8 minutes to cut 85% of a 1280 x 720 lawn,
-   and only 8 to 25% of a big one (1600 x 900 or more) in 5 minutes: slow, a tiers call.
-   S15-ROBOT (2026-10-02): $150 is pocket change after the first month, and cheap doesn't
-   make it good: price it with the tiers (and 193's pace), once 200 and 201 make it useful.
+189. [DESIGN, moderate] Robot mowers, what's still open: tiers (cheap bouncers that run till
+   they die, dear ones upgradeable or cleverer round critters), consumable vs permanent vs
+   destroyable, speed and price. How it behaves now is in the design doc (Mowers and
+   Equipment). Measured: two robots take about 8 minutes to cut 85% of a 1280 x 720 lawn,
+   and only 8 to 25% of a big one (1600 x 900 or more) in 5 minutes: slow. S15-ROBOT: $150
+   is pocket change after the first month, and cheap doesn't make it good: price it with
+   the tiers and 193's pace.
 193. [DESIGN, large] Pace and escalation (S14-PACE, the dev's biggest concern). One big job
    and you're set: the loan's paid, tens of thousands by month two, nothing to buy, no
    pressure. The week fills with the same big venue reshuffled: well paid, easy, samey.
@@ -130,29 +115,15 @@ writes them.
    lead, unsure: escalation inside the jobs (more critters and trouble per visit, maybe the
    longer you stay), not only outside them; or back toward the coin-op shape. Needs a grill
    before any retune of PAPER, REACH, the vig or pay.
-194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays (the
-   corner fix is dc5e08f). Collect screenshots here; side runs still leave a thin strip of
-   outside grass between the fence and the lawn (judged fine, unconfirmed). The churchyard
-   wall's stub past the vestry is fixed (45b2610).
-Also: S14-CAL, the board reads but will be redone when things split out (no item). S13-CORD
-reads a bit better (no item). The rest of S13 and S14 passed.
+194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect
+   screenshots here; side runs still leave a thin strip of outside grass between the fence
+   and the lawn (judged fine, unconfirmed; S15-FENCE asks).
+206. [DESIGN, small] The horn (199, built): does using it a lot annoy the customer? The dev
+   was unsure; left out for now.
+Also: S14-CAL, the board reads but will be redone when things split out (no item).
 
-PROPOSED ORDER: play what session 15 built; grill 193 (pace); 189's tiers after.
-
-### Notes 2026-10-02 (S15 check fallout, LOAD 1 to 3 mostly played, and the dev's notes)
-
-Fixed during the play (session 16): a robot crashed the job once the dog was handed home
-(dcfaf99: the blocked check passed the freed dog through a typed lambda param).
-Passed: S15-TRUCK, SAVEQUIT, PAY, OFFER; S15-PORTRAIT and PAPER pass bar 203 and 196.
-Built in session 16: 196 (the shop's text wraps); 200 to 202 (the robots, c3a079e and after).
-
-Built in session 16 too (all decided, my small calls in the commits, veto any): 197 (a
-100 x 64 bay from the drive's end to the truck, painted faint yellow), 198 (third gear $150,
-fourth $250), 199 (the horn: 160 px, critters run at double speed for 2.5 s, not the dog;
-the customer's annoyance at it is still open), 203, 204, 205.
-
-PROPOSED ORDER: the grills: 193 (pace and escalation) first, then 189 (robot tiers, price,
-speed), then 168 (hired help).
+PROPOSED ORDER: grill 193 (pace and escalation) first, then 189 (robot tiers, price, speed),
+then 168 (hired help).
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 

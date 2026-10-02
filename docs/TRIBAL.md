@@ -22,3 +22,12 @@ Traps and "we tried X, it failed because Y". Current rules live in CLAUDE.md.
 - "The dead stay dead" (season prototype, 2026-09-29) had nothing to act on: no garden
   resident dies for good. The dog only limps; hedgehogs and squirrels are fresh spawns each
   visit. It waits for something killable that belongs to the garden.
+- A background comparison that `git stash`ed robot.gd and main.gd to run the old code was
+  killed at its time limit mid-run (2026-10-02), leaving the work stashed. Compare old code
+  by copying `git show HEAD:<file>` over the file and copying it back, in the foreground,
+  never by stashing in the background.
+- A new agent type in `.claude/agents/` loads only when a session starts: the session that
+  wrote `verifier.md` had to run it as a general-purpose agent told to read the file.
+- Robots used to drive in a straight line at any target the grid couldn't reach, which is
+  how they "crossed the drive" (the drive is excluded ground) and also how they flattened
+  flower beds. The drive is now an explicit crossable rect (Robot.crossable).

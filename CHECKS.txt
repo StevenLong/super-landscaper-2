@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (6 checks, about 30 minutes)
+PLAY CHECKS OWED  (6 checks, 2 loads, about 30 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -13,24 +13,8 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 3: A JOB      (about 15 min; an L plot, a dog helps; [1] for a ride-on first)
+LOAD 1 of 2: A JOB      (about 20 min; an L plot, a dog helps; [1] on the board for a ride-on)
 ================================================================================
-
-S15-TRUCK
-On foot at the truck with kit packed: the menu is a vertical list, "Keep going" first
-and highlighted, the drive-off last, nothing off the screen.
->yes
-
-S15-DOOR
-Watch the customer go in and come out: they walk between the patio and the door, which
-opens and shuts. Indoors they walk from window to window, glimpsed through the panes they
-pass, then stand behind the glass (the glass over their face). Does it read?
->They slide backwards into the door, still facing the player. They should probably face the direction they are walking.
-
-S15-PORTRAIT
-The portrait: at a window and unable to see you, the glass stays and it greys with
-UNSEEN; indoors away from the windows it greys with INSIDE. It switches, no fade.
->Yes, but see my notes
 
 S15-POLICE
 Run the dog over while they watch: the police are called and you're fired there and
@@ -61,7 +45,7 @@ start? The horn ([H]): does the honk sound right, and is scattering critters use
 
 
 ================================================================================
-LOAD 2 of 3: THE ROBOT      (about 10 min; [1] on the board, buy a robot under Upgrades)
+LOAD 2 of 2: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
 ================================================================================
 
 S16-ROBOT
@@ -70,46 +54,6 @@ been cut, cross the drive, and go green when there's nothing left they can reach
 one by a gnome and two meeting head on: do they get on with it? (The mechanics are
 verified, below; this is whether it feels right.)
 >
-
-S15-ROBOT
-Take a robot off the truck and set it down facing along the lawn: straight stripes lane
-by lane, round trees and beds; it stops for a critter, the dog or you (and goes round if
-kept waiting); it grinds stones (its bar drops); never a crime. Worth $150 now? It's slow
-on its own (about 15 minutes for a small lawn): too slow?
->$150 seems cheap after the first couple of missions or the first month. You've definitely got that sitting around in your pockets, but that doesn't make the lawnmower good. 
-
-As you can see in my notes, it just keeps cutting already-cut grass, providing no value, and pretty often will park either facing each other or facing a stone forever. 
-
-It would be good if it were a bit smarter. It doesn't actually stop in front of stones (it runs them over), but it does stop in front of gnomes, for example. I think that's fine, because it puts a little bit of onus on the player to keep somewhat of an eye on them. But if they can't find grass that needs cutting, or if they get deadlocked, they're not much use.
-
-
-================================================================================
-LOAD 3 of 3: THE BOARD AND THE MONEY      (about 15 min; Continue or New business)
-================================================================================
-
-S15-PAPER
-With a pad, go down the paper to the last ad: it's fully in view (stamped ones too).
->Yes, but see my note above about the shop overflowing to the right.
-
-S15-SAVEQUIT
-On the board, Esc or Start jumps to "Save and quit"; Continue on the title picks up there.
->yes
-
-S15-PAY
-[3] to payday: slide what comes off the debt; the line shows interest, rent and food, off
-the debt, owed after. Can you pay exactly as much as you can spare?
->yes
-
-S15-OFFER
-Finish jobs perfectly ([0]) until a regular asks: the summary, Continue, then their own
-screen with their face. Slide the ask and haggle; next time decline ("booked up", +2
-reputation). Does it feel like a win?
->yes
-
-S15-PACK
-The packing screen: the cursor on the petrol mower outlines it whole and one step leaves
-it; Start (or [P]) drives off from anywhere.
->Much better. There should also be an option to just directly remove something, rather than have to pick it up and manually move it all the way back over to the home inventory.
 
 
 ================================================================================
