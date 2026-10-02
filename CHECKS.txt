@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (14 checks, 3 loads, about 40 minutes)
+PLAY CHECKS OWED  (2 checks, in one job, about 10 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -13,7 +13,7 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 3: A JOB      (about 15 min; any garden, a dog helps; a back patio for PORCH)
+LOAD 1 of 3: A JOB      (about 10 min; an L plot, a dog helps)
 ================================================================================
 
 S15-TRUCK
@@ -32,28 +32,15 @@ The portrait: at a window and unable to see you, the glass stays and it greys wi
 UNSEEN; indoors away from the windows it greys with INSIDE. It switches, no fade.
 >Yes, but see my notes
 
-S15-PORCH
-On a back patio (terrace or semi): mow right up behind the customer, over the grass their
-body hides. No knockout unless you drive onto their feet.
->
-
 S15-POLICE
 Run the dog over while they watch: the police are called and you're fired there and
 then ("I've called the police!"). As the countdown runs out, is the siren still too loud?
 >
 
-S15-HEDGE
-Throw a critter over the hedge while they watch you throw it, landing out of their
-sight: they still react.
->
-
 S15-FENCE
-Next door's corner on an L plot, and the churchyard's short wall: the runs meet at the
-post, the wall reaches the church, and no strip of grass by the corner post you can't cut.
->
-
-S15-QUIT
-Pause in a job: "Quit to title" says you'll black out.
+On an L plot, mow right into the corner where your hedge or fence meets next door's: is
+there a strip of grass by the corner post you can't cut? (How the corners look is
+verified, below.)
 >
 
 
@@ -100,3 +87,28 @@ S15-PACK
 The packing screen: the cursor on the petrol mower outlines it whole and one step leaves
 it; Start (or [P]) drives off from anywhere.
 >Much better. There should also be an option to just directly remove something, rather than have to pick it up and manually move it all the way back over to the home inventory.
+
+
+================================================================================
+VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
+================================================================================
+Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
+
+VERIFIED  Crash: a robot mower after the dog went home (dcfaf99). test_robot frees a dog
+          and runs the robot's check; the old code throws your exact error, the fix passes.
+VERIFIED  S15-PORCH: only their feet count. New test_porch drives through the space their
+          body covers (no knockout), then onto their feet (out cold); the old hitbox fails
+          it. The grass behind them is ordinary lawn, nothing stops it being cut.
+VERIFIED  S15-HEDGE: test_throw lands a thrown squirrel out of sight: no reaction unless
+          they saw it leave your hand. The "saw it" flag is set from what they can see at
+          the moment you throw (read in the code, not driven by the test).
+VERIFIED  S15-QUIT: screenshot of the pause menu in a job: the last button reads "Quit to
+          title (you'll black out: the job's lost)", fits its box.
+VERIFIED  S15-FENCE, the look: screenshots of three L plots and two churchyards, overview
+          and each corner. L plots: hedge runs meet at the corners. Churchyard: both walls
+          reach the church. Found: the churchyard's left wall carries on past the side
+          chapel into the open grass behind the church (about 150 px of stub ending in
+          nothing). Filed under 194.
+CHANGED   Process: checks are owed only for what needs you; this section lists the rest.
+          A verifier agent will try to break each build batch; its score is kept in
+          HANDOFF.md.

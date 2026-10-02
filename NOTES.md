@@ -124,7 +124,10 @@ writes them.
    before any retune of PAPER, REACH, the vig or pay.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays (the
    corner fix is dc5e08f). Collect screenshots here; side runs still leave a thin strip of
-   outside grass between the fence and the lawn (judged fine, unconfirmed).
+   outside grass between the fence and the lawn (judged fine, unconfirmed). Seen
+   2026-10-02 (screenshots): the churchyard's left wall runs on past the side chapel into
+   the open grass behind the church, a stub ending in nothing; it should stop at the
+   chapel's back, as the right wall stops at the nave.
 Also: S14-CAL, the board reads but will be redone when things split out (no item). S13-CORD
 reads a bit better (no item). The rest of S13 and S14 passed.
 
