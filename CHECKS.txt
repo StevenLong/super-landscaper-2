@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (6 checks, 2 loads, about 30 minutes)
+PLAY CHECKS OWED  (10 checks, 3 loads, about 60 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -53,6 +53,35 @@ Two robots on one lawn, you mowing too: do they now feel worth having (they skip
 been cut, cross the drive, and go green when there's nothing left they can reach)? Watch
 one by a gnome and two meeting head on: do they get on with it? (The mechanics are
 verified, below; this is whether it feels right.)
+>
+
+
+================================================================================
+LOAD 3 of 3: THE CLOCK      (about 30 min; a week of the season, any business)
+================================================================================
+
+S17-GAMBLE
+The day's clock (193a): book two or three jobs on one day, windows overlapping, and try
+to fit them all. Does overbooking feel like a gamble you chose, or a chore? (The clock's
+whole question.)
+>
+
+S17-PACE
+A small lawn eats about 2 hours of the day, the day runs 8am to 8pm, the drive is 30
+minutes, a call 10. Does the day move at the right speed, in a job and on the board?
+>
+
+S17-LATE
+Arrive partway through someone's window (book one that opens early, go late): they're
+already partway through their patience, glancing at their watch sooner. Does it read
+that you're late, and is the cost fair?
+>
+
+S17-BOARD
+The corkboard: the day's clock along the top (today's windows as bars, the cost of the
+button you're on lit gold), today's jobs with when you'd get there, the fortnight, the
+paper three ads a page, the shop; Shift and Ctrl (RB, LB) turn the pages. Does it read?
+Anything you reach for that isn't there?
 >
 
 
@@ -130,6 +159,33 @@ VERIFIED  The verifier's second run (on the small pass): facing, the bay, gears,
           by walking out of the house next door: now 0 (its own sampler, 4 layouts x 3).
 VERIFIED  194, the churchyard wall: the side wall by the vestry starts at the vestry's back,
           flush with its roof (screenshots of both churchyards).
+VERIFIED  193a, the day's clock, by test (test_season, new clock section): windows on the
+          half hour inside 8am to 8pm, sized from patience; arriving is the drive or the
+          window opening, whichever's later; patience is the window and the customer's
+          clock starts where you came in; the day goes on after a job; no-shows cost a
+          classified's word and a regular's mood (and rebook them); a day taken whole
+          can't be booked, nor a day gone, nor a window you can't reach; a call takes 10
+          minutes; June's paper is fuller and regulars come twice as often; court moves a
+          regular a day; an old save loads and gets its windows. test_run_flow rings an ad
+          and goes through the real board; test_controls checks every page fits the screen
+          and Shift turns them. Screenshots of each page and a job's HUD ("1:30pm, by 6pm").
+VERIFIED  The verifier's third run (on the clock): the calendar's lists, windows, arriving
+          late, no-shows at the day's end, the call's cost on the clock, the paper by month,
+          old saves and the suite held. It found real bugs, all fixed with a test or a
+          screenshot: (1) being nicked no longer ended the day, so you went from the cells
+          to the next job (test_season); (2) time spent after being paid was free, the day
+          went on from payment, not drive-off (test_run_flow); (3) an ad whose window shut
+          within the call's 10 minutes showed Ring, and a sure yes came back a no
+          (test_season); (4) court or jail on a day lost its classifieds without a word,
+          now no-shows (test_season); (5) blacking out on community service wiped the
+          sentence, now it waits for the next free day (test_season); (6) the regulars
+          list ran off the paper page, now it scrolls (screenshot, 8 regulars); (7) more
+          than 3 jobs today pushed the fortnight off the board, now they scroll, three at a
+          time (screenshot, 6 jobs); (8) cheat [3] made every job on the way a no-show;
+          (9) small ones: the HUD read 0:00 under the briefing, turning to the paper's last
+          page left the cursor on a dead button, 4 or more overlapping windows drew over
+          each other, a long late job ran the clock past midnight, a peak regular's list
+          entry didn't say they come more often in summer.
 TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
           and slow on big lawns either way (filed under 189).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.

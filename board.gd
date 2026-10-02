@@ -135,7 +135,15 @@ func _preview(c: Control, to: int) -> void:
 ## first button.
 func _today(box: Control) -> Button:
 	var col := UI.vbox(6)
+	var list := UI.vbox(6) # more than three and they scroll, so the fortnight stays in view
+	var scroll := ScrollContainer.new()
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.add_child(list)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(scroll)
 	var jobs := Game.jobs_today()
+	scroll.custom_minimum_size.y = 42 * clampi(jobs.size(), 1, 3)
 	var first: Button = null
 	if jobs.is_empty():
 		var row := UI.hbox(14)
@@ -147,16 +155,17 @@ func _today(box: Control) -> Button:
 			_ready(), 20)
 		first.name = "Today"
 		row.add_child(first)
-		col.add_child(row)
+		list.add_child(row)
 	else:
 		for b: Dictionary in jobs:
-			var row := UI.hbox(14)
-			var what := RichTextLabel.new()
-			what.bbcode_enabled = true
-			what.fit_content = true
-			what.scroll_active = false
+			var row := UI.hbox(0) # one line each (labels, not rich text, so the scroll can measure them)
+			var who := UI.label(b.customer, 20, UI.BAD if b.has("service") else (UI.GOOD if b.has("regular") else UI.GOLD))
+			who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(who)
+			var what := UI.label(_job_line(b), 20)
+			what.clip_text = true
 			what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			what.text = _job_line(b)
+			what.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(what)
 			var go: Button
 			if Game.can_go(b):
@@ -168,7 +177,7 @@ func _today(box: Control) -> Button:
 				go.disabled = true
 			go.name = "Today" if b == jobs[0] else "Go"
 			row.add_child(go)
-			col.add_child(row)
+			list.add_child(row)
 			if first == null and not go.disabled:
 				first = go
 		var end := UI.button("Call it a day" + (" (miss %d)" % jobs.size()), func() -> void:
@@ -185,13 +194,14 @@ func _today(box: Control) -> Button:
 	return first
 
 
+## What a job is, after the customer's name.
 func _job_line(b: Dictionary) -> String:
 	var when := "%s to %s" % [Game.time_text(b.from), Game.time_text(b.by)]
 	if b.has("regular"):
-		return "[color=#98e070]%s[/color], your regular, %s. $%d, no tips." % [b.customer, when, b.pay]
+		return ", your regular, %s. %s" % [when, "Paid up front." if Game.regulars.get(b.regular, {}).get("prepaid", 0) > 0 else "$%d, no tips." % b.pay]
 	if b.has("service"):
-		return "Community service, [color=#f07060]%s[/color]'s churchyard, %s. Unpaid." % [b.customer, when]
-	return "[color=#f8d048]%s[/color], from the paper, %s. $%d." % [b.customer, when, b.pay]
+		return "'s churchyard, %s. Community service, unpaid." % when
+	return ", from the paper, %s. $%d." % [when, b.pay]
 
 
 ## A time as short as it'll go, for a calendar note: 9, 9:30, 12.
@@ -283,7 +293,7 @@ func _paper_view(root: Control) -> Control:
 	var prev := UI.button("< Page back", func() -> void:
 		_page -= 1
 		_build()
-		UI.focus(find_child("PrevPage", true, false)), 20)
+		_focus_page("PrevPage"), 20)
 	prev.name = "PrevPage"
 	prev.disabled = _page == 0
 	nav.add_child(prev)
@@ -293,15 +303,20 @@ func _paper_view(root: Control) -> Control:
 	var next := UI.button("Turn the page >", func() -> void:
 		_page += 1
 		_build()
-		UI.focus(find_child("NextPage", true, false)), 20)
+		_focus_page("NextPage"), 20)
 	next.name = "NextPage"
 	next.disabled = _page >= pages - 1
 	nav.add_child(next)
 	left.add_child(nav)
 
+	var side := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
+	side.follow_focus = true
+	side.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cols.add_child(side)
 	var right := UI.vbox(6)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(right)
+	side.add_child(right)
 	right.add_child(UI.label("Your regulars", 22))
 	if Game.regulars.is_empty():
 		var none := UI.label("None yet. A good job from the paper might earn one.", 18, UI.DIM)
@@ -311,6 +326,13 @@ func _paper_view(root: Control) -> Control:
 		right.add_child(_regular_row(id))
 	var ring := left.find_child("Ring", true, false)
 	return ring if ring else (next if not next.disabled else (prev if not prev.disabled else find_child("Tab_paper", true, false)))
+
+
+## After turning the paper's page: stay on that page button, or the other one once you
+## reach an end (a disabled button can't hold the cursor).
+func _focus_page(pressed: String) -> void:
+	var b := find_child(pressed, true, false) as Button
+	UI.focus(b if b and not b.disabled else find_child("NextPage" if pressed == "PrevPage" else "PrevPage", true, false))
 
 
 ## An ad as a classified on newsprint: no picture, just the words and the hints buried
@@ -392,6 +414,8 @@ func _regular_row(id: int) -> Control:
 	var reg: Dictionary = Game.regulars[id]
 	var row := UI.hbox(10)
 	var every: String = {7: "weekly", 14: "fortnightly", 28: "four-weekly"}[reg.cadence]
+	if Game.cadence_now(reg) < reg.cadence:
+		every += " (more in summer)"
 	var l := UI.label("%s, %s, %s, $%d" % [reg.job.customer, every, _hours(reg.job.from) + "-" + _hours(reg.job.by), reg.rate], 18, UI.GOOD)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -422,7 +446,8 @@ class DayClock extends Control:
 			var w := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
 			draw_string(font, Vector2(clampf(x - w / 2.0, 0.0, size.x - w), 17), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UI.DIM)
 		draw_rect(Rect2(0, top, _x(Game.minute), h), Color(0, 0, 0, 0.4))
-		var lanes: Array[int] = []
+		var lanes: Array[int] = [] # each window in the first lane free by its start
+		var on: Array[int] = []
 		for b: Dictionary in Game.jobs_today():
 			var lane := 0
 			while lane < lanes.size() and lanes[lane] > b.from:
@@ -430,8 +455,13 @@ class DayClock extends Control:
 			if lane == lanes.size():
 				lanes.append(0)
 			lanes[lane] = b.by
+			on.append(lane)
+		var step := minf(10.0, (h - 6.0) / maxf(1.0, lanes.size())) # many overlapping, thinner bars
+		var jobs := Game.jobs_today()
+		for i in jobs.size():
+			var b: Dictionary = jobs[i]
 			var color := UI.BAD if b.has("service") else (UI.GOOD if b.has("regular") else UI.GOLD)
-			draw_rect(Rect2(_x(b.from), top + 3 + (lane % 3) * 10, _x(b.by) - _x(b.from), 8), color)
+			draw_rect(Rect2(_x(b.from), top + 3 + on[i] * step, _x(b.by) - _x(b.from), maxf(2.0, step - 2.0)), color)
 		if cost_to > Game.minute:
 			var x0 := _x(Game.minute)
 			var x1 := maxf(_x(cost_to), x0 + 3.0)
@@ -538,9 +568,18 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if event.keycode == KEY_1:
 		Game.money += 500
 		_build()
-	elif event.keycode == KEY_3: # skip to payday
+	elif event.keycode == KEY_3: # skip to payday, the jobs on the way not counted against you
+		var trend := Game.rep_trend
+		var moods := {}
+		for id: int in Game.regulars:
+			moods[id] = Game.regulars[id].mood
 		while not Game.payday_pending and not Game.winter_pending:
 			Game.end_day()
+		Game.rep_trend = trend
+		for id: int in moods:
+			if Game.regulars.has(id):
+				Game.regulars[id].mood = moods[id]
+		Game.missed.clear()
 		_ready()
 	elif event.keycode == KEY_4: # down the ladder, for the churchyard
 		Game.reputation = maxf(1.0, Game.reputation - 20.0)

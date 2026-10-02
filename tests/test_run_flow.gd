@@ -79,8 +79,10 @@ func _process(_delta: float) -> bool:
 			current_scene._count("windows", 40.0) # as if a stone went through one
 			current_scene._count("sent_back")
 			current_scene.hand_in()
+			current_scene.customer.elapsed += 100.0 # dawdling after they've paid
 			current_scene._on_choice("drive_off")
 			assert(game.last_result.outcome == "paid", "a mowed lawn is accepted and you drive off (the scene is already on its way out)")
+			assert(game.last_result.elapsed >= 100.0 and game.minute == 600 + roundi(game.last_result.elapsed * game.MPS), "the day goes on from when you drove off, not when they paid")
 		4:
 			assert(current_scene.name == "Summary", "back at base, the job's summary")
 			assert(game.date_text() == "Tuesday 1 April 1980" and game.minute >= 600 and not game.in_job, "the day goes on, from when you got there")

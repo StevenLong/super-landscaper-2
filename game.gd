@@ -610,9 +610,11 @@ func record_result(result: Dictionary) -> void:
 		_maybe_offer(result)
 	if result.get("charge", 0.0) > 0.0 and (result.outcome == "nicked" or result.get("police", false)):
 		_charge(result)
-	# The day goes on: it's as late as you left.
+	# The day goes on: it's as late as you left (a night in the cells ends it).
 	if current_job.has("from"):
-		minute = maxi(minute, current_job.from + roundi(float(result.get("elapsed", 0.0)) * MPS))
+		minute = mini(1439, maxi(minute, current_job.from + roundi(float(result.get("elapsed", 0.0)) * MPS)))
+	if result.outcome == "nicked":
+		end_day()
 	save()
 
 
@@ -808,15 +810,15 @@ func cant_book(ad: Dictionary) -> String:
 		return "Gone"
 	if blocked(ad.day):
 		return "Day taken"
-	if ad.day == day and not can_go(ad):
+	if ad.day == day and not can_go(ad, RING_TIME):
 		return "Too late"
 	return ""
 
 
 ## Book an ad from the paper on its day, however full (the gamble's yours). Returns the
-## day, or -1 if it can't be (cant_book).
+## day, or -1 if it can't be (its day gone or taken whole).
 func book(ad: Dictionary) -> int:
-	if cant_book(ad) != "":
+	if ad.day < day or blocked(ad.day):
 		return -1
 	_add(ad.day, ad)
 	paper.erase(ad)
@@ -845,9 +847,10 @@ func arrival(b: Dictionary) -> int:
 	return maxi(minute + DRIVE, b.get("from", 0))
 
 
-## Whether you can still get there inside its window, before the day's out.
-func can_go(b: Dictionary) -> bool:
-	return minute < DAY_END and minute + DRIVE <= b.get("by", DAY_END)
+## Whether you can still get there inside its window, before the day's out (`first`:
+## minutes of something else before you set off, a call).
+func can_go(b: Dictionary, first := 0) -> bool:
+	return minute + first < DAY_END and minute + first + DRIVE <= b.get("by", DAY_END)
 
 
 ## Off to a job (the one picked on the board, else today's first), on the best mower
@@ -1100,6 +1103,7 @@ func save() -> void:
 func load_business() -> void:
 	var f := FileAccess.open(business_path(), FileAccess.READ)
 	var state: Dictionary = f.get_var()
+	minute = DAY_START # a save from before the clock has none
 	for k: String in state:
 		if get(k) is Array:
 			(get(k) as Array).assign(state[k])
@@ -1116,6 +1120,11 @@ func load_business() -> void:
 		blackout = current_job
 		if current_job.has("regular"):
 			drop(current_job.regular)
+		elif current_job.has("service"): # a sentence isn't wiped by blacking out: the next free day
+			var d := day + 1
+			while not day_free(d):
+				d += 1
+			_add(d, current_job)
 		rep_trend = maxf(0.0, rep_trend - BLACKOUT_REP)
 		reputation = maxf(0.0, reputation - BLACKOUT_REP * 0.5)
 		end_day()
@@ -1128,7 +1137,10 @@ func _upgrade_save() -> void:
 		if calendar[d] is Dictionary:
 			calendar[d] = [calendar[d]]
 		for b: Dictionary in calendar[d]:
-			if b.has("seed") and not b.has("from"):
+			if b.has("service") and not b.has("from"):
+				b.from = DAY_START + 60
+				b.by = DAY_START + 540
+			elif b.has("seed") and not b.has("from"):
 				_window(b)
 	for reg: Dictionary in regulars.values():
 		if not reg.job.has("from"):
@@ -1164,7 +1176,10 @@ func _take_day(d: int, what: Dictionary) -> void:
 	var lost := bookings(d)
 	calendar[d] = [what]
 	for b: Dictionary in lost:
-		if b.has("regular") and regulars.has(b.regular):
+		if b.has("seed") and not b.has("regular") and not b.has("service"): # a classified you can't now turn up to
+			missed.append(b.customer)
+			rep_trend = maxf(0.0, rep_trend - NO_SHOW_REP)
+		elif b.has("regular") and regulars.has(b.regular):
 			var moved := _place(b.regular, d)
 			if moved < 0 or moved > d + 1:
 				regulars[b.regular].mood -= NO_SHOW_MOOD

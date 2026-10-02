@@ -114,6 +114,11 @@ func _paper() -> void:
 	ad0.day = g.day
 	ad0.by = g.minute + g.DRIVE - 10
 	assert(g.cant_book(ad0) == "Too late", "today, too late to get there in time")
+	ad0.by = g.minute + g.DRIVE + g.RING_TIME - 5
+	assert(g.cant_book(ad0) == "Too late", "nor once the call's taken its ten minutes (the verifier's find: a sure yes came back a no)")
+	ad0.by = g.minute + g.DRIVE + g.RING_TIME
+	ad0.bar = 0.0
+	assert(g.cant_book(ad0) == "" and g.ring(ad0).contains("today") and g.jobs_on(g.day) == 1, "just in time, a yes")
 
 
 ## The day's clock (design doc, Time is the scarce thing).
@@ -160,8 +165,18 @@ func _clock() -> void:
 	g.day = g.day_of(1980, 4, 8)
 	var d: int = g.day + 2
 	g.calendar[d] = [_job_for("grump"), g._visit(9)]
+	var was: float = g.rep_trend
+	g.missed.clear()
 	g._take_day(d, {"court": {}})
 	assert(g.bookings(d).size() == 1 and g.bookings(d + 1).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == 9), "court: the regular shifts a day, the classified's lost")
+	assert(g.missed.size() == 1 and g.rep_trend == was - g.NO_SHOW_REP, "and the classified's a no-show, not lost silently")
+	# Blacking out on community service doesn't wipe the sentence.
+	g.calendar = {g.day: [g.service_job()]}
+	g.start_job()
+	g.in_run = false
+	g.load_business()
+	assert(g.calendar.values().any(func(l: Array) -> bool: return l.any(func(b: Dictionary) -> bool: return b.has("service"))), "blacked out on service: it's on the next free day")
+	g.blackout = {}
 
 
 ## A classified job for this persona, from the first seed that makes one.
@@ -256,8 +271,7 @@ func _court() -> void:
 	g.start_job()
 	var r := {"outcome": "nicked", "net": 0, "paid": 0, "rep": -12.0, "charge": 2.0, "tier": 2, "police": true}
 	g.record_result(r)
-	g.end_day()
-	assert(r.court_day == d0 + 1 and g.day == d0 + 1 and g.today().has("court"), "caught: court in the morning")
+	assert(r.court_day == d0 + 1 and g.day == d0 + 1 and g.today().has("court"), "caught: a night in the cells ends the day, court in the morning")
 	assert(g.bookings(d0 + 2).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == 1), "the regular booked then shifts a day")
 	var case: Dictionary = g.today().court
 	assert(case.caught and case.charge == 2.0 and case.tier == 2, "the charge goes to court")

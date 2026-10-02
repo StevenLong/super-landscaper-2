@@ -160,6 +160,7 @@ func _ready() -> void:
 	$HUD/Fuel.stamina = mower.power == "stamina"
 	$HUD/Face.set_look(job.look)
 	hud.choice.connect(_on_choice)
+	hud.set_clock(customer.elapsed, job) # the time you got there, under the briefing too
 
 	Sfx.music("music_mowing")
 	_record0 = Game.record
@@ -1834,6 +1835,7 @@ func _costs() -> float:
 ## The job is over: record it and head back to the board, which shows the rundown.
 func _finish(result: Dictionary) -> void:
 	over = true
+	result.elapsed = customer.elapsed # when you drove off, not when they paid: the day goes on from here
 	# What moved your name, line by line, for the summary (result.rep is their sum).
 	var job_rep: float = result.rep + result.get("mischief", 0.0)
 	result.rep_lines = [[{"paid": "The job", "fired": "Fired", "walked": "Drove off unpaid", "ko": "Knocked them out cold",

@@ -109,7 +109,7 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    is pocket change after the first month, and cheap doesn't make it good: price it with
    the tiers and 193's pace.
 193. Grilled 2026-10-02: time is the scarce thing (design doc, The Business). Build steps:
-193a. [FEATURE, large] The day clock: a booking is a window and the customer's patience is
+193a. [BUILT 2026-10-02, unplayed: CHECKS S17] The day clock: a booking is a window and the customer's patience is
    that window, on one clock that runs in the job (late arrival leaves less); free booking,
    several jobs a day, a drive chunk between; the paper swelling with the season and
    regulars asking extra visits at the peak. The corkboard screen (big calendar, several
@@ -145,8 +145,8 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    to see a little growth, leave again. For the hub grill.
 Also: S14-CAL, the board reads but will be redone when things split out (no item).
 
-PROPOSED ORDER: build 193a and play it; grill 189 (robots) and 168 (hired help) after,
-priced as ways to buy time.
+PROPOSED ORDER: play 193a (CHECKS LOAD 3); then 193b; grill 189 (robots) and 168 (hired
+help), priced as ways to buy time.
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
