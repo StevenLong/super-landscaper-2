@@ -109,6 +109,11 @@ VERIFIED  S15-FENCE, the look: screenshots of three L plots and two churchyards,
           reach the church. Found: the churchyard's left wall carries on past the side
           chapel into the open grass behind the church (about 150 px of stub ending in
           nothing). Filed under 194.
+VERIFIED  196, the shop running off the board: reproduced by screenshot with a robot owned
+          (the robot row, with Sell and Buy both, widened the column; Save and quit went
+          off the edge). Shop text now wraps. Screenshots with nothing, one robot, and
+          everything owned all fit; test_controls now checks every board button is on
+          screen with everything bought (the old code fails it).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.
           A verifier agent will try to break each build batch; its score is kept in
           HANDOFF.md.

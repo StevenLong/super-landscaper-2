@@ -124,6 +124,8 @@ func _build(keep := "") -> void:
 	for key: String in Game.UPGRADES:
 		shop.add_child(_upgrade_row(key))
 	shop.add_child(_robot_row())
+	for l: Label in shop.find_children("*", "Label", true, false): # wrap, so no row's words widen the column off the screen
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var kept := find_child(keep, true, false) if keep != "" else null
 	if kept:
 		for b: Button in kept.find_children("*", "Button", true, false):

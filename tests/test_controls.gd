@@ -120,6 +120,15 @@ func _physics_process(_delta: float) -> bool:
 			var last: Control = current_scene.find_children("Ring", "Button", true, false)[0].get_parent().get_parent().get_parent().get_child(-1)
 			var view: ScrollContainer = last.get_parent().get_parent()
 			assert(last.get_global_rect().end.y <= view.get_global_rect().end.y + 1.0, "the last ad scrolled into view")
+			# Everything bought (rows with Sell and Buy both): the shop still fits the screen.
+			for k: String in ["rideon", "robot", "robot"]:
+				g.buy(k)
+			current_scene._build()
+			_wait = 5
+		9:
+			var w := root.get_visible_rect().size.x
+			for b: Button in current_scene.find_children("*", "Button", true, false):
+				assert(b.get_global_rect().end.x <= w + 1.0, "%s fits on the screen (ends at %d)" % [b.text, b.get_global_rect().end.x])
 			print("PASS controls")
 			quit()
 	_step += 1

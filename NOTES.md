@@ -138,12 +138,8 @@ PROPOSED ORDER: play what session 15 built; grill 193 (pace); 189's tiers after.
 Fixed during the play (session 16): a robot crashed the job once the dog was handed home
 (dcfaf99: the blocked check passed the freed dog through a typed lambda param).
 Passed: S15-TRUCK, SAVEQUIT, PAY, OFFER; S15-PORTRAIT and PAPER pass bar 203 and 196.
+Built in session 16: 196 (the shop's text wraps).
 
-196. [BUG, small, BLOCKS] Board: the shop runs off the right of the screen, and the Save
-   and quit button with it, seen after buying a robot (S15-PAPER). Home: `board.gd`
-   `_robot_row`. Guess (unverified): it's the only row with both Sell and Buy, and its
-   name and blurb labels don't wrap, so it sets the column's width. FIX: wrap or clip the
-   labels; screenshot the board with robots owned to confirm.
 197. [FEATURE, small] The truck's reach is too wide; mark where you stand to refuel. Home:
    `main.gd` `at_truck()`, `$Truck/RefuelZone` (180 x 150 at (0, -80), set near line 255),
    which also opens the truck menu. FIX: shrink the zone and paint it faintly on the
@@ -184,7 +180,7 @@ Passed: S15-TRUCK, SAVEQUIT, PAY, OFFER; S15-PORTRAIT and PAPER pass bar 203 and
    back to the tray (S15-PACK, otherwise much better). Home: `pack.gd` `_unhandled_input`,
    `put_back`. Decided: the put-back key with empty hands on an item sends it home.
 
-PROPOSED ORDER: 196 (it's blocking, and small); the robot pass, 200, 201, 202 (the robot's
+PROPOSED ORDER: the robot pass, 200, 201, 202 (the robot's
 useless until it finds uncut grass and gets out of jams); the small pass, 204, 203, 205,
 197; 198 and 199; then the grills (193, then 189's tiers and price).
 
