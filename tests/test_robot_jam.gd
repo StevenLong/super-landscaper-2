@@ -15,6 +15,7 @@ var _wall: StaticBody2D
 
 
 func _initialize() -> void:
+	seed(1) # the robots' patience jitter, the same every run
 	g = root.get_node("Game")
 	g.save_path = "user://test_best.cfg"
 	g.new_run(7)
@@ -65,6 +66,9 @@ func _physics_process(_delta: float) -> bool:
 			for c: Vector2i in _a._targets:
 				assert(_a._wants(c), "planned only uncut cells: %s" % c)
 			assert(not _a._targets.has(_a._cell(Vector2(m.lawn.size_px.x / 2.0, y))), "not the band just cut")
+			for i in _a.route.size() - 1: # only ever by the grid: no straight line over a bed
+				var d := (_a._cell(_a.route[i + 1]) - _a._cell(_a.route[i])).abs()
+				assert(maxi(d.x, d.y) <= 1, "one cell at a time: %s to %s" % [_a.route[i], _a.route[i + 1]])
 			# Cut since it planned (by you, say): its next few stops go, and it heads straight
 			# for the first one still uncut, by a fresh short way round.
 			m.lawn.cut_segment(_a.route[2], _a.route[2], 50.0)

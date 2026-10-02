@@ -77,6 +77,7 @@ var worst_crime := 0 ## the worst tier on the crime ladder this job (Game.RECORD
 var cans := 0 ## petrol cans left on the truck (what was packed)
 var robots_left := 0 ## robot mowers still on the truck
 var robots: Array[Robot] = [] ## robot mowers set down on the lawn
+var _robot_been := {} ## the cells robots have stood in, shared (Robot.been)
 var _held_robot := 100.0 ## the condition of the robot in your hands (fresh off the truck)
 var _fuel := {} ## what's left in each mower put back on the truck (take_out)
 var charge := 0.0 ## what witnesses saw this job, weighed (Game.RECORD): court makes it record
@@ -1734,6 +1735,9 @@ func set_robot(at: Vector2, dir: Vector2) -> Robot:
 	r.heading = dir
 	r.condition = _held_robot
 	r.blocked = _robot_blocked
+	r.been = _robot_been
+	if $Driveway.visible:
+		r.crossable = Rect2($Driveway.position, $Driveway.size).grow(lawn.cell_px) # the mask rounds out a cell
 	add_child(r)
 	robots.append(r)
 	return r

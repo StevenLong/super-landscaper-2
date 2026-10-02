@@ -21,15 +21,18 @@ var condition := 100.0 ## at 0 it's broken down and stops (carried over a pick-u
 var lawn: Lawn
 var blocked: Callable ## (p: Vector2, me: Robot) -> bool, global: something alive or breakable there
 var heading := Vector2.RIGHT ## set before it's added: the stripes run this way
+var crossable := Rect2() ## lawn space, off the lawn but fine to drive over (the drive), never mowed
+var been := {} ## cells any robot on this lawn has stood in (main shares one): what's left there no robot can reach (by the fence, a bed's rim)
 var route: Array[Vector2] = [] ## waypoints still to visit, lawn space: the plan
 
 var _grid := AStarGrid2D.new()
 var _across := true ## its lanes run left-right (else up-down), the way it was set down
 var _targets := {} ## the cells the plan mows, not those it only crosses: Vector2i -> true
-var _been := {} ## cells it's stood in: whatever's left there it can't reach (by the fence, a bed's rim)
 var _waited := 0.0
 var _patience := WAIT
 var _done := false ## nothing left to cut: it sits, light green
+var _walled := false ## stopped by something solid (not something alive): that spot's out of reach for good
+var _gave_up := {} ## cells it's given up on once: twice, and they're out of reach for good (a gnome stays put)
 
 
 func _ready() -> void:
@@ -57,9 +60,10 @@ func _map() -> void:
 			_grid.set_point_solid(Vector2i(x, y), not _fits(_grid.get_point_position(Vector2i(x, y))))
 
 
-## The route from here: every open cell still uncut, lane by lane from the one it's on to
-## the far side, then back for the lanes behind it; along each lane alternately, and round
-## by the grid wherever the next cell isn't straight on.
+## The route from here: every open cell still uncut that it can get to by the grid, lane by
+## lane from the one it's on to the far side, then back for the lanes behind it; along each
+## lane alternately, and round by the grid wherever the next cell isn't straight on. It
+## only ever drives by the grid, so never over a bed.
 func plan() -> void:
 	var cells := _grid.region.size
 	var across := _across
@@ -71,11 +75,20 @@ func plan() -> void:
 	var order: Array[Vector2i] = []
 	var behind: Array[Vector2i] = [] # its own lane behind where it was set down: done last
 	var at := start.x if across else start.y
+	var reach := {start: true} # what it can get to from here, by the grid
+	var todo: Array[Vector2i] = [start]
+	while not todo.is_empty():
+		var c: Vector2i = todo.pop_back()
+		for o: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var n := c + o
+			if _grid.is_in_boundsv(n) and not reach.has(n) and not _grid.is_point_solid(n):
+				reach[n] = true
+				todo.append(n)
 	for i: int in range(first, lanes_n) + range(first - 1, -1, -1):
 		for k in along_n:
 			var a := k if forward else along_n - 1 - k
 			var c := Vector2i(a, i) if across else Vector2i(i, a)
-			if not _grid.is_point_solid(c) and _wants(c):
+			if reach.has(c) and not _grid.is_point_solid(c) and _wants(c):
 				(behind if i == first and (a < at if forward else a > at) else order).append(c)
 		forward = not forward
 	behind.reverse() # back out from where it started
@@ -87,7 +100,7 @@ func plan() -> void:
 	var from := start
 	for c in order:
 		var d := (c - from).abs()
-		if maxi(d.x, d.y) > 1:
+		if d.x + d.y > 1: # not straight on: by the grid, never cutting a corner
 			var path := _path(from, c)
 			for j in range(1, path.size() - 1):
 				route.append(path[j])
@@ -95,11 +108,12 @@ func plan() -> void:
 		from = c
 
 
-## Its body sits on lawn here (lawn space): nothing excluded under it, so it never
-## clips a bed (and tramples it). Past the lawn's outer edge is the fence: that's fine.
+## Its body sits on lawn (or the drive) here (lawn space): nothing else excluded under it,
+## so it never clips a bed (and tramples it). Past the lawn's outer edge is the fence: fine.
 func _fits(p: Vector2) -> bool:
 	for o: Vector2 in [Vector2.ZERO, Vector2(11, 0), Vector2(-11, 0), Vector2(0, 11), Vector2(0, -11)]:
-		if lawn._cell((p + o).clamp(Vector2.ZERO, Vector2(lawn.size_px) - Vector2.ONE)) == Lawn.EXCLUDED:
+		var q := (p + o).clamp(Vector2.ZERO, Vector2(lawn.size_px) - Vector2.ONE)
+		if lawn._cell(q) == Lawn.EXCLUDED and not crossable.has_point(q):
 			return false
 	return true
 
@@ -118,7 +132,7 @@ func _path(from: Vector2i, to: Vector2i) -> PackedVector2Array:
 
 ## Grass still uncut in cell c, anywhere its pass would cut, and it hasn't been there yet.
 func _wants(c: Vector2i) -> bool:
-	if _been.has(c):
+	if been.has(c):
 		return false
 	var p := _grid.get_point_position(c)
 	for o: Vector2 in [Vector2.ZERO, Vector2(7, 0), Vector2(-7, 0), Vector2(0, 7), Vector2(0, -7),
@@ -150,16 +164,18 @@ func _physics_process(delta: float) -> void:
 	var here := global_position - lawn.global_position
 	var to := route[0] - here
 	if to.length() < 2.0:
-		_been[_cell(route.pop_front())] = true
+		been[_cell(route.pop_front())] = true
 		_reroute()
 		return
 	var dir := to.normalized()
 	var ahead := global_position + dir * (cut_radius + 10.0)
 	var stuck: bool = blocked.is_valid() and blocked.call(ahead, self)
+	_walled = false
 	if not stuck:
 		rotation = dir.angle()
 		velocity = dir * SPEED
-		stuck = move_and_collide((velocity * delta).limit_length(to.length())) != null # never past the waypoint
+		_walled = move_and_collide((velocity * delta).limit_length(to.length())) != null # never past the waypoint
+		stuck = _walled
 		lawn.cut_segment(here, global_position - lawn.global_position, cut_radius)
 	if stuck:
 		velocity = Vector2.ZERO
@@ -170,9 +186,9 @@ func _physics_process(delta: float) -> void:
 	_waited = 0.0
 
 
-## Kept waiting: the waypoint it couldn't reach is dropped, and the spot ahead (lawn space)
-## and whatever of the cells round it the blocker covers are off the plan (till the plan
-## next runs out); go round them.
+## Kept waiting: the waypoint it couldn't reach is dropped (for good if something solid's in
+## the way), and the spot ahead (lawn space) and whatever of the cells round it the blocker
+## covers are off the plan (till the plan next runs out); go round them.
 func _skip(at: Vector2) -> void:
 	_waited = 0.0
 	_patience = WAIT + randf() * WAIT_JITTER
@@ -184,26 +200,31 @@ func _skip(at: Vector2) -> void:
 			if n != here and _grid.is_in_boundsv(n) and (n == c or blocked.call(lawn.global_position + _grid.get_point_position(n), self)):
 				_grid.set_point_solid(n)
 	if not route.is_empty():
-		route.pop_front()
+		var gone := _cell(route.pop_front())
+		if _walled or _gave_up.has(gone):
+			been[gone] = true
+		_gave_up[gone] = true
 	_reroute(true)
 
 
 ## Drop what's no use off the front of the route: cells given up on, cells cut since it
 ## planned (by you, another robot), and the way there; then round by the grid to the next
-## cell it still wants.
+## cell it still wants. No way there now (it's given up on the only way): plan afresh.
 func _reroute(dropped := false) -> void:
 	while not route.is_empty():
 		var c := _cell(route[0])
-		var target := _targets.has(c)
-		if not _grid.is_point_solid(c) and (_wants(c) if target else not dropped): # still wanted, or a step on an unbroken way to one
-			break
+		if not _grid.is_point_solid(c) and (_wants(c) if _targets.has(c) else not dropped): # still wanted, or a step on an unbroken way to one
+			if not dropped:
+				return
+			var path := _path(_cell(global_position - lawn.global_position), c)
+			if path.is_empty():
+				plan()
+				return
+			for j in range(path.size() - 2, 0, -1):
+				route.push_front(path[j])
+			return
 		route.pop_front()
 		dropped = true
-	if not dropped or route.is_empty():
-		return
-	var path := _path(_cell(global_position - lawn.global_position), _cell(route[0]))
-	for j in range(path.size() - 2, 0, -1):
-		route.push_front(path[j])
 
 
 func _draw() -> void:

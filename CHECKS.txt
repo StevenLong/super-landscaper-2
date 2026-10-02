@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (2 checks, in one job, about 10 minutes)
+PLAY CHECKS OWED  (3 checks, about 20 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -47,6 +47,13 @@ verified, below.)
 ================================================================================
 LOAD 2 of 3: THE ROBOT      (about 10 min; [1] on the board, buy a robot under Upgrades)
 ================================================================================
+
+S16-ROBOT
+Two robots on one lawn, you mowing too: do they now feel worth having (they skip what's
+been cut, cross the drive, and go green when there's nothing left they can reach)? Watch
+one by a gnome and two meeting head on: do they get on with it? (The mechanics are
+verified, below; this is whether it feels right.)
+>
 
 S15-ROBOT
 Take a robot off the truck and set it down facing along the lawn: straight stripes lane
@@ -114,6 +121,27 @@ VERIFIED  196, the shop running off the board: reproduced by screenshot with a r
           off the edge). Shop text now wraps. Screenshots with nothing, one robot, and
           everything owned all fit; test_controls now checks every board button is on
           screen with everything bought (the old code fails it).
+VERIFIED  200 to 202, the robots (c3a079e and the fix after it). By test (test_robot_jam,
+          new, and test_robot): it plans only uncut cells, skips what's cut since, only
+          ever moves cell to cell by the grid, two nose to nose get past each other, one
+          stuck short of a waypoint gives it up, a cut lawn turns them green, a ram knocks
+          it by the mower's weight. By simulation (two robots, 12 game minutes, 4 gardens):
+          they reach 84% by minute 8 on a 1280 x 720 lawn (the old robots: 75%), but
+          that's the first build; the verifier then found more (below) and the numbers
+          after its fixes are from its own repro scripts.
+VERIFIED  The verifier's first run (an agent told to break the batch; it ran its own
+          scripts on many gardens): board fit, the dog crash, ramming, crimes and squashes,
+          the gnome all held. It found four real bugs, all now fixed and rechecked with its
+          scripts: (1) a robot with grass it couldn't reach by the grid drove at it in a
+          straight line and gave up one cell at a time for ever, never going green (house,
+          drive, churchyard headstones); (2) those straight lines crossed beds: 59 to 62
+          flowers flattened on a mansion parterre, now 0; (3) two robots in a narrow gap
+          blocked each other for up to a minute at a time, now 2.5 s at most; (4) solid
+          things stick out past their no-mow area, so a robot stalled beside them, now
+          given up for good after the first time. Also: the far side of a drive now gets
+          mown (63% to 92% in 4 minutes on a split lawn; before, it gave up there).
+TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
+          and slow on big lawns either way (filed under 189).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.
           A verifier agent will try to break each build batch; its score is kept in
           HANDOFF.md.

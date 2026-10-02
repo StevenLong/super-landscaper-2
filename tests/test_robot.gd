@@ -75,12 +75,12 @@ func _physics_process(_delta: float) -> bool:
 			# The plan: every open cell of the lawn, none off it, in lanes running the way it faced.
 			var planned := {}
 			for p: Vector2 in r.route:
-				assert(m.lawn._cell(p) != Lawn.EXCLUDED, "never planned off the lawn: %s" % p)
+				assert(m.lawn._cell(p) != Lawn.EXCLUDED or r.crossable.has_point(p), "never planned off the lawn but over the drive: %s" % p)
 				planned[r._cell(p)] = true
 			var cells := Vector2i(Vector2(m.lawn.size_px) / Robot.LANE)
 			for y in cells.y:
 				for x in cells.x:
-					assert(r._grid.is_point_solid(Vector2i(x, y)) or planned.has(Vector2i(x, y)), "the plan covers every open spot: %s" % Vector2i(x, y))
+					assert(r._grid.is_point_solid(Vector2i(x, y)) or planned.has(Vector2i(x, y)) or not r._wants(Vector2i(x, y)), "the plan covers every open spot: %s" % Vector2i(x, y))
 			assert(r.route[0].y == r.route[1].y and r.route[1].y == r.route[2].y and r.route[2].x > r.route[0].x, "straight lanes, the way it was set down facing")
 			m.add_stone(r.global_position + Vector2(40, 0)) # right in its way
 		5:
