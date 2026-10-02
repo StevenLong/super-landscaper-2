@@ -34,7 +34,14 @@ if a session changes the design, edit the vault doc and push game-dev too.
 - New test: a `tests/test_<name>.gd` extending SceneTree that prints `PASS ...` and calls `quit()`.
   Autoload names (`Game`, `Sfx`) don't compile inside a -s script: use `root.get_node("Game")`.
   Set `save_path` to a test file before anything records a result.
-- Screenshots (needs a window): `SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot.gd`.
+- Screenshots (needs a window): `SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot.gd`
+  (the default job's views; write a scratch script like it for any other screen).
+- Verify it yourself first: anything a test, a script or a screenshot can settle, settle it
+  and log it in CHECKS.txt's VERIFIED section. A play-check is owed only for what needs a
+  person: feel, fun, pace, balance, loudness, a real pad, "does it read?". Stills miss motion;
+  the dev plays the game daily and catches that, so no frame-by-frame rigs.
+- Adversarial check: after a build batch, the `verifier` agent (`.claude/agents/verifier.md`)
+  tries to refute its claims. Score each run in HANDOFF.md's verifier tally.
 - Balance: `"$GODOT" --headless --fixed-fps 60 --path . -s tests/sim_balance.gd` (a bot mows
   with each mower and prints times to 50/70/85/95%; deterministic, not part of run_all).
 

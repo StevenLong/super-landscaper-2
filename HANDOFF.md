@@ -4,6 +4,9 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
+Verifier tally (the adversarial agent, scored by /handoff): 0 runs, 0 real finds, 0 false
+alarms, 0 misses.
+
 ---
 
 ## Session 15 (2026-10-01): S13 and S14 played and triaged, the fallout built, the robot redone

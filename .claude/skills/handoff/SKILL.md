@@ -39,11 +39,22 @@ Add it at the top of the session list, below the ledger block.
 - Read answers first: only the `>` lines are answers. Read every one before saying what
   passed; a vague "all good" elsewhere does not clear a check.
 - Remove answered checks (the session entry records the verdict). Leave unanswered ones.
+- Owe a check only for what needs a person (CLAUDE.md, Verify). Everything else this
+  session changed goes in the VERIFIED section at the bottom (rewrite it each handoff, no
+  `>` lines): one line per change, tagged VERIFIED (and how: test, screenshot looked at,
+  script), TRIED (what you couldn't settle and why), or CHANGED (nothing to verify), plus
+  any verifier findings.
 - Add new checks grouped by what the dev loads (not by session): a `LOAD n of m` header
   with a rough time, then per check a short ID (`S2-THROW`), one observable, and a line
   that is exactly `>`. Never pre-fill the `>` line.
 - Nothing owed: replace the body with "Nothing owed." and no `>` lines, so the hook stays shut.
 - If a check has rolled for 3+ sessions, tell the dev rather than rolling it again.
+
+## 4b. Score the verifier
+If the `verifier` agent ran this session, update the tally line in HANDOFF.md's ledger block:
+runs, real finds (bugs you then fixed or filed), false alarms, misses (bugs it had in scope
+that the dev found later). Note each run in the session entry. Three or more runs with no
+real find: tell the dev it may not be earning its cost.
 
 ## 5. Sort NOTES.md (the task list)
 Without a set point, ideas pile up in NOTES.md forever. This is the set point.
