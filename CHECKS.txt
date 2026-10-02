@@ -131,7 +131,7 @@ VERIFIED  S15-FENCE, the look: screenshots of three L plots and two churchyards,
           and each corner. L plots: hedge runs meet at the corners. Churchyard: both walls
           reach the church. Found: the churchyard's left wall carries on past the side
           chapel into the open grass behind the church (about 150 px of stub ending in
-          nothing). Filed under 194.
+          nothing). Fixed since (below).
 VERIFIED  196, the shop running off the board: reproduced by screenshot with a robot owned
           (the robot row, with Sell and Buy both, widened the column; Save and quit went
           off the edge). Shop text now wraps. Screenshots with nothing, one robot, and
@@ -176,6 +176,16 @@ VERIFIED  199, horn: test_horn: through the real key, a near hedgehog runs away,
 VERIFIED  A rare spawn bug found on the way: about 1 critter in 1500 came in grazing the
           house's back corner on a terrace (test_shapes failed 1 run in 7). Spawns now need
           room for the critter's whole width: 0 in 6000.
+VERIFIED  The verifier's second run (on the small pass): facing, the bay, gears, horn and the
+          suite held. It found four real bugs, all fixed and rechecked: (1) mine: pressing
+          Drive on the packing screen sent home whatever the cursor rested on, for good
+          (test_pack now guards it); (2) a customer at a smashed window, or walking past one,
+          was invisible (the hole drew over them): now they show in the hole, shards over
+          them (screenshot); (3) selling the third gear left the fourth owned but useless:
+          now it goes too (test_mower_feel); (4) on terraces, 2 to 6% of critters came in
+          by walking out of the house next door: now 0 (its own sampler, 4 layouts x 3).
+VERIFIED  194, the churchyard wall: the side wall by the vestry starts at the vestry's back,
+          flush with its roof (screenshots of both churchyards).
 TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
           and slow on big lawns either way (filed under 189).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.

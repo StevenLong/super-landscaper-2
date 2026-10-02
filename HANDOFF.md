@@ -4,8 +4,9 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 1 run, 4 real finds, 0 false
-alarms, 0 misses so far. Cost per run: about 240k tokens, 15 minutes (2026-10-02, robots).
+Verifier tally (the adversarial agent, scored by /handoff): 2 runs, 8 real finds (1 of them
+a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
+per run: about 215k to 240k tokens, 13 to 15 minutes (both 2026-10-02).
 
 ---
 
