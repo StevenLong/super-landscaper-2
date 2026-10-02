@@ -216,6 +216,20 @@ VERIFIED  193c, by test (test_season): a day's event never changes, only falls i
           gets a third of the gap between squirrels on top of the month's, room for 8
           critters, squirrels 1.5x as fast. Screenshots: the board's news line on a crowded
           event day (still fits), and the briefing saying it.
+VERIFIED  The verifier's fourth run (soft terms and event days): the terms' steps, losing a
+          regular when fired, the raise, the winter rise, event days' timing and every new
+          screen by keyboard and pad held. It found real bugs, all fixed with a test: (1)
+          losing a prepaid regular paid the money back twice; (2) one not back after the
+          winter was paid back after the shark's top-up, so money went below zero, and the
+          winter screen didn't say (now first, and said; the blackout screen says it too);
+          (3) a month-up-front offer left over from a closed game crashed a later summary
+          (cleared when you drop them or start a job); (4) a job on an event day that
+          became a regular carried the day's critters into every visit, and the month's
+          compounded (the regular now keeps the job as booked; the same for a community
+          service you blacked out on); (5) small: a sour regular in June was told both
+          "less often" and "sooner"; rates stuck at $25 under cuts (a cut or rise now
+          always moves it $5 at least); a month up front at the summer peak covered two
+          weeks (now four).
 TRIED     Whether two robots are fast enough to be worth $150: that's yours (S16-ROBOT),
           and slow on big lawns either way (filed under 189).
 CHANGED   Process: checks are owed only for what needs you; this section lists the rest.

@@ -21,6 +21,8 @@ func _ready() -> void:
 	books.add_child(_money(r))
 	books.add_child(_reputation(r))
 	root.add_child(books)
+	if not Game.upfront.is_empty() and not Game.regulars.has(Game.upfront.id): # they've gone since
+		Game.upfront = {}
 	var offered := not Game.offer.is_empty() or not Game.upfront.is_empty()
 	var row := UI.hbox(14)
 	root.add_child(row)

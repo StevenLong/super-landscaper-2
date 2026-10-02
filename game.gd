@@ -252,6 +252,7 @@ var principal := 0
 var calendar := {} ## day -> what's booked, earliest first: jobs (a classified, a regular's visit, community service), or a day taken whole by {"court": case} or {"jail": true}
 var paper: Array[Dictionary] = [] ## this week's ads not yet booked, each with its day and window
 var next_job := {} ## the booking picked on the board, for packing and the job
+var booked := {} ## the job under way as it was booked, before the day (critters, arriving late) touched it
 var missed: Array[String] = [] ## who you didn't turn up for, for the board to say
 var regulars := {} ## id (their first job's seed) -> {id, job, cadence, rate, mood, drift}
 var offer := {} ## a regular's offer after the job just done, until answered
@@ -263,7 +264,7 @@ var blackout := {} ## the job you blacked out on, for the board to break the new
 ## What the save keeps: the whole business.
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
-	"calendar", "paper", "regulars", "offer", "upfront", "payday_pending", "winter_pending", "in_job", "current_job"]
+	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -890,7 +891,9 @@ func start_job(b := {}) -> void:
 	if b.is_empty():
 		b = next_job if not next_job.is_empty() else today()
 	next_job = {}
+	upfront = {} # an offer's for the summary it came with, not later
 	equipped = "rideon" if packed_has("rideon") else ("petrol" if packed_has("petrol") else "push")
+	booked = b.duplicate(true)
 	current_job = b.duplicate(true)
 	if b.has("regular") and regulars.has(b.regular) and regulars[b.regular].get("prepaid", 0) > 0:
 		current_job.pay = 0 # paid up front
@@ -981,7 +984,7 @@ func end_mood(r: Dictionary) -> float:
 ## After a good classifieds job: a hidden chance they ask you back, by how it ended and
 ## who they are. A no is silence.
 func _maybe_offer(r: Dictionary) -> void:
-	var j := current_job
+	var j := booked if not booked.is_empty() else current_job # the job as booked: not today's critters or patience
 	if r.outcome != "paid" or regulars.has(j.seed):
 		return
 	var m := end_mood(r)
@@ -1026,6 +1029,11 @@ func _round5(x: float) -> int:
 	return roundi(x / 5.0) * 5
 
 
+## A rate cut (`share` under 1) or raised, always by at least $5 (never under $5).
+func _rate(rate: int, share: float) -> int:
+	return maxi(5, floori(rate * share / 5.0 + 1e-6) * 5) if share < 1.0 else ceili(rate * share / 5.0 - 1e-6) * 5 # float slop: 100 * 1.1 is 110.00000000000001
+
+
 ## Ask a regular for a raise to `ask` a visit, after a good visit (the haggle, design doc
 ## Regulars change softly): the happier they are and the less you ask, the likelier a yes;
 ## near the edge, yes but sore; past it, they can't afford you and say so, a little put
@@ -1063,10 +1071,11 @@ func take_upfront() -> void:
 	save()
 
 
-## What you owe a regular you're losing for visits they paid up front.
+## What you owe a regular you're losing for visits they paid up front: paid back, once.
 func _repay(reg: Dictionary) -> int:
-	var owed := roundi(reg.get("prepaid", 0) * reg.get("prepaid_each", 0.0))
+	var owed := roundi(maxi(0, reg.get("prepaid", 0)) * reg.get("prepaid_each", 0.0))
 	money -= owed
+	reg.prepaid = 0
 	return owed
 
 
@@ -1132,11 +1141,11 @@ func _visited(id: int, r: Dictionary) -> void:
 	r.can_raise = m >= RAISE_MOOD
 	reg.mood = carried(reg.job, m)
 	if reg.get("seasons", 0) >= 1 and m >= 80.0 and reg.get("prepaid", 0) <= 0 and _rng.randf() < 0.3:
-		var n := maxi(1, floori(28.0 / reg.cadence))
+		var n := maxi(1, floori(28.0 / cadence_now(reg)))
 		upfront = {"id": id, "visits": n, "amount": _round5(n * reg.rate * UPFRONT_OFF)}
 	reg.drift.append(["gnome", "flamingo"][reg.drift.size() % 2]) # ponytail: a token drift; beds, ponds, leaves when it matters
 	var every := cadence_now(reg)
-	r.sooner = every < reg.cadence
+	r.sooner = every < reg.cadence and r.terms != "fewer" # wanting you less, the summer doesn't count as more
 	_place(id, day + every)
 
 
@@ -1147,20 +1156,20 @@ func _visited(id: int, r: Dictionary) -> void:
 func _terms(reg: Dictionary, m: float) -> String:
 	if m < FLOOR:
 		reg.strikes = 1
-		reg.rate = _round5(reg.rate * 0.9)
+		reg.rate = _rate(reg.rate, 0.9)
 		return "cheaper"
 	reg.strikes = 0
 	if m < SOUR:
 		if reg.cadence < 28:
 			reg.cadence *= 2
 			return "fewer"
-		reg.rate = _round5(reg.rate * 0.9)
+		reg.rate = _rate(reg.rate, 0.9)
 		return "cheaper"
 	if m >= PLEASED and reg.visits >= 3 and _rng.randf() < 0.5:
 		if reg.cadence > 7:
 			reg.cadence = floori(reg.cadence / 2.0)
 			return "more"
-		reg.rate = _round5(reg.rate * 1.1)
+		reg.rate = _rate(reg.rate, 1.1)
 		return "better"
 	return ""
 
@@ -1170,6 +1179,8 @@ func _terms(reg: Dictionary, m: float) -> String:
 func drop(id: int) -> int:
 	var owed := _repay(regulars[id]) if regulars.has(id) else 0
 	regulars.erase(id)
+	if upfront.get("id", -1) == id:
+		upfront = {}
 	for d: int in calendar.keys():
 		var l: Array = bookings(d).filter(func(b: Dictionary) -> bool: return b.get("regular", -1) != id)
 		if l.is_empty():
@@ -1183,22 +1194,23 @@ func drop(id: int) -> int:
 ## shark tops you up onto what you owe), who's back by their carried mood, reputation
 ## drifting toward the middle, then April. Returns {cost, topped, back, gone} (names).
 func settle_winter() -> Dictionary:
-	var cost := LIVING * WINTER_WEEKS
-	var topped := maxi(0, cost - money)
-	principal += topped
-	money += topped - cost
 	var back: Array[String] = []
 	var gone: Array[String] = []
+	var owed_back := 0
 	for id: int in regulars.keys():
 		var reg: Dictionary = regulars[id]
 		if _rng.randf() < reg.mood / 100.0:
 			reg.seasons = reg.get("seasons", 0) + 1 # loyalty compounds: their rate creeps up
-			reg.rate = _round5(reg.rate * LOYAL_RAISE)
+			reg.rate = _rate(reg.rate, LOYAL_RAISE)
 			back.append("%s ($%d)" % [reg.job.customer, reg.rate])
 		else:
 			gone.append(reg.job.customer)
-			_repay(reg) # what they paid up front for next year goes back
+			owed_back += _repay(reg) # what they paid up front for next year goes back
 			regulars.erase(id)
+	var cost := LIVING * WINTER_WEEKS
+	var topped := maxi(0, cost - money)
+	principal += topped
+	money += topped - cost
 	reputation = lerpf(reputation, 50.0, 0.2)
 	rep_trend = lerpf(rep_trend, 50.0, 0.2)
 	record = maxf(0.0, record - 1.0) # a winter fades it, a little
@@ -1216,7 +1228,7 @@ func settle_winter() -> Dictionary:
 		_place(id, day + posmod(id, regulars[id].cadence))
 	paper = make_paper()
 	save()
-	return {"cost": cost, "topped": topped, "back": back, "gone": gone}
+	return {"cost": cost, "topped": topped, "back": back, "gone": gone, "owed_back": owed_back}
 
 
 # ---------------------------------------------------------------- the save
@@ -1262,12 +1274,12 @@ func load_business() -> void:
 		in_job = false
 		blackout = current_job
 		if current_job.has("regular"):
-			drop(current_job.regular)
+			blackout.owed_back = drop(current_job.regular)
 		elif current_job.has("service"): # a sentence isn't wiped by blacking out: the next free day
 			var d := day + 1
 			while not day_free(d):
 				d += 1
-			_add(d, current_job)
+			_add(d, booked if not booked.is_empty() else current_job)
 		rep_trend = maxf(0.0, rep_trend - BLACKOUT_REP)
 		reputation = maxf(0.0, reputation - BLACKOUT_REP * 0.5)
 		end_day()

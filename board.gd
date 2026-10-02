@@ -716,6 +716,8 @@ func _winter() -> void:
 	var col := _screen()
 	_centred(col, "WINTER", 64, UI.GOLD)
 	_centred(col, "October to March: rent and food, $%d." % w.cost, 26)
+	if w.get("owed_back", 0) > 0:
+		_centred(col, "Paid back to those not coming back, for visits paid up front: $%d." % w.owed_back, 22, UI.BAD)
 	if w.topped > 0:
 		_centred(col, "Short, so the shark tops you up: $%d more on what you owe ($%d)." % [w.topped, Game.principal], 22, UI.BAD)
 	if not w.back.is_empty():
@@ -783,6 +785,8 @@ func _blackout() -> void:
 	_centred(col, "You come to at home. Of %s's garden, you remember nothing." % j.get("customer", "someone"), 24)
 	_centred(col, "A note through the door: \"Don't bother coming back.\"", 24, UI.DIM)
 	_centred(col, "The job's lost, and word gets round.", 22, UI.BAD)
+	if j.get("owed_back", 0) > 0:
+		_centred(col, "And the $%d they paid up front, you pay back." % j.owed_back, 22, UI.BAD)
 	UI.focus(_centred_button(col, "Carry on", _ready))
 
 

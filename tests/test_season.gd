@@ -183,6 +183,15 @@ func _clock() -> void:
 	assert(is_equal_approx(g.current_job.squirrel_every, plain.squirrel_every * mon[1] * 0.35) and is_equal_approx(g.current_job.hedgehog_every, plain.hedgehog_every * mon[0]),
 		"a squirrel day: three times the squirrels, on top of the month's")
 	assert(g.current_job.event == "squirrels" and g.current_job.max_animals == g.EVENT_CROWD and g.current_job.squirrel_speed == 1.5, "room for more, and frantic")
+	# The day's critters stay with the day: a job that becomes a regular keeps the job as booked.
+	for i in 200:
+		g.offer = {}
+		g._maybe_offer({"outcome": "paid", "mood": 100.0})
+		if not g.offer.is_empty():
+			break
+	assert(not g.offer.is_empty() and not g.offer.job.has("event") and g.offer.job.squirrel_every == plain.squirrel_every and not g.offer.job.has("late"),
+		"an offer on a squirrel day: their garden as booked, not the day's squirrels")
+	g.offer = {}
 	g.in_job = false
 	# Court takes the whole day: two bookings on it move or go.
 	g.calendar = {}
@@ -244,7 +253,7 @@ func _regulars() -> void:
 	# A bad one: they want it cheaper. A second running loses them.
 	g.day = d0 + 13
 	var r := _play(30.0)
-	assert(not r.has("lost_regular") and r.terms == "cheaper" and g.regulars[j.seed].rate == roundi(j.pay * 0.9 / 5.0) * 5, "under the floor once: cheaper")
+	assert(not r.has("lost_regular") and r.terms == "cheaper" and g.regulars[j.seed].rate == floori(j.pay * 0.9 / 5.0) * 5, "under the floor once: cheaper")
 	g.day = d0 + 20
 	r = _play(30.0)
 	assert(r.lost_regular and not g.regulars.has(j.seed) and g.calendar.values().all(func(l: Array) -> bool: return l.all(func(b: Dictionary) -> bool: return b.get("regular", -1) != j.seed)),
@@ -340,6 +349,26 @@ func _soft(j: Dictionary) -> void:
 	assert(reg.prepaid == 3, "three to go")
 	cash = g.money
 	assert(g.drop(7) == roundi(amount * 3 / 4.0) and g.money == cash - roundi(amount * 3 / 4.0), "dropped: the three not done go back")
+	# The verifier's finds: paid back once, not twice, losing a prepaid regular.
+	reg = {"id": 7, "job": j, "cadence": 7, "rate": 100, "mood": 60.0, "drift": [], "prepaid": 4, "prepaid_each": 90.0}
+	g.regulars[7] = reg
+	g.current_job = g._visit(7)
+	g.current_job.prepaid = true
+	cash = g.money
+	var lost := {"outcome": "fired", "mood": 0.0}
+	g._visited(7, lost)
+	assert(lost.lost_regular and lost.owed_back == 270 and g.money == cash - 270, "fired on a prepaid visit: the other three paid back, once")
+	assert(g._rate(25, 0.9) == 20 and g._rate(5, 0.9) == 5 and g._rate(20, 1.1) == 25 and g._rate(100, 0.9) == 90, "a cut or a rise always moves the rate, never under $5")
+	# In June, a sour fortnightly regular isn't also told they want you sooner.
+	g.day = g.day_of(1980, 6, 3)
+	reg = {"id": 7, "job": j, "cadence": 14, "rate": 100, "mood": 60.0, "drift": []}
+	g.regulars[7] = reg
+	g.current_job = g._visit(7)
+	var sour := {"outcome": "paid", "mood": 45.0}
+	g._visited(7, sour)
+	assert(sour.terms == "fewer" and not sour.sooner, "fewer visits, not 'sooner' as well")
+	g.drop(7)
+	g.day = g.day_of(1980, 4, 20)
 	# Loyalty compounds: back after a winter, their rate creeps up.
 	g.regulars[8] = {"id": 8, "job": j, "cadence": 14, "rate": 100, "mood": 100.0, "drift": []}
 	g.day = g.season_end()
@@ -347,6 +376,15 @@ func _soft(j: Dictionary) -> void:
 	g.end_day()
 	var w: Dictionary = g.settle_winter()
 	assert(g.regulars[8].rate == 110 and g.regulars[8].seasons == 1 and w.back[0].contains("$110"), "back in spring, $10 more")
+	# One not back, who'd paid up front: paid back before the shark tops you up, and said.
+	g.regulars[8].mood = 0.0
+	g.regulars[8].prepaid = 2
+	g.regulars[8].prepaid_each = 90.0
+	g.money = 0
+	g.day = g.season_end()
+	g.end_day()
+	w = g.settle_winter()
+	assert(w.owed_back == 180 and g.money == 0 and w.topped == g.LIVING * g.WINTER_WEEKS + 180, "gone after the winter: $180 back, topped up, never below zero")
 
 
 ## Put a case on today and hear it with this lawyer until it goes `guilty` (or not).
