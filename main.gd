@@ -252,9 +252,11 @@ func _build_layout() -> void:
 		drive.self_modulate = Color.WHITE
 	lawn.exits = [Rect2(drive.position.x, size.y - 40, drive.size.x, 40 + BORDER + FOOTPATH)]
 	$Truck.position = Vector2(drive.position.x + drive.size.x * 0.5, size.y + BORDER + FOOTPATH + 34)
-	# Parked along the kerb: the zone reaches back up the drive mouth to where you pull in.
-	$Truck/RefuelZone/Shape.position = Vector2(0, -80)
-	($Truck/RefuelZone/Shape.shape as RectangleShape2D).size = Vector2(180, 150)
+	# Parked along the kerb: the zone is a bay from the drive's end across the pavement to the
+	# truck, where you pull in (truck_spot) or stand to use it; painted on the ground (truck.gd).
+	$Truck/RefuelZone/Shape.position = Vector2(0, -66)
+	($Truck/RefuelZone/Shape.shape as RectangleShape2D).size = Vector2(100, 64)
+	$Truck.paint_bay()
 	if not fixed and venue == "house" and not _house.passage and rv.randf() < 0.5:
 		_park_car(Vector2(drive.position.x + drive.size.x * 0.5, g.end.y + 72.0), rv)
 	mower.position = truck_spot()
@@ -681,6 +683,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	mouth.position = Vector2(d0, h)
 	mouth.size = Vector2(drive.size.x, b + FOOTPATH)
 	mouth.self_modulate = GRAVEL
+	mouth.z_index = -1 # flat ground, under the refuel bay painted on it (truck.gd)
 	if _house.venue == "graveyard":
 		mouth.texture = drive.texture
 		mouth.self_modulate = Color.WHITE

@@ -101,6 +101,13 @@ func _process(_delta: float) -> bool:
 			assert(current_scene.cans == 1, "with the one can packed")
 			current_scene._on_choice("start")
 			current_scene.hop_off()
+			# The truck's reach is its painted bay: small, from the drive's end to the truck, and
+			# where the mower parks is in it.
+			var t: Node2D = current_scene.get_node("Truck")
+			var shape: CollisionShape2D = t.get_node("RefuelZone/Shape")
+			var size: Vector2 = (shape.shape as RectangleShape2D).size
+			var bay := Rect2(t.position + shape.position - size / 2.0, size)
+			assert(size.x <= 110.0 and size.y <= 70.0 and bay.has_point(current_scene.truck_spot()), "a small bay round where you park: %s" % bay)
 			current_scene.mower.position = Vector2(200, 200) # well away, so a can isn't poured into it
 			current_scene.walker.global_position = current_scene.get_node("Truck").position + Vector2(0, -60)
 			current_scene.open_truck_menu()
