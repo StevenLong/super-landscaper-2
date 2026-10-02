@@ -77,7 +77,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_accept") or event.is_action_pressed("interact"):
 		act()
 	elif event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel"):
-		put_back()
+		if held.is_empty():
+			send_home()
+		else:
+			put_back()
 	elif event.is_action_pressed("pause"): # Start or [P] (Esc is put back, above): off from anywhere
 		drive()
 	elif (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R) \
@@ -165,15 +168,18 @@ func turn() -> void:
 		Sfx.play("ui_move", 0.0)
 
 
-## Put what's in your hands back where it came from (or back in the tray). Empty-handed on
-## a packed item: it comes off the truck, straight home.
+## Empty-handed on a packed item: it comes off the truck, straight home.
+func send_home() -> void:
+	var p := Game.packed_at(zone, cell) if zone != "tray" and held.is_empty() else {}
+	if not p.is_empty():
+		Game.packed.erase(p)
+		_say = "%s left at home." % Game.kit_name(p.kind)
+		Sfx.play("ui_select", 0.0)
+
+
+## Put what's in your hands back where it came from (or back in the tray).
 func put_back() -> void:
 	if held.is_empty():
-		var p := Game.packed_at(zone, cell) if zone != "tray" else {}
-		if not p.is_empty():
-			Game.packed.erase(p)
-			_say = "%s left at home." % Game.kit_name(p.kind)
-			Sfx.play("ui_select", 0.0)
 		return
 	if not held.from.is_empty():
 		Game.packed.append(held.from)

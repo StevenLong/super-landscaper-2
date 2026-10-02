@@ -77,6 +77,10 @@ func _physics_process(_delta: float) -> bool:
 			g.money = 1000
 			assert(g.buy("gear3") and g.mower_spec("rideon").gears == 3, "the third")
 			assert(g.buy("gear4") and g.mower_spec("rideon").gears == 4, "then the fourth")
+			var cash: int = g.money
+			g.sell("gear3")
+			assert(not "gear4" in g.upgrades and g.money == cash + g.resale("gear3") + g.resale("gear4"), "selling the third sells the fourth with it")
+			g.buy("gear3")
 			g.upgrades.erase("gear4")
 			mower.apply_spec(g.mower_spec("rideon")) # with the third gear, above
 			mower.condition = 100.0

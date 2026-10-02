@@ -166,13 +166,18 @@ func _draw_house() -> void:
 		_front.draw_rect(d, Color("1a1820"))
 		_front.draw_rect(Rect2(d.position, Vector2(5, d.size.y)), Color("5a3a20"))
 		_front.draw_rect(Rect2(d.position + Vector2(5, 0), Vector2(1, d.size.y)), Color("2a1a10"))
+	# A smashed pane: a dark hole inside the frame (anyone behind it drawn in it, below),
+	# jagged glass left round the edges (after them).
+	for id in broken:
+		_front.draw_rect(Rect2(GLASS.position + Vector2(id % UPSTAIRS, -FLOOR_UP * floori(id / float(UPSTAIRS))), GLASS.size), Color("1a1820"))
 	if peek_x >= 0 and peek_tex:
 		# Head and shoulders at the glass, facing out (the sheet's south row), cut off by the sill.
 		var head := Rect2(9, 2 * 94 + 12, 30, 24) # tools/voxel.py client(): 48 x 94 cells
 		_front.draw_texture_rect_region(peek_tex, Rect2(GLASS.position + Vector2(peek_x, GLASS.size.y - head.size.y), head.size), head)
 		# Behind the glass, not stuck on it: the bars and frame over them, the glass a faint sheen.
 		var pane := Rect2(GLASS.position + Vector2(peek_x, 0), GLASS.size)
-		_front.draw_texture_rect_region(_see_through(), pane, Rect2(pane.position + Vector2(0, ART_FOOT), pane.size))
+		if peek_x not in broken: # no glass left in a smashed one
+			_front.draw_texture_rect_region(_see_through(), pane, Rect2(pane.position + Vector2(0, ART_FOOT), pane.size))
 	if pass_x >= 0.0 and peek_tex: # walking by inside, side-on: only what shows through each pane
 		var head := Rect2(9, (0 if pass_east else 4) * 94 + 12, 30, 24)
 		var at := Rect2(GLASS.position + Vector2(pass_x, GLASS.size.y - head.size.y), head.size)
@@ -181,13 +186,12 @@ func _draw_house() -> void:
 			var cut := at.intersection(pane)
 			if cut.has_area():
 				_front.draw_texture_rect_region(peek_tex, cut, Rect2(head.position + cut.position - at.position, cut.size))
-				_front.draw_texture_rect_region(_see_through(), cut, Rect2(cut.position + Vector2(0, ART_FOOT), cut.size))
-	# A smashed pane: a dark hole inside the frame, jagged glass left round the edges.
+				if wx not in broken:
+					_front.draw_texture_rect_region(_see_through(), cut, Rect2(cut.position + Vector2(0, ART_FOOT), cut.size))
 	var glass := Color("a8d0e8")
 	for id in broken:
 		var o := GLASS.position + Vector2(id % UPSTAIRS, -FLOOR_UP * floori(id / float(UPSTAIRS)))
 		var s := GLASS.size
-		_front.draw_rect(Rect2(o, s), Color("1a1820"))
 		for shard: PackedVector2Array in [
 			[Vector2(0, 0), Vector2(0.4, 0), Vector2(0.08, 0.35)],
 			[Vector2(1, 0), Vector2(1, 0.55), Vector2(0.7, 0)],

@@ -637,6 +637,8 @@ func sellable() -> Array[String]:
 
 
 func sell(item: String) -> void:
+	if item == "gear3" and "gear4" in upgrades: # the fourth's no use without the third: it goes too
+		sell("gear4")
 	money += resale(item)
 	if item == "robot": # one of them; off the truck only if none's left at home
 		robots -= 1

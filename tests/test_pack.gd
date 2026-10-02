@@ -79,6 +79,8 @@ func _process(_delta: float) -> bool:
 			assert(g.cans_packed() == 1, "into the corner")
 			# Empty-handed, put back on a packed item: straight off the truck, home.
 			s.put_back()
+			assert(g.cans_packed() == 1, "put_back alone (driving off calls it) never unpacks")
+			s.send_home()
 			assert(g.cans_packed() == 0 and s.held.is_empty() and s._say == "Petrol can left at home.", "off the truck, home: %s" % s._say)
 			s.zone = "tray" # and on again, for the drive below
 			s.row = s._tray().find("can")

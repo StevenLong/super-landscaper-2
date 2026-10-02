@@ -2497,8 +2497,10 @@ func _spawn_spot(kind: String) -> Dictionary:
 		pool = _edges.filter(func(ed: Dictionary) -> bool: return kind != "hedgehog" or ed.kind != "wall")
 	if pool.is_empty():
 		return {}
-	var e: Dictionary = {}
-	var at := Vector2.INF
+	var next_door: Array[Rect2] = [] # its walk up to the boundary doesn't come out of a house next door
+	for n in $Beyond.get_children():
+		if n.has_method("garage_rect"):
+			next_door.append_array([n.rect().grow(10.0), n.garage_rect().grow(10.0)])
 	for i in 40: # not where a building stands against the boundary (a terrace, the church)
 		var c: Dictionary = pool[randi() % pool.size()]
 		var p := (c.from as Vector2).lerp(c.to, randf_range(0.05, 0.95))
@@ -2507,18 +2509,19 @@ func _spawn_spot(kind: String) -> Dictionary:
 		for d: float in [12.0, 24.0]:
 			for side: float in [-10.0, 0.0, 10.0]:
 				clear = clear and not _blocked(p + inward * d + inward.orthogonal() * side)
+		if not clear:
+			continue
+		var from := p
+		for j in 10: # back out of sight, so it's seen walking in, not popping up
+			from = p - inward * (40.0 + 30.0 * j)
+			if not _on_screen(from):
+				break
+		for d in range(0, int(p.distance_to(from)) + 1, 8):
+			for r: Rect2 in next_door:
+				clear = clear and not r.has_point(p - inward * d)
 		if clear:
-			e = c
-			at = p
-			break
-	if e.is_empty():
-		return {} # nowhere to come in this time
-	var from := at
-	for i in 10: # back out of sight, so it's seen walking in, not popping up
-		from = at - (e.inward as Vector2) * (40.0 + 30.0 * i)
-		if not _on_screen(from):
-			break
-	return {"at": from, "grace": 0.0, "inward": e.inward, "edge": at}
+			return {"at": from, "grace": 0.0, "inward": inward, "edge": p}
+	return {} # nowhere to come in this time
 
 
 ## Is p on the property (the lawn, the drive), not out past its boundary?
