@@ -14,6 +14,7 @@ func _initialize() -> void:
 	g.save_path = "user://test_best.cfg"
 	_money()
 	_paper()
+	_climb()
 	_clock()
 	_regulars()
 	_court()
@@ -119,6 +120,23 @@ func _paper() -> void:
 	ad0.by = g.minute + g.DRIVE + g.RING_TIME
 	ad0.bar = 0.0
 	assert(g.cant_book(ad0) == "" and g.ring(ad0).contains("today") and g.jobs_on(g.day) == 1, "just in time, a yes")
+
+
+## A name builds slowly (193d): a run of great jobs takes weeks to reach the top band, not
+## a day; a bad one isn't softened; the summary's book says where the rest went.
+func _climb() -> void:
+	g.new_run(7)
+	var jobs := 0
+	var r := {}
+	while g.reputation < 75.0 and jobs < 100:
+		r = {"outcome": "paid", "net": 0, "paid": 0, "rep": 10.0, "rep_lines": [["The job", 10.0]]}
+		g.record_result(r)
+		jobs += 1
+	assert(jobs >= 15 and jobs <= 30, "the top band after %d great jobs" % jobs)
+	assert(r.rep_lines.size() == 2 and is_equal_approx(r.rep_lines[0][1] + r.rep_lines[1][1], r.rep), "the book adds up to what it moved")
+	var trend: float = g.rep_trend
+	g.record_result({"outcome": "fired", "net": 0, "paid": 0, "rep": -18.0})
+	assert(is_equal_approx(g.rep_trend, trend - 18.0), "a firing costs the lot")
 
 
 ## The day's clock (design doc, Time is the scarce thing).

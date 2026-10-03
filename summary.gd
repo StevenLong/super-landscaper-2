@@ -248,7 +248,9 @@ func _reputation(r: Dictionary) -> Control:
 	if r.has("rep_after"):
 		var moved := roundi(r.rep_after - r.rep_before)
 		var standing := "Word travels: your standing is %s" % UI.rep_word(r.rep_after)
-		if total != moved:
+		if moved > total and total >= 0: # earlier jobs' word still arriving
+			standing += " (%+d, with earlier word catching up)" % moved
+		elif total != moved:
 			standing += " (%+d so far, the rest over the next jobs)" % moved
 		var s := UI.label(standing, 18, UI.DIM)
 		s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

@@ -109,8 +109,9 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    is pocket change after the first month, and cheap doesn't make it good: price it with
    the tiers and 193's pace.
 193. Grilled 2026-10-02: time is the scarce thing (design doc, The Business). 193a to 193c built in session 17; left:
-193d. Retunes after 193a (mine, measured): reputation climbs to the top band in about 3
-   good jobs (computed, not simmed), which free booking makes day one; PAPER's count by
+193d. Retunes after 193a (mine, measured): reputation's climb done in session 18 (gains
+   scaled by how known you are, design doc Reputation; the top band after about 20 great
+   jobs, was 3; S18-CLIMB asks how it plays). Left: PAPER's count by
    month; REACH and the bars (S14-RING: steps of 0, 20, 55, 75); the vig; pay; the clock
    rate. Today a manor pays about $790 against a $150 week.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect

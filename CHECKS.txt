@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (11 checks, 3 loads, about 55 minutes)
+PLAY CHECKS OWED  (12 checks, 3 loads, about 55 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -87,6 +87,13 @@ fewer hedgehogs in April, more of both in autumn. Does an event day play differe
 or is it just more on screen? (Cheat [3] skips days to find one.)
 >
 
+S18-CLIMB
+Your name now builds slowly (193d): a great job adds a quarter of what it did at Fair, a
+sixteenth near the top, shown on the summary as "Most folk won't hear of it". Over a week
+or two, does the paper's ladder feel like something you climb? Does that summary line
+read as fair or as a slap? (A run of great jobs reaches the top band after about 20.)
+>
+
 S17-BOARD
 The corkboard: the day's clock along the top (today's windows as bars, the cost of the
 button you're on lit gold), today's jobs with when you'd get there, the fortnight, the
@@ -100,6 +107,11 @@ VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
 
+VERIFIED  The name's climb (193d, session 18), by test (test_season _climb): a run of great
+          jobs reaches the top band in 15 to 30 (about 20; without the curve, 3); a firing
+          isn't softened; the summary's book adds up to what moved. Screenshot of the summary
+          with the new line; its standing line no longer says "+2 so far, the rest over the
+          next jobs" under a total of +1 (earlier word catching up says so).
 VERIFIED  S15-FENCE (session 18), by test and screenshot: every lawn cell on every plot
           shape and venue is in reach of every mower, the corners where your fence meets
           next door's included (new test_reach; a 4 px wider edge margin fails it). But side

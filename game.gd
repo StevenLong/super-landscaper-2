@@ -165,6 +165,7 @@ const DRIVE := 30 ## minutes to drive to a job
 const RING_TIME := 10 ## minutes a phone call takes
 const NO_SHOW_REP := 6.0 ## a classified you never turned up to (on the trend)
 const NO_SHOW_MOOD := 10.0 ## a regular's visit missed
+const REP_CLIMB := 2.0 ## a good job's reputation times (1 - trend/100) to this: at 50 a quarter, at 75 a sixteenth
 const REACH := 15.0 ## how far under an ad's bar a call can still get a yes
 const DAYS := ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 const RESALE := 0.5 ## what kit fetches sold (by you or the heavies), as a share of its price
@@ -605,6 +606,11 @@ func record_result(result: Dictionary) -> void:
 		run_tally_cost[k] = run_tally_cost.get(k, 0.0) + result.tally_cost[k]
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
+	if result.rep > 0.0: # the better known you are, the less one good job adds (193d)
+		var gain: float = result.rep * pow(1.0 - rep_trend / 100.0, REP_CLIMB)
+		if roundi(result.rep) != roundi(gain):
+			result.get("rep_lines", []).append(["Most folk won't hear of it", gain - result.rep])
+		result.rep = gain
 	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
 	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
 	jobs_done += 1
