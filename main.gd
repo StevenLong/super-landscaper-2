@@ -168,6 +168,12 @@ func _ready() -> void:
 	Sfx.music("music_mowing")
 	_record0 = Game.record
 	mower.bumped.connect(_on_mower_bumped)
+	# Start on the mower at the truck: paused under the briefing, smoothing would hold the
+	# camera where the scene file had it. Deferred (it only becomes current then); the
+	# reset moves it only on the next scroll, so force one.
+	(func() -> void:
+		cam.reset_smoothing()
+		cam.force_update_scroll()).call_deferred()
 	if Game.in_run:
 		get_tree().paused = true
 		var lines: Array = job.brief.duplicate()

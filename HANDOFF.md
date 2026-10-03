@@ -36,9 +36,11 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
 - Verified: run_all green (parse, smoke, 40 tests, 42 PASS lines). Screenshots looked at:
   18 whole gardens, the briefing at 4 sizes, litter and a hoop at play zoom, a sapling
   before and after a scripted drive into it.
-- S15-POLICE has now rolled four sessions: the dev should play it or drop it.
+- After the wrap, the dev: 155 was the camera, not the panel (paused under the briefing,
+  it sat where the mower stood in the scene file, then jumped to you). Fixed with a test
+  (test_camera). S15-POLICE dropped (the dev will raise the siren again if it's too loud).
 
-OWED CHECKS: 13, in CHECKS.txt (3 loads, about 55 minutes; LOAD 3 is the clock).
+OWED CHECKS: 12, in CHECKS.txt (3 loads, about 55 minutes; LOAD 3 is the clock).
 
 NEXT:
 1. Play LOAD 3 (the clock, terms, event days, the slower climb); LOAD 1 and 2 when there's time.

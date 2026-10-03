@@ -79,12 +79,6 @@ Built in session 12 (unplayed, see CHECKS.txt): 141 to 146, 148 to 154, 156, 157
    Seed ideas, none decided: watering beds (the gardener's mood), soaking the customer or
    the dog, sluicing critters out, putting out fire (79b, 94). Grill alongside 94 and 100.
    A cut-off piece isn't cut again (a `ponytail:` in `hose.gd`); decide with this.
-155. [BUG, small] The job's opening briefing often shows in a weird spot; the dev wants it
-   on the player or the customer (it's the customer talking). Not reproduced: in a
-   1280x720 window on the default job it sits screen-centre (`hud.gd` `open()`,
-   PRESET_CENTER), over the player; session 19 got the same at 1920x1080, 1600x1000
-   and 1000x900. QUESTION: a screenshot next time it's off, and what
-   size the window was.
 158. [DESIGN, small] The summary's "All told" line will confuse (S11-SUMMARY); the dev has
    no better wording yet. Home: `summary.gd` ~89. Goes to the text pass (159) unless the
    presentation changes (say, standing before and after instead of a total).
@@ -97,8 +91,6 @@ Built in session 12 (unplayed, see CHECKS.txt): 141 to 146, 148 to 154, 156, 157
    rewrites the board's text.
 Also: S11-HEAP's target brackets stay for now; the dev is unsure of the look, to soak.
 S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
-
-155 when it's caught on screen.
 
 ### Open after session 16 (2026-10-02; what's left of the S13 to S15 fallout)
 
