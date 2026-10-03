@@ -13,7 +13,7 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 2: A JOB      (about 20 min; an L plot, a dog helps; [1] on the board for a ride-on)
+LOAD 1 of 3: A JOB      (about 20 min; an L plot, a dog helps; [1] on the board for a ride-on)
 ================================================================================
 
 S15-POLICE
@@ -45,7 +45,7 @@ start? The horn ([H]): does the honk sound right, and is scattering critters use
 
 
 ================================================================================
-LOAD 2 of 2: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
+LOAD 2 of 3: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
 ================================================================================
 
 S16-ROBOT
