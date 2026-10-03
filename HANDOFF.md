@@ -4,11 +4,43 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 4 runs, 29 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 5 runs, 34 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
-per run: about 95k to 240k tokens, 9 to 15 minutes (all 2026-10-02).
+per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
+
+## Session 18 (2026-10-03): solo, S15-FENCE settled, the name builds slowly
+- No dev at the keyboard: worked what needs no play or call. Pulled clean; nothing in
+  CHECKS answered, so nothing cleared.
+- **S15-FENCE settled without play** (8a90f9e): new test_reach shows every lawn cell on
+  every plot is in reach of every mower (boundary and next door's corner only; solid things
+  not modelled). But side fences stood mid-way through their 24 px strip, so 8 to 9 px of
+  next door's long grass showed inside them and looked uncut: the dev's strip, almost
+  certainly. Side runs now stand on the lawn's edge. NOTES 194's strip note closed.
+- **193d, reputation's climb** (36c721a), from the dev's "it shouldn't saturate so early":
+  a job's gains are cut by (1 - trend/100) squared, losses whole. Simulated: great jobs
+  reach the top band after about 20 (was 3), typical play about 34, 90 after about 80.
+  Claude's call, in the design doc as built, veto any. The cost: fired at 80, about 24
+  great jobs to win back; near the top a great job with a small mishap nets a loss. New
+  check S18-CLIMB. The rest of 193d waits for play.
+- **Verifier, run 5** (on both): claims held, 5 real finds, all fixed (864dbc1, the fixes
+  commit): losses inside a good job were cut with its gains; the standing line promised
+  "the rest later" when bad word was arriving; a declined offer's +2 was unscaled; the cut
+  line sat above the noticed lines; a road-fence run shorter than its tile overhung a
+  terrace's drive mouth. Not changed: a winter's drift from 85 takes about 21 great jobs
+  to win back (with the 193d retunes). About 120k tokens, 20 minutes.
+- Verified: run_all green (parse, smoke, 40 tests). Screenshots looked at: L corners
+  (fence and fence, fence and hedge, hedge and fence) before and after, a fenced rect, a
+  terrace and the churchyard's corners, the summary's reputation book, a terrace's mouth.
+- S15-POLICE has now rolled three sessions (the siren's loudness): play it or drop it.
+
+OWED CHECKS: 12, in CHECKS.txt (3 loads, about 55 minutes; LOAD 3 is the clock).
+
+NEXT:
+1. Play LOAD 3 (the clock, terms, event days, the slower climb); LOAD 1 and 2 when there's time.
+2. 193d's other retunes from what play says (the paper's size, REACH, pay, the vig, the clock).
+3. Grill 189 (robots) and 168 (hired help) together, as ways to buy time; then 207 with 136.
 
 ## Session 17 (2026-10-02): the 193 grill (time is the scarce thing), the clock built
 - **Grilled 193** (pace and escalation, the dev's biggest concern), all in the design doc
@@ -361,53 +393,3 @@ NEXT:
 2. Retune from the checks and NOTES 140's numbers if play agrees; then 106 and 107.
 3. /grill on 137 (the art pipeline: blocks the manor and topiary redraws), then 136
    (storylines and the animal dealer), 96 (subquests), 94 (strimmer) with fire, 100 (weeds).
-
-## Session 10 (2026-09-27): grills on 88 and 91, plot shapes, the manor, churchyard, line of sight
-- No checks answered: all 16 S9 checks roll on (S9-BODY and S9-BOARD reworded for this
-  session's rule changes). 12 new, 28 owed.
-- Grill on 88 (the dev chose each; design doc Levels and The Customer): a layout per venue
-  (golf course to its own grill); a building off the back fence fades while you're behind
-  it, the churchyard walls that ground off instead; suburban shapes by neighbourhood
-  (terraces, semis set forward, an L; corner plot, wedge and bent drive parked); the manor
-  from the dev's references with the truck at the tradesmen's entrance, only the formal
-  gardens mowable, a ha-ha on the park sides, railings by the gates, parterre as beds,
-  topiary breakable, a fixed skeleton with details per job, loop or forecourt per job;
-  the churchyard's church to one side; a playground next to the terraces.
-- The dev reworked seen versus evidence mid-grill (their idea, better than my proposal):
-  during the job they only know what they see happen; line of sight (anything taller than
-  a person blocks it; a window is a cone with its ground faintly lit; upstairs windows
-  seeing over things parked); afterwards ownership decides what they notice, bodies in
-  view count, on a new post-job summary screen that moves reputation only; carried into
-  view counts at once, even after payment. Balancing evidence-hiding waits for play (first
-  lever: squashing costs a little mower damage). This reverses part of an older rejection
-  ("sight lines and neighbours as witnesses"): neighbours stay rejected.
-- Grill on 91 (design doc Mowers and Equipment): packing the truck as inventory Tetris
-  (cab: push mower free; bed; a trailer a ride-on fills, or 2 to 4 robot mowers; the
-  trailer bought, bundled with a ride-on), a packing screen before every job, swap
-  anywhere with the unused mower recalled to the truck, "Pack up and leave" brings it all
-  home unless the police were called; the robot mower (bounces, stops at bed edges, flings
-  stones as yours); push: hold to sprint; petrol: a timed ripcord, stalls on a knock below
-  about 40%; ride-on: four instant gears. "Best at a plot" is emergent, never a penalty.
-- Built, all unplayed: 101 (shapes), 55 (playground), 102 (the manor, new art: front,
-  coach house, topiary, railings, piers), 103 (churchyard, new art: walls, lychgate),
-  104 and 105 (line of sight, the cone, the greyed portrait, the aftermath list, the
-  summary screen; the board's rundown moved onto it). Fixed on the way: critters came out
-  of a wall a building stands against; mulched bodies counted as bodies for 12 s.
-- Calls I made (vetoable): terraces under reputation 40, semis 40 to 70, the L from 70, a
-  rectangle 30% of the time; terrace 560x1600 (about a small lawn's area), house 64 px off
-  the road, no car; the manor 1760x1340 (grass measured within 2% of the old mansion's),
-  topiary $60 a chunk; the window cone 100 degrees; a noticed item's reputation is its mood
-  hit over 5, "Every blade cut" +2; bodies they already saw aren't counted again.
-- Verified: run_all green (exit 0; parse, smoke, 27 tests), new test_shapes, extended
-  venues, seen, stunned, run flow, each checked failing without its fix where it guards a
-  bug. Every visual change screenshotted and looked at. Not measured: terrace mowing time
-  against patience (sim_balance only runs the default lawn, NOTES 112).
-- Promoted to the design doc this session (vetoable): everything above under the two
-  grills; also "a body is found after you've gone" replacing "when they come out".
-
-OWED CHECKS: 28, in CHECKS.txt (6 loads, about 60 minutes).
-
-NEXT:
-1. Play the checks; triage what they turn up.
-2. Build 108, 109, 110 (each mower's feel), then 106 and 107 (packing, the robot mower).
-3. /grill on 96 (subquests), then 94 (strimmer) with fire, and 100 (weeds).
