@@ -813,6 +813,32 @@ def cone():
     return c
 
 
+def sapling():
+    """A young tree tied to a stake, in two 20x40 cells: standing; then snapped, a stump
+    and the stake with the top lying on the lawn beside it."""
+    c = Canvas(40, 40)
+    bark = WOOD[1:]
+
+    def crown(cx, cy, rx, ry):
+        shaded_ellipse(c, cx, cy, rx, ry, LEAF)
+
+    # Standing: the stake, the stem tied to it, a small crown.
+    shaded_rect(c, 12, 14, 2, 24, WOOD[2:])               # the stake, behind
+    shaded_rect(c, 9, 12, 2, 26, bark)                    # the stem
+    c.rect(9, 22, 5, 1, CREAM[1])                         # the tie
+    crown(10, 10, 7, 8)
+    # Snapped: the stake and a stump, the top lying on the lawn.
+    shaded_rect(c, 32, 14, 2, 24, WOOD[2:])
+    shaded_rect(c, 29, 31, 2, 7, bark)
+    c.set(29, 30, WOOD[4])
+    c.set(30, 30, WOOD[3])                                 # splintered
+    for x in range(22, 31):
+        c.rect(x, 37, 1, 2, bark[2 if x % 3 else 1])      # the fallen stem, along the ground
+    crown(25, 35, 5, 3)
+    c.outline(INK)
+    return c
+
+
 def litter():
     """A crisp packet blown onto the lawn: pick it up, or mow it into confetti."""
     c = Canvas(10, 7)

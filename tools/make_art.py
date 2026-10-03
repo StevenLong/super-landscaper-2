@@ -220,6 +220,7 @@ def main(only=None):
             save("ball", a.ball(), 6),
             save("litter", a.litter(), 6),
             save("hoop", a.hoop(), 6),
+            save("sapling", a.sapling(), 6),
             save("rock", a.rock(), 4),
             save("urn", a.urn(), 6),
             save("walker", v.sheet([v.walker(0), v.walker(1)]), 4),

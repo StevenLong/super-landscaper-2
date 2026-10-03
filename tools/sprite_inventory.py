@@ -76,6 +76,7 @@ SPRITES = {
     "cone": ("prop", 1, 1, "art_sprites.py cone()", "stone.gd", ""),
     "ball": ("prop", 1, 1, "art_sprites.py ball()", "stone.gd, dog.gd", "the tennis ball"),
     "litter": ("prop", 1, 1, "art_sprites.py litter()", "stone.gd", "a crisp packet blown in"),
+    "sapling": ("prop", 2, 1, "art_sprites.py sapling()", "rock.gd (main.gd places it)", "a staked young tree, standing and snapped"),
     "hoop": ("prop", 1, 1, "art_sprites.py hoop()", "stone.gd", "a croquet hoop (the manor)"),
     "urn": ("prop", 1, 1, "art_sprites.py urn()", "stone.gd", "the manor's urns"),
     "splat": ("prop", 1, 1, "art_sprites.py splat()", "main.gd (decals)", "what's left of a critter"),

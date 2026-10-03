@@ -33,8 +33,9 @@ open the truck menu standing in it. Right size? Visible enough, without shouting
 >
 
 S19-LITTER
-New small things (79b): crisp packets blown onto about a third of lawns, and croquet hoops
-on the manor's lawn. Litter's nobody's: mow it where they can see and they mind the mess
+New things (79b): crisp packets blown onto about a third of lawns, croquet hoops on the
+manor's lawn, and now and then a staked sapling that snaps if you ram it (theirs: they mind,
+now or once you've gone; a nudge leaves it). Does the snapped one read? Litter's nobody's: mow it where they can see and they mind the mess
 (a little), unseen it costs nothing; pick it up and put it in the truck for a tally. A
 hoop clonks the mower and sometimes flies. Worth having, or clutter? (A crisp packet can
 still be thrown hard enough to break a window, like a flamingo: say if that grates.)
@@ -119,6 +120,9 @@ VERIFIED  Litter and croquet hoops (session 19), by test (test_objects) and scre
           shredded unseen costs nothing now or after you leave, seen it costs mood; a hoop
           dents the mower; a manor has 4 to 6 hoops, about a third of gardens have litter.
           Both sprites read at play zoom (a red packet, a white hoop).
+VERIFIED  The sapling (session 19), by test and a scripted drive: a bump under 110 leaves it,
+          driving the petrol mower into it snaps it (tally, their mood or found after), and
+          you then drive over the stump. Screenshot standing and snapped.
 VERIFIED  The fences (NOTES 194, session 19), by screenshot: whole gardens of 3 seeds of each
           plot (terrace, semi, L, rectangle, manor, churchyard): no breaks seen at that zoom.
 TRIED     The briefing's "weird spot" (NOTES 155, session 19): screenshots at 1920x1080,

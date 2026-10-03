@@ -1,5 +1,5 @@
 # Objects by size: small things are carried, thrown and mowed (each with its own
-# consequence; litter minded only if seen, croquet hoops on the manor), the dog fetches a thrown ball, and decorative rocks are solid.
+# consequence; litter minded only if seen, croquet hoops on the manor, a sapling snaps if rammed), the dog fetches a thrown ball, and decorative rocks are solid.
 extends SceneTree
 
 var m: Node
@@ -113,6 +113,24 @@ func _physics_process(_delta: float) -> bool:
 			assert(m2._stone_hit_test(rocks[0].position) == "rock", "a stone hits a rock")
 			var props: Array = m2.get_node("Stones").get_children().filter(func(s: Node) -> bool: return s is Stone and s.kind != "stone")
 			assert(props.size() >= 1, "and its small things lie about: %s" % str(job.props))
+			# A sapling: a nudge leaves it, ramming it snaps it, and it was theirs.
+			for seed_value in range(1, 400):
+				job = g.make_job(seed_value)
+				if "sapling" in job.props:
+					break
+			g.current_job = job
+			var m3: Node = load("res://main.tscn").instantiate()
+			root.add_child(m3)
+			var sap: Array = m3.get_node("Scenery").get_children().filter(func(n: Node) -> bool: return "art" in n and n.art == "sapling")
+			assert(sap.size() == 1, "a sapling in the garden: %s" % [job.props])
+			var mood3: float = m3.customer.mood
+			m3._on_mower_bumped(sap[0], 80.0)
+			assert(sap[0].frame == 0 and m3.customer.mood == mood3, "a nudge: still standing")
+			m3._on_mower_bumped(sap[0], 200.0)
+			assert(sap[0].frame == 1 and m3.tally.get("saplings", 0) == 1, "rammed: snapped")
+			assert(m3.customer.mood < mood3 or not m3.customer._owned.is_empty(), "their sapling: minded now, or found later")
+			m3._on_mower_bumped(sap[0], 200.0)
+			assert(m3.tally.saplings == 1, "it snaps once")
 			g.current_job = {}
 			print("PASS objects")
 			quit()

@@ -218,7 +218,7 @@ const TALLY := {
 	"dog_bowled": "Dogs bowled over", "dog_returned": "Dogs walked home",
 	"customer_hits": "Customers hit with a stone", "knockouts": "Customers knocked out cold",
 	"robberies": "Pockets rifled",
-	"windows": "Windows put through", "car_dents": "Dents in the customer's car", "topiary": "Topiary clipped the hard way", "dents": "Dents in your own truck",
+	"windows": "Windows put through", "car_dents": "Dents in the customer's car", "topiary": "Topiary clipped the hard way", "saplings": "Saplings snapped", "dents": "Dents in your own truck",
 	"own_goals": "Stones at your own mower", "flowers": "Flowers flattened",
 	"stones_mowed": "Stones through the blades", "stones_thrown": "Things thrown",
 	"gnomes_mowed": "Gnomes shattered", "flamingos_mowed": "Flamingos shredded", "cones_mowed": "Cones sent flying",
@@ -565,6 +565,8 @@ func _props(seed_value: int, persona_key: String, size_i: int) -> Array[String]:
 	if r.randf() < 0.35: # blown in: nobody's, and only minded if they see it shredded
 		for i in r.randi_range(1, 3):
 			out.append("litter")
+	if r.randf() < 0.25: # newly planted: rammed, it snaps (main.gd)
+		out.append("sapling")
 	return out
 
 

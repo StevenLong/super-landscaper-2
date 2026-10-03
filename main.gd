@@ -54,6 +54,7 @@ const NEXT_DOOR := Color(0.72, 0.8, 0.7) ## next door's lawn, a touch duller tha
 const MANOR_BACK := 260.0 ## the manor's back lawn, between the ha-ha and its ridge
 const APPROACH_W := 96.0 ## the manor's approach, up the middle from the gates
 const TOPIARY_BILL := 60.0 ## a chunk out of a clipped peacock
+const SAPLING_SNAP := 110.0 ## a bump into a sapling harder than this snaps it
 const CHURCH_BACK := 170.0 ## the church stands this far off the back wall, walled off behind
 const PATH_W := 48.0 ## the churchyard path, from the lychgate to the porch
 const WINDOW_CONE := deg_to_rad(50.0) ## half the spread a window sees out over
@@ -382,6 +383,19 @@ func _build_layout() -> void:
 		for kind: String in props:
 			if kind == "hose":
 				_lay_hose(rp)
+				continue
+			if kind == "sapling":
+				var sp := _place(rp, taken, Vector2(24, 24), size)
+				if sp.has_area():
+					var sap := RockScript.new()
+					sap.name = "Sapling"
+					sap.art = "sapling"
+					sap.frames = 2
+					sap.radius = 4.0
+					sap.height = 36.0
+					sap.position = sp.get_center()
+					$Scenery.add_child(sap)
+					lawn.exclude_circle(sap.position, sap.radius)
 				continue
 			var pr := _place(rp, taken, Vector2(14, 14), size)
 			if pr.has_area():
@@ -1981,6 +1995,18 @@ func _finish_nicked() -> void:
 ## Ramming the customer's car dents it like a stone, and harder hits cost more. Only a
 ## ram at speed is a crime: a bump at a crawl is an accident, like a blade-flung stone.
 func _on_mower_bumped(what: Object, impact: float) -> void:
+	if what is StaticBody2D and "art" in what and what.art == "sapling":
+		if what.frame == 0 and impact > SAPLING_SNAP: # snapped: over, and nothing left to hit
+			what.frame = 1
+			what.height = 8.0
+			what.get_child(0).set_deferred("disabled", true)
+			Sfx.play("crunch")
+			_burst(what.position + Vector2(0, -26), ["2e6a2c", "4e9448", "6a4a2a"])
+			_count("saplings")
+			_mischief(3.0)
+			if customer.on_property("sapling", -15.0, what.position):
+				_react()
+		return
 	if what is StaticBody2D and "art" in what and what.art == "topiary":
 		if what.frame >= 3:
 			return # already bitten
