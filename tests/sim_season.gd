@@ -5,18 +5,20 @@
 # lawn's area (to 85%), times HUMAN, times the plot's area; the customer ends at MOOD
 # (shifted by where they start), less if you overran their window. So read it for shape
 # (is April short of money, is summer short of time, when does money stop mattering),
-# not for exact dollars.
+# not for exact dollars. It flatters income: every job meets its target (a perfectionist's
+# 0.96 included), and the ride-on's manor time is extrapolated (the balance bot gets it
+# to 26%), so trust MOOD 75's dollars least. "paid$" leaves out money up front.
 #   "$GODOT" --headless --path . -s tests/sim_season.gd
-# Knobs (env): SIM_SEEDS (5), SIM_SEASONS (2), SIM_HUMAN (0.7), SIM_MOOD (75), SIM_FILL
-# SIM_SPREAD (15, each job's mood is MOOD give or take this), SIM_FILL (0.85, how much of a day the bot dares book), SIM_BUFFER (200, cash kept at payday),
-# SIM_SHOW (the seed whose months print in full, 1).
+# Knobs (env): SIM_SEEDS (5), SIM_SEASONS (2), SIM_HUMAN (0.85), SIM_MOOD (75), SIM_SPREAD
+# (15, each job's mood is MOOD give or take this), SIM_FILL (0.85, how much of a day the
+# bot dares book), SIM_BUFFER (200, cash kept at payday), SIM_SHOW (the seed printed in full, 1).
 extends SceneTree
 
 const BOT_SECS := {"push": 420.0, "petrol": 262.0, "rideon": 281.0} ## sim_balance, default lawn to 85% (push guessed: it never got there)
 const BUY := ["petrol", "rideon", "gear3"] ## the bot's shopping list, in order
 
 var g: Node
-var human := 0.7
+var human := 0.85
 var mood := 75.0
 var spread := 15.0
 var rng := RandomNumberGenerator.new()

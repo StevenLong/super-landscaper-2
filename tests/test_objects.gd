@@ -131,8 +131,29 @@ func _physics_process(_delta: float) -> bool:
 			assert(m3.customer.mood < mood3 or not m3.customer._owned.is_empty(), "their sapling: minded now, or found later")
 			m3._on_mower_bumped(sap[0], 200.0)
 			assert(m3.tally.saplings == 1, "it snaps once")
+			# Gardens keep the layout they had before litter, hoops and saplings (the verifier's
+			# find: rocks and the dog's ball moved): those are placed last, on their own draws.
+			for seed_value in [2, 4, 9, 10]:
+				var full: Dictionary = g.make_job(seed_value)
+				var old: Dictionary = full.duplicate(true)
+				old.props = old.props.filter(func(k: String) -> bool: return k not in m3.LATER_PROPS)
+				assert(old.props.size() < full.props.size(), "seed %d has a new prop" % seed_value)
+				assert(_layout(full) == _layout(old), "seed %d: its rocks and small things where they were" % seed_value)
 			g.current_job = {}
 			print("PASS objects")
 			quit()
 	_step += 1
 	return false
+
+
+## Where a job's rocks and its older small things lie (not the new ones).
+func _layout(job: Dictionary) -> Array:
+	g.current_job = job
+	var mm: Node = load("res://main.tscn").instantiate()
+	root.add_child(mm)
+	var out: Array = []
+	for n: Node in mm.get_node("Scenery").get_children() + mm.get_node("Stones").get_children():
+		if (n.get_script() == preload("res://rock.gd") and n.art == "rock") or (n is Stone and n.kind not in mm.LATER_PROPS):
+			out.append([str(n.get("kind")), (n as Node2D).position])
+	mm.free()
+	return out

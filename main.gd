@@ -55,6 +55,7 @@ const MANOR_BACK := 260.0 ## the manor's back lawn, between the ha-ha and its ri
 const APPROACH_W := 96.0 ## the manor's approach, up the middle from the gates
 const TOPIARY_BILL := 60.0 ## a chunk out of a clipped peacock
 const SAPLING_SNAP := 110.0 ## a bump into a sapling harder than this snaps it
+const LATER_PROPS := ["litter", "hoop", "sapling"] ## placed after the rest, so gardens from before them keep their layout
 const CHURCH_BACK := 170.0 ## the church stands this far off the back wall, walled off behind
 const PATH_W := 48.0 ## the churchyard path, from the lychgate to the porch
 const WINDOW_CONE := deg_to_rad(50.0) ## half the spread a window sees out over
@@ -381,21 +382,10 @@ func _build_layout() -> void:
 		rp.seed = job.seed + 4
 		var props: Array = job.get("props", []) + (["ball"] if job.get("dog", false) else [])
 		for kind: String in props:
+			if kind in LATER_PROPS:
+				continue # placed last, below
 			if kind == "hose":
 				_lay_hose(rp)
-				continue
-			if kind == "sapling":
-				var sp := _place(rp, taken, Vector2(24, 24), size)
-				if sp.has_area():
-					var sap := RockScript.new()
-					sap.name = "Sapling"
-					sap.art = "sapling"
-					sap.frames = 2
-					sap.radius = 4.0
-					sap.height = 36.0
-					sap.position = sp.get_center()
-					$Scenery.add_child(sap)
-					lawn.exclude_circle(sap.position, sap.radius)
 				continue
 			var pr := _place(rp, taken, Vector2(14, 14), size)
 			if pr.has_area():
@@ -415,6 +405,25 @@ func _build_layout() -> void:
 			var pd := _place(rd, taken, Vector2(14, 14), size)
 			if pd.has_area():
 				add_stone(pd.get_center(), kind)
+		var rl := RandomNumberGenerator.new() # props added after a garden's layout was settled: last, their own draws
+		rl.seed = job.seed + 9
+		for kind: String in job.get("props", []):
+			if kind == "sapling":
+				var sp := _place(rl, taken, Vector2(24, 24), size)
+				if sp.has_area():
+					var sap := RockScript.new()
+					sap.name = "Sapling"
+					sap.art = "sapling"
+					sap.frames = 2
+					sap.radius = 4.0
+					sap.height = 36.0
+					sap.position = sp.get_center()
+					$Scenery.add_child(sap)
+					lawn.exclude_circle(sap.position, sap.radius)
+			elif kind in LATER_PROPS:
+				var pl := _place(rl, taken, Vector2(14, 14), size)
+				if pl.has_area():
+					add_stone(pl.get_center(), kind)
 	lawn.exclude_rect(_house.rect())
 	lawn.exclude_rect(_house.garage_rect())
 	lawn.exclude_rect(Rect2(drive.position, drive.size))

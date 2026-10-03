@@ -121,21 +121,23 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    - Everything hinges on regulars, and offers need an end mood over 60. MOOD 75: 13
      regulars by May, 20 by July; paid $15k in May, $31k in July; $101k cash at the first
      winter, $354k at the second. MOOD 65: 6, then 11; $9k, $20k; $48k, $115k. MOOD 55:
-     2 or 3 regulars all season; $3k to $4k a month; $1.4k at the winter, $1.9k at the
-     second (the heavies take the ride-on now and then).
+     2 or 3 regulars (4 or 5 in the second season); $2k to $4k a month; $1.4k at the
+     winter, $1.9k at the second (the heavies take the ride-on now and then).
    - Money is tight for about three weeks: at MOOD 65 or 75 the debt's gone by early May,
-     all the kit ($1,500 in all) bought by May, then cash piles up with nothing to buy. The
+     nearly all the kit ($1,500 in all) bought by May, then cash piles up with nothing to buy. The
      $1M target is about 3 seasons at MOOD 75. So money's use (189 robots, 168 help) wants
      pricing against $20k to $40k a month for a good player, not $150.
    - Time: at MOOD 75 days run 60 to 70% full from June and 90 to 135 ads a month are
      turned away for want of room (the squeeze works); at MOOD 55 days stay 16 to 30% full
      and nothing is turned away (the paper alone, 5 to 10 ads a week, can't fill a day:
      PAPER_SIZE). Regular visits missed (placed however busy): 5 to 10 a month at MOOD 75.
-   - Fuel eats 30 to 80% of pay: the ride-on burns about $70 of fuel on a small lawn that
+   - Fuel eats 25 to 90% of pay (the most at MOOD 55 in summer, on the ride-on): the ride-on burns about $70 of fuel on a small lawn that
      pays about $70 (1.5 a second, the first tank free), petrol about $40. On small lawns
      the push mower nets the most, if it fits the window (its time is a guess: the bot
      never reached 85% with it).
-   No numbers changed: which lever (pay, PAPER_SIZE, the offer's mood threshold, fuel, or
+   The sim flatters income (every job meets its target; the ride-on's manor time is a
+   guess), so MOOD 75's dollars are the least trustworthy; the verifier (run 6) re-ran and
+   matched the core numbers. No numbers changed: which lever (pay, PAPER_SIZE, the offer's mood threshold, fuel, or
    pricing 189/168 at this scale) is the dev's call, with LOAD 3's play.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect
    screenshots here. (The strip of outside grass inside side fences: fixed in session 18.)
