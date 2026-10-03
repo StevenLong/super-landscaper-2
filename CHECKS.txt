@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (12 checks, 3 loads, about 55 minutes)
+PLAY CHECKS OWED  (13 checks, 3 loads, about 55 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -30,6 +30,14 @@ over them, a faint tint). Does it read as a window now?
 S16-BAY
 The truck's reach is the faint yellow bay from the drive's end to the truck: refuel and
 open the truck menu standing in it. Right size? Visible enough, without shouting?
+>
+
+S19-LITTER
+New small things (79b): crisp packets blown onto about a third of lawns, and croquet hoops
+on the manor's lawn. Litter's nobody's: mow it where they can see and they mind the mess
+(a little), unseen it costs nothing; pick it up and put it in the truck for a tally. A
+hoop clonks the mower and sometimes flies. Worth having, or clutter? (A crisp packet can
+still be thrown hard enough to break a window, like a flamingo: say if that grates.)
 >
 
 S16-RIDEON
@@ -107,6 +115,15 @@ Anything you reach for that isn't there?
 VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
+VERIFIED  Litter and croquet hoops (session 19), by test (test_objects) and screenshot: litter
+          shredded unseen costs nothing now or after you leave, seen it costs mood; a hoop
+          dents the mower; a manor has 4 to 6 hoops, about a third of gardens have litter.
+          Both sprites read at play zoom (a red packet, a white hoop).
+VERIFIED  The fences (NOTES 194, session 19), by screenshot: whole gardens of 3 seeds of each
+          plot (terrace, semi, L, rectangle, manor, churchyard): no breaks seen at that zoom.
+TRIED     The briefing's "weird spot" (NOTES 155, session 19): screenshots at 1920x1080,
+          1280x720, 1600x1000 and 1000x900 windows all show it centred, the player just under
+          it at the truck. Still not reproduced: a screenshot when it's off, please.
 
 VERIFIED  The name's climb (193d, session 18), by test (test_season _climb): a run of great
           jobs reaches the top band in 15 to 30 (about 20; without the curve, 3); a firing

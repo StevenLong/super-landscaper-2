@@ -1285,8 +1285,8 @@ func interact() -> void:
 			set_robot(walker.global_position + Vector2(20, 0).rotated(walker.rotation), Vector2.RIGHT.rotated(walker.rotation))
 		elif not at_truck():
 			add_stone(walker.global_position + Vector2(14, 0).rotated(walker.rotation), walker.carrying)
-		elif walker.carrying == "stone":
-			_count("stones_binned")
+		elif walker.carrying in ["stone", "litter"]:
+			_count(walker.carrying + ("s" if walker.carrying == "stone" else "") + "_binned")
 		elif walker.carrying == "jerrycan": # back on the truck, still full
 			cans += 1
 		elif walker.carrying == "robot":
@@ -2031,7 +2031,7 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 	m.damage(k.get("damage", 0.0))
 	match k.mowed:
 		"fling":
-			Sfx.play("clonk" if s.kind == "stone" else "bump")
+			Sfx.play("clonk" if s.kind in ["stone", "hoop"] else "bump")
 			shake(3.0)
 			if k.get("always", false) or randf() < Stone.LAUNCH_CHANCE:
 				var dir := Vector2.RIGHT.rotated(m.rotation + randf_range(-1.1, 1.1))
@@ -2052,6 +2052,8 @@ func _on_stone_mowed(s: Stone, m: Node2D) -> void:
 		_mischief(3.0)
 		if customer.on_property(k.theirs, k.mood, s.position):
 			_react()
+	elif k.has("mess") and customer.on_property(k.mess, k.mood, s.position, false):
+		_react()
 
 
 ## Bits flying off something mowed to pieces: a one-shot spray in its colours.

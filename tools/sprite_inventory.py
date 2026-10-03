@@ -75,6 +75,8 @@ SPRITES = {
     "flamingo": ("prop", 1, 1, "art_sprites.py flamingo()", "stone.gd", ""),
     "cone": ("prop", 1, 1, "art_sprites.py cone()", "stone.gd", ""),
     "ball": ("prop", 1, 1, "art_sprites.py ball()", "stone.gd, dog.gd", "the tennis ball"),
+    "litter": ("prop", 1, 1, "art_sprites.py litter()", "stone.gd", "a crisp packet blown in"),
+    "hoop": ("prop", 1, 1, "art_sprites.py hoop()", "stone.gd", "a croquet hoop (the manor)"),
     "urn": ("prop", 1, 1, "art_sprites.py urn()", "stone.gd", "the manor's urns"),
     "splat": ("prop", 1, 1, "art_sprites.py splat()", "main.gd (decals)", "what's left of a critter"),
     # The HUD.

@@ -1,5 +1,5 @@
 # Objects by size: small things are carried, thrown and mowed (each with its own
-# consequence), the dog fetches a thrown ball, and decorative rocks are solid.
+# consequence; litter minded only if seen, croquet hoops on the manor), the dog fetches a thrown ball, and decorative rocks are solid.
 extends SceneTree
 
 var m: Node
@@ -74,6 +74,31 @@ func _physics_process(_delta: float) -> bool:
 			# Mow the ball in front of it and it sulks.
 			m._on_stone_mowed(balls[0], m.mower)
 			assert(m.dog._grief > 0.0, "a ball mowed in front of the dog: it grieves")
+			# Litter: shredded, minded only if they see it done; never found afterwards.
+			var where: String = m.customer.where
+			m.customer.where = "inside"
+			var mood: float = m.customer.mood
+			m._on_stone_mowed(m.add_stone(Vector2(640, 560), "litter"), m.mower)
+			assert(m.customer.mood == mood and m.customer._owned.is_empty(), "litter shredded unseen: nothing, now or later")
+			m.customer.where = where
+			m._on_stone_mowed(m.add_stone(Vector2(660, 560), "litter"), m.mower)
+			assert(m.customer.mood < mood and m.tally.get("litters_mowed", 0) == 2, "shredded where they see: they mind the mess")
+			# A croquet hoop: sent flying sometimes, always a knock to the mower.
+			var cond: float = m.mower.condition
+			m._on_stone_mowed(m.add_stone(Vector2(680, 560), "hoop"), m.mower)
+			assert(m.mower.condition < cond and m.tally.get("hoops_mowed", 0) == 1, "a mowed hoop dents the mower")
+			# Where they turn up: the manor's croquet lawn, litter now and then anywhere.
+			g.reputation = 90.0
+			var manor := {}
+			var litter := 0
+			for seed_value in range(1, 400):
+				var j: Dictionary = g.make_job(seed_value)
+				litter += int("litter" in j.props)
+				if manor.is_empty() and j.get("venue", "") == "mansion":
+					manor = j
+			assert(manor.props.count("hoop") >= 4 and manor.props.count("hoop") <= 6, "a manor's croquet hoops: %s" % [manor.props])
+			assert(litter > 60 and litter < 220, "litter in about a third of gardens: %d of 400" % litter)
+			g.reputation = 50.0
 			# A garden with rocks: solid, and stones bounce off.
 			var job: Dictionary = {}
 			for seed_value in range(1, 200):

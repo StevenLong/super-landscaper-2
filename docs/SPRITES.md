@@ -97,6 +97,8 @@ Small things on the lawn, one image each, drawn standing on their foot.
 | `art/flamingo.png` | 14 x 22 | 1 x 1 | 14 x 22 | art_sprites.py flamingo() | stone.gd |  |
 | `art/cone.png` | 12 x 16 | 1 x 1 | 12 x 16 | art_sprites.py cone() | stone.gd |  |
 | `art/ball.png` | 7 x 7 | 1 x 1 | 7 x 7 | art_sprites.py ball() | stone.gd, dog.gd | the tennis ball |
+| `art/litter.png` | 10 x 7 | 1 x 1 | 10 x 7 | art_sprites.py litter() | stone.gd | a crisp packet blown in |
+| `art/hoop.png` | 12 x 11 | 1 x 1 | 12 x 11 | art_sprites.py hoop() | stone.gd | a croquet hoop (the manor) |
 | `art/urn.png` | 16 x 22 | 1 x 1 | 16 x 22 | art_sprites.py urn() | stone.gd | the manor's urns |
 | `art/splat.png` | 24 x 20 | 1 x 1 | 24 x 20 | art_sprites.py splat() | main.gd (decals) | what's left of a critter |
 

@@ -222,11 +222,11 @@ const TALLY := {
 	"own_goals": "Stones at your own mower", "flowers": "Flowers flattened",
 	"stones_mowed": "Stones through the blades", "stones_thrown": "Things thrown",
 	"gnomes_mowed": "Gnomes shattered", "flamingos_mowed": "Flamingos shredded", "cones_mowed": "Cones sent flying",
-	"hoses_mowed": "Hoses cut", "urns_mowed": "Urns smashed", "balls_mowed": "Tennis balls shredded", "jerrycans_mowed": "Petrol cans mowed",
+	"hoses_mowed": "Hoses cut", "urns_mowed": "Urns smashed", "balls_mowed": "Tennis balls shredded", "litters_mowed": "Litter shredded", "hoops_mowed": "Croquet hoops sent flying", "jerrycans_mowed": "Petrol cans mowed",
 	"fetches": "Balls fetched", "animals_thrown": "Animals thrown", "prickled": "Hedgehogs grabbed bare-handed",
 	"bitten": "Bitten by squirrels", "own_head": "Stones on your own head",
 	"trees_hit": "Trees stoned", "splashes": "Stones fed to the pond",
-	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck",
+	"stones_picked": "Stones picked up", "stones_binned": "Stones tidied into the truck", "litter_binned": "Litter tidied into the truck",
 	"cans": "Cans of fuel carried", "sent_back": "Times sent back out to finish",
 }
 ## What can only happen once a job: shown as the event, never a count or a record.
@@ -234,7 +234,7 @@ const EVENTS := {"dog_bowled": "Bowled the dog over", "dog_returned": "Walked th
 	"knockouts": "Knocked the customer out cold", "robberies": "Rifled their pockets", "hoses_mowed": "Cut the hose"}
 ## The counts it's good to beat: a record in one of these is a personal best. A record
 ## in anything else is a personal worst.
-const GOOD_TALLY := ["dog_returned", "fetches", "stones_picked", "stones_binned", "cans"]
+const GOOD_TALLY := ["dog_returned", "fetches", "stones_picked", "stones_binned", "litter_binned", "cans"]
 ## Button prompts follow what you last touched: keyboard keys, or an Xbox-style pad.
 const PROMPTS := {"interact": ["E", "A"], "hop": ["F", "B"], "throw": ["Q", "X"], "look": ["Tab", "Y"], "pause": ["Esc", "Start"], "sprint": ["Shift", "A"],
 	"gear_up": ["Shift", "RB"], "gear_down": ["Ctrl", "LB"], "horn": ["H", "L3"]}
@@ -467,6 +467,8 @@ func make_job(seed_value: int, at := -1.0) -> Dictionary:
 		j.ponds = 1 if rv.randf() < 0.5 else 0
 		j.beds = 0 # the parterre is the beds
 		j.trees = rv.randi_range(2, 3)
+		for i in rv.randi_range(4, 6): # a croquet lawn
+			j.props.append("hoop")
 	elif not dregs and at < 20.0 and rv.randf() < 0.5:
 		_churchyard(j, rv)
 	else:
@@ -560,6 +562,9 @@ func _props(seed_value: int, persona_key: String, size_i: int) -> Array[String]:
 		out.append("cone") # not theirs: nobody minds
 	if r.randf() < 0.6:
 		out.append("hose")
+	if r.randf() < 0.35: # blown in: nobody's, and only minded if they see it shredded
+		for i in r.randi_range(1, 3):
+			out.append("litter")
 	return out
 
 

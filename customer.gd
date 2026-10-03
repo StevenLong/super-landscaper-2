@@ -281,9 +281,10 @@ func on_stone(target: String, at := Vector2.INF) -> bool:
 
 ## Something of theirs wrecked at `at` (a gnome, the hose, a spill on the lawn). Returns
 ## true if they saw it; unseen, it's theirs, so it's found after you've gone.
-func on_property(what: String, d: float, at := Vector2.INF) -> bool:
+func on_property(what: String, d: float, at := Vector2.INF, found_after := true) -> bool:
 	if not sees(at):
-		_owned.append([what, d])
+		if found_after:
+			_owned.append([what, d])
 		return false
 	_change(d)
 	_react("horrified", 2.0, "My %s!" % what.to_upper())

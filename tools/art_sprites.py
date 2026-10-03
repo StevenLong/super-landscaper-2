@@ -813,6 +813,33 @@ def cone():
     return c
 
 
+def litter():
+    """A crisp packet blown onto the lawn: pick it up, or mow it into confetti."""
+    c = Canvas(10, 7)
+    c.rect(1, 1, 8, 5, RED[3])                            # the packet, crumpled at the ends
+    c.rect(0, 2, 1, 3, RED[2])
+    c.rect(9, 2, 1, 3, RED[2])
+    c.rect(2, 2, 6, 3, YELLOW[3])                         # the label
+    c.rect(3, 3, 3, 1, BLUE[2])
+    c.set(2, 1, RED[4])
+    c.set(6, 5, RED[1])
+    c.outline(INK)
+    return c
+
+
+def hoop():
+    """A croquet hoop: white wire pushed into the lawn, a hoop seen from 3/4."""
+    c = Canvas(12, 11)
+    for x in (1, 9):
+        c.rect(x, 3, 2, 8, STEEL[5])                      # the legs
+        c.rect(x + 1, 3, 1, 8, STEEL[3])                  # their shaded side
+    c.rect(2, 1, 8, 2, STEEL[5])                          # the crown
+    c.rect(3, 0, 6, 1, STEEL[5])
+    c.rect(3, 2, 6, 1, STEEL[3])
+    c.outline(INK)
+    return c
+
+
 def ball():
     """A tennis ball: the dog fetches it."""
     c = Canvas(7, 7)
