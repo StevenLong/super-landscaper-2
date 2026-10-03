@@ -91,7 +91,8 @@ S18-CLIMB
 Your name now builds slowly (193d): a great job adds a quarter of what it did at Fair, a
 sixteenth near the top, shown on the summary as "Most folk won't hear of it". Over a week
 or two, does the paper's ladder feel like something you climb? Does that summary line
-read as fair or as a slap? (A run of great jobs reaches the top band after about 20.)
+read as fair or as a slap? (A run of great jobs reaches the top band after about 20. Near
+the top a great job with one small mishap can now cost you overall: fair?)
 >
 
 S17-BOARD
@@ -110,8 +111,15 @@ Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing 
 VERIFIED  The name's climb (193d, session 18), by test (test_season _climb): a run of great
           jobs reaches the top band in 15 to 30 (about 20; without the curve, 3); a firing
           isn't softened; the summary's book adds up to what moved. Screenshot of the summary
-          with the new line; its standing line no longer says "+2 so far, the rest over the
-          next jobs" under a total of +1 (earlier word catching up says so).
+          with the new line. The verifier's fifth run held the claims and found: (1) losses
+          inside a good job were cut with its gains (now only gains are cut, by test); (2) the
+          standing line could say "-1 so far, the rest over the next jobs" after a +2 (it now
+          says word takes time to travel); (3) turning down an offer gave its +2 unscaled, worth
+          3 great jobs at the top (scaled now, by test); (4) the cut line sat above the noticed
+          lines it also cuts (now after them, screenshot); (5) a road-fence run shorter than
+          its 16 px tile drew 16 px wide, over a terrace's drive mouth (drawn its true width
+          now, screenshot). Not changed: one winter's drift from 85 takes about 21 great jobs
+          to win back (the 193d retunes, with play).
 VERIFIED  S15-FENCE (session 18), by test and screenshot: every lawn cell on every plot
           shape and venue is in reach of every mower, the corners where your fence meets
           next door's included (new test_reach; a 4 px wider edge margin fails it). But side

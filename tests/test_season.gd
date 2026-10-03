@@ -133,10 +133,20 @@ func _climb() -> void:
 		g.record_result(r)
 		jobs += 1
 	assert(jobs >= 15 and jobs <= 30, "the top band after %d great jobs" % jobs)
-	assert(r.rep_lines.size() == 2 and is_equal_approx(r.rep_lines[0][1] + r.rep_lines[1][1], r.rep), "the book adds up to what it moved")
+	assert(is_equal_approx(r.rep_lines[0][1] + r.rep_cut, r.rep), "the book adds up to what it moved")
 	var trend: float = g.rep_trend
 	g.record_result({"outcome": "fired", "net": 0, "paid": 0, "rep": -18.0})
 	assert(is_equal_approx(g.rep_trend, trend - 18.0), "a firing costs the lot")
+	# A loss on a good job lands whole too (the verifier's find: the net was cut, losses with it).
+	trend = g.rep_trend
+	var gain: float = g.climb(10.0)
+	g.record_result({"outcome": "paid", "net": 0, "paid": 0, "rep": 2.0, "rep_lines": [["The job", 10.0]], "noticed": [["A dead hedgehog", -8.0]]})
+	assert(is_equal_approx(g.rep_trend, trend + gain - 8.0), "the job's gain cut, the hedgehog's cost whole")
+	# Being asked, and saying no, is cut the same way.
+	trend = g.rep_trend
+	g.offer = {"id": 1}
+	g.answer_offer("decline")
+	assert(g.rep_trend > trend and g.rep_trend < trend + g.OFFER_REP, "declining a top-band offer adds less than %d" % g.OFFER_REP)
 
 
 ## The day's clock (design doc, Time is the scarce thing).
@@ -295,8 +305,8 @@ func _regulars() -> void:
 	_soft(j)
 	# Turning them down still does your name good: you were wanted.
 	g.offer = {"id": 4, "job": j, "cadence": 14, "rate": 100, "mood": 70.0, "day": g.day, "drift": []}
-	var rep: float = g.reputation
-	assert(g.answer_offer("decline") == "no" and g.reputation == rep + g.OFFER_REP and not g.regulars.has(4), "declined: a little reputation")
+	var rep: float = g.reputation + g.climb(g.OFFER_REP)
+	assert(g.answer_offer("decline") == "no" and is_equal_approx(g.reputation, rep) and not g.regulars.has(4), "declined: a little reputation")
 
 
 ## Regulars change softly (design doc, Time is the scarce thing): terms move with how a

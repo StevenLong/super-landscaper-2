@@ -167,7 +167,7 @@ func _offer_screen() -> void:
 			said.text = {"yes": "\"Lovely. See you then.\" A regular: $%d %s." % [rate, every],
 				"grudging": "\"...Fine. But it had better be good.\" $%d %s, and they're not pleased." % [rate, every],
 				"walk": "\"At that price? Forget it.\" They're gone.",
-				"no": "\"Shame. Well, you know where we are.\" Being asked does your name good: +%d reputation." % roundi(Game.OFFER_REP)}[reply]
+				"no": "\"Shame. Well, you know where we are.\" Being asked does your name a little good."}[reply]
 			face.expression = {"yes": "happy", "grudging": "annoyed", "walk": "furious", "no": "neutral"}[reply]
 			choices.queue_free()
 			root.add_child(go)
@@ -244,14 +244,15 @@ func _reputation(r: Dictionary) -> Control:
 		for n: Array in noticed:
 			total += _shown(n[1])
 			_line(box, "   " + n[0], "%+d" % _shown(n[1]), UI.GOOD if n[1] >= 0.0 else UI.BAD)
+	if r.has("rep_cut"): # the gains above, cut by how known you are already (Game.climb)
+		total += _shown(r.rep_cut)
+		_line(box, "Most folk won't hear of it", "%+d" % _shown(r.rep_cut), UI.BAD)
 	_line(box, "All told", "%+d" % total, UI.GOOD if total >= 0 else UI.BAD, 24)
 	if r.has("rep_after"):
 		var moved := roundi(r.rep_after - r.rep_before)
 		var standing := "Word travels: your standing is %s" % UI.rep_word(r.rep_after)
-		if moved > total and total >= 0: # earlier jobs' word still arriving
-			standing += " (%+d, with earlier word catching up)" % moved
-		elif total != moved:
-			standing += " (%+d so far, the rest over the next jobs)" % moved
+		if total != moved: # it lags: this job's word, and earlier jobs', arrive over time
+			standing += " (%+d for now: word takes time to travel)" % moved
 		var s := UI.label(standing, 18, UI.DIM)
 		s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		s.custom_minimum_size.x = 420

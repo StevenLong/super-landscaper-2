@@ -593,6 +593,11 @@ func tally_lines(counts: Dictionary, costs: Dictionary, beaten: Array = []) -> A
 	return out
 
 
+## How much of a gain in reputation lands: the better known you are, the less (193d).
+func climb(gain: float) -> float:
+	return gain * pow(1.0 - rep_trend / 100.0, REP_CLIMB)
+
+
 ## Apply a finished job's result to the run. Reputation drifts toward the trend
 ## rather than jumping, so bad behaviour catches up with you a job or two later.
 func record_result(result: Dictionary) -> void:
@@ -606,11 +611,15 @@ func record_result(result: Dictionary) -> void:
 		run_tally_cost[k] = run_tally_cost.get(k, 0.0) + result.tally_cost[k]
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
-	if result.rep > 0.0: # the better known you are, the less one good job adds (193d)
-		var gain: float = result.rep * pow(1.0 - rep_trend / 100.0, REP_CLIMB)
-		if roundi(result.rep) != roundi(gain):
-			result.get("rep_lines", []).append(["Most folk won't hear of it", gain - result.rep])
-		result.rep = gain
+	# Only the gains are cut, the job's and what they noticed; losses land whole (193d).
+	var lines: Array = result.get("rep_lines", []) + result.get("noticed", [])
+	var gains := maxf(0.0, result.rep) if lines.is_empty() else 0.0
+	for l: Array in lines:
+		gains += maxf(0.0, l[1])
+	var cut := climb(gains) - gains
+	result.rep += cut
+	if roundi(cut) != 0:
+		result.rep_cut = cut # the summary's book shows it
 	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
 	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
 	jobs_done += 1
@@ -1007,8 +1016,9 @@ func answer_offer(how: String, ask := 0) -> String:
 	offer = {}
 	if how == "decline" or o.is_empty():
 		if not o.is_empty():
-			rep_trend = minf(100.0, rep_trend + OFFER_REP)
-			reputation = minf(100.0, reputation + OFFER_REP)
+			var gain := climb(OFFER_REP)
+			rep_trend = minf(100.0, rep_trend + gain)
+			reputation = minf(100.0, reputation + gain)
 		save()
 		return "no"
 	var said := "yes"

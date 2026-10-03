@@ -749,6 +749,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			x1 = minf(x1, w + half)
 			box = Rect2(x0, foot - strip.texture.get_height(), x1 - x0, strip.texture.get_height())
 		strip.stretch_mode = TextureRect.STRETCH_TILE
+		strip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE # a run shorter than its tile stays short (by a drive's mouth)
 		strip.position = box.position
 		strip.size = box.size
 		if key.begins_with("bottom"): # in front of the lawn: drawn over the mower
