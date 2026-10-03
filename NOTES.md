@@ -114,8 +114,7 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    month; REACH and the bars (S14-RING: steps of 0, 20, 55, 75); the vig; pay; the clock
    rate. Today a manor pays about $790 against a $150 week.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect
-   screenshots here; side runs still leave a thin strip of outside grass between the fence
-   and the lawn (judged fine, unconfirmed; S15-FENCE asks).
+   screenshots here. (The strip of outside grass inside side fences: fixed in session 18.)
 206. [DESIGN, small] The horn (199, built): does using it a lot annoy the customer? The dev
    was unsure; left out for now.
 207. [DESIGN, large] Taking things from gardens pays (the dev, 2026-10-02, during the 193

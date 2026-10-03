@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (12 checks, 3 loads, about 60 minutes)
+PLAY CHECKS OWED  (11 checks, 3 loads, about 55 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -13,18 +13,12 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 3: A JOB      (about 20 min; an L plot, a dog helps; [1] on the board for a ride-on)
+LOAD 1 of 3: A JOB      (about 15 min; an L plot, a dog helps; [1] on the board for a ride-on)
 ================================================================================
 
 S15-POLICE
 Run the dog over while they watch: the police are called and you're fired there and
 then ("I've called the police!"). As the countdown runs out, is the siren still too loud?
->
-
-S15-FENCE
-On an L plot, mow right into the corner where your hedge or fence meets next door's: is
-there a strip of grass by the corner post you can't cut? (How the corners look is
-verified, below.)
 >
 
 S16-WINDOW
@@ -106,6 +100,14 @@ VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
 
+VERIFIED  S15-FENCE (session 18), by test and screenshot: every lawn cell on every plot
+          shape and venue is in reach of every mower, the corners where your fence meets
+          next door's included (new test_reach; a 4 px wider edge margin fails it). But side
+          fences stood mid-strip, 8 to 9 px out from the lawn (walls 4 to 6), so a strip of
+          next door's long grass showed inside them, looking uncut. Side runs now stand on
+          the lawn's edge and the runs across end on them: screenshots of an L's corners
+          (fence and fence, fence and hedge, hedge and fence), a fenced rectangle's, a
+          terrace's and the churchyard's.
 VERIFIED  193a, the day's clock, by test (test_season, new clock section): windows on the
           half hour inside 8am to 8pm, sized from patience; arriving is the drive or the
           window opening, whichever's later; patience is the window and the customer's

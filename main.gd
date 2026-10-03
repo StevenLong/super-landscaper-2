@@ -701,6 +701,11 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		mouth.texture = drive.texture
 		mouth.self_modulate = Color.WHITE
 	$Borders.add_child(mouth)
+	var art_v := {"hedge": preload("res://art/hedge_v.png"), "fence": preload("res://art/fence_v.png"),
+		"wall": preload("res://art/wall_v.png")}
+	# A side run's art stands on the lawn's edge, not mid-strip, so no strip of next door's
+	# grass shows inside it, looking uncut (S15-FENCE); the runs across end on its middle.
+	var half := b * 0.5 if edge == "haha" else (art_v[edge] as Texture2D).get_image().get_used_rect().size.x * 0.5
 	for key: String in sides:
 		var s: Array = sides[key]
 		if not s[2].is_empty() and (s[2][0] as Vector2).distance_to(s[2][1]) > 40.0: # too short to come out of
@@ -718,8 +723,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 		var strip := TextureRect.new()
 		var box: Rect2 = s[1]
 		if vertical: # seen from above, lifted by its height like everything that stands up
-			strip.texture = {"hedge": preload("res://art/hedge_v.png"), "fence": preload("res://art/fence_v.png"),
-				"wall": preload("res://art/wall_v.png")}[s[0]]
+			strip.texture = art_v[s[0]]
+			var used := strip.texture.get_image().get_used_rect()
 			var from := -BORDER_UP
 			if (key == "left" and nl) or (key == "right" and nr):
 				from = n.end.y - b - BORDER_UP # it starts at next door's corner, and takes it
@@ -728,9 +733,10 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			var to := h + b - BORDER_UP
 			if key == "notch_v": # down to next door's run, or to its foot where none crosses (the church)
 				to = n.end.y - (BORDER_UP if sides.has("notch_h") else 0.0)
-			# The art's a column down the strip's middle: a notch's goes on the corner line,
-			# where the runs either side of it end.
-			var x := (n.end.x if nl else n.position.x) - b * 0.5 if key == "notch_v" else box.position.x
+			# A notch's art goes down the corner line, where the runs either side of it end.
+			var x := -float(used.end.x) if key == "left" else w - used.position.x
+			if key == "notch_v":
+				x = (n.end.x if nl else n.position.x) - b * 0.5
 			box = Rect2(x, from, box.size.x, to - from)
 		else: # its front face, standing on the run's outer edge (the lawn edge at the top)
 			strip.texture = {"hedge": preload("res://art/hedge_h.png"), "fence": preload("res://art/fence_h.png"),
@@ -739,8 +745,8 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			# End on the side runs' middle line, where their art stands, not past it or short of it.
 			var x0 := box.position.x - (b if key == "notch_h" and nl else 0.0)
 			var x1 := box.end.x + (b if key == "notch_h" and nr else 0.0)
-			x0 = maxf(x0, -b * 0.5)
-			x1 = minf(x1, w + b * 0.5)
+			x0 = maxf(x0, -half)
+			x1 = minf(x1, w + half)
 			box = Rect2(x0, foot - strip.texture.get_height(), x1 - x0, strip.texture.get_height())
 		strip.stretch_mode = TextureRect.STRETCH_TILE
 		strip.position = box.position
