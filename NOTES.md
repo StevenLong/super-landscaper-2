@@ -20,9 +20,9 @@ BLOCKS = spoils the next playtest.
    (a tier 2 arrest's lost slot becomes a forced unpaid job, needs a litter-pick or prison
    venue); the week-4 finale (open in the design doc).
 79b. [FEATURE, moderate] Objects, later batches (design doc Mowers and Equipment): medium
-   things shoved by heavy mowers (RigidBody2D: chairs, parasols, a sandbox rim), a sapling
-   that snaps, sandbox, paddling pools, lawn darts, litter, croquet hoops, more critters and
-   their interactions (cats, birds, rats, pond fish), fire.
+   things shoved by heavy mowers (RigidBody2D: chairs, parasols, a sandbox rim), sandbox,
+   paddling pools, lawn darts, more critters and their interactions (cats, birds, rats,
+   pond fish), fire. Litter, croquet hoops and the sapling built in session 19 (S19-LITTER).
 
 ### Notes 2026-09-27 (S8 check fallout, and an idea dump; what's left after session 9)
 
@@ -82,7 +82,8 @@ Built in session 12 (unplayed, see CHECKS.txt): 141 to 146, 148 to 154, 156, 157
 155. [BUG, small] The job's opening briefing often shows in a weird spot; the dev wants it
    on the player or the customer (it's the customer talking). Not reproduced: in a
    1280x720 window on the default job it sits screen-centre (`hud.gd` `open()`,
-   PRESET_CENTER), over the player. QUESTION: a screenshot next time it's off, and what
+   PRESET_CENTER), over the player; session 19 got the same at 1920x1080, 1600x1000
+   and 1000x900. QUESTION: a screenshot next time it's off, and what
    size the window was.
 158. [DESIGN, small] The summary's "All told" line will confuse (S11-SUMMARY); the dev has
    no better wording yet. Home: `summary.gd` ~89. Goes to the text pass (159) unless the
@@ -140,7 +141,8 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    matched the core numbers. No numbers changed: which lever (pay, PAPER_SIZE, the offer's mood threshold, fuel, or
    pricing 189/168 at this scale) is the dev's call, with LOAD 3's play.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect
-   screenshots here. (The strip of outside grass inside side fences: fixed in session 18.)
+   screenshots here. (The strip of outside grass inside side fences: fixed in session 18.
+   Session 19's sweep of 18 whole gardens found nothing new.)
 206. [DESIGN, small] The horn (199, built): does using it a lot annoy the customer? The dev
    was unsure; left out for now.
 207. [DESIGN, large] Taking things from gardens pays (the dev, 2026-10-02, during the 193

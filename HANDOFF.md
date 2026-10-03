@@ -4,11 +4,47 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 5 runs, 34 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 6 runs, 38 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
 per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
+
+## Session 19 (2026-10-03): solo, the economy measured, litter, hoops and a sapling
+- No dev at the keyboard again: worked what needs no play or call. Nothing in CHECKS
+  answered, so nothing cleared.
+- **193d measured, not retuned** (d802275): new `tests/sim_season.gd` runs seasons through
+  Game with each job's result modelled. What it says is in NOTES 193d: regulars decide
+  everything, and offers need an end mood over 60 (a MOOD 75 player has 20 regulars and
+  $31k a month by July, a MOOD 55 player 2 or 3 and $2k to $4k); money is tight for about
+  three weeks, then piles up with nothing to buy ($1M in about 3 seasons for a strong
+  player); time is scarce in summer only with regulars (the paper alone can't fill a day);
+  fuel eats 25 to 90% of pay, the ride-on's about a small lawn's pay. It flatters income
+  (every job meets its target). No numbers changed: which lever is the dev's call, with
+  LOAD 3. It also prices 189/168: a good player's money is $20k to $40k a month.
+- **79b, part** (5870f62, cb9a0ea): litter (a third of gardens, minded only if seen
+  shredded, never found later, binned for a tally), croquet hoops on the manor (4 to 6),
+  a staked sapling (a quarter of gardens) that snaps if rammed over 110 (theirs). My calls,
+  veto any. New check S19-LITTER. Left in 79b: medium shoved things, pools, darts, fire.
+- **194 and 155 tried**: whole-garden screenshots of 3 seeds per plot showed no fence
+  breaks; the briefing is centred at 4 window sizes (155 still wants a screenshot).
+- **Verifier, run 6** (on the whole batch): claims held, 4 real finds, all fixed (a37dbac):
+  the new props shifted rocks and the dog's ball in existing gardens (now placed last on
+  their own draws, tested); TEXT.md stale again; the sim's header and NOTES ranges off.
+  Not changed: a ride-on in first gear (90) stops dead on a sapling without snapping it;
+  a snapped stump still blocks critters within 8 px (harmless). About 106k tokens, 10 min.
+- Verified: run_all green (parse, smoke, 40 tests, 42 PASS lines). Screenshots looked at:
+  18 whole gardens, the briefing at 4 sizes, litter and a hoop at play zoom, a sapling
+  before and after a scripted drive into it.
+- S15-POLICE has now rolled four sessions: the dev should play it or drop it.
+
+OWED CHECKS: 13, in CHECKS.txt (3 loads, about 55 minutes; LOAD 3 is the clock).
+
+NEXT:
+1. Play LOAD 3 (the clock, terms, event days, the slower climb); LOAD 1 and 2 when there's time.
+2. Pick 193d's lever from the sim and play: pay, PAPER_SIZE, the offer's mood threshold,
+   fuel, or pricing 189/168 at this scale.
+3. Grill 189 (robots) and 168 (hired help) together, as ways to buy time; then 207 with 136.
 
 ## Session 18 (2026-10-03): solo, S15-FENCE settled, the name builds slowly
 - No dev at the keyboard: worked what needs no play or call. Pulled clean; nothing in
@@ -339,57 +375,3 @@ NEXT:
 2. The text pass (159, with 158's "All told"), line by line with the dev.
 3. Play the S12 checks; triage.
 4. Then 140's retune if play agrees, 106 and 107; grills on 137, 136, 147 with 94 and 100, 96.
-
-## Session 11 (2026-09-28): the S9 and S10 checks triaged and built, each mower's feel
-- All 28 checks answered. Passed as written: S9-HEAD, S9-HEDGEHOG, S9-GRIT, S9-CAR, S9-TREES,
-  S9-VICAR ("better"), S10-TERRACE, S10-SEMI, S10-SIGHT, S10-CONE, S10-UNSEEN, S10-CHURCH.
-  The rest turned up work (NOTES 113 to 139, triaged at the start); S10-CARRY couldn't be
-  tried (no intact body) and rolls on as S11-CARRY.
-- The dev's calls this session (promoted to the design doc, vetoable): the throw shows its
-  whole arc to the first hit (reverses "no path line"); things thrown off the plot land next
-  door, never fetchable; critters live past the boundary and walk in, a hedge rustling as
-  they pass; knocked out stays knocked out; running one over knocks it out, likelier the
-  smaller the mower, the ride-on always splats; a critter thrown hard into something solid
-  is knocked out; the hose green on a reel, only the end and reel are grips, no kinks; the
-  pad layout (A on, B off and back, X throw, the stick only steers); the door knock moment;
-  the lead on when you choose; the summary as two books; once-a-job things as events; no
-  stamina levelling (a consumable kept as an idea); the manor's back lawn kept; the ha-ha
-  redrawn before railings.
-- Calls I made (vetoable): interact does the target nearest the spot in front of you,
-  outlined (options were A/X, a cycle button, a pick list); run-over knockout 70% push,
-  30% petrol; the house fades only while its art covers you (it had nothing behind it);
-  the manor roof square-ended; sprint on R/RB, gears R/C and RB/LB; walking drains stamina
-  0.6x, sprinting 1.5x; ripcord sweet spot at 62% of the meter, 6 to 20% wide by
-  condition, a stall on half of knocks under 40%; ride-on gears 30/50/75/100% speed.
-- Built (all unplayed): the bug batch (throw arc, windows, thuds, fired-after-paid,
-  knockouts carried, spawns, off-plot flights), controls, the hose and reel, interact
-  targets, the door, the summary, the manor fade and roof, the ha-ha, 108 to 110 (each
-  mower's feel), 112 (sim_balance per plot), and docs/SPRITES.md (137 prep).
-- Found on the way: squirrels "climbed down" rocks, headstones and topiary (the tree filter
-  took any round obstacle); a critter spawned inside next door's corner spun forever; the
-  hose chain blew up to infinity when yanked taut (the anti-kink step kept stretched
-  lengths); a flaky test pair fixed; a spawn spot could still land against a building when
-  ten random tries all did (now forty, else no spawn that time). Once a commit (9471c66) went in over two failing
-  tests: both were test flaws, fixed in 80bfe24.
-- Balance (NOTES 140, sim numbers not play): no mower gets the bot to 85% within patience
-  on the small plots; the ride-on isn't faster than petrol on open lawns; the push at
-  walking pace is far off; the ride-on can't mow the churchyard. Nothing retuned.
-- Verified: run_all green twice in a row at the end (parse, smoke, 31 tests); new tests throw_path, fallout,
-  controls, mower_feel; hose, tells, talk, records, animals rewritten or extended. Every
-  visual change screenshotted and looked at (arc, facade, hose and reel, door, ha-ha,
-  ripcord meter, summary). Not measured: anything by feel.
-- After the handoff, the dev's calls (built, 4ae2567): Shift (pad A) sprints; the ride-on
-  shifts on Shift and Ctrl (pad RB, LB); powered mowers start switched off and interact
-  switches them off to save fuel (ride-on key on; petrol by ripcord). The pad's A is also
-  interact, so from the mower the truck opens only off the throttle (my call). CLAUDE.md
-  now allows Shift and Ctrl. NOTES 140: play first, then retune. 30b stays parked.
-- 106 (packing) not started on purpose: it changes how mowers are chosen, on top of this
-  session's unplayed mower feel, and its grid sizes and shapes are still open.
-
-OWED CHECKS: 24, in CHECKS.txt (3 loads, about 50 minutes).
-
-NEXT:
-1. Play the checks; triage what they turn up.
-2. Retune from the checks and NOTES 140's numbers if play agrees; then 106 and 107.
-3. /grill on 137 (the art pipeline: blocks the manor and topiary redraws), then 136
-   (storylines and the animal dealer), 96 (subquests), 94 (strimmer) with fire, 100 (weeds).

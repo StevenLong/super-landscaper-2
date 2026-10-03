@@ -118,34 +118,20 @@ VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
 VERIFIED  Litter and croquet hoops (session 19), by test (test_objects) and screenshot: litter
           shredded unseen costs nothing now or after you leave, seen it costs mood; a hoop
-          dents the mower; a manor has 4 to 6 hoops, about a third of gardens have litter.
-          Both sprites read at play zoom (a red packet, a white hoop).
+          dents the mower; every manor has 4 to 6 hoops; litter in about a third of ordinary
+          gardens (fewer at the manor and churchyard). Both read at play zoom.
 VERIFIED  The sapling (session 19), by test and a scripted drive: a bump under 110 leaves it,
-          driving the petrol mower into it snaps it (tally, their mood or found after), and
-          you then drive over the stump. Screenshot standing and snapped.
+          driving into it snaps it (tally, their mood or found after), then you drive over the
+          stump. Snaps: push sprinting, petrol, ride-on gear 2 up; a walking push mower and a
+          first-gear ride-on stop dead on it instead. Screenshot standing and snapped.
+VERIFIED  Gardens keep their layout (session 19): the verifier found the new props moved rocks
+          and the dog's ball; they're now placed last on their own draws (tested on the seeds
+          that moved).
+VERIFIED  The economy probe (193d, session 19): tests/sim_season.gd, re-run by the verifier, who
+          matched the numbers in NOTES 193d and corrected some ranges. Modelled, not played:
+          read it for shape.
 VERIFIED  The fences (NOTES 194, session 19), by screenshot: whole gardens of 3 seeds of each
           plot (terrace, semi, L, rectangle, manor, churchyard): no breaks seen at that zoom.
-TRIED     The briefing's "weird spot" (NOTES 155, session 19): screenshots at 1920x1080,
-          1280x720, 1600x1000 and 1000x900 windows all show it centred, the player just under
-          it at the truck. Still not reproduced: a screenshot when it's off, please.
-
-VERIFIED  The name's climb (193d, session 18), by test (test_season _climb): a run of great
-          jobs reaches the top band in 15 to 30 (about 20; without the curve, 3); a firing
-          isn't softened; the summary's book adds up to what moved. Screenshot of the summary
-          with the new line. The verifier's fifth run held the claims and found: (1) losses
-          inside a good job were cut with its gains (now only gains are cut, by test); (2) the
-          standing line could say "-1 so far, the rest over the next jobs" after a +2 (it now
-          says word takes time to travel); (3) turning down an offer gave its +2 unscaled, worth
-          3 great jobs at the top (scaled now, by test); (4) the cut line sat above the noticed
-          lines it also cuts (now after them, screenshot); (5) a road-fence run shorter than
-          its 16 px tile drew 16 px wide, over a terrace's drive mouth (drawn its true width
-          now, screenshot). Not changed: one winter's drift from 85 takes about 21 great jobs
-          to win back (the 193d retunes, with play).
-VERIFIED  S15-FENCE (session 18), by test and screenshot: every lawn cell on every plot
-          shape and venue is in reach of every mower, the corners where your fence meets
-          next door's included (new test_reach; a 4 px wider edge margin fails it). But side
-          fences stood mid-strip, 8 to 9 px out from the lawn (walls 4 to 6), so a strip of
-          next door's long grass showed inside them, looking uncut. Side runs now stand on
-          the lawn's edge and the runs across end on them: screenshots of an L's corners
-          (fence and fence, fence and hedge, hedge and fence), a fenced rectangle's, a
-          terrace's and the churchyard's.
+TRIED     The briefing's "weird spot" (NOTES 155, session 19): at 1920x1080, 1280x720,
+          1600x1000 and 1000x900 windows it's centred, the player just under it at the truck.
+          Still not reproduced: a screenshot when it's off, please.
