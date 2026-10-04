@@ -10,7 +10,7 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
 
-## Session 24 (2026-10-04): the hub grilled and built (228 to 234), verifier run 9
+## Session 24 (2026-10-04): the hub grilled and built (228 to 234), vans as things, the B crash, fences at the root; verifier runs 9 and 10
 - Dev's answers: S23-PAD yes, bar the Calendar's ad Ring being hard to reach (moot: that
   page is gone). S23-RAISE: "considerably slower"; the trouble was growing fast (cheats
   showed better hires), not asking. Plus a new ask: a "finish the day" beat (became 229).
