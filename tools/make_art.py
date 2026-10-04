@@ -214,6 +214,7 @@ def main(only=None):
         "pond": lambda: [save("pond", sheet([a.pond(0), a.pond(1)]), 3)],
         "borders": lambda: [save("hedge_h", a.hedge_h(), 6), save("hedge_v", a.hedge_v(), 6),
                               save("fence_h", a.fence_h(), 6), save("fence_v", a.fence_v(), 6)],
+        "playground": lambda: [save("chainlink_h", a.chainlink_h(), 6), save("chainlink_v", a.chainlink_v(), 6)],
         "props": lambda: [
             save("stone", a.stone(), 6),
             save("jerrycan", a.jerrycan(), 6),

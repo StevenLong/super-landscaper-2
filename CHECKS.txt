@@ -75,3 +75,5 @@ VERIFIED  Hedge and wall corners: a run across meets a hedge or wall side at its
           crops of 12 gardens, all four corners, looked at. The counter card: test_hub.
 VERIFIED  The playground on the left no longer stands its side railings on your lawn (a
           ghost fence inside yours): test_next_door (fails on the old seed 190); a corner crop.
+CHANGED   The council playground's fence is galvanised chain-link (new art: chainlink_h/_v,
+          make_art.py playground), not green-tinted pickets; screenshot looked at.

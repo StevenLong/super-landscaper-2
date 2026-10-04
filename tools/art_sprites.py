@@ -645,6 +645,40 @@ def fence_v():
     return c
 
 
+def chainlink_h():
+    """A 32x32 run of chain-link for the top and bottom edges (the council playground),
+    seen 3/4: galvanised diamond mesh, see-through, under a top rail, a post every tile.
+    The ground line is the bottom row."""
+    c = Canvas(32, 32)
+    wire = STEEL[4][:3] + (150,)
+    for y in range(6, 31):                                   # the mesh: diagonals both ways
+        for x in range(32):
+            if (x + y) % 4 == 0 or (x - y) % 4 == 0:
+                c.set(x, y, wire)
+    c.rect(0, 4, 32, 2, STEEL[3])                            # top rail
+    c.rect(0, 4, 32, 1, STEEL[5])
+    c.rect(0, 30, 32, 1, STEEL[2])                           # bottom wire
+    c.rect(14, 2, 3, 29, STEEL[3])                           # post
+    c.rect(14, 2, 1, 29, STEEL[5])
+    c.rect(16, 2, 1, 29, STEEL[1])
+    c.rect(13, 1, 5, 2, STEEL[2])                            # its cap
+    c.rect(0, 31, 32, 1, hexc("0c200c", 110))                # the foot on the grass
+    return c
+
+
+def chainlink_v():
+    """A 24x32 run of chain-link for the side edges: the mesh running away from us stacks
+    into a thin grey line; a post every tile."""
+    c = Canvas(24, 32)
+    c.rect(11, 0, 2, 32, STEEL[4][:3] + (190,))
+    c.rect(11, 0, 1, 32, STEEL[5][:3] + (190,))
+    c.rect(13, 0, 3, 32, hexc("0c200c", 60))                 # shadow on the grass
+    c.rect(10, 12, 4, 20, STEEL[3])                          # post
+    c.rect(10, 12, 4, 2, STEEL[5])
+    c.rect(13, 12, 1, 20, STEEL[1])
+    return c
+
+
 def wall_h():
     """A 24x34 run of churchyard wall for the top and bottom edges, seen 3/4: rough
     stone courses under a coping. The ground line is the bottom row."""

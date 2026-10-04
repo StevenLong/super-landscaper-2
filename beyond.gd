@@ -115,16 +115,15 @@ func _terrace(plot: Rect2, border: float, up: float, divider := true) -> void:
 
 
 ## The council playground next to the terraces: rough grass, a tarmac pad by the road with
-## swings, a slide and a roundabout, railings along the front. On the left its railings
+## swings, a slide and a roundabout, chain-link round it (council, not pickets: 2026-10-05). On the left its fence
 ## down the side would stand on your lawn (2026-10-05): your own run is the boundary there.
 func _playground(plot: Rect2, border: float, divider := true) -> void:
 	_ground(preload("res://art/grass_long.png"), plot, Color(0.9, 0.95, 0.75))
 	var pad := Rect2(plot.position.x + 30, _house_y + 40, plot.size.x - 60, plot.end.y - _house_y - 60)
 	_ground(preload("res://art/paving.png"), pad, Color(0.95, 0.55, 0.45)) # the red safety surface
-	var rail := Color(0.45, 0.6, 0.5)
-	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, plot.end.y + border - 32, plot.size.x, 32), 0, rail)
+	_strip(preload("res://art/chainlink_h.png"), Rect2(plot.position.x, plot.end.y + border - 32, plot.size.x, 32), 0)
 	if divider:
-		_strip(preload("res://art/fence_v.png"), Rect2(plot.end.x, -32.0, border, plot.size.y + border), 0, rail)
+		_strip(preload("res://art/chainlink_v.png"), Rect2(plot.end.x, -32.0, border, plot.size.y + border), 0)
 	_kit(Vector2(pad.position.x + 90, pad.position.y + 90), "swings")
 	_kit(Vector2(pad.end.x - 90, pad.position.y + 100), "slide")
 	_kit(Vector2(pad.get_center().x, pad.end.y - 70), "roundabout")
