@@ -139,10 +139,9 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
 208. [DESIGN, large] Your own garden (the dev, 2026-10-02, during the 193 grill; a soft
    opinion): nothing takes time while you're in it, the day moves only when you leave.
    Seeds got on a job or elsewhere, planted there, grow over several days: leave, come back
-   to see a little growth, leave again. For the hub grill.
-Also: S14-CAL, the board reads but will be redone when things split out (no item).
+   to see a little growth, leave again. Later: another door off the hub (2026-10-04 grill).
 
-PROPOSED ORDER: see Notes 2026-10-04b (the office/hub grill).
+PROPOSED ORDER: see Grilled 2026-10-04c (the hub).
 
 ### Notes 2026-10-04 (LOAD 3 played, S17 and S18 check fallout, two bugs)
 
@@ -150,11 +149,6 @@ Verdicts: S16-WINDOW, S16-BAY, S17-TERMS yes. S17-GAMBLE works okay (213 is its 
 S17-PACE retired: the dev can't judge the day's speed until there's more than jobs in it;
 ask again once help (209) or the hub exists. S17-EVENTS: played a little differently,
 subtler than expected, fine.
-
-217. [DESIGN, large] An actual newspaper (the dev): the game keeps saying "the paper" but
-   there's no paper, just a tab and things that look like ads. With S17-BOARD (hard to
-   read at first, too much in one place; no change now, it gets redone with real places)
-   this goes to the office/hub grill (with 208).
 
 211 to 216 built in session 21 (see CHECKS.txt S20-FIXES, S20-DIAL).
 
@@ -166,34 +160,45 @@ reframed into 225. S20-FIXES: the 6am start fine, the summary an improvement, th
 unreadable (218); the dog and doors not commented (verified by test). S20-DIAL: doesn't
 read (227). S21-CREW: the whole flow confusing (222).
 
-220. [DESIGN, large] Everything outside the mowing is overwhelming, confusing and doesn't
-   operate smoothly (the dev). For the office/hub grill with 217, 208 and S14-CAL.
-222. [DESIGN, large] The crew flow needs rethinking (S21-CREW): the results are hidden (hard
-   to notice; the report runs off the bottom and a pad can't scroll to it, since only
-   buttons take focus); equipping went unnoticed (a Kit toggle); assigning is a wall of jobs
-   each toggled through names. Also "they asked for money after the first day": a raise
-   ask, diagnosed: wage_for uses your reputation now, so as your name climbs (50 to 70 in
-   days) every helper soon asks. Fixed in session 23: priced on your name when they
-   answered the ad, raises by growth only. But growth alone still earns an ask after about
-   4 to 6 jobs (modelled, GROW 0.01 a job, RAISE_AT 1.15), so a busy helper asks within 2 or
-   3 days: QUESTION (balance) in CHECKS S23-RAISE. Only three in the paper: 1 to 3 a week,
-   by design. For the hub grill.
-223. [DESIGN, moderate] The shop (inventory): a growing list of buttons doesn't scale, and
-   it doesn't scroll down (on a pad: follow_focus only follows a focused button). For the
-   hub grill.
-224. [VISUAL, moderate] The board's day clock is hard to read: where now is, whether you're
-   missing something, whether a booking has already started. Home: board.gd DayClock.
-   For the hub grill, unless a quick pass is wanted first.
 225. [DESIGN, moderate] Upgrades as work on kit you own, not a shop list (the dev, on
    S16-RIDEON): money for parts and time for labour, e.g. a few hours one morning to fit
    the ride-on's gear. Direction in the design doc (Mowers and Equipment); details for a
-   grill (with 223). 226 (nothing on the lawn does nothing) went to the doc too.
+   grill; fitting them yourself happens at the yard (the hub grill, 2026-10-04). 226 (nothing on the lawn does nothing) went to the doc too.
 227. [VISUAL, moderate] The HUD clock face reads as a speedometer and is too small. The dev
    pictures Graveyard Keeper's: markers for when the window starts, rolling round to where
    it ends (a sunrise and a sunset). Waits on the dev's drawing. Home: hud.gd _draw_dial.
 
-PROPOSED ORDER: the office/hub grill (220, 222, 223, 224, 225 with 217, 208, S14-CAL), then
-227 once the drawing comes. 218, 219, 221 and 47 built in session 23.
+220, 222, 223, 224 and 217 grilled: see Grilled 2026-10-04c. 218, 219, 221 and 47 built in
+session 23.
+
+### Grilled 2026-10-04c (the hub: 217, 220, 222, 223, 224, S14-CAL, S23-RAISE)
+
+Decided in the design doc (Outside the Season, The hub; The Business, Hired help, Growth
+pace). S23-PAD: left and right fine; the Calendar's ad button sits far right, so down from
+the tabs drops past it (moot once 230 and 231 replace the page). One slice, built in this
+order, each step tested and screenshotted before the next:
+
+228. [FEATURE, small] Growth a fifth as fast (GROW 0.002), a raise asked only when pace or
+   care ticks up a shown point (replaces RAISE_AT). sim_crew to re-model. Home: game.gd
+   _crew_day.
+229. [FEATURE, moderate] The day's end, every day: no day skips (Game.skip goes; it also
+   lost every crew report but the last, since _crew_day clears crew_report). Your jobs,
+   the crew's, growth and raise asks answered there, today's money and Friday's bill;
+   Friday's leads into payday.
+230. [FEATURE, large] The calendar as its tiles: rolling 5 weeks, a day panel (jobs, state in
+   words and colour, who goes from a list), today open by default. DayClock, the today list
+   and the Crew page's assigning go.
+231. [FEATURE, moderate] The paper as a newspaper (masthead, front page from existing news,
+   classifieds, situations wanted, pages turned by the shoulders); the client book.
+232. [FEATURE, large] The walkable office: desk and corkboard opening the calendar, the door
+   to the yard. Reuse walker.gd (keep_in for the room's bounds) and the job's Y-sort.
+233. [FEATURE, large] The walkable yard: storage as a resource (auto-placed floor, footprints
+   from pack.gd's sizes, an expansion to buy), vans holding workers (interact for the card),
+   kit's interact menu (sell, upgrade, assign), the truck to leave (jobs, then packing; or
+   the shop). Needs a voxel van. Starting size and expansion price: knobs, sim_season to
+   count them.
+234. [FEATURE, large] The walkable shop in town (+30 min each way): stock with signs and
+   tags, interact for a card; no room in the yard, no sale. Needs shop fittings.
 
 ### Grilled 2026-10-04 (168 hired help with 189 robots: ways to buy time)
 

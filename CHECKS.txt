@@ -3,14 +3,19 @@ PLAY CHECKS OWED  (2)
 LOAD 1 of 1  (about 15 min: any save with a van, on the pad)
 S23-PAD    On the board with the pad, left and right go where you'd expect on every page
            (the Shop's two columns, the Crew page, the paper). Anything odd, say which page.
->
+>yes, Though on the calendar, it is difficult to reach the ring button for the ads, as it is off to the right side. So, pressing down from the tabs row drops you straight down to the page controls.
+
 S23-RAISE  Hire a helper and keep them busy: they now ask for a raise only as they get
            better, not as your name climbs. By the model that's after about 4 to 6 jobs
            (2 or 3 busy days). Too soon? Options: grow slower (fewer raises, slower
            improvement), ask only after a set time (say a month since hire or the last
            raise), or a bigger jump before asking. Recommend the set time: growth stays
            visible and the asks stay rare. Your call.
->
+>I think it will need to be considerably slower. 
+
+We also need a status or events screen or something. Currently, if you hire somebody and only have them do the jobs, skipping to the next job skips the entire week. So maybe we need a sort of "finish the day" type beat where you get to see the status of everything that happened. 
+
+If an employee improved, that's where they would ask for a raise. You could see a breakdown of how much you earned, how much you spent, how much you have, and how much you will owe at the end of the week.
 
 Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
 [3] skips to Friday's payday; in a job [0] finishes it perfectly.
