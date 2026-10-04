@@ -80,25 +80,6 @@ feel like a bet worth making?
 VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
-VERIFIED  Litter and croquet hoops (session 19), by test (test_objects) and screenshot: litter
-          shredded unseen costs nothing now or after you leave, seen it costs mood; a hoop
-          dents the mower; every manor has 4 to 6 hoops; litter in about a third of ordinary
-          gardens (fewer at the manor and churchyard). Both read at play zoom.
-VERIFIED  The sapling (session 19), by test and a scripted drive: a bump under 110 leaves it,
-          driving into it snaps it (tally, their mood or found after), then you drive over the
-          stump. Snaps: push sprinting, petrol, ride-on gear 2 up; a walking push mower and a
-          first-gear ride-on stop dead on it instead. Screenshot standing and snapped.
-VERIFIED  Gardens keep their layout (session 19): the verifier found the new props moved rocks
-          and the dog's ball; they're now placed last on their own draws (tested on the seeds
-          that moved).
-VERIFIED  The economy probe (193d, session 19): tests/sim_season.gd, re-run by the verifier, who
-          matched the numbers in NOTES 193d and corrected some ranges. Modelled, not played:
-          read it for shape.
-VERIFIED  The fences (NOTES 194, session 19), by screenshot: whole gardens of 3 seeds of each
-          plot (terrace, semi, L, rectangle, manor, churchyard): no breaks seen at that zoom.
-VERIFIED  The camera under the briefing (NOTES 155, session 19, the dev's report): it sat where
-          the mower stood in the scene file, paused, and jumped to you on closing; it now
-          starts on the mower at the truck (new test_camera, screenshot looked at).
 VERIFIED  The dog and the house (NOTES 211, session 21), by test (test_objects): a ball past
           the house it doesn't go for; you past the house, it brings the ball to the nearest
           point on its side and never leaves it (no more running through and snapping back).

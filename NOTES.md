@@ -145,7 +145,7 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    to see a little growth, leave again. For the hub grill.
 Also: S14-CAL, the board reads but will be redone when things split out (no item).
 
-PROPOSED ORDER: see Notes 2026-10-04 (bugs and small fixes, the clock face, then 209).
+PROPOSED ORDER: play LOADs 1 to 4, then 210 (robot tiers wait on S16-ROBOT), then the office/hub grill (217, 208, S14-CAL, 47).
 
 ### Notes 2026-10-04 (LOAD 3 played, S17 and S18 check fallout, two bugs)
 
@@ -154,57 +154,18 @@ S17-PACE retired: the dev can't judge the day's speed until there's more than jo
 ask again once help (209) or the hub exists. S17-EVENTS: played a little differently,
 subtler than expected, fine.
 
-211. [BUG, small, BLOCKS] The dog runs through the house to a thrown ball, then teleports
-   back to its side once it's returned it. Root cause (`dog.gd` _physics_process): the dog
-   is an Area2D moved by setting its position, so solids never stop it; fetching skips
-   the clamp to `lawn_rect` (its side of the house, main.gd _release_dog), and the wander
-   clamp snaps it back in one frame. FIX: route its runs round solids (the robots' grid,
-   robot.gd) and keep it in the garden while fetching; a ball on the far side, it goes
-   round or doesn't go.
-212. [BUG, small] With the patio out the back, only the back door can be knocked: the
-   customer indoors can't be reached from the front door. Home: main.gd near_customer,
-   _knock, house.gd door_point (back_patio). FIX: both doors knockable when they're
-   indoors; they answer the one you knocked at (door_point for that door).
-213. [FEATURE, small] The day starts at 6am, no window opens before 8am (S17-GAMBLE: a
-   window opening at 8am when the drive means you can't arrive before 8:30 is unfair; the
-   dev's call). Home: game.gd DAY_START (also the board's line, board.gd 442, and every
-   `minute = DAY_START`); a new earliest-window constant for `_window` and community
-   service. Old saves' windows stay as they were.
-214. [VISUAL, small] The summary's reputation book: show a job's gain already cut (its own
-   line smaller), no separate "Most folk won't hear of it" minus line (S18-CLIMB and the
-   dev's note: gaining then losing more reads as a slap and is confusing). Presentation
-   only, the climb stays (the dev's 1a). Home: summary.gd ~247 (rep_cut).
-215. [FEATURE, moderate] A clock face in the job's HUD (S17-LATE, the dev's 2a): the
-   customer's window as a coloured arc, a hand for now, so arriving late visibly starts
-   the hand partway round the window; their getting cross early then reads. The board
-   keeps its number line until the office redesign. Home: hud.gd set_clock.
-216. [VISUAL, small] The day's event news as a headline on the paper's page, not a gold
-   line above today's jobs (S17-EVENTS: "why is something from the paper not in the
-   paper"; the dev's 3a). Home: board.gd ~146.
 217. [DESIGN, large] An actual newspaper (the dev): the game keeps saying "the paper" but
    there's no paper, just a tab and things that look like ads. With S17-BOARD (hard to
    read at first, too much in one place; no change now, it gets redone with real places)
    this goes to the office/hub grill (with 208).
 
-PROPOSED ORDER: 211 and 212 (bugs, one spoils play), then 213, 214, 216 (small, one batch),
-then 215 (the clock face), then 209 (hired help, slice 1). Bugs and small fixes first so
-the next play of help isn't fighting them.
+211 to 216 built in session 21 (see CHECKS.txt S20-FIXES, S20-DIAL).
 
 ### Grilled 2026-10-04 (168 hired help with 189 robots: ways to buy time)
 
 Decided in the design doc (The Business, Hired help; Mowers and Equipment, robot mowers).
 
-209. [BUILT session 21, awaiting S21-CREW] Hired help, slice 1, as the design doc's slice 1.
-   Claude's calls, veto any: a helper's wage scales with your name as well as pace (twice)
-   and care, since what the work pays does (sim_crew: fully booked, 2 to 3 times the wage;
-   at a Fair name a good one asks about $1,000 a week, which looks odd beside $50 rent:
-   that's 193d's inflation showing); ringing always hires if a van's free; a job a helper
-   wins a regular from is accepted for you (the offer screen is the summary's); today's
-   bookings go out only if they could still be reached, the helper setting off from then;
-   the paper's column sits after the ads; a Crew page (helpers, kit, raises, who goes, the
-   report); crew mowers as their own shop rows; a sold van loses the last-hired helper.
-   Measured (sim_season SIM_CREW=2): the bot gives them its overflow, 5 to 8 jobs a week
-   each, about break-even, and its missed visits fall from 28 a month to 5.
+209 (hired help, slice 1) built in session 21: S21-CREW; Claude's calls in the design doc, Hired help, "Slice 1 as built".
 210. [FEATURE, large] Hired help slice 2 and robots: a helper nicked or sacked over a
    crime, quitting and poaching when underpaid, robot tiers (a cheap stop-for-everything
    one, a dear faster one that goes round critters), robots lent to helpers as kit,

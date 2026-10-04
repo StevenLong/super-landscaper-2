@@ -4,11 +4,45 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 6 runs, 38 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 7 runs, 47 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
 per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
+
+## Session 21 (2026-10-04): solo, the small batch, the clock face, hired help slice 1
+- **Built 211 to 216**: the dog keeps its side of the house fetching, and a dog put down
+  past it runs back round (never through); a back-patio house's front door can be knocked
+  (they answer it, go back in, come out the back later); the day from 6am, no window before
+  8am (every job's window unchanged); the reputation book shows gains already cut, no minus
+  line; the day's news a headline on the paper's page; a clock face in the job's HUD.
+- **Built 209, hired help slice 1**: situations wanted at the back of the paper, vans and
+  crew mowers in the shop, a Crew page (helpers, kit, raises, who goes, their day's report),
+  the helper's day at the day's end on your clock's rules, wages at payday, the winter
+  layoff. My calls (veto any) are in the design doc, Hired help, "Slice 1 as built"; the
+  big one: **the wage scales with your name** (about $1,000 a week for a good helper at a
+  Fair name), because job pay does; 193d's inflation makes that look odd beside $50 rent.
+- **Tuned by sim**: new tests/sim_crew.gd (fully booked, a helper brings in 2 to 3 times
+  the wage); sim_season gained SIM_CREW=n (its bot's overflow keeps each helper on 5 to 8
+  jobs a week, about break-even; missed regular visits fall from 28 a month to 5).
+  Modelled, not played.
+- **Verifier run 7** (154k tokens, 11 minutes): 9 real finds, all fixed in 60c3c2c. The
+  crew's day accepted your own pending offer and left a set-off time on regulars it won
+  (later visits became no-shows); a thrown dog still snapped through the house; the Crew
+  page overflowed with 5+ helpers; a sent booking couldn't be taken back once unreachable;
+  a crew-only day said "Nothing booked"; the paper's heading ignored the wanted column; an
+  old save had no situations wanted; a quit-on-summary offer resurfaced later (older bug).
+- Verified: run_all green, 47 PASS lines (new test_doors, test_dial, test_help,
+  test_crew_board); screenshots looked at for each screen changed.
+- Rolling: S16-RIDEON and S16-ROBOT have been owed since session 16. Play them or drop them;
+  robot tiers (210) wait on S16-ROBOT.
+
+OWED CHECKS: 6, in CHECKS.txt (4 loads, about 55 minutes).
+
+NEXT:
+1. Play LOADs 1 to 4, LOAD 4 (hired help) first if short of time.
+2. 210 (help slice 2, robot tiers) once S16-ROBOT and S21-CREW are answered.
+3. A grill on the office/hub (217, 208, S14-CAL, 47): three or more items wait on it.
 
 ## Session 20 (2026-10-04): help and robots grilled, LOAD 3 played and triaged
 - **Grilled 168 with 189** (the dev's calls, all in the design doc, The Business, Hired
@@ -321,49 +355,3 @@ NEXT:
 3. The text pass (159, with 158): docs/TEXT.md is regenerated with all of S14's screens.
 4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after
    play. Nothing buildable is left without a call from the dev.
-
-## Session 13 (2026-09-29): the 160 grill (a business, not a roguelite), S12 fallout built
-- **Grilled 160** (design doc, The Business and Season Prototype; NOTES 162 to 168). The dev
-  pivoted the game: a small gardening business season after season, not a roguelite run
-  (the 4-week run was only an on-ramp: best kit by week 2 or 3). Paperboy as the reference.
-  Settled: real months April to September, one job a day, Sundays too, a month grid, 1980;
-  the shark as a principal plus a weekly vig (paid off, you're free); a weekly living cost;
-  a weekly paper at payday; regulars offered after a good job (a hidden chance, accept /
-  decline / haggle, cadence-only requests auto-scheduled, carried mood as the
-  relationship, a floor that cancels, no tips); the garden remembers (the dead stay dead,
-  drift); ironman saves with the "blacked out" penalty for a quit job; one winter screen;
-  sell up and retire as the win, the shark's patience as the loss; heat becomes a record
-  of convictions, with summonses, a bought lawyer's roll, sentences as calendar days, and
-  prison by accumulation. Back pocket, all on record: multi-day jobs, grass length by
-  cadence, referrals, the compounding vig, wear and overheads, winter work, save-scum
-  escalation, hired help (its own grill, 168).
-- My calls the dev confirmed: the bad ending where bankruptcy fires now; jail at once,
-  community service on the next free day; old heat numbers as conviction weights; cells
-  cost the next day; the week-4 finale dropped; score is the pot at selling up.
-- S12 checks: all 16 answered. Passed: UNSEEN, WALLDROP, DONE, LAG, CHIMNEY, HAHA, DRY (with
-  175). PORTRAIT reads clear (the dev's partner to see it). BANNERS not reproduced and
-  LFENCE "some better", both on the dev to report with a screenshot. BODY: an unconscious
-  hedgehog pricking is meant. The rest became NOTES 169 to 177, all built (c28205b).
-- Found while building: a critter thrown over a hedge landed as "ground" next door, so no
-  eviction ever fired (only "gone", off a roof's back slope, did); and a hedge is clearable
-  only from about 35 to 190 px back at full power (the test checks 100 px and 8 px; the
-  range is arithmetic). If that feels too hard, the lever is the hedge's throw clearance.
-- The patio slabs were the bottom 24 rows of the house art, drawn upright; now ground
-  (z -2), so a hose or body lies on them.
-- The dev's calls, in the design doc (42636e2): a second hit on a critter out cold kills
-  it; an empty ride-on won't budge; a running engine standing still burns 30%; pockets
-  hold 0 to 20% of the pay once they've paid you; the ripcord as a hand on the meter.
-- Prototype prep: `docs/SEASON_PLAN.md` maps the code it replaces, a five-step build order
-  with a test each, and first numbers (principal $1,000, vig 10% a week, living $50 a
-  week: guesses, not measured).
-- Verified: run_all green (parse, smoke, 32 tests) under the strict gate; new
-  `test_slam.gd` fires real throws; fuel and police tests extended. Screenshotted and
-  looked at: the hose on the slabs, the ripcord at rest, drawing, mid-yank. Not played.
-
-OWED CHECKS: 9, in CHECKS.txt (2 loads, about 25 minutes).
-
-NEXT:
-1. The season prototype, 162 to 166, by `docs/SEASON_PLAN.md` (step 1: dates and the vig).
-2. Play the S13 checks when convenient; triage.
-3. The text pass (159, with 158), after the prototype rewrites the board's text.
-4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after play.
