@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (12 checks, 3 loads, about 55 minutes)
+PLAY CHECKS OWED  (3 checks, 2 loads, about 25 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -11,21 +11,9 @@ NOTES
 ================================================================================
 
 
-
 ================================================================================
-LOAD 1 of 3: A JOB      (about 15 min; an L plot, a dog helps; [1] on the board for a ride-on)
+LOAD 1 of 2: A JOB      (about 15 min; a manor for the hoops, [1] and [2] on the board; a ride-on)
 ================================================================================
-
-S16-WINDOW
-Watch the customer go in and come out, stand at a window, and walk past the windows
-inside: they face the way they walk, and at the window they're behind the glass (bars
-over them, a faint tint). Does it read as a window now?
->
-
-S16-BAY
-The truck's reach is the faint yellow bay from the drive's end to the truck: refuel and
-open the truck menu standing in it. Right size? Visible enough, without shouting?
->
 
 S19-LITTER
 New things (79b): crisp packets blown onto about a third of lawns, croquet hoops on the
@@ -43,7 +31,7 @@ start? The horn ([H]): does the honk sound right, and is scattering critters use
 
 
 ================================================================================
-LOAD 2 of 3: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
+LOAD 2 of 2: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
 ================================================================================
 
 S16-ROBOT
@@ -51,59 +39,6 @@ Two robots on one lawn, you mowing too: do they now feel worth having (they skip
 been cut, cross the drive, and go green when there's nothing left they can reach)? Watch
 one by a gnome and two meeting head on: do they get on with it? (The mechanics are
 verified, below; this is whether it feels right.)
->
-
-
-================================================================================
-LOAD 3 of 3: THE CLOCK      (about 30 min; a week of the season, any business)
-================================================================================
-
-S17-GAMBLE
-The day's clock (193a): book two or three jobs on one day, windows overlapping, and try
-to fit them all. Does overbooking feel like a gamble you chose, or a chore? (The clock's
-whole question.)
->
-
-S17-PACE
-A small lawn eats about 2 hours of the day, the day runs 8am to 8pm, the drive is 30
-minutes, a call 10. Does the day move at the right speed, in a job and on the board?
->
-
-S17-LATE
-Arrive partway through someone's window (book one that opens early, go late): they're
-already partway through their patience, glancing at their watch sooner. Does it read
-that you're late, and is the cost fair?
->
-
-S17-TERMS
-Regulars change softly (193b): keep a few regulars for a few weeks. After a good visit,
-ask for a raise from the summary; let one go sour (a so-so visit or two). Do the changes
-(fewer visits, a cheaper rate, more visits, a better rate) feel earned and readable? Is
-the raise a gamble worth taking? (Upfront pay only comes from regulars back after a
-winter, so it's verified below, not owed.)
->
-
-S17-EVENTS
-Event days (193c): about one day in eight from May, the board's morning news says the
-hedgehogs are courting (May to July) or the squirrels have lost their minds (August,
-September, faster too), and every job that day gets about three times as many. Also
-fewer hedgehogs in April, more of both in autumn. Does an event day play differently,
-or is it just more on screen? (Cheat [3] skips days to find one.)
->
-
-S18-CLIMB
-Your name now builds slowly (193d): a great job adds a quarter of what it did at Fair, a
-sixteenth near the top, shown on the summary as "Most folk won't hear of it". Over a week
-or two, does the paper's ladder feel like something you climb? Does that summary line
-read as fair or as a slap? (A run of great jobs reaches the top band after about 20. Near
-the top a great job with one small mishap can now cost you overall: fair?)
->
-
-S17-BOARD
-The corkboard: the day's clock along the top (today's windows as bars, the cost of the
-button you're on lit gold), today's jobs with when you'd get there, the fortnight, the
-paper three ads a page, the shop; Shift and Ctrl (RB, LB) turn the pages. Does it read?
-Anything you reach for that isn't there?
 >
 
 

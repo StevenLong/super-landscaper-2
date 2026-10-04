@@ -10,6 +10,33 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
 
+## Session 20 (2026-10-04): help and robots grilled, LOAD 3 played and triaged
+- **Grilled 168 with 189** (the dev's calls, all in the design doc, The Business, Hired
+  help, and the robot mowers bullet, rejected options listed): helpers are sent out alone
+  to jobs off screen; ability plus kit (kit from what you own, more than one of a mower);
+  they grow, carried over the winter; a weekly wage at payday; your name counts, not your
+  record (a crime loses you the helper); found in the paper's "situations wanted"; tuned
+  so a busy helper brings in about twice their wage; a van each; some regulars want you,
+  by persona, always shown (the dev: never silently punish a reasonable choice). Robots:
+  time savers in a job and kit for helpers, permanent tiers. Filed as 209 (slice 1) and
+  210 (slice 2). My calls, veto: helpers keep your clock exactly; an evening report.
+- **LOAD 3 played**: S16-WINDOW, S16-BAY, S17-TERMS yes; S17-GAMBLE works okay; S17-EVENTS
+  fine, subtler than expected; S17-PACE retired till the day has more in it. Triaged into
+  NOTES 211 to 217: the dog runs through the house and teleports back (diagnosed, BLOCKS);
+  only the back door can be knocked on back-patio houses; the day from 6am, no window
+  before 8am (the dev's call); the reputation book's cut shown as a smaller gain, not a
+  minus line (1a); a clock face in the job's HUD (2a); the event news on the paper's page
+  (3a); a real newspaper and the board's redesign to the office/hub grill.
+- 193d's lever still open: LOAD 3 didn't settle it (the dev wants more in the day first).
+- Verified: run_all green (43 PASS lines). No code changed since faeaa10.
+
+OWED CHECKS: 3, in CHECKS.txt (2 loads, about 25 minutes).
+
+NEXT:
+1. 211 and 212 (the bugs), then 213, 214, 216 as one small batch.
+2. 215, the clock face in the job.
+3. 209, hired help slice 1 (board UI the bulk; reuse tests/sim_season.gd's job model).
+
 ## Session 19 (2026-10-03): solo, the economy measured, litter, hoops and a sapling
 - No dev at the keyboard again: worked what needs no play or call. Nothing in CHECKS
   answered, so nothing cleared.
@@ -340,40 +367,3 @@ NEXT:
 2. Play the S13 checks when convenient; triage.
 3. The text pass (159, with 158), after the prototype rewrites the board's text.
 4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after play.
-
-## Session 12 (2026-09-28): the S11 checks triaged and built, no witness no heat
-- All 24 S11 checks answered. Passed as written: S11-ARC ("much better"), S11-HOLE, S11-OVER,
-  S11-LEAD, S11-DOOR, S11-DOGHOME, S11-HOUSE (the look), S11-MOTOR, S11-PUSH (pace right),
-  S11-STALL, S11-ENGINE, S11-RUNOVER, S11-PAD, S11-BOARD, S11-SPAWN (nothing stuck since;
-  the dev will say if it returns). S11-HEAP: brackets stay, the dev is unsure of the look.
-  S11-GEARS: feels worse to drive, maybe rightly (it was overpowered); noted on NOTES 140.
-  The rest, plus a notes dump, became NOTES 141 to 161 (591d64f).
-- The dev's calls (promoted to the design doc, 6fab5b0, vetoable): no witness, no heat
-  (seen, heard, or a neighbour for a robbery); a critter a customer wants hurt is no crime
-  whatever it hits, bar them, their car, window or dog; a critter thrown out in their sight
-  moves mood by 40% of its death; the loose hose piece; an engine run dry dies and wants
-  restarting; the greyed portrait eases and says UNSEEN; buildings never fade (chimneys).
-- My calls (vetoable): a broken pane counts as their window; a cut-off hose piece can't be
-  cut again (a `ponytail:` in hose.gd); an empty mower is still pushable; the ripcord's cord
-  and PULL; wording for UNSEEN, PULL, "Out of petrol" until the text pass.
-- Built (a39ec5f, unplayed): 141 to 146, 148 to 154, 156, 157, 161. The manor lag measured:
-  `_show_cone()` 190 ms worst per window change, now 6 ms (headless timing, a test guards it).
-- New gate: run_all copies `tests/strict.cfg` to `override.cfg`, so every GDScript warning
-  fails the tests (the editor's parse step never saw warnings). It found three more the
-  editor hadn't shown (summary.gd, two tests).
-- Text pass prep: `docs/TEXT.md` from `tools/text_inventory.py`, 417 lines by script and
-  function. The dev's format for it: line by line together, I show the scenario and the
-  current text, they reword and give variants.
-- 155 (the briefing in a weird spot) not reproduced: screen-centre in a 1280x720 window.
-- Verified: run_all green (parse, smoke, 32 tests) under the strict gate; new or extended
-  tests venues (cone timing), critters (heat and eviction), stunned (bodies), fuel, fired,
-  talk, hose (loose piece), fallout (wall drop). Screenshotted and looked at: UNSEEN, the
-  ripcord cord, the ha-ha corner, the L notch join. Not measured: anything by feel.
-
-OWED CHECKS: 16, in CHECKS.txt (3 loads, about 40 minutes).
-
-NEXT:
-1. /grill on 160 (a season calendar of regular clients: the dev's pick for next).
-2. The text pass (159, with 158's "All told"), line by line with the dev.
-3. Play the S12 checks; triage.
-4. Then 140's retune if play agrees, 106 and 107; grills on 137, 136, 147 with 94 and 100, 96.
