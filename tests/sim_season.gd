@@ -11,7 +11,10 @@
 #   "$GODOT" --headless --path . -s tests/sim_season.gd
 # Knobs (env): SIM_SEEDS (5), SIM_SEASONS (2), SIM_HUMAN (0.85), SIM_MOOD (75), SIM_SPREAD
 # (15, each job's mood is MOOD give or take this), SIM_FILL (0.85, how much of a day the
-# bot dares book), SIM_BUFFER (200, cash kept at payday), SIM_SHOW (the seed printed in full, 1).
+# bot dares book), SIM_BUFFER (200, cash kept at payday), SIM_SHOW (the seed printed in full, 1),
+# SIM_CREW (0, helpers the bot may hire: at a payday after a month it turned work away, a van
+# and the best situation wanted by pace for the wage; the work it can't fit goes to them,
+# on Game's own model, help_job; raises always paid). crew$ is what they brought in, net.
 extends SceneTree
 
 const BOT_SECS := {"push": 420.0, "petrol": 262.0, "rideon": 281.0} ## sim_balance, default lawn to 85% (push guessed: it never got there)
@@ -24,6 +27,7 @@ var spread := 15.0
 var rng := RandomNumberGenerator.new()
 var fill := 0.85
 var buffer := 200
+var crew := 0
 var rows := {} ## "season-month" -> totals over every seed
 
 
@@ -35,10 +39,11 @@ func _initialize() -> void:
 	spread = float(OS.get_environment("SIM_SPREAD")) if OS.has_environment("SIM_SPREAD") else spread
 	fill = float(OS.get_environment("SIM_FILL")) if OS.has_environment("SIM_FILL") else fill
 	buffer = int(OS.get_environment("SIM_BUFFER")) if OS.has_environment("SIM_BUFFER") else buffer
+	crew = int(OS.get_environment("SIM_CREW")) if OS.has_environment("SIM_CREW") else crew
 	var seeds := int(OS.get_environment("SIM_SEEDS")) if OS.has_environment("SIM_SEEDS") else 5
 	var seasons := int(OS.get_environment("SIM_SEASONS")) if OS.has_environment("SIM_SEASONS") else 2
 	var show := int(OS.get_environment("SIM_SHOW")) if OS.has_environment("SIM_SHOW") else 1
-	print("human %.2f, mood %d +-%d, fill %.2f, buffer $%d, %d seeds, %d seasons" % [human, mood, spread, fill, buffer, seeds, seasons])
+	print("human %.2f, mood %d +-%d, fill %.2f, buffer $%d, crew %d, %d seeds, %d seasons" % [human, mood, spread, fill, buffer, crew, seeds, seasons])
 	for s in range(1, seeds + 1):
 		var months := _season_run(s, seasons)
 		if s == show:
@@ -72,9 +77,22 @@ func _kind() -> String:
 func _load(d: int) -> float:
 	var t := 0.0
 	for b: Dictionary in g.bookings(d):
-		if b.has("seed"):
+		if b.has("seed") and not b.has("helper"):
 			t += g.DRIVE + _mow_minutes(b, _kind())
 	return t
+
+
+## Minutes a helper's bookings that day would take them, by Game's model (help_job).
+func _help_load(d: int, h: Dictionary) -> float:
+	var t := 0.0
+	for b: Dictionary in g.bookings(d):
+		if b.get("helper", -1) == h.id:
+			t += g.DRIVE + _help_minutes(b, h)
+	return t
+
+
+func _help_minutes(j: Dictionary, h: Dictionary) -> float:
+	return g.HELP_SECS[h.kit] * float(j.size.x * j.size.y) / (1280.0 * 720.0) * g.MPS / h.pace
 
 
 func _season_run(seed_value: int, seasons: int) -> Array:
@@ -92,11 +110,34 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 			if ad.get("refused", false) or g.cant_book(ad) != "" or g.yes_chance(ad) < 0.5:
 				continue
 			if _load(ad.day) + g.DRIVE + _mow_minutes(ad, _kind()) > (g.DAY_END - g.WINDOW_START) * fill:
-				m.full += 1 # wanted it, no time
+				var sent := false
+				for h: Dictionary in g.helpers: # the crew takes what you can't
+					if _help_load(ad.day, h) + g.DRIVE + _help_minutes(ad, h) <= (g.DAY_END - g.WINDOW_START) * fill:
+						m.rung += 1
+						g.ring(ad)
+						if not ad.get("refused", false):
+							g.assign(ad, h.id)
+							m.sent += 1
+						sent = true
+						break
+				if not sent:
+					m.full += 1 # wanted it, no time
 				continue
 			m.rung += 1
 			g.ring(ad)
 			m.no += int(ad.get("refused", false))
+		# More today than you can do (regulars' visits pile up): the crew takes the rest.
+		var cap: float = (g.DAY_END - g.WINDOW_START) * fill
+		var mine: Array = g.jobs_today()
+		mine.reverse()
+		for b: Dictionary in mine:
+			if _load(g.day) <= cap:
+				break
+			for h: Dictionary in g.helpers:
+				if g.can_send(b) and _help_load(g.day, h) + g.DRIVE + _help_minutes(b, h) <= cap:
+					g.assign(b, h.id)
+					m.sent += 1
+					break
 		# The day: each job in turn while you can still make its window.
 		var busy := 0.0
 		while true:
@@ -132,8 +173,22 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 		m.missed += g.jobs_today().size()
 		m.days += 1
 		m.busy += busy / (g.DAY_END - g.WINDOW_START)
+		var before: int = g.money
 		g.end_day()
+		m.crew += g.money - before # end_day's only money is the crew's day
 		if g.payday_pending:
+			for h: Dictionary in g.helpers:
+				if h.has("asks"):
+					g.answer_raise(h.id, true)
+			if g.helpers.size() < crew and m.full > 0 and g.money - g.due() - g.VAN.price >= buffer and not g.wanted.is_empty():
+				var best: Dictionary = g.wanted[0]
+				for w: Dictionary in g.wanted:
+					if w.pace / w.wage > best.pace / best.wage:
+						best = w
+				g.buy("van")
+				g.hire(best)
+				m.bought.append("van")
+			m.wages += g.wages()
 			for item: String in BUY:
 				if not (item in g.owned or item in g.upgrades) and g.money - g.due() - g.price_of(item) >= buffer:
 					g.buy(item)
@@ -146,6 +201,7 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 			m.debt = g.principal
 			m.rep = g.reputation
 			m.regs = g.regulars.size()
+			m.help = g.helpers.size()
 			months.append(m)
 			_add(m)
 			m = _blank()
@@ -161,7 +217,8 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 
 func _blank() -> Dictionary:
 	return {"label": "", "rung": 0, "no": 0, "full": 0, "jobs": 0, "visits": 0, "late": 0, "missed": 0, "paid": 0,
-		"fuel": 0.0, "busy": 0.0, "days": 0, "money": 0, "debt": 0, "rep": 0.0, "regs": 0, "bought": [], "taken": []}
+		"fuel": 0.0, "busy": 0.0, "days": 0, "money": 0, "debt": 0, "rep": 0.0, "regs": 0, "bought": [], "taken": [],
+		"sent": 0, "crew": 0, "wages": 0, "help": 0}
 
 
 func _add(m: Dictionary) -> void:
@@ -176,10 +233,10 @@ func _add(m: Dictionary) -> void:
 
 
 func _print(months: Array, n: int) -> void:
-	print("month   rung  no full | jobs visits late missed | paid$  fuel$ |   day full% | cash$  debt$  rep  regs | bought, taken")
+	print("month   rung  no full | jobs visits late missed | paid$  fuel$ |   day full% | cash$  debt$  rep  regs | help sent crew$ wages$ | bought, taken")
 	for m: Dictionary in months:
 		var busy: float = m.busy / maxf(1.0, m.days) * 100.0
-		print("%-7s %4.1f %3.1f %4.1f | %4.1f %6.1f %4.1f %6.1f | %5d %5d | %13d | %5d %6d %4d %5.1f | %s %s" % [
+		print("%-7s %4.1f %3.1f %4.1f | %4.1f %6.1f %4.1f %6.1f | %5d %5d | %13d | %5d %6d %4d %5.1f | %4.1f %4.1f %5d %6d | %s %s" % [
 			m.label, m.rung, m.no, m.full, m.jobs, m.visits, m.late, m.missed, roundi(m.paid), roundi(m.fuel), roundi(busy),
-			roundi(m.money), roundi(m.debt), roundi(m.rep), m.regs, ",".join(m.bought) if n == 1 else "%d buys" % m.bought.size(),
+			roundi(m.money), roundi(m.debt), roundi(m.rep), m.regs, m.help, m.sent, roundi(m.crew), roundi(m.wages), ",".join(m.bought) if n == 1 else "%d buys" % m.bought.size(),
 			",".join(m.taken)])

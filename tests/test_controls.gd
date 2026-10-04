@@ -118,11 +118,11 @@ func _physics_process(_delta: float) -> bool:
 				g.paper[-1].day = g.day + 1
 			current_scene._show("calendar")
 			_wait = 5
-		8, 9, 10:
+		8, 9, 10, 11:
 			_fits()
-			current_scene._show(["paper", "shop", "calendar"][_step - 8])
+			current_scene._show(["paper", "crew", "shop", "calendar"][_step - 8])
 			_wait = 5
-		11:
+		12:
 			_fits()
 			# Shift and Ctrl turn the board's pages.
 			var shift := InputEventKey.new()
@@ -140,9 +140,16 @@ func _physics_process(_delta: float) -> bool:
 	return false
 
 
-## Every button on the board's page is on the screen.
+## Every button on the board's page is on the screen (one in a scrolling list: the list is,
+## and it follows the cursor).
 func _fits() -> void:
 	var r := root.get_visible_rect().size
 	for b: Button in current_scene.find_children("*", "Button", true, false):
-		var e := b.get_global_rect().end
+		var at: Control = b
+		var up := b.get_parent()
+		while up:
+			if up is ScrollContainer:
+				at = up
+			up = up.get_parent()
+		var e := at.get_global_rect().end
 		assert(e.x <= r.x + 1.0 and e.y <= r.y + 1.0, "%s (%s page) fits on the screen (ends at %s)" % [b.text, current_scene._view, e])

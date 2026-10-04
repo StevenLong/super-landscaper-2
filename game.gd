@@ -57,7 +57,7 @@ const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself, i
 ## tests/sim_season.gd: a helper kept busy brings in about twice their wage.
 const VAN := {"name": "Van", "price": 400, "blurb": "One per helper: no van, no crew."}
 const HELP_SECS := {"push": 420.0, "petrol": 262.0, "rideon": 281.0} ## sim_balance's bot, default lawn to 85% (push guessed): a helper at pace 1 mows like it
-const WAGE := 150 ## a week, asked by a helper of pace 1 and care 1 (less for less)
+const WAGE := 25.0 ## a week per point of your name, asked by a helper of pace 1 and care 1 (less for less): fully booked, one brings in about twice it (tests/_probe in session 21, sim_season SIM_CREW)
 const WANTS_YOU := {"perfectionist": 15.0, "toff": 15.0} ## a regular of these wants you: a helper's visit starts their mood this much lower
 const MISHAPS := [["put a stone through a window", 60], ["dented the car", 80], ["flattened a flowerbed", 0]] ## [what, bill]: likelier the less care
 const MISHAP_CHANCE := 0.3 ## a job's chance of one at no care at all (none at full care)
@@ -1336,9 +1336,10 @@ func make_wanted() -> Array[Dictionary]:
 	return out
 
 
-## What a helper asks a week, by how good they are.
+## What a helper asks a week, by how good they are (pace counts twice: a slow one fits fewer
+## jobs in and burns more fuel on each) and by your name (what the work pays).
 func wage_for(h: Dictionary) -> int:
-	return maxi(5, _round5(WAGE * h.pace * (0.5 + 0.5 * h.care)))
+	return maxi(5, _round5(WAGE * maxf(10.0, reputation) * h.pace * h.pace * (0.5 + 0.5 * h.care)))
 
 
 func wages() -> int:
@@ -1384,12 +1385,21 @@ func let_go(id: int) -> void:
 	save()
 
 
+## Whether a booking can go to a helper: a later day's, or today's if it could still be
+## reached setting off now.
+func can_send(b: Dictionary) -> bool:
+	return b.has("seed") and not b.has("service") and (b.day > day or can_go(b))
+
+
 ## Send a helper to a booking, or (id -1) take it back yourself.
 func assign(b: Dictionary, id: int) -> void:
 	if id < 0:
 		b.erase("helper")
+		b.erase("sent_at")
 	else:
 		b.helper = id
+		if b.day == day:
+			b.sent_at = minute # they set off from now, not from this morning
 	save()
 
 
@@ -1462,6 +1472,7 @@ func _crew_day() -> void:
 		for b: Dictionary in help_today(h.id):
 			_unbook(b)
 			b.erase("helper")
+			t = maxi(t, b.get("sent_at", DAY_START))
 			if not (t < DAY_END and t + DRIVE <= b.by):
 				_no_show(b)
 				crew_report.append("%s couldn't get to %s in time." % [who, b.customer])
@@ -1754,6 +1765,10 @@ func unpacked() -> Array[String]:
 
 ## What to call a packable thing.
 func kit_name(kind: String) -> String:
+	if kind == "van":
+		return VAN.name
+	if kind.begins_with("crew_"):
+		return "Crew " + MOWERS[kind.trim_prefix("crew_")].name.to_lower()
 	if kind == "can":
 		return "Petrol can"
 	if kind == "robot":

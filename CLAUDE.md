@@ -45,7 +45,8 @@ if a session changes the design, edit the vault doc and push game-dev too.
 - Balance: `"$GODOT" --headless --fixed-fps 60 --path . -s tests/sim_balance.gd` (a bot mows
   with each mower and prints times to 50/70/85/95%; deterministic, not part of run_all).
 - Economy: `"$GODOT" --headless --path . -s tests/sim_season.gd` (a bot runs seasons through
-  Game, results modelled; prints money, debt, reputation, how full days get; knobs at its top).
+  Game, results modelled; prints money, debt, reputation, how full days get; knobs at its top,
+  SIM_CREW=n lets it hire). Crew: `tests/sim_crew.gd` (a fully booked helper's week vs their wage).
 
 ## Project
 - 2D, Compatibility renderer (keeps a web export open), 1280x720 viewport, stretch

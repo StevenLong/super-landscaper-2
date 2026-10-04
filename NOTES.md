@@ -194,14 +194,17 @@ the next play of help isn't fighting them.
 
 Decided in the design doc (The Business, Hired help; Mowers and Equipment, robot mowers).
 
-209. [FEATURE, large] Hired help, slice 1 (design doc, Hired help): the paper's "situations
-   wanted" column (1 to 3 a week, pace, care, asking wage, better with your name), ringing
-   to hire, a weekly wage at payday, a van per helper (shop), more than one of a mower,
-   assigning a booking and kit on the board, the off-screen result on your clock's rules
-   (reuse tests/sim_season.gd's model: pace by kit, care and luck for mood), the evening
-   report, your name and regulars counting, mishaps by care, persona "wants you" shown
-   on the booking and in the report, growth and raises, the winter layoff. Tune with
-   the sim: a busy helper brings in about twice their wage. Board UI is the bulk.
+209. [BUILT session 21, awaiting S21-CREW] Hired help, slice 1, as the design doc's slice 1.
+   Claude's calls, veto any: a helper's wage scales with your name as well as pace (twice)
+   and care, since what the work pays does (sim_crew: fully booked, 2 to 3 times the wage;
+   at a Fair name a good one asks about $1,000 a week, which looks odd beside $50 rent:
+   that's 193d's inflation showing); ringing always hires if a van's free; a job a helper
+   wins a regular from is accepted for you (the offer screen is the summary's); today's
+   bookings go out only if they could still be reached, the helper setting off from then;
+   the paper's column sits after the ads; a Crew page (helpers, kit, raises, who goes, the
+   report); crew mowers as their own shop rows; a sold van loses the last-hired helper.
+   Measured (sim_season SIM_CREW=2): the bot gives them its overflow, 5 to 8 jobs a week
+   each, about break-even, and its missed visits fall from 28 a month to 5.
 210. [FEATURE, large] Hired help slice 2 and robots: a helper nicked or sacked over a
    crime, quitting and poaching when underpaid, robot tiers (a cheap stop-for-everything
    one, a dear faster one that goes round critters), robots lent to helpers as kit,

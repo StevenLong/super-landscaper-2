@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (5 checks, 3 loads, about 35 minutes)
+PLAY CHECKS OWED  (6 checks, 4 loads, about 55 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -12,7 +12,7 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 3: A JOB      (about 15 min; a manor for the hoops, [1] and [2] on the board; a ride-on)
+LOAD 1 of 4: A JOB      (about 15 min; a manor for the hoops, [1] and [2] on the board; a ride-on)
 ================================================================================
 
 S19-LITTER
@@ -31,7 +31,7 @@ start? The horn ([H]): does the honk sound right, and is scattering critters use
 
 
 ================================================================================
-LOAD 2 of 3: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
+LOAD 2 of 4: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
 ================================================================================
 
 S16-ROBOT
@@ -43,7 +43,7 @@ verified, below; this is whether it feels right.)
 
 
 ================================================================================
-LOAD 3 of 3: THE SMALL FIXES      (about 10 min; any day, a job with a dog, a semi with the patio out the back)
+LOAD 3 of 4: THE SMALL FIXES      (about 10 min; any day, a job with a dog, a semi with the patio out the back)
 ================================================================================
 
 S20-FIXES
@@ -58,6 +58,21 @@ S20-DIAL
 A clock face by the time in a job (NOTES 215): their window a green arc, the part gone
 shaded, the hand now, red once you're past it. Turn up late to a booking: does the hand
 starting partway round make their getting cross early read? Is it big enough?
+>
+
+
+================================================================================
+LOAD 4 of 4: HIRED HELP      (about 20 min; [1] a few times and [2] twice on the board, a week or two)
+================================================================================
+
+S21-CREW
+Hired help, slice 1 (NOTES 209 lists my calls to veto). Buy a van in the shop, ring a
+situation wanted at the back of the paper, then on the new Crew page press a booking's
+"You" to send them (a regular who wants you says so). Give them a crew mower (shop) with
+their Kit button. Their day comes in at the day's end: a line on the calendar, the rest on
+the Crew page; wages come out on Friday. Is sending work out a real choice, does the report
+read, and do the wages (they scale with your name: hundreds to a couple of thousand a week)
+feel like a bet worth making?
 >
 
 
@@ -100,3 +115,7 @@ VERIFIED  The day's news (NOTES 216), by screenshot: a headline on newsprint ove
 VERIFIED  The clock face (NOTES 215), by test (new test_dial) and screenshots on time, late and
           past the window: the arc, the shading and the red hand show as meant; a job with no
           window has no face.
+VERIFIED  Hired help, slice 1 (NOTES 209), by test (new test_help: the model; new
+          test_crew_board: the board) and screenshots of the Crew page, the paper's column,
+          the shop and the corkboard (a sent booking in blue under the helper's name).
+          Tuned by sim (sim_crew, sim_season SIM_CREW=2): modelled, not played.
