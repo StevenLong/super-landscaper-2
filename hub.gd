@@ -613,8 +613,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("interact"):
+		get_viewport().set_input_as_handled() # first: a door or the desk takes this place out of the tree
 		use()
-		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("pause"):
 		_open_card("Paused", [], [["Save and quit", func() -> void:
 			_leaving = true

@@ -170,5 +170,6 @@ func _layout(job: Dictionary) -> Array:
 	for n: Node in mm.get_node("Scenery").get_children() + mm.get_node("Stones").get_children():
 		if (n.get_script() == preload("res://rock.gd") and n.art == "rock") or (n is Stone and n.kind not in mm.LATER_PROPS):
 			out.append([str(n.get("kind")), (n as Node2D).position])
-	mm.free()
+	root.remove_child(mm)
+	mm.queue_free() # not free(): what it's queued up (deferred calls) goes with it cleanly
 	return out

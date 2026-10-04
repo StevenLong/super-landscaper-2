@@ -62,8 +62,12 @@ func _spawn_batch() -> void:
 func _check_batch(where: String) -> void:
 	# Stuck is what the dev saw: at the boundary, never getting in (spinning in a wall). One
 	# still out past it, far off, is walking in or has wandered off next door.
-	var stuck := _spawned.filter(func(a: Animal) -> bool:
-		return is_instance_valid(a) and not a.visited and not a.on_plot and a.position.distance_to(m.lawn.keep_in(a.position, 0.0)) < 40.0)
+	var stuck: Array[Animal] = []
+	for i in _spawned.size(): # some are freed by now: nothing typed can hold them
+		if is_instance_valid(_spawned[i]):
+			var a := _spawned[i] as Animal
+			if not a.visited and not a.on_plot and a.position.distance_to(m.lawn.keep_in(a.position, 0.0)) < 40.0:
+				stuck.append(a)
 	assert(stuck.is_empty(), "%s: %d of %d critters stuck at the boundary: %s" % [where, stuck.size(), _spawned.size(),
 		stuck.map(func(a: Animal) -> String: return "%s at %s" % [a.kind, a.position])])
 

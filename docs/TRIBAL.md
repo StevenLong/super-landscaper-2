@@ -31,3 +31,8 @@ Traps and "we tried X, it failed because Y". Current rules live in CLAUDE.md.
 - Robots used to drive in a straight line at any target the grid couldn't reach, which is
   how they "crossed the drive" (the drive is excluded ground) and also how they flattened
   flower beds. The drive is now an explicit crossable rect (Robot.crossable).
+- `change_scene_to_file` and `reload_current_scene` take the current scene out of the tree
+  at once, so an input handler that leaves and then calls `get_viewport()` hits null: the
+  pad's B on the desk crashed that way (2026-10-04). Mark the input handled first (or hold
+  the viewport, as pack.gd does). run_all now fails on engine `ERROR:` lines too, bar the
+  "resources still in use at exit" each headless run prints.

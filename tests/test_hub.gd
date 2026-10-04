@@ -104,7 +104,10 @@ func _process(_delta: float) -> bool:
 			s.use("use the desk")
 		1:
 			assert(s.name == "Board", "the desk opens the board")
-			s._away()
+			var back := InputEventJoypadButton.new() # the pad's B: away from the desk (it crashed, 2026-10-04)
+			back.button_index = JOY_BUTTON_B
+			back.pressed = true
+			root.push_input(back)
 		2:
 			assert(s.name == "Hub" and g.place == "office" and s.walker.position.distance_to(Vector2(150, 80)) < 1.0, "stepped away: by the desk")
 			s.use("go out to the yard")

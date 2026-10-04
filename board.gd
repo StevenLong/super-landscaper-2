@@ -625,8 +625,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		UI.focus(leave)
 		get_viewport().set_input_as_handled()
 	elif leave and event.is_action_pressed("hop") and not (find_child("Away", true, false) as Button).disabled: # away from the desk
+		get_viewport().set_input_as_handled() # first: leaving takes the board out of the tree
 		_away()
-		get_viewport().set_input_as_handled()
 	elif leave and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")):
 		var step := 1 if event.is_action_pressed("gear_up") else -1
 		if _view == "paper" and _page + step >= 0 and _page + step < _paper_pages(): # the paper's pages first

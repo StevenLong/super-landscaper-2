@@ -25,7 +25,7 @@ if a session changes the design, edit the vault doc and push game-dev too.
 - `bash tests/run_all.sh`: parse check, then `tests/smoke.gd` (runs the title 300 frames)
   and every `tests/test_*.gd`. Exit 0 = all pass. Commit only on a green run.
 - Godot exits 0 even on script errors, so a test passes only if it prints a line starting
-  `PASS` AND its output has no `SCRIPT ERROR`. Each test runs under a 60s timeout, since a
+  `PASS` AND its output has no `SCRIPT ERROR` or engine `ERROR:` (bar the exit leak report). Each test runs under a 60s timeout, since a
   failed assert halts the script but leaves godot idling.
 - The parse check catches errors, not GDScript warnings, and only in scripts the project loads:
   a parse error in a test file passes it. The test run itself catches those, and warnings too:

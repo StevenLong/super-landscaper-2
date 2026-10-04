@@ -101,9 +101,13 @@ static func amount(lo: int, hi: int, step: int, value: int, on_change: Callable)
 
 ## Focus a control next frame, if it's still around by then (menus can close fast).
 static func focus(c: Control) -> void:
+	if c == null:
+		return
+	var id := c.get_instance_id() # by id: a page rebuilt before the deferred call frees c, and a freed capture errors
 	(func() -> void:
-		if is_instance_valid(c) and c.is_inside_tree():
-			c.grab_focus()).call_deferred()
+		var n := instance_from_id(id) as Control
+		if n and n.is_inside_tree():
+			n.grab_focus()).call_deferred()
 
 
 ## Left or right (dir -1 or 1) from button c, never up or down a column (NOTES 221): Godot's

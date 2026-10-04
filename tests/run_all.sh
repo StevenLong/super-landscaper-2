@@ -17,9 +17,12 @@ for t in tests/smoke.gd tests/test_*.gd; do
 	[ -e "$t" ] || continue
 	# timeout: a failed assert halts the script but not the SceneTree, so godot would idle forever.
 	out="$(timeout 60 "$GODOT" --headless --path . -s "$t" 2>&1)"
-	if ! grep -q "^PASS" <<<"$out" || grep -q "SCRIPT ERROR" <<<"$out"; then
+	# Engine errors count too (a null call in an input handler, a bad get_child), bar the
+	# leak report every headless run prints as it quits.
+	engine="$(grep "^ERROR:" <<<"$out" | grep -v "resources still in use at exit")"
+	if ! grep -q "^PASS" <<<"$out" || grep -q "SCRIPT ERROR" <<<"$out" || [ -n "$engine" ]; then
 		# Show the real error; fall back to the tail (e.g. a timeout) when there is none.
-		errs="$(grep -A2 -E "SCRIPT ERROR|^FAIL" <<<"$out" | head -n 20)"
+		errs="$(grep -A2 -E "SCRIPT ERROR|^FAIL|^ERROR:" <<<"$out" | grep -v "resources still in use at exit" | head -n 20)"
 		echo "FAIL  $t"; if [ -n "$errs" ]; then echo "$errs"; else tail -n 25 <<<"$out"; fi; fail=1
 	else
 		echo "PASS  $t"

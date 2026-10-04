@@ -56,6 +56,13 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
   on helpers, not vans; buying a van didn't seat the one waiting; two identical empty-van
   buttons; standing helpers' tags smeared and the 9th past reach (now 4 to a row).
 
+- The dev's crash: the pad's B on the desk (Step away) called get_viewport() after the
+  scene change took the board out of the tree; the hub's interact had the same shape. Fixed,
+  and test_hub now presses B. run_all fails on engine ERROR: lines too, which surfaced three
+  hidden ones, fixed: UI.focus's deferred lambda holding a freed button (any quick rebuild),
+  test_fallout's typed filter on freed critters, test_objects freeing a scene with calls
+  queued. docs/TRIBAL.md has the scene-change lesson.
+
 OWED CHECKS: 8 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
 LOAD 2 S24-YARD, S24-RAISE, S24-CREW).
 
