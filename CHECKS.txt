@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (4 checks, 3 loads, about 35 minutes)
+PLAY CHECKS OWED  (5 checks, 3 loads, about 35 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -54,6 +54,12 @@ Throw the ball past the house: the dog won't go (it stays its side). Knock on a 
 house's front door: they answer it, then go back in and come out the back later. Fine?
 >
 
+S20-DIAL
+A clock face by the time in a job (NOTES 215): their window a green arc, the part gone
+shaded, the hand now, red once you're past it. Turn up late to a booking: does the hand
+starting partway round make their getting cross early read? Is it big enough?
+>
+
 
 ================================================================================
 VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
@@ -91,3 +97,6 @@ VERIFIED  The reputation book (NOTES 214), by test (test_season): gains shown al
           adding to the total, no "won't hear of it" line.
 VERIFIED  The day's news (NOTES 216), by screenshot: a headline on newsprint over the ads, gone
           from the calendar.
+VERIFIED  The clock face (NOTES 215), by test (new test_dial) and screenshots on time, late and
+          past the window: the arc, the shading and the red hand show as meant; a job with no
+          window has no face.

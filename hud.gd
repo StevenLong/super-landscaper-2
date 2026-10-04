@@ -7,12 +7,15 @@ signal choice(id: String)
 const SPEECH_W := 360.0
 const BANNER_MS := 2350 ## a banner's whole life: in, held, faded
 const WRAP := 820.0 ## a panel line wider than this wraps
+const DIAL_R := 22.0 ## the clock face's radius
 
 var _banner_free := 0 ## ticks (msec) when the banner showing now is gone
 
 var _panel: PanelContainer
 var _back := "" ## the open panel's way out ("resume"), for back (Esc, B) or pause again
 var _say_tween: Tween
+var _dial: Control ## the clock face: their window as an arc, a hand for now (NOTES 215)
+var _dial_at := Vector3.ZERO ## now, from, by: minutes of the day
 
 
 func _ready() -> void:
@@ -23,6 +26,13 @@ func _ready() -> void:
 	box.set_border_width_all(2)
 	box.set_content_margin_all(8)
 	$Speech.add_theme_stylebox_override("normal", box)
+	_dial = Control.new()
+	_dial.name = "Dial"
+	_dial.position = Vector2(110, 10)
+	_dial.size = Vector2(DIAL_R, DIAL_R) * 2.0
+	_dial.visible = false
+	_dial.draw.connect(_draw_dial)
+	add_child(_dial)
 
 
 ## Speech hangs under the portrait.
@@ -33,12 +43,47 @@ func _process(_delta: float) -> void:
 	s.position = f.position + Vector2(f.size.x - SPEECH_W, f.size.y + 6.0)
 
 
-## The time: of day on a booked job ("2:40pm, by 6pm"), else minutes and seconds in.
+## The time: of day on a booked job ("2:40pm, by 6pm", and the clock face), else minutes
+## and seconds in.
 func set_clock(seconds: float, job: Dictionary) -> void:
+	_dial.visible = job.has("from")
+	$Clock.position.x = _dial.position.x + (DIAL_R * 2.0 + 8.0 if _dial.visible else 0.0)
 	if job.has("from"):
-		$Clock.text = "%s, by %s" % [Game.time_text(job.from + floori(seconds * Game.MPS)), Game.time_text(job.by)]
+		var now: int = job.from + floori(seconds * Game.MPS)
+		$Clock.text = "%s, by %s" % [Game.time_text(now), Game.time_text(job.by)]
+		if Vector3(now, job.from, job.by) != _dial_at:
+			_dial_at = Vector3(now, job.from, job.by)
+			_dial.queue_redraw()
 	else:
 		$Clock.text = "%d:%02d" % [floori(seconds / 60.0), int(seconds) % 60]
+
+
+## A 12-hour face: their window a green arc, the part of it gone shaded, the hand now
+## (red once you're past it). Turn up late and the hand starts partway round.
+func _draw_dial() -> void:
+	var c := Vector2(DIAL_R, DIAL_R)
+	var now := _dial_at.x
+	var from := _dial_at.y
+	var by := _dial_at.z
+	_dial.draw_circle(c + Vector2(2, 2), DIAL_R, Color(0, 0, 0, 0.5)) # its shadow, like the labels'
+	_dial.draw_circle(c, DIAL_R, Color("1a1820"))
+	_dial.draw_arc(c, DIAL_R - 1.0, 0.0, TAU, 32, UI.DIM, 2.0)
+	for h in 12:
+		var d := Vector2.from_angle(h * TAU / 12.0)
+		_dial.draw_line(c + d * (DIAL_R - 4.0), c + d * (DIAL_R - 2.0), UI.DIM, 1.0)
+	var a0 := _angle(from)
+	var span := minf(by - from, 720.0) / 720.0 * TAU
+	_dial.draw_arc(c, DIAL_R - 7.0, a0, a0 + span, 32, UI.GOOD, 5.0)
+	var gone := clampf(now - from, 0.0, by - from)
+	if gone > 0.0:
+		_dial.draw_arc(c, DIAL_R - 7.0, a0, a0 + minf(gone, 720.0) / 720.0 * TAU, 32, Color("3a5a2a"), 5.0)
+	_dial.draw_line(c, c + Vector2.from_angle(_angle(now)) * (DIAL_R - 4.0), UI.BAD if now > by else UI.TEXT, 2.0)
+	_dial.draw_circle(c, 2.0, UI.TEXT)
+
+
+## Where m (minutes of the day) points on a 12-hour face: noon and midnight straight up.
+static func _angle(m: float) -> float:
+	return fmod(m, 720.0) / 720.0 * TAU - PI / 2.0
 
 
 ## The police countdown, top centre, flashing red and blue: visible on purpose.
