@@ -129,7 +129,18 @@ func _initialize() -> void:
 	g.end_day()
 	assert(not h.has("asks"), "a better name alone: no raise asked (wage $%d, now worth $%d)" % [h.wage, g.wage_for(h)])
 	g.reputation = was_rep
-	# A raise: a job that ticks a point up on their card, and they ask; yes pays it.
+	# Care a point up alone: no ask (it rides along with the next pace point: the verifier's
+	# run 9 found pace and care ticking days apart, asks in pairs).
+	h.pace = 1.0
+	h.care = 0.849
+	var care_only: Dictionary = g.make_job(13)
+	care_only.from = g.WINDOW_START
+	care_only.by = g.DAY_END
+	g.book(_today(care_only))
+	g.assign(care_only, h.id)
+	g.end_day()
+	assert(g.points_of(h).y == 9 and not h.has("asks"), "care up a point alone: no ask")
+	# A raise: a job that ticks their pace a point up, and they ask; yes pays it.
 	h.pace = 1.149
 	h.care = 0.9
 	var raise: Dictionary = g.make_job(14)

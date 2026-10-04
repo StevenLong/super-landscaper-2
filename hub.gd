@@ -27,7 +27,7 @@ static var _stood := Vector2.INF ## where you stood when a card's act laid the p
 
 func _ready() -> void:
 	if not Game.day_end.is_empty() or not Game.blackout.is_empty() or Game.today().has("court") \
-			or Game.payday_pending or Game.winter_pending:
+			or Game.today().has("jail") or Game.payday_pending or Game.winter_pending: # a day inside: at the desk, calling it a day
 		Game.place = "office"
 		Game.spot = "desk"
 		get_tree().change_scene_to_file.call_deferred("res://board.tscn") # the desk has it to read
@@ -192,7 +192,7 @@ func _go_to(where: String, from: String) -> void:
 func _yard() -> void:
 	var wide := Game.YARD_W * CELL.x
 	var depth := Game.yard_rows * CELL.y
-	var floor_rect := Rect2(-40, -10, wide + 260, depth + 130)
+	var floor_rect := Rect2(-90, -10, wide + 310, depth + 180)
 	_room(floor_rect, preload("res://art/gravel.png"), 0.0)
 	var lines := Node2D.new() # the storage floor, painted out
 	lines.z_index = -9
@@ -223,12 +223,12 @@ func _yard() -> void:
 	var x := 0.0 # what's got no room, stood about below the floor
 	for it: Dictionary in lay.over:
 		var sz := Vector2(Game.FOOT[it.kind]) * CELL
-		_yard_item(it, Vector2(x, depth + 40), sz)
+		_yard_item(it, Vector2(x, depth + 50), sz) # no room for it: over the edge, till it's sold
 		x += sz.x + 10.0
 	# Your truck by the gate; the signpost for more yard.
 	var truck_at := Vector2(wide + 120, depth + 30)
 	_thing(truck_at, Vector2(120, 34), "get in your truck", _truck_card, preload("res://art/truck.png"))
-	var sign_at := Vector2(wide / 2.0, depth + 56)
+	var sign_at := Vector2(-45, depth)
 	var sp := _thing(sign_at, Vector2(20, 8), "read the sign (more yard)", _yard_sign, preload("res://art/signpost.png"))
 	_tag(sp, "More yard $%d" % Game.price_of("yard"), Vector2(0, -62))
 	_spawn(truck_at + Vector2(-10, 30) if Game.spot == "truck" else Vector2(wide + 60, 14))
@@ -291,7 +291,10 @@ func _yard_card(it: Dictionary) -> void:
 						func() -> void: Game.set_kit(h.id, "push"), not free])
 				acts.append(["Let %s go" % h.name.split(" ")[0], func() -> void: Game.let_go(h.id)])
 			lines.append("Takes %s in the yard." % _cells("van"))
-			acts.append(["Sell the van, $%d%s" % [Game.resale("van"), "" if h.is_empty() else " (they go too)"], func() -> void: Game.sell("van")])
+			acts.append(["Sell the van, $%d%s" % [Game.resale("van"), "" if h.is_empty() else " (%s goes too)" % h.name.split(" ")[0]], func() -> void:
+				if not h.is_empty():
+					Game.let_go(h.id) # this van's helper, not the last hired
+				Game.sell("van")])
 		"robot":
 			title = Game.ROBOT.name
 			lines.append(Game.ROBOT.blurb + " You pack it in the truck's bed, or the trailer.")
@@ -493,6 +496,12 @@ func _physics_process(_delta: float) -> void:
 		return
 	var t := _target()
 	_hint.text = (Game.key("interact") + " " + t.hint) if not t.is_empty() else ""
+	for th: Dictionary in _things: # stood behind something tall (a van): see through it
+		var n: Node2D = th.node
+		var spr := n.get_child(0) as Sprite2D
+		if spr:
+			var behind := walker.position.y < n.position.y and Rect2(n.position + spr.position, spr.texture.get_size()).has_point(walker.position)
+			n.modulate.a = 0.45 if behind else 1.0
 
 
 ## What you'd use: the thing in front of you, else the nearest you're by.

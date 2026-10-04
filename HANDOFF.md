@@ -4,11 +4,53 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 8 runs, 48 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 9 runs, 60 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
 per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
+
+## Session 24 (2026-10-04): the hub grilled and built (228 to 234), verifier run 9
+- Dev's answers: S23-PAD yes, bar the Calendar's ad Ring being hard to reach (moot: that
+  page is gone). S23-RAISE: "considerably slower"; the trouble was growing fast (cheats
+  showed better hires), not asking. Plus a new ask: a "finish the day" beat (became 229).
+- The hub grill (design doc, Outside the Season, The hub): tangible things live in space,
+  paper things stay screens; office as home with doors; walkable office, yard and shop; the
+  calendar is its tiles (rolling 5 weeks, a day panel, state in words and colour, who goes
+  from a list); the paper a newspaper with a front page; a client book; the day's end every
+  day, nothing skips; crew acts where their objects are (no Crew page); storage as a
+  resource (the yard's floor, auto-placed for now, more bought); leaving is the truck; the
+  shop a 30-minute drive; raises: growth a fifth, an ask only on a card point. The dev
+  overturned two of my picks: the calendar's tiles over a second list, and all three
+  places walkable (my "office walkable, yard and shop as screens" was the tabs in a room).
+- Built 228 to 234 (5353157, 8f755a5, 3a48a91, bf41f09, then the verifier's fixes). New:
+  hub.gd/hub.tscn, test_hub, tools/shot_hub.gd, 8 sprites in tools/art_sprites.py (group
+  "hub"). Claude's calls in the doc's "As built" (yard 10 by 8, +4 rows at $300 then
+  dearer; footprints in truck cells; upgrades on kit cards; the phone has nothing yet).
+- Verifier run 9 (990995d..bf41f09): calendar and paper held, raises, day's end and the
+  places refuted in part; 12 real finds, all fixed or decided: raise asks came in pairs (pace and care
+  tick days apart; now only a pace point asks, care rides along), payday and the winter leaked into the next day's money, jobs lost
+  to jail/court/the cells missing from the day's end, cheat [3]'s skipped jobs listed as
+  missed, last season's tally on April's front page, an empty page headed Situations
+  Wanted, selling a van from a helper's card let the last hire go, driving to the shop from
+  jail, the overflow van on the signpost, a big crew pushing the day's end off screen (now a
+  line a helper), vans hiding the walker (now see-through when you're behind). Decided, not
+  fixed: letting a helper go (or losing them over the winter) can overflow the yard; their
+  mower stands over the edge till sold. Unchecked: a front page with every tally key full
+  pushes the page buttons off screen (not a realistic week).
+- Verified: run_all green (49 PASS incl. the new test_hub); sim_season SIM_CREW=0/1/2 clean (one
+  seed with 2 helpers bought yard); screenshots of every new screen looked at.
+- Modelled, not played: a busy helper now asks about every 50 jobs (a pace point), 2 to 3
+  weeks; reaching the top takes about a season.
+
+OWED CHECKS: 7 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
+LOAD 2 S24-YARD, S24-RAISE).
+
+NEXT:
+1. The dev plays LOADs 1 and 2; triage the fallout.
+2. 227 when the clock drawing arrives (it becomes the office's clock too).
+3. Grill-ready: 225 (upgrades as work, at the yard) with 223's leftovers; 207 with 136; 208
+   (your own garden, another door). Hold 210.
 
 ## Session 23 (2026-10-04): solo, 218, 219, 221 with 47, and the raise half of 222
 - 218: the paper's headline is ink, no shadow (new test_newsprint; screenshot reads).
@@ -233,45 +275,3 @@ NEXT:
 1. Play LOAD 3 (the clock, the terms, event days); LOAD 1 and 2 when there's time.
 2. 193d's retunes from what play says (reputation's climb, the paper's size, pay, the vig).
 3. Grill 189 (robots) and 168 (hired help) together, as ways to buy time; then 207 with 136.
-
-## Session 16 (2026-10-02): verify-first, the verifier, the robots fixed, the small pass built
-- **Played (dev):** S15 mostly answered. Passed: TRUCK, SAVEQUIT, PAY, OFFER; PORTRAIT and
-  PAPER pass bar the window glass (203) and the shop overflow (196). Raised: DOOR (slid
-  backwards, 204), ROBOT (re-mowed cut grass, jammed; $150 cheap), PACK (send home, 205),
-  and notes triaged into 196 to 206. A crash (robot after the dog went home) fixed at once
-  (dcfaf99).
-- **Process, the dev's call:** verify everything I can myself; a play check is owed only
-  for what needs a person (feel, fun, pace, loudness, "does it read"); the rest goes in
-  CHECKS.txt's VERIFIED section. The dev dogfoods daily, so no frame-by-frame rigs for
-  motion. In CLAUDE.md (Verify) and the handoff skill (06731a4).
-- **The verifier agent** (`.claude/agents/verifier.md`, in the repo so both machines have
-  it; loads by name from the next session, this one ran it as general-purpose reading that
-  file): 2 runs, 8 real finds, 0 false alarms. Run 1 (robots): unreachable grass driven at
-  in straight lines for ever, 59 to 62 flowers flattened on a parterre, a corridor
-  deadlock, solid shapes bigger than their no-mow areas. Run 2 (small pass): my own
-  regression (Drive on the packing screen unpacked the item under the cursor), a customer
-  invisible at a smashed window, an orphaned fourth gear, critters walking out of next
-  door's terrace houses. All fixed and rechecked with its scripts. The dev wants its value
-  tracked: the tally is in the ledger block. Keep it to one run per build batch.
-- **Built** (all pushed; my calls in the design doc and the commits, veto any): 196, 200 to
-  202 (the robots), 197 (truck bay), 198 (gears), 199 (horn), 203, 204, 205, the churchyard
-  wall stub (194). Also a rare spawn bug (critters grazing the house corner; test_shapes
-  flaked 1 in 7).
-- **Promoted to the design doc** (the dev's calls this session): the customer faces the way
-  they walk and is behind the glass at a window; two ride-on gears, the third and fourth as
-  upgrades; the horn scares critters (annoyance open, 206); the truck's reach is one painted
-  bay; send home on the packing screen; robots mow only uncut grass, stop when done, never
-  deadlock, rammed takes damage both ways (stopping at a gnome is fine).
-- **Lessons:** never run a background job that stashes project files (one got killed
-  mid-stash; restored). A new agent type in `.claude/agents` only loads at session start.
-- Verified: run_all green (parse, smoke, 40 tests; new test_porch, test_robot_jam,
-  test_horn; additions in test_controls, test_pack, test_seen, test_mower_feel,
-  test_robot, test_prompts). Robot coverage measured by sim; screenshots looked at for the
-  board, window, bay, packing, horn, fences. Not played.
-
-OWED CHECKS: 6, in CHECKS.txt (2 loads, about 30 minutes).
-
-NEXT:
-1. Grill 193 (pace and escalation), now, after clearing context.
-2. Then grill 189 (robot tiers, price, speed) and 168 (hired help).
-3. Play LOAD 1 and 2 of CHECKS.txt when there's time.

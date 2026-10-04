@@ -17,6 +17,7 @@ var _was := 0
 func _initialize() -> void:
 	g = root.get_node("Game")
 	g.save_path = "user://test_best.cfg"
+	_days()
 	g.new_run(7)
 	g.money = 20000
 	assert(g.yard_room("van") and g.cant_buy("van") == "", "an empty yard has room for a van")
@@ -32,6 +33,7 @@ func _initialize() -> void:
 	assert(g.buy("van"), "and room again")
 	_no_overlaps()
 	g.hire(g.wanted[0])
+	g.hire(g.wanted[0])
 	var h: Dictionary = g.helpers[0]
 	assert(g.buy("crew_petrol") and _crew_petrols() == 1, "the crew's petrol mower, on the floor")
 	assert(g.set_kit(h.id, "petrol") and _crew_petrols() == 0, "given out: it rides in their van")
@@ -43,6 +45,27 @@ func _initialize() -> void:
 	g.place = "office"
 	g.spot = "desk"
 	change_scene_to_file("res://hub.tscn")
+
+
+## The day's end's sums (the verifier's run 9): payday and the winter start the next day
+## afresh; a classified lost to a day in jail is in that day's end.
+func _days() -> void:
+	g.new_run(7)
+	g.money = 1000
+	while not g.payday_pending:
+		g.end_day()
+	g.settle_payday()
+	g.end_day()
+	assert(g.day_end.now - g.day_end.was == 0, "the day after payday: nothing spent on it")
+	var ad: Dictionary = g.make_job(5)
+	ad.day = g.day
+	g._add(g.day, ad)
+	g._take_day(g.day, {"jail": true})
+	g.end_day()
+	assert(ad.customer in g.day_end.missed, "a job lost to jail: in the day's end (%s)" % [g.day_end.missed])
+	g.run_tally = {"windows": 3}
+	g.settle_winter()
+	assert(g.paper_tally == g.run_tally and g.front_page()[0][0] == "QUIET WEEK IN THE GARDENS", "last season's mess isn't April's news")
 
 
 func _no_overlaps() -> void:
@@ -117,14 +140,24 @@ func _process(_delta: float) -> bool:
 			s.use("drive home")
 		8:
 			assert(g.place == "yard" and g.minute == _was + g.DRIVE, "home, a drive")
-			s.go(_job)
+			_was = g.helpers[0].id
+			s.use("look in %s" % g.helpers[0].name.split(" ")[0])
+			_card("Sell the van").pressed.emit()
 		9:
+			assert(g.helpers.size() == 1 and g.helpers[0].id != _was, "selling their van lets them go, not the last hired")
+			s.go(_job)
+		10:
 			assert(s.name == "Pack" and g.next_job == _job, "going: packing first")
 			g.day_end = {"day": g.day, "mine": [], "crew": [], "crew_net": 0, "missed": [], "was": 0, "now": 0}
 			change_scene_to_file("res://hub.tscn")
-		11:
+		12:
 			assert(s.name == "Board" and "DAY'S END" in s.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text),
 				"something to read: the desk, first")
+			g.day_end = {}
+			g.calendar[g.day] = [{"jail": true}]
+			change_scene_to_file("res://hub.tscn")
+		14:
+			assert(s.name == "Board" and (s.find_child("Away", true, false) as Button).disabled, "a day inside: the desk, and nowhere to step away to")
 			print("PASS hub")
 			quit()
 	_step += 1

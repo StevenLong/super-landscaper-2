@@ -88,7 +88,7 @@ func _process(_delta: float) -> bool:
 			g.end_day()
 			s._ready()
 		7:
-			assert(_texts().any(func(t: String) -> bool: return t.contains("mowed for")), "their day in the day's end: %s" % [_texts()])
+			assert(_texts().any(func(t: String) -> bool: return t.begins_with(g.helpers[0].name.split(" ")[0] + ": 1 job")), "their day in the day's end: %s" % [_texts()])
 			assert(g.helpers[0].has("asks") and _texts().any(func(t: String) -> bool: return t.begins_with("Raise ")), "a point up: they ask, at the day's end")
 			_button("Pay it").pressed.emit()
 		8:

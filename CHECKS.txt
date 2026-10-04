@@ -1,21 +1,30 @@
-PLAY CHECKS OWED  (2)
+PLAY CHECKS OWED  (7)
 
-LOAD 1 of 1  (about 15 min: any save with a van, on the pad)
-S23-PAD    On the board with the pad, left and right go where you'd expect on every page
-           (the Shop's two columns, the Crew page, the paper). Anything odd, say which page.
->yes, Though on the calendar, it is difficult to reach the ring button for the ads, as it is off to the right side. So, pressing down from the tabs row drops you straight down to the page controls.
+LOAD 1 of 2  (about 20 min: a new business, on the pad)
+S24-HUB    Walk the office, out to the yard, drive to the shop and home. Does it feel like
+           your own space? Anything that should be a thing in the room but is a card (or
+           the other way round)? Walking pace and the drive's half hour fine?
+>
+S24-CAL    The calendar's tiles and the day beside them: can you tell where now is, if
+           you're missing something, and whether a booking's started? Picking who goes?
+>
+S24-PAPER  The paper's front page, then its ads: does it read as a paper?
+>
+S24-DAYEND A day's end every day, worked or not. Does a free day read as a chance to do
+           something, or a screen to click past? Are the money lines clear?
+>
+S24-PAD    On the pad: walking, the cards (A picks, B backs out), B to step away from the
+           desk, the who-goes list. Anything that fights you?
+>
 
-S23-RAISE  Hire a helper and keep them busy: they now ask for a raise only as they get
-           better, not as your name climbs. By the model that's after about 4 to 6 jobs
-           (2 or 3 busy days). Too soon? Options: grow slower (fewer raises, slower
-           improvement), ask only after a set time (say a month since hire or the last
-           raise), or a bigger jump before asking. Recommend the set time: growth stays
-           visible and the asks stay rare. Your call.
->I think it will need to be considerably slower. 
-
-We also need a status or events screen or something. Currently, if you hire somebody and only have them do the jobs, skipping to the next job skips the entire week. So maybe we need a sort of "finish the day" type beat where you get to see the status of everything that happened. 
-
-If an employee improved, that's where they would ask for a raise. You could see a breakdown of how much you earned, how much you spent, how much you have, and how much you will owe at the end of the week.
+LOAD 2 of 2  (about 20 min: any save, [1] for money, hire one or two helpers, play weeks)
+S24-YARD   When did you first hit "no room in the yard", and did buying more feel fair
+           ($300 a lot, dearer each time)? Did auto-placing ever look wrong (room that
+           looks free but won't take a van)?
+>
+S24-RAISE  Growth is a fifth as fast; they ask only when their pace ticks a point on their
+           card. By the model a busy helper asks every 2 or 3 weeks. Too often, or too rare?
+>
 
 Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
 [3] skips to Friday's payday; in a job [0] finishes it perfectly.
@@ -30,11 +39,18 @@ NOTES
 VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
-VERIFIED  218 headline: test_newsprint (fails on the old code); screenshot of the paper reads.
-VERIFIED  219 L-plot corners: test_shapes (fails on the old code); screenshots both sides;
-          the verifier swept 463 L plots, every style pairing, zero mismatches.
-VERIFIED  221/47 board left/right: a scratch script pressed left/right on every button of
-          every page, before and after; test_controls now checks it. Feel owed: S23-PAD.
-VERIFIED  222 raise by growth: test_help (fails on the old code); old saves back-solve the
-          name (repro round-trips 7 cases, incl. the verifier's find near the floor).
-TRIED     The summary screen's pad left/right: not measured (the note was about the board).
+VERIFIED  228 raises: test_help (a care point alone asks nothing; a pace point asks; growth
+          not rounded away). Pace every 50 jobs is modelled, not played: S24-RAISE.
+VERIFIED  229 day's end: test_help, test_season, test_court, test_run_flow, test_hub (the
+          day after payday starts afresh; a job lost to jail is listed); screenshot read.
+VERIFIED  230 calendar: test_crew_board (who goes from the list), test_controls (left/right
+          on every page, every page fits); screenshots of the month and the menu.
+VERIFIED  231 paper: test_controls (pages before tabs), test_newsprint, test_hub (April's
+          front page fresh); screenshots of the front page and a page of ads.
+VERIFIED  232-234 the places: test_hub (desk and back, yard room and overlaps, more yard,
+          van cards, crew mower in and out, truck, shop drive and buying, the desk first
+          when something's waiting, a day in jail); screenshots of office, yard, shop, cards.
+VERIFIED  sim_season SIM_CREW=0, 1 and 2 run clean; one 2-helper seed bought more yard.
+VERIFIED  Verifier run 9: 12 real finds, fixed (see HANDOFF session 24).
+TRIED     A front page with every tally key full pushes its page buttons off screen: not a
+          realistic week, left.

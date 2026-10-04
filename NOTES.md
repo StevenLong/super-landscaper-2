@@ -141,7 +141,8 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    Seeds got on a job or elsewhere, planted there, grow over several days: leave, come back
    to see a little growth, leave again. Later: another door off the hub (2026-10-04 grill).
 
-PROPOSED ORDER: see Grilled 2026-10-04c (the hub).
+PROPOSED ORDER: the dev plays session 24's LOADs; 227 when the drawing comes; then a
+grill on 225 (upgrades as work, at the yard), 207 with 136, or 208 (your garden, a door).
 
 ### Notes 2026-10-04 (LOAD 3 played, S17 and S18 check fallout, two bugs)
 
@@ -168,37 +169,25 @@ read (227). S21-CREW: the whole flow confusing (222).
    pictures Graveyard Keeper's: markers for when the window starts, rolling round to where
    it ends (a sunrise and a sunset). Waits on the dev's drawing. Home: hud.gd _draw_dial.
 
-220, 222, 223, 224 and 217 grilled: see Grilled 2026-10-04c. 218, 219, 221 and 47 built in
-session 23.
+220, 222, 223, 224 and 217 grilled and built (228 to 234, session 24). 218, 219, 221 and 47
+built in session 23.
 
 ### Grilled 2026-10-04c (the hub: 217, 220, 222, 223, 224, S14-CAL, S23-RAISE)
 
 Decided in the design doc (Outside the Season, The hub; The Business, Hired help, Growth
 pace). S23-PAD: left and right fine; the Calendar's ad button sits far right, so down from
-the tabs drops past it (moot once 230 and 231 replace the page). One slice, built in this
-order, each step tested and screenshotted before the next:
+the tabs drops past it (moot once 230 and 231 replace the page). 228 to 234 built in session 24 (CHECKS.txt
+LOADs 1 and 2); Claude's calls in the doc's "As built". Left from it:
 
-228. [FEATURE, small] Growth a fifth as fast (GROW 0.002), a raise asked only when pace or
-   care ticks up a shown point (replaces RAISE_AT). sim_crew to re-model. Home: game.gd
-   _crew_day.
-229. [FEATURE, moderate] The day's end, every day: no day skips (Game.skip goes; it also
-   lost every crew report but the last, since _crew_day clears crew_report). Your jobs,
-   the crew's, growth and raise asks answered there, today's money and Friday's bill;
-   Friday's leads into payday.
-230. [FEATURE, large] The calendar as its tiles: rolling 5 weeks, a day panel (jobs, state in
-   words and colour, who goes from a list), today open by default. DayClock, the today list
-   and the Crew page's assigning go.
-231. [FEATURE, moderate] The paper as a newspaper (masthead, front page from existing news,
-   classifieds, situations wanted, pages turned by the shoulders); the client book.
-232. [FEATURE, large] The walkable office: desk and corkboard opening the calendar, the door
-   to the yard. Reuse walker.gd (keep_in for the room's bounds) and the job's Y-sort.
-233. [FEATURE, large] The walkable yard: storage as a resource (auto-placed floor, footprints
-   from pack.gd's sizes, an expansion to buy), vans holding workers (interact for the card),
-   kit's interact menu (sell, upgrade, assign), the truck to leave (jobs, then packing; or
-   the shop). Needs a voxel van. Starting size and expansion price: knobs, sim_season to
-   count them.
-234. [FEATURE, large] The walkable shop in town (+30 min each way): stock with signs and
-   tags, interact for a card; no room in the yard, no sale. Needs shop fittings.
+235. [DESIGN, small] The phone has nothing of its own yet: ringing stays on the paper's ads
+   and situations wanted. The dev listed it with the paper and the client book. Build it
+   when something wants ringing that isn't an ad (a regular to move a visit, the shark?).
+236. [VISUAL, small] In the yard a van's tall sprite hides kit stood in the rows behind it
+   (verifier run 9). You behind one: it goes see-through; kit behind one stays hidden. Pack
+   vans to the back rows, or fade a van over kit too. Home: hub.gd _yard, game.gd yard_layout.
+237. [DESIGN, small] Arranging the yard by hand: open (the dev, 2026-10-04: "not fully
+   convinced we won't want to"). Auto-placed is biggest first, so free-looking cells may not
+   take a van: S24-YARD asks whether that reads wrong.
 
 ### Grilled 2026-10-04 (168 hired help with 189 robots: ways to buy time)
 

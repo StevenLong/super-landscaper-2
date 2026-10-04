@@ -230,7 +230,8 @@ var helpers: Array[Dictionary] = [] ## your crew: {id, name, pace, care, wage, k
 var wanted: Array[Dictionary] = [] ## this week's paper's situations wanted: {id, name, pace, care, wage}
 var vans := 0
 var crew_kit := {} ## mowers bought for the crew (yours aren't lent): kind -> how many
-var crew_report: Array[String] = [] ## the crew's day just gone, for the board
+var crew_report: Array[String] = [] ## the crew's day just gone, job by job
+var crew_day: Array[String] = [] ## the same, a line a helper, for the day's end
 var day_mine: Array[Dictionary] = [] ## your jobs today, for the day's end: {customer, net, outcome, mood}
 var day_money := 0 ## money as the day began
 var yard_rows := YARD_ROWS ## how deep the yard's floor is
@@ -979,6 +980,7 @@ func settle_payday(extra := 0) -> Dictionary:
 	paper = make_paper()
 	wanted = make_wanted()
 	paper_tally = run_tally.duplicate()
+	day_money = money # Saturday starts from what payday left
 	save()
 	var outcome := "free" if off > 0 and principal == 0 else ("repossessed" if taken else "paid")
 	return {"paid": owed, "off": off, "taken": taken, "outcome": outcome}
@@ -1168,14 +1170,15 @@ func _unbook(b: Dictionary) -> void:
 ## The day's over, worked or not: whatever's left you never turned up to. Friday brings
 ## payday, September's last day the winter. What happened waits in day_end for its screen.
 func end_day() -> void:
+	var earlier := missed.duplicate() # lost today already: a day taken by court or jail, a night in the cells
 	var before := money
 	_crew_day()
 	var crew_net := money - before
 	var gone := missed.size()
 	for b: Dictionary in jobs_today():
 		_no_show(b)
-	day_end = {"day": day, "mine": day_mine.duplicate(true), "crew": crew_report.duplicate(), "crew_net": crew_net,
-		"missed": missed.slice(gone), "was": day_money, "now": money}
+	day_end = {"day": day, "mine": day_mine.duplicate(true), "crew": crew_day.duplicate(), "crew_net": crew_net,
+		"missed": earlier + missed.slice(gone), "was": day_money, "now": money}
 	day_mine = []
 	day_money = money
 	calendar.erase(day)
@@ -1476,6 +1479,8 @@ func settle_winter() -> Dictionary:
 		_place(id, day + posmod(id, regulars[id].cadence))
 	paper = make_paper()
 	wanted = make_wanted()
+	paper_tally = run_tally.duplicate() # last season's mess isn't April's news
+	day_money = money # spring starts from what the winter left
 	crew_report = []
 	save()
 	return {"cost": cost, "topped": topped, "back": back, "gone": gone, "owed_back": owed_back, "crew_back": crew_back, "crew_gone": crew_gone}
@@ -1631,12 +1636,16 @@ func help_today(id: int) -> Array:
 ## of it into crew_report for the board.
 func _crew_day() -> void:
 	crew_report = []
+	crew_day = []
 	var mine := [current_job, booked, offer, upfront]
 	offer = {} # yours wait for you: only what the crew wins is answered here
 	upfront = {}
 	for h: Dictionary in helpers:
 		var t := DAY_START
 		var who: String = h.name.split(" ")[0]
+		var done := 0
+		var paid := 0
+		var notes: Array[String] = []
 		for b: Dictionary in help_today(h.id):
 			_unbook(b)
 			b.erase("helper")
@@ -1644,6 +1653,7 @@ func _crew_day() -> void:
 			if not (t < DAY_END and t + DRIVE <= b.by):
 				_no_show(b)
 				crew_report.append("%s couldn't get to %s in time." % [who, b.customer])
+				notes.append("couldn't get to %s in time" % b.customer)
 				continue
 			var at := maxi(t + DRIVE, b.from)
 			var r := help_job(b, h, at - b.from)
@@ -1651,11 +1661,19 @@ func _crew_day() -> void:
 			money += r.net
 			total_earned += maxi(0, r.paid)
 			_rep(r)
+			done += 1
+			paid += r.paid
 			var line := "%s mowed for %s: $%d%s" % [who, b.customer, r.paid, ", late" if r.over else ""]
+			if r.over:
+				notes.append("late at %s" % b.customer)
 			if r.has("mishap"):
 				line += "; %s%s" % [r.mishap, " ($%d)" % r.bill if r.bill > 0 else ""]
+				notes.append("%s at %s's%s" % [r.mishap, b.customer, " ($%d)" % r.bill if r.bill > 0 else ""])
 			if wants_you(b) > 0.0:
 				line += "; they wanted you"
+				notes.append("%s wanted you" % b.customer)
+			if r.mood < 45.0:
+				notes.append("%s not happy" % b.customer)
 			line += ". " + ("Pleased." if r.mood >= 70.0 else ("Not happy." if r.mood < 45.0 else "Fine."))
 			booked = b.duplicate(true)
 			for k: String in ["helper", "sent_at", "prepaid"]:
@@ -1666,21 +1684,26 @@ func _crew_day() -> void:
 				_visited(b.regular, r)
 				if r.get("lost_regular", false):
 					line += " They've let you go."
+					notes.append("%s's let you go" % b.customer)
 			elif not regulars.has(b.seed):
 				_maybe_offer(r)
 				if not offer.is_empty():
 					answer_offer("accept")
 					line += " They want you back: a regular now."
+					notes.append("%s wants you back: a regular now" % b.customer)
 			upfront = {}
 			crew_report.append(line)
 			h.jobs += 1
 			var points := points_of(h)
 			h.pace = snappedf(minf(1.4, h.pace + GROW), 0.001)
 			h.care = snappedf(minf(0.95, h.care + GROW), 0.001)
-			if points_of(h) != points and wage_for(h) > h.wage: # a point up on their card: they ask
+			if points_of(h).x != points.x and wage_for(h) > h.wage: # their pace a point up: they ask (care's rides along)
 				if not h.has("asks"):
 					crew_report.append("%s's getting better (%s): asks $%d a week." % [who, card_text(h), wage_for(h)])
+					notes.append("getting better (%s)" % card_text(h))
 				h.asks = wage_for(h)
+		if done > 0 or not notes.is_empty():
+			crew_day.append("%s: %d job%s, $%d%s." % [who, done, "" if done == 1 else "s", paid, "; " + "; ".join(notes) if notes else ""])
 	current_job = mine[0]
 	booked = mine[1]
 	offer = mine[2]

@@ -69,6 +69,7 @@ func _build(keep := "") -> void:
 	head.add_child(gap)
 	var away := UI.button("Step away %s" % Game.key("hop"), _away, 18)
 	away.name = "Away"
+	away.disabled = Game.today().has("jail") # a day inside: nowhere to step to
 	head.add_child(away)
 	var leave := UI.button("Save and quit", _save_and_quit, 18) # the board's always saved: this just says so
 	leave.name = "Quit"
@@ -392,7 +393,8 @@ func _paper_view(root: Control) -> Control:
 	else:
 		var page := UI.vbox(8)
 		page.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		page.add_child(_ink("CLASSIFIEDS" if ads.slice((_page - 1) * PER_PAGE).any(func(o: Dictionary) -> bool: return not o.has("care")) else "SITUATIONS WANTED", INK, 30))
+		var here := ads.slice((_page - 1) * PER_PAGE, _page * PER_PAGE)
+		page.add_child(_ink("SITUATIONS WANTED" if not here.is_empty() and here.all(func(o: Dictionary) -> bool: return o.has("care")) else "CLASSIFIEDS", INK, 30))
 		for o: Dictionary in ads.slice((_page - 1) * PER_PAGE, _page * PER_PAGE):
 			page.add_child(_wanted(o) if o.has("care") else _ad(o))
 		if ads.is_empty():
@@ -624,7 +626,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if leave and event.is_action_pressed("pause"):
 		UI.focus(leave)
 		get_viewport().set_input_as_handled()
-	elif leave and event.is_action_pressed("hop"): # away from the desk
+	elif leave and event.is_action_pressed("hop") and not (find_child("Away", true, false) as Button).disabled: # away from the desk
 		_away()
 		get_viewport().set_input_as_handled()
 	elif leave and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")):
@@ -658,6 +660,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		while not Game.payday_pending and not Game.winter_pending:
 			Game.end_day()
 		Game.rep_trend = trend
+		Game.day_end.missed = [] # not counted against you
 		for id: int in moods:
 			if Game.regulars.has(id):
 				Game.regulars[id].mood = moods[id]
@@ -880,7 +883,7 @@ func _day_end() -> void:
 		_centred(col, "You didn't work today.", 22, UI.DIM)
 	if not Game.helpers.is_empty() or not e.crew.is_empty():
 		_centred(col, "Your crew", 26, UI.GOLD)
-		for line: String in e.crew: # ponytail: a big crew's lines run long; a scroll once crews get that big
+		for line: String in e.crew: # a line a helper: the yard's room keeps the crew few
 			_centred(col, line, 18)
 		if e.crew.is_empty():
 			_centred(col, "Nothing on today.", 18, UI.DIM)
