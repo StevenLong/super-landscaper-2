@@ -88,10 +88,12 @@ func _process(_delta: float) -> bool:
 			_button("Pay it").pressed.emit()
 			assert(g.helpers[0].wage == asks, "a raise paid")
 			g.end_day() # tomorrow's done by them... first today ends
+			g.day_end = {}
 			g.end_day()
-			s._show("calendar")
+			s._ready()
 		9:
-			assert(s.find_child("CrewNews", true, false) != null, "their day's news on the calendar: %s" % [g.crew_report])
+			assert(_texts().any(func(t: String) -> bool: return t.contains("mowed for")), "their day in the day's end: %s" % [_texts()])
+			_button("Next day").pressed.emit()
 			s._show("crew")
 		10:
 			assert(_texts().has("Their last day"), "and on the Crew page")

@@ -39,6 +39,7 @@ func _process(_delta: float) -> bool:
 				assert(said.any(func(t: String) -> bool: return t.contains("community service")), "a first assault, summoned: service")
 			# Today's community service.
 			game.calendar = {game.day: [game.service_job()]}
+			game.day_end = {} # the court day's end, read
 			current_scene._ready()
 			assert(current_scene.find_child("Today", true, false).text.begins_with("Go"), "service to go to")
 			current_scene.find_child("Today", true, false).pressed.emit()

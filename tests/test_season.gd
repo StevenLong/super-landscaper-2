@@ -31,8 +31,9 @@ func _money() -> void:
 	# A month of empty days: skipping stops at each Friday's payday.
 	g.money = 10000
 	for i in 4:
-		g.skip()
-		assert(g.payday_pending, "empty days skip to payday")
+		while not g.payday_pending:
+			g.end_day()
+		assert(g.day_end.mine.is_empty() and g.day_end.missed.is_empty(), "an empty day's end")
 		assert(g.settle_payday().outcome == "paid", "paid")
 	assert(g.date_text() == "Saturday 26 April 1980", "four Fridays in April 1980")
 	assert(g.money == 10000 - 4 * 150 and g.principal == 1000, "the vig and the keep, four times; the debt untouched")
@@ -490,8 +491,9 @@ func _court() -> void:
 	v = _hear({"charge": 1.0, "tier": 1, "caught": false, "customer": "X"}, 0, true)
 	assert(v.service == 0 and v.jail == 1 and g.today().has("jail"), "a menace: jail at once, not service")
 	g.payday_pending = false
-	g.skip()
-	assert(not g.today().has("jail"), "jail days pass on their own")
+	while g.today().has("jail"):
+		g.end_day()
+	assert(not g.today().has("jail"), "jail days pass, a day's end each")
 	g.record = g.PRISON - 1.0
 	v = _hear({"charge": 2.0, "tier": 2, "caught": true, "customer": "X"}, 0, true)
 	assert(v.prison and g.run_over_reason == "prison" and not g.has_business(), "prison: the business is over")

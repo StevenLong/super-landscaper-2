@@ -129,8 +129,8 @@ func _initialize() -> void:
 	g.end_day()
 	assert(not h.has("asks"), "a better name alone: no raise asked (wage $%d, now worth $%d)" % [h.wage, g.wage_for(h)])
 	g.reputation = was_rep
-	# A raise: they ask once they're worth it; yes pays it.
-	h.pace = 1.2
+	# A raise: a job that ticks a point up on their card, and they ask; yes pays it.
+	h.pace = 1.149
 	h.care = 0.9
 	var raise: Dictionary = g.make_job(14)
 	raise.from = g.WINDOW_START
@@ -143,16 +143,15 @@ func _initialize() -> void:
 	g.answer_raise(h.id, true)
 	assert(h.wage == asks and not h.has("asks"), "a yes pays it")
 
-	# Skipping a day with only the crew's work in it: it doesn't stick there.
+	# A day with only the crew's work in it ends on its own day's end, report and all.
 	var crew_only: Dictionary = g.make_job(15)
 	crew_only.from = g.WINDOW_START
 	crew_only.by = g.DAY_END
 	g.book(_today(crew_only))
 	g.assign(crew_only, h.id)
 	day = g.day
-	g.payday_pending = false # skipping stops at a payday
-	g.skip()
-	assert(g.day > day, "skips past a day the crew has")
+	g.end_day()
+	assert(g.day == day + 1 and g.day_end.day == day and g.day_end.crew.size() == 1 and g.day_end.crew_net != 0, "the crew's day, in its day's end")
 
 	# The heavies take the van: the helper goes, their bookings back to you.
 	var kept: Dictionary = g.make_job(16)

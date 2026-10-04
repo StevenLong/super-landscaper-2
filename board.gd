@@ -23,6 +23,8 @@ func _ready() -> void:
 	Sfx.music("music_menu")
 	if not Game.blackout.is_empty():
 		_blackout()
+	elif not Game.day_end.is_empty():
+		_day_end()
 	elif Game.today().has("court"):
 		_court()
 	elif Game.payday_pending:
@@ -102,17 +104,6 @@ func _build(keep := "") -> void:
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	tabs.add_child(hint)
 	root.add_child(tabs)
-	if not Game.missed.is_empty():
-		var m := UI.label("You never turned up for %s. They'll remember." % ", ".join(Game.missed), 20, UI.BAD)
-		m.name = "Missed"
-		m.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		root.add_child(m)
-		Game.missed.clear()
-	if _view == "calendar" and not Game.crew_report.is_empty():
-		var r := UI.label("Your crew (Crew page): " + Game.crew_report[0], 18, UI.GOLD)
-		r.name = "CrewNews"
-		r.clip_text = true
-		root.add_child(r)
 
 	var first: Control
 	match _view:
@@ -158,51 +149,42 @@ func _today(box: Control) -> Button:
 	scroll.custom_minimum_size.y = 42 * clampi(jobs.size(), 1, 3)
 	var first: Button = null
 	if jobs.is_empty():
-		var row := UI.hbox(14)
 		var sent := Game.bookings().filter(func(b: Dictionary) -> bool: return b.has("helper")).size()
-		var l := UI.label("A day in jail." if Game.today().has("jail") else ("Nothing for you today; your crew has %d." % sent if sent else "Nothing booked today."), 20, UI.DIM)
-		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(l)
-		first = UI.button("On to the next job", func() -> void:
-			Game.skip()
-			_ready(), 20)
-		first.name = "Today"
-		row.add_child(first)
+		list.add_child(UI.label("A day in jail." if Game.today().has("jail") else ("Nothing for you today; your crew has %d." % sent if sent else "Nothing booked today."), 20, UI.DIM))
+	for b: Dictionary in jobs:
+		var row := UI.hbox(0) # one line each (labels, not rich text, so the scroll can measure them)
+		var who := UI.label(b.customer, 20, UI.BAD if b.has("service") else (UI.GOOD if b.has("regular") else UI.GOLD))
+		who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(who)
+		var what := UI.label(_job_line(b), 20)
+		what.clip_text = true
+		what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		what.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(what)
+		var go: Button
+		if Game.can_go(b):
+			var at := Game.arrival(b)
+			go = UI.button("Go: there at %s" % Game.time_text(at), _go.bind(b), 20)
+			_preview(go, at)
+		else:
+			go = UI.button("Too late", func() -> void: pass, 20)
+			go.disabled = true
+		go.name = "Today" if b == jobs[0] else "Go"
+		row.add_child(go)
 		list.add_child(row)
-	else:
-		for b: Dictionary in jobs:
-			var row := UI.hbox(0) # one line each (labels, not rich text, so the scroll can measure them)
-			var who := UI.label(b.customer, 20, UI.BAD if b.has("service") else (UI.GOOD if b.has("regular") else UI.GOLD))
-			who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			row.add_child(who)
-			var what := UI.label(_job_line(b), 20)
-			what.clip_text = true
-			what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			what.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			row.add_child(what)
-			var go: Button
-			if Game.can_go(b):
-				var at := Game.arrival(b)
-				go = UI.button("Go: there at %s" % Game.time_text(at), _go.bind(b), 20)
-				_preview(go, at)
-			else:
-				go = UI.button("Too late", func() -> void: pass, 20)
-				go.disabled = true
-			go.name = "Today" if b == jobs[0] else "Go"
-			row.add_child(go)
-			list.add_child(row)
-			if first == null and not go.disabled:
-				first = go
-		var end := UI.button("Call it a day" + (" (miss %d)" % jobs.size()), func() -> void:
-			Game.end_day()
-			_ready(), 20)
-		end.name = "EndDay"
-		var holder := UI.hbox(0)
-		holder.alignment = BoxContainer.ALIGNMENT_END
-		holder.add_child(end)
-		col.add_child(holder)
-		if first == null:
-			first = end
+		if first == null and not go.disabled:
+			first = go
+	# Every day ends on its own day's end, worked or not (the hub grill): nothing skips.
+	var end := UI.button("Call it a day" + (" (miss %d)" % jobs.size() if jobs else ""), func() -> void:
+		Game.end_day()
+		_ready(), 20)
+	end.name = "EndDay"
+	var holder := UI.hbox(0)
+	holder.alignment = BoxContainer.ALIGNMENT_END
+	holder.add_child(end)
+	col.add_child(holder)
+	if first == null:
+		first = end
 	box.add_child(UI.panel(col))
 	return first
 
@@ -1003,6 +985,79 @@ func _verdict(lawyer: int) -> void:
 			_centred(col, "And no more than that. This time.", 22, UI.DIM)
 	_centred(col, "You have $%d." % Game.money, 22, UI.DIM)
 	UI.focus(_centred_button(col, "Carry on", _ready))
+
+
+## The day's end (design doc, The hub): every day, worked or not. Your jobs, the crew's
+## (a raise asked is answered here), then the money: today's, and what Friday will take.
+func _day_end() -> void:
+	var e: Dictionary = Game.day_end
+	var col := _screen()
+	col.add_theme_constant_override("separation", 8)
+	_centred(col, "DAY'S END", 48, UI.GOLD)
+	_centred(col, Game.date_text(e.day), 24, UI.DIM)
+	var mine_net := 0
+	for m: Dictionary in e.mine:
+		mine_net += m.net
+		var how: String = {"fired": "fired you", "walked": "you drove off unpaid", "ko": "knocked out",
+			"nicked": "nicked"}.get(m.outcome, "pleased" if m.mood >= 70.0 else ("not happy" if m.mood < 45.0 else "fine"))
+		_centred(col, "%s: %s, %s" % [m.customer, how, _signed(m.net)], 22,
+			UI.GOOD if m.outcome == "paid" and m.net > 0 else (UI.TEXT if m.outcome == "paid" else UI.BAD))
+	if not e.missed.is_empty():
+		_centred(col, "You never turned up for %s. They'll remember." % ", ".join(e.missed), 22, UI.BAD)
+	if e.mine.is_empty() and e.missed.is_empty():
+		_centred(col, "You didn't work today.", 22, UI.DIM)
+	if not Game.helpers.is_empty() or not e.crew.is_empty():
+		_centred(col, "Your crew", 26, UI.GOLD)
+		for line: String in e.crew: # ponytail: a big crew's lines run long; a scroll once crews get that big
+			_centred(col, line, 18)
+		if e.crew.is_empty():
+			_centred(col, "Nothing on today.", 18, UI.DIM)
+	var first: Button = null
+	for h: Dictionary in Game.helpers:
+		if not h.has("asks"):
+			continue
+		var row := UI.hbox(12)
+		row.add_child(UI.label("%s asks $%d a week (now $%d):" % [h.name, h.asks, h.wage], 20, UI.GOLD))
+		var yes := UI.button("Pay it", func() -> void:
+			Game.answer_raise(h.id, true)
+			_day_end(), 20)
+		yes.name = "PayRaise"
+		row.add_child(yes)
+		row.add_child(UI.button("No", func() -> void:
+			Game.answer_raise(h.id, false)
+			_day_end(), 20))
+		var holder := CenterContainer.new()
+		holder.add_child(row)
+		col.add_child(holder)
+		if first == null:
+			first = yes
+	var today: int = e.now - e.was
+	var other: int = today - mine_net - e.crew_net
+	var parts := ["your jobs " + _signed(mine_net)]
+	if not Game.helpers.is_empty() or e.crew_net != 0:
+		parts.append("the crew " + _signed(e.crew_net))
+	if other != 0:
+		parts.append("bought, sold and the rest " + _signed(other))
+	_centred(col, "Today %s (%s). You have $%d." % [_signed(today), ", ".join(parts), Game.money], 22)
+	var due := Game.due()
+	var bill := "rent and food $%d" % Game.LIVING
+	if not Game.helpers.is_empty():
+		bill += ", wages $%d" % Game.wages()
+	if Game.principal > 0:
+		bill += ", the vig $%d" % Game.vig()
+	_centred(col, "%s takes $%d: %s. That leaves $%d." % ["Payday" if Game.payday_pending else "Friday", due, bill, Game.money - due], 22,
+		UI.GOOD if Game.money >= due else UI.BAD)
+	var go := _centred_button(col, "Payday" if Game.payday_pending else ("The winter" if Game.winter_pending else "Next day"), func() -> void:
+		Game.day_end = {}
+		Game.missed.clear()
+		Game.save()
+		_ready())
+	go.name = "NextDay"
+	UI.focus(first if first else go)
+
+
+func _signed(n: int) -> String:
+	return ("+$%d" if n >= 0 else "-$%d") % absi(n)
 
 
 ## A job started and never finished (quit, or a crash): you blacked out. Ironman.

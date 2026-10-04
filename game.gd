@@ -61,8 +61,7 @@ const WAGE := 25.0 ## a week per point of your name, asked by a helper of pace 1
 const WANTS_YOU := {"perfectionist": 15.0, "toff": 15.0} ## a regular of these wants you: a helper's visit starts their mood this much lower
 const MISHAPS := [["put a stone through a window", 60], ["dented the car", 80], ["flattened a flowerbed", 0]] ## [what, bill]: likelier the less care
 const MISHAP_CHANCE := 0.3 ## a job's chance of one at no care at all (none at full care)
-const GROW := 0.01 ## pace and care each job adds
-const RAISE_AT := 1.15 ## worth this times their wage, they ask for a raise
+const GROW := 0.002 ## pace and care each job adds: a busy helper nears the top in about a season
 
 const FIRST := ["Margaret", "Derek", "Priya", "Gordon", "Yvonne", "Colin", "Shirley", "Nigel",
 	"Bernadette", "Keith", "Fatima", "Trevor", "Agnes", "Barry", "Hilary", "Rajesh", "Doreen", "Clive"]
@@ -223,6 +222,9 @@ var wanted: Array[Dictionary] = [] ## this week's paper's situations wanted: {id
 var vans := 0
 var crew_kit := {} ## mowers bought for the crew (yours aren't lent): kind -> how many
 var crew_report: Array[String] = [] ## the crew's day just gone, for the board
+var day_mine: Array[Dictionary] = [] ## your jobs today, for the day's end: {customer, net, outcome, mood}
+var day_money := 0 ## money as the day began
+var day_end := {} ## the day just gone, until its screen's read: {day, mine, crew, crew_net, missed, was, now}
 
 ## Names for everything the jobs count, in the order they're shown. Only counts above
 ## zero appear, so most of these are a surprise the first time.
@@ -283,7 +285,7 @@ var blackout := {} ## the job you blacked out on, for the board to break the new
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
 	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job",
-	"helpers", "wanted", "vans", "crew_kit", "crew_report"]
+	"helpers", "wanted", "vans", "crew_kit", "crew_report", "day_mine", "day_money", "day_end"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -363,6 +365,9 @@ func new_run(seed_value := 0) -> void:
 	vans = 0
 	crew_kit = {}
 	crew_report = []
+	day_mine = []
+	day_money = money
+	day_end = {}
 	paper = make_paper()
 	wanted = make_wanted()
 	save()
@@ -656,6 +661,8 @@ func record_result(result: Dictionary) -> void:
 		run_tally_cost[k] = run_tally_cost.get(k, 0.0) + result.tally_cost[k]
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
+	day_mine.append({"customer": current_job.get("customer", "?"), "net": int(result.net), "outcome": result.get("outcome", "paid"),
+		"mood": end_mood(result)})
 	_rep(result)
 	jobs_done += 1
 	in_job = false
@@ -1008,11 +1015,18 @@ func _unbook(b: Dictionary) -> void:
 
 
 ## The day's over, worked or not: whatever's left you never turned up to. Friday brings
-## payday, September's last day the winter.
+## payday, September's last day the winter. What happened waits in day_end for its screen.
 func end_day() -> void:
+	var before := money
 	_crew_day()
+	var crew_net := money - before
+	var gone := missed.size()
 	for b: Dictionary in jobs_today():
 		_no_show(b)
+	day_end = {"day": day, "mine": day_mine.duplicate(true), "crew": crew_report.duplicate(), "crew_net": crew_net,
+		"missed": missed.slice(gone), "was": day_money, "now": money}
+	day_mine = []
+	day_money = money
 	calendar.erase(day)
 	if date().weekday == FRIDAY:
 		payday_pending = true
@@ -1039,12 +1053,6 @@ func _no_show(b: Dictionary) -> void:
 		_place(b.regular, day + cadence_now(reg))
 	else:
 		rep_trend = maxf(0.0, rep_trend - NO_SHOW_REP)
-
-
-## Through the days with no job (or in jail) to the next booking, court, payday or the winter.
-func skip() -> void:
-	while jobs_today().is_empty() and not today().has("court") and not payday_pending and not winter_pending:
-		end_day()
 
 
 ## Carried mood: the next visit starts halfway between their usual and how the last ended.
@@ -1513,15 +1521,27 @@ func _crew_day() -> void:
 			upfront = {}
 			crew_report.append(line)
 			h.jobs += 1
-			h.pace = snappedf(minf(1.4, h.pace + GROW), 0.01)
-			h.care = snappedf(minf(0.95, h.care + GROW), 0.01)
-			if not h.has("asks") and wage_for(h) >= h.wage * RAISE_AT:
+			var points := points_of(h)
+			h.pace = snappedf(minf(1.4, h.pace + GROW), 0.001)
+			h.care = snappedf(minf(0.95, h.care + GROW), 0.001)
+			if points_of(h) != points and wage_for(h) > h.wage: # a point up on their card: they ask
+				if not h.has("asks"):
+					crew_report.append("%s's getting better (%s): asks $%d a week." % [who, card_text(h), wage_for(h)])
 				h.asks = wage_for(h)
-				crew_report.append("%s's getting good: asks $%d a week." % [who, h.asks])
 	current_job = mine[0]
 	booked = mine[1]
 	offer = mine[2]
 	upfront = mine[3]
+
+
+## Pace and care as their card shows them, whole numbers out of 10.
+func points_of(h: Dictionary) -> Vector2i:
+	return Vector2i(roundi(h.pace * 10.0), roundi(h.care * 10.0))
+
+
+func card_text(h: Dictionary) -> String:
+	var p := points_of(h)
+	return "pace %d, care %d" % [p.x, p.y]
 
 
 ## A helper's raise: yes, at what they ask (and they're pleased); no, and they're sore.
@@ -1574,6 +1594,8 @@ func load_business() -> void:
 	_rng.randomize()
 	if not state.has("wanted"):
 		wanted = make_wanted()
+	if not state.has("day_money"): # from before the day's end: today starts from here
+		day_money = money
 	_upgrade_save()
 	in_run = true
 	run_over_reason = ""

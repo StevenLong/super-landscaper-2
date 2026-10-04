@@ -50,7 +50,7 @@ func _process(_delta: float) -> bool:
 				assert(not text.contains("\""), "and reads as an ad, not a quote")
 			for k: String in game.PERSONAS:
 				assert(game.PERSONAS[k].ads.size() >= 2, "every kind of customer has ads")
-			assert(current_scene.find_child("Today", true, false).text == "On to the next job", "nothing booked yet")
+			assert(current_scene.find_child("Today", true, false) == null and current_scene.find_child("EndDay", true, false).text == "Call it a day", "nothing booked yet")
 			var ad: Dictionary = game.paper[0]
 			ad.bar = 0.0 # a sure yes
 			ad.day = game.day # today, ten till three
@@ -140,7 +140,9 @@ func _process(_delta: float) -> bool:
 		9:
 			assert(current_scene.name == "Board" and "YOU BLACKED OUT" in _labels(), "the job you quit loads as the blackout")
 			assert(game.regulars.is_empty() and game.day == _visit_day + 1, "that client's lost, and the day")
-			current_scene._ready() # carry on
+			current_scene._ready() # carry on: the lost day's end
+			assert(not game.day_end.is_empty() and "DAY'S END" in _labels(), "then the day you lost, ended")
+			game.day_end = {}
 			game.reputation = 0.0
 			game.paper = game.make_paper()
 			current_scene._build()
