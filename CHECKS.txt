@@ -79,3 +79,5 @@ CHANGED   The council playground's fence is galvanised chain-link (new art: chai
           make_art.py playground), not green-tinted pickets; screenshot looked at.
 VERIFIED  A post on each road corner of a fenced garden (no grass between the runs):
           test_next_door (fails without it); corner crops of 6 gardens looked at.
+VERIFIED  Gate posts either side of the drive's mouth on a fenced road run, not cut pickets:
+          test_next_door (fails without them); crops of 3 drives' mouths looked at.

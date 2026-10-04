@@ -132,6 +132,10 @@ func _process(_delta: float) -> bool:
 			var used := t.texture.get_image().get_used_rect()
 			assert(t.position.x + used.end.x <= 0.5 or t.position.x + used.position.x >= w - 0.5,
 				"%s: next door's side fence stands on the lawn at %.1f" % [what, t.position.x + used.position.x])
+	if not is_nan(_corner(true, NAN)): # fenced: gate posts either side of the drive's mouth, flush with the run's ends
+		var d: Control = m.get_node("Driveway")
+		assert(_post_over(d.position.x - 8.0, d.position.x) and _post_over(d.position.x + d.size.x, d.position.x + d.size.x + 8.0),
+			"%s: no gate post at the drive's mouth" % what)
 	for left: bool in [true, false]:
 		var art := _outer(left)
 		if is_nan(art):
