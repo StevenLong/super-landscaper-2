@@ -10,6 +10,31 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
 
+## Session 22 (2026-10-04): LOADs 1 to 4 played and triaged, nothing built
+- All six checks answered. S19-LITTER passes (the sapling's sprite unclear, for the sprite
+  pass). S16-ROBOT: maybe too good, the dev will report it. S16-RIDEON reframed: upgrades
+  should be work on kit you own (parts and labour), not a shop list. S20-FIXES: the 6am
+  start fine, the summary better, the paper's headline unreadable (a drop shadow on
+  newsprint). S20-DIAL: reads as a speedometer, too small; the dev will draw what they
+  picture (Graveyard Keeper's sunrise and sunset markers). S21-CREW: the whole flow is
+  confusing (results hidden and unscrollable on a pad, kit unnoticed, a wall of toggles).
+- The dev's verdict on the board as a whole: overwhelming, confusing, not smooth; pad
+  left/right misbehaves. Every menu note points at one redesign: the office/hub grill.
+- Triaged into NOTES 218 to 227 (fence corners from the dev's screenshots: 219, cause
+  suspected, not run). Diagnosed in passing: helpers ask for raises within days because
+  wage_for uses your current reputation (222).
+- Promoted to the design doc (veto): nothing on the lawn does nothing (226); upgrades as
+  work on owned kit, direction only (225).
+- Verified: run_all green, 47 PASS lines; no code changed.
+
+OWED CHECKS: none (CHECKS.txt says so).
+
+NEXT:
+1. 218 (the headline's shadow) and 219 (fence corners): small bugs, one batch.
+2. A /grill on the office/hub: 220, 222, 223, 224, 225 with 217, 208, S14-CAL, 47 (221 checked
+   against it). Hold 210 (help slice 2, robot tiers) until the crew flow is redesigned.
+3. 227 when the dev's clock drawing arrives.
+
 ## Session 21 (2026-10-04): solo, the small batch, the clock face, hired help slice 1
 - **Built 211 to 216**: the dog keeps its side of the house fetching, and a dog put down
   past it runs back round (never through); a back-patio house's front door can be knocked
@@ -269,89 +294,3 @@ NEXT:
    REACH, the vig or pay; it may also reshape S14-RING's stratified bars.
 3. Then 189's open parts (robot tiers), and the text pass (159, with 158).
 4. Grills still waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96.
-
-## Session 14 (2026-09-29): the season prototype, ringing the ads, the record, packing, robots
-- **Built all five steps** of the old SEASON_PLAN (50e46fa): days from Tuesday 1 April 1980,
-  a month-grid board (calendar, today's job or "On to the next job", the week's paper to
-  book, regulars with Drop, the shop); Friday's vig plus keep, with buttons to pay extra
-  off the debt; regular offers after the summary (accept, haggle for 20% more, decline);
-  carried mood as the visit's start and the face on arrival; a token drift prop per visit;
-  the ironman save (Continue / New business, the blackout on a quit job); the winter stub.
-  SEASON_PLAN.md deleted as it asked; its lessons are in TRIBAL.
-- **My calls, not the dev's (veto any):**
-  - Booking puts an ad on the week's first free day (no day picker); no unbooking.
-  - The paper covers today to Friday: Tuesday to Friday for the first week.
-  - A regular's clash tries the day, +1, then -1; none free and that visit's missed, on to
-    the next cadence (no mood hit). Only the next visit is on the calendar at a time.
-  - Anything but a paid visit, or an end mood under 35, loses a regular. "End mood"
-    subtracts what they found after you left (noticed rep x 5).
-  - Cadence and ask-chance per persona in `Game.REGULAR` (busy and toff weekly; grump
-    four-weekly and rarely asks).
-  - The winter charges 26 weeks of keep ($1,300) and no vig; the part-week after the last
-    Friday has no payday. Regulars come back at a chance of carried mood / 100; reputation
-    drifts 20% toward the middle.
-  - The blackout: -15 on the rep trend, -7.5 now; a regular blacked out on is dropped.
-  - A night in the cells now takes tomorrow (a "Cells" day on the calendar); a regular
-    booked then moves on a cadence.
-  - The business save sits beside `save_path` (`best_business.save`), so tests' own
-    save_path keeps them off the real save. Bankruptcy deletes it.
-- **Ringing the ads** (the dev's call, after the build; design doc, The Business): the
-  paper prints six ads spread round your name (`PAPER`: two below, two around, two above);
-  each has a bar from its size, plot and venue (the dregs and churchyard 0, else at least
-  20); ringing is instant and free, a yes books the first free day, a no stamps the ad for
-  the week. The dev's note: play below the bar, so the chance falls to 0 over `REACH` = 15
-  points. My calls: the bar numbers reuse make_job's old reputation band edges; the
-  caller's lines are placeholders for the text pass.
-- **The record (167)**, built after the prototype, unasked but decided in the doc: heat is
-  gone. A witnessed crime goes on the job's `charge` (the old weights, `Game.RECORD`);
-  only a conviction adds to `Game.record`. Caught: court in the morning. Escaped with the
-  police called: a summons, court on the first free day `SUMMONS_DAYS` (3) on. No police,
-  no court. Court is a calendar day: yourself or three lawyers ($60, $200, $600) for a 10,
-  30, 50 or 75% chance to walk; guilty is `fine()` at the record before, the charge onto
-  the record, and `sentence()`. Community service is `service_job()`, the churchyard
-  unpaid with +5 rep when signed off ("Duty" on the calendar); jail days block at once
-  and push a regular a day, else a missed visit and -10 mood. My numbers, all guesses:
-  a nuisance is the fine only until the record reaches 2; assault is service (a day more
-  if caught), jail from a record of 4; `MENACE` 8 turns service into jail; `PRISON` 16
-  ends the business; a winter takes 1 off the record. Court and service left when
-  September ends come first in April. New `test_court.gd`; test_season covers the rest.
-- **Packing the truck (106)**, decided in the doc: `pack.gd` between the board's Go and
-  the job. The cab holds the push mower; a 4 x 3 bed and a 4 x 4 trailer (a shop item,
-  $100, bundled with a ride-on); kit is rectangles (petrol 2 x 3, ride-on 4 x 4 trailer
-  only, can 1 x 1), turned to fit; a cursor picks up, turns, drops, puts back (mouse too).
-  New kit packs itself; sold or repossessed kit leaves the truck; the board's "Use" is gone
-  (the job starts on the best mower packed). At the truck, "Take out the ..." swaps: the
-  other is recalled, keeping its fuel. Driving off with the police called while on foot,
-  a mower not at the truck is lost. My calls: the grid and shape sizes; the truck still
-  refuels a mower driven up to it, and packed cans are only the fuel you carry on foot
-  (the old unlimited can is now what you packed). New `test_pack.gd`.
-- **The robot mower (107)**, decided in the doc: `robot.gd`, a body with the mower's
-  fields (`cut_radius`, `knock_out`, `damage()`), so stones, critters and beds treat it as
-  a mower through the existing code: its flings and squashes count as yours. 55 px/s,
-  12 px cut; straight until it bumps something solid or would leave the lawn's rectangle,
-  then a random turn (90 to 270 degrees); it treats a bed's edge (plus its cut radius) as
-  the wire. Bought any number ($150, `Game.robots`), packed 2 x 2; taken off the truck on
-  foot ("Take out a robot mower"), set down with interact, picked up like a thing, can't
-  be thrown; left on the lawn when you flee the police, it's lost. Drawn in code (a grey
-  shell, green lid): a placeholder for the art. New `test_robot.gd`.
-- **Not built:** "the dead stay dead" (nothing in a garden dies for good: the dog only
-  limps, critters respawn; see TRIBAL). The start month is `Game.start_month`, a code knob,
-  no in-game switch.
-- Arithmetic, not measured: at a Fair name the paper has 3 small ads a week at about $70
-  to $85, so a perfect week clears the $150 due by about $60 to $100. Paying down $1,000
-  from that is slow by design; S14-PACE asks how it feels.
-- Verified: run_all green (parse, smoke, 35 tests with test_court, test_pack, test_robot) under the strict gate; test_season
-  rewritten (money, paper, regulars, cells, save and blackout, winter), test_run_flow
-  drives title to board to job to offer to a regular's visit to quit, blackout and payday.
-  Screenshotted and looked at: the board (1 and 5 regulars, the right column scrolls, long
-  surnames clip), payday, after payday, winter, the offer, the blackout. Not played.
-
-OWED CHECKS: 19, in CHECKS.txt (3 loads, about 75 minutes; LOAD 3 is everything built in S14).
-
-NEXT:
-1. Play the prototype (LOAD 3) and the S13 checks; triage.
-2. Retune from play: S14-PACE and S14-RING (principal, vig, keep, PAPER, REACH), S14-COURT
-   (LAWYERS, MENACE, PRISON, sentence()), S14-PACK and S14-ROBOT (GRIDS, SHAPES, prices).
-3. The text pass (159, with 158): docs/TEXT.md is regenerated with all of S14's screens.
-4. Grills waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96; 140's retune after
-   play. Nothing buildable is left without a call from the dev.

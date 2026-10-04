@@ -1,7 +1,7 @@
-PLAY CHECKS OWED  (6 checks, 4 loads, about 55 minutes)
+PLAY CHECKS OWED  (none)
 
-Answer on the line that starts with ">". Leave it blank if you didn't try that one.
-Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
+Nothing owed.
+
 Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
 [3] skips to Friday's payday; in a job [0] finishes it perfectly.
 
@@ -12,96 +12,7 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 4: A JOB      (about 15 min; a manor for the hoops, [1] and [2] on the board; a ride-on)
-================================================================================
-
-S19-LITTER
-New things (79b): crisp packets blown onto about a third of lawns, croquet hoops on the
-manor's lawn, and now and then a staked sapling that snaps if you ram it (theirs: they mind,
-now or once you've gone; a nudge leaves it). Does the snapped one read? Litter's nobody's: mow it where they can see and they mind the mess
-(a little), unseen it costs nothing; pick it up and put it in the truck for a tally. A
-hoop clonks the mower and sometimes flies. Worth having, or clutter? (A crisp packet can
-still be thrown hard enough to break a window, like a flamingo: say if that grates.)
->
-
-S16-RIDEON
-On the ride-on (buy the third gear on the board to compare): is two gears enough to
-start? The horn ([H]): does the honk sound right, and is scattering critters useful?
->
-
-
-================================================================================
-LOAD 2 of 4: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
-================================================================================
-
-S16-ROBOT
-Two robots on one lawn, you mowing too: do they now feel worth having (they skip what's
-been cut, cross the drive, and go green when there's nothing left they can reach)? Watch
-one by a gnome and two meeting head on: do they get on with it? (The mechanics are
-verified, below; this is whether it feels right.)
->
-
-
-================================================================================
-LOAD 3 of 4: THE SMALL FIXES      (about 10 min; any day, a job with a dog, a semi with the patio out the back)
-================================================================================
-
-S20-FIXES
-The day now starts at 6am (no window opens before 8am, so you can be there when it opens);
-an event day's news is a headline on the paper's page, not a gold line on the calendar;
-the summary's reputation book shows each gain already cut, no minus line. Do they read?
-Throw the ball past the house: the dog won't go (it stays its side). Knock on a back-patio
-house's front door: they answer it, then go back in and come out the back later. Fine?
->
-
-S20-DIAL
-A clock face by the time in a job (NOTES 215): their window a green arc, the part gone
-shaded, the hand now, red once you're past it. Turn up late to a booking: does the hand
-starting partway round make their getting cross early read? Is it big enough?
->
-
-
-================================================================================
-LOAD 4 of 4: HIRED HELP      (about 20 min; [1] a few times and [2] twice on the board, a week or two)
-================================================================================
-
-S21-CREW
-Hired help, slice 1 (NOTES 209 lists my calls to veto). Buy a van in the shop, ring a
-situation wanted at the back of the paper, then on the new Crew page press a booking's
-"You" to send them (a regular who wants you says so). Give them a crew mower (shop) with
-their Kit button. Their day comes in at the day's end: a line on the calendar, the rest on
-the Crew page; wages come out on Friday. Is sending work out a real choice, does the report
-read, and do the wages (they scale with your name: hundreds to a couple of thousand a week)
-feel like a bet worth making?
->
-
-
-================================================================================
 VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
-VERIFIED  The dog and the house (NOTES 211, session 21), by test (test_objects): a ball past
-          the house it doesn't go for; you past the house, it brings the ball to the nearest
-          point on its side and never leaves it (no more running through and snapping back).
-VERIFIED  Back-patio front doors (NOTES 212), by test (new test_doors) and screenshot: with them
-          in, either door can be knocked; they answer the one knocked at (the front doorway
-          draws open), go back in after a front-door chat, and the back door works as before.
-VERIFIED  6am start (NOTES 213), by test (test_season) and screenshot: the day and the board's
-          clock start at 6am; windows still open 8am or later, the same windows as before for
-          every job; community service keeps 9am to 5pm.
-VERIFIED  The reputation book (NOTES 214), by test (test_season): gains shown already cut and
-          adding to the total, no "won't hear of it" line.
-VERIFIED  The day's news (NOTES 216), by screenshot: a headline on newsprint over the ads, gone
-          from the calendar.
-VERIFIED  The clock face (NOTES 215), by test (new test_dial) and screenshots on time, late and
-          past the window: the arc, the shading and the red hand show as meant; a job with no
-          window has no face.
-VERIFIED  Hired help, slice 1 (NOTES 209), by test (new test_help: the model; new
-          test_crew_board: the board) and screenshots of the Crew page, the paper's column,
-          the shop and the corkboard (a sent booking in blue under the helper's name).
-          Tuned by sim (sim_crew, sim_season SIM_CREW=2): modelled, not played.
-VERIFIED  Fixes from the verifier's seventh run (session 21), by test: the crew no longer accepts
-          your own pending offer, nor leaves its set-off time on a regular it wins (test_help);
-          a dog put down past the house runs back round it, never jumping through (test_doors);
-          the Crew page's columns scroll (screenshot, six helpers); a quit-on-summary offer no
-          longer turns up on a later summary.
+CHANGED   Session 22 was triage only (NOTES 218 to 227): no code changed. run_all green, 47.
