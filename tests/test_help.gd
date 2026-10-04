@@ -51,6 +51,42 @@ func _initialize() -> void:
 	assert(g.money != money and h.jobs == 1 and h.pace > 0.4, "the money moved, and they grew")
 	h.pace = pace
 
+	# Your own pending offer isn't the crew's to answer (the verifier's find).
+	var mine := {"id": 777, "job": g.make_job(17), "cadence": 14, "rate": 50, "mood": 70.0, "day": g.day, "drift": []}
+	g.offer = mine
+	var sour: Dictionary = g.make_job(18)
+	sour.from = g.WINDOW_START
+	sour.by = g.DAY_END
+	sour.start_mood = 0.0 # it can't win an offer itself
+	g.book(_today(sour))
+	g.assign(sour, h.id)
+	g.end_day()
+	assert(not g.regulars.has(777) and g.offer == mine, "your offer still waits for you")
+	g.offer = {}
+	# A regular won by a helper's job: its visits don't carry the sending (a stale set-off time).
+	var won: Dictionary = g.make_job(19)
+	won.from = g.WINDOW_START
+	won.by = g.DAY_END
+	won.start_mood = 100.0
+	g.book(_today(won))
+	g.minute = 900
+	g.assign(won, h.id)
+	g.minute = g.DAY_START
+	var tries := 0
+	while not g.regulars.has(won.seed) and tries < 50: # their offer's a chance: send them again till it comes
+		g.end_day()
+		won.erase("helper")
+		g.book(_today(won))
+		g.assign(won, h.id)
+		tries += 1
+	assert(g.regulars.has(won.seed), "won a regular")
+	for k: String in ["sent_at", "helper", "prepaid"]:
+		assert(not g.regulars[won.seed].job.has(k), "the regular's job doesn't keep %s" % k)
+	g.drop(won.seed)
+	for b: Dictionary in g.bookings():
+		g.assign(b, -1)
+	g.calendar.erase(g.day)
+
 	# A regular who wants you: the helper's visit says so.
 	g.missed.clear()
 	var reg_job: Dictionary = g.make_job(13)

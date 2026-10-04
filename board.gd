@@ -159,7 +159,8 @@ func _today(box: Control) -> Button:
 	var first: Button = null
 	if jobs.is_empty():
 		var row := UI.hbox(14)
-		var l := UI.label("A day in jail." if Game.today().has("jail") else "Nothing booked today.", 20, UI.DIM)
+		var sent := Game.bookings().filter(func(b: Dictionary) -> bool: return b.has("helper")).size()
+		var l := UI.label("A day in jail." if Game.today().has("jail") else ("Nothing for you today; your crew has %d." % sent if sent else "Nothing booked today."), 20, UI.DIM)
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(l)
 		first = UI.button("On to the next job", func() -> void:
@@ -289,7 +290,7 @@ func _paper_view(root: Control) -> Control:
 	left.size_flags_stretch_ratio = 2.0
 	cols.add_child(left)
 	var heading := UI.hbox(14)
-	heading.add_child(UI.label("This week's paper" if Game.paper.any(func(o: Dictionary) -> bool: return o.day >= Game.day)
+	heading.add_child(UI.label("This week's paper" if Game.paper.any(func(o: Dictionary) -> bool: return o.day >= Game.day) or not Game.wanted.is_empty()
 		else "Nothing else in this week's paper.", 22))
 	if _call != "": # what the last one you rang said
 		var said := UI.label(_call, 18, UI.GOLD)
@@ -612,9 +613,14 @@ func _crew_view(root: Control, keep: String) -> Control:
 	var cols := UI.hbox(20)
 	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(cols)
+	var crew := ScrollContainer.new() # a big crew and a long report scroll, following the cursor
+	crew.follow_focus = true
+	crew.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	crew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cols.add_child(crew)
 	var left := UI.vbox(6)
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(left)
+	crew.add_child(left)
 	left.add_child(UI.label("Your crew (%d van%s)" % [Game.vans, "" if Game.vans == 1 else "s"], 22))
 	if Game.helpers.is_empty():
 		var none := UI.label("Nobody yet. Buy a van in the shop, then ring a situation wanted in the paper. A helper's paid every Friday, busy or not.", 18, UI.DIM)
@@ -641,7 +647,7 @@ func _crew_view(root: Control, keep: String) -> Control:
 	var any := false
 	for d in range(Game.day, Game.day + 7):
 		for b: Dictionary in Game.bookings(d):
-			if Game.can_send(b):
+			if Game.can_send(b) or b.has("helper"): # one sent stays, to take back
 				right.add_child(_send_row(b))
 				any = true
 	if not any:

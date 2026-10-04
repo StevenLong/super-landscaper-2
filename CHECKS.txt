@@ -107,7 +107,7 @@ VERIFIED  Back-patio front doors (NOTES 212), by test (new test_doors) and scree
           draws open), go back in after a front-door chat, and the back door works as before.
 VERIFIED  6am start (NOTES 213), by test (test_season) and screenshot: the day and the board's
           clock start at 6am; windows still open 8am or later, the same windows as before for
-          every job; community service keeps 9am to 6pm.
+          every job; community service keeps 9am to 5pm.
 VERIFIED  The reputation book (NOTES 214), by test (test_season): gains shown already cut and
           adding to the total, no "won't hear of it" line.
 VERIFIED  The day's news (NOTES 216), by screenshot: a headline on newsprint over the ads, gone
@@ -119,3 +119,8 @@ VERIFIED  Hired help, slice 1 (NOTES 209), by test (new test_help: the model; ne
           test_crew_board: the board) and screenshots of the Crew page, the paper's column,
           the shop and the corkboard (a sent booking in blue under the helper's name).
           Tuned by sim (sim_crew, sim_season SIM_CREW=2): modelled, not played.
+VERIFIED  Fixes from the verifier's seventh run (session 21), by test: the crew no longer accepts
+          your own pending offer, nor leaves its set-off time on a regular it wins (test_help);
+          a dog put down past the house runs back round it, never jumping through (test_doors);
+          the Crew page's columns scroll (screenshot, six helpers); a quit-on-summary offer no
+          longer turns up on a later summary.

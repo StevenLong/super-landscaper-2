@@ -10,6 +10,7 @@ signal caught(dog: Dog)
 signal dropped_ball(at: Vector2)
 
 var lawn_rect := Rect2()
+var house := Rect2() ## the house (and garage) it goes round, never through
 var home_point := Vector2.ZERO
 var following: Node2D = null
 var heading := Vector2.RIGHT
@@ -72,6 +73,20 @@ func _physics_process(delta: float) -> void:
 		if to.length() > (4.0 if limping else 28.0):
 			heading = to.normalized()
 			speed = 60.0 if limping else 150.0
+	elif _inside(position) != position: # put down past the house: back round it to its side
+		var goal := _inside(position)
+		if _through(position, goal):
+			var sides: Array = [house.position.x - 16.0, house.end.x + 16.0].filter(func(x: float) -> bool: return x > lawn_rect.position.x and x < lawn_rect.end.x)
+			if sides.is_empty(): # no way round: it's simply back
+				position = goal
+				queue_redraw()
+				return
+			sides.sort_custom(func(a: float, b: float) -> bool: return absf(a - position.x) < absf(b - position.x))
+			goal = Vector2(sides[0], position.y)
+		heading = (goal - position).normalized()
+		position = position.move_toward(goal, 150.0 * delta)
+		queue_redraw()
+		return
 	else:
 		_dash -= delta
 		if _dash <= 0.0:
@@ -82,6 +97,14 @@ func _physics_process(delta: float) -> void:
 	if not limping:
 		position = _inside(position)
 	queue_redraw()
+
+
+## Whether the straight run from a to b goes through the house.
+func _through(a: Vector2, b: Vector2) -> bool:
+	for i in range(1, 20):
+		if house.has_point(a.lerp(b, i / 20.0)):
+			return true
+	return false
 
 
 ## p kept on its side of the house (it never runs through it).

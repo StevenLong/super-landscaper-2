@@ -2525,6 +2525,7 @@ func _release_dog() -> void:
 	var fp: Rect2 = _house.rect() # it runs about the garden on their side of the house
 	dog.lawn_rect = Rect2(0, 0, lawn.size_px.x, fp.position.y - 50.0) if _house.back_patio \
 		else Rect2(0, fp.end.y, lawn.size_px.x, lawn.size_px.y - fp.end.y)
+	dog.house = (fp if _house.passage else _house.footprint()).grow(8.0) # a terrace's passage is the way round
 	dog.bowled.connect(func(_d: Dog, by: String) -> void:
 		_count("dog_bowled")
 		Sfx.play("yelp")

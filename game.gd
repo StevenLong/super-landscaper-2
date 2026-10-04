@@ -970,6 +970,7 @@ func start_job(b := {}) -> void:
 		b = next_job if not next_job.is_empty() else today()
 	next_job = {}
 	upfront = {} # an offer's for the summary it came with, not later
+	offer = {}
 	equipped = "rideon" if packed_has("rideon") else ("petrol" if packed_has("petrol") else "push")
 	booked = b.duplicate(true)
 	current_job = b.duplicate(true)
@@ -1382,6 +1383,7 @@ func let_go(id: int) -> void:
 		for b: Dictionary in l:
 			if b.get("helper", -1) == id:
 				b.erase("helper")
+				b.erase("sent_at")
 	save()
 
 
@@ -1398,6 +1400,7 @@ func assign(b: Dictionary, id: int) -> void:
 		b.erase("sent_at")
 	else:
 		b.helper = id
+		b.erase("sent_at")
 		if b.day == day:
 			b.sent_at = minute # they set off from now, not from this morning
 	save()
@@ -1466,6 +1469,8 @@ func help_today(id: int) -> Array:
 func _crew_day() -> void:
 	crew_report = []
 	var mine := [current_job, booked, offer, upfront]
+	offer = {} # yours wait for you: only what the crew wins is answered here
+	upfront = {}
 	for h: Dictionary in helpers:
 		var t := DAY_START
 		var who: String = h.name.split(" ")[0]
@@ -1489,9 +1494,11 @@ func _crew_day() -> void:
 			if wants_you(b) > 0.0:
 				line += "; they wanted you"
 			line += ". " + ("Pleased." if r.mood >= 70.0 else ("Not happy." if r.mood < 45.0 else "Fine."))
-			current_job = b
+			booked = b.duplicate(true)
+			for k: String in ["helper", "sent_at", "prepaid"]:
+				booked.erase(k)
+			current_job = booked.duplicate(true)
 			current_job.prepaid = r.prepaid
-			booked = b
 			if b.has("regular"):
 				_visited(b.regular, r)
 				if r.get("lost_regular", false):
@@ -1563,6 +1570,8 @@ func load_business() -> void:
 		else:
 			set(k, state[k])
 	_rng.randomize()
+	if not state.has("wanted"):
+		wanted = make_wanted()
 	_upgrade_save()
 	in_run = true
 	run_over_reason = ""

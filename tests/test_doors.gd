@@ -58,6 +58,18 @@ func _physics_process(_delta: float) -> bool:
 		5:
 			assert(m.hud.is_open() and m._house.door_open and not m._house.front_open, "answered at the back")
 			assert(m.get_node("Client").position == m._house.door_point(), "standing at the back door")
+			m._on_choice("resume")
+			# The dog put down past the house (thrown, or wriggling free at the front step):
+			# back round the house to its side, never through it (the verifier's find, NOTES 211).
+			m.job.dog_name = "Rolo"
+			m._release_dog()
+			m.dog.let_go(m._house.front_step() + Vector2(0, 20))
+			for i in 600:
+				var was: Vector2 = m.dog.position
+				m.dog._physics_process(1.0 / 60.0)
+				assert(not m._house.rect().has_point(m.dog.position), "never through the house (at %s)" % m.dog.position)
+				assert(was.distance_to(m.dog.position) < 5.0, "it runs, never jumps (from %s to %s)" % [was, m.dog.position])
+			assert(m.dog.lawn_rect.has_point(m.dog.position), "back on its side")
 			g.current_job = {}
 			print("PASS doors")
 			quit()
