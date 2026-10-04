@@ -224,6 +224,7 @@ var crew_kit := {} ## mowers bought for the crew (yours aren't lent): kind -> ho
 var crew_report: Array[String] = [] ## the crew's day just gone, for the board
 var day_mine: Array[Dictionary] = [] ## your jobs today, for the day's end: {customer, net, outcome, mood}
 var day_money := 0 ## money as the day began
+var paper_tally := {} ## run_tally when this week's paper came out: the week's mess since is its news
 var day_end := {} ## the day just gone, until its screen's read: {day, mine, crew, crew_net, missed, was, now}
 
 ## Names for everything the jobs count, in the order they're shown. Only counts above
@@ -281,11 +282,43 @@ var payday_pending := false
 var winter_pending := false
 var in_job := false ## a job started and not finished: loading onto it is the blackout
 var blackout := {} ## the job you blacked out on, for the board to break the news
+## The front page's news (design doc, The hub): only what the game already knows. Each
+## [headline, line, colour key]: your court date this week, the week's event days, and
+## what's been counted in gardens since the paper came out. The first is the lead.
+func front_page() -> Array:
+	var out := []
+	for d in week_left():
+		for b: Dictionary in bookings(d):
+			if b.has("court"):
+				out.append(["LOCAL GARDENER UP BEFORE THE BENCH", "The case of what happened at %s's is heard on %s." % [b.court.get("customer", "a client"), day_word(d)], "bad"])
+	for d in week_left():
+		var ev := day_event(d)
+		if ev != "":
+			out.append([{"hedgehogs": "HEDGEHOGS COURTING", "squirrels": "SQUIRRELS GO MAD"}.get(ev, ev.to_upper()),
+				"%s: %s" % [day_word(d), DAY_EVENTS[ev].news.replace(" today", "")], "event"])
+	var week := {}
+	for k: String in run_tally:
+		var n: int = run_tally[k] - paper_tally.get(k, 0)
+		if n > 0:
+			week[k] = n
+	var lines := tally_lines(week, {})
+	if not lines.is_empty():
+		var worst := ""
+		for k: String in TALLY:
+			if week.has(k) and k not in GOOD_TALLY:
+				worst = k
+				break
+		out.append(["MAYHEM IN THE GARDENS" if worst != "" else "A TIDY WEEK IN THE GARDENS", "Since last Friday: " + "; ".join(lines) + ".", "bad" if worst != "" else "good"])
+	if out.is_empty():
+		out.append(["QUIET WEEK IN THE GARDENS", "Nothing to report. The lawns grow.", "dim"])
+	return out
+
+
 ## What the save keeps: the whole business.
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
 	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job",
-	"helpers", "wanted", "vans", "crew_kit", "crew_report", "day_mine", "day_money", "day_end"]
+	"helpers", "wanted", "vans", "crew_kit", "crew_report", "day_mine", "day_money", "day_end", "paper_tally"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -368,6 +401,7 @@ func new_run(seed_value := 0) -> void:
 	day_mine = []
 	day_money = money
 	day_end = {}
+	paper_tally = {}
 	paper = make_paper()
 	wanted = make_wanted()
 	save()
@@ -828,6 +862,7 @@ func settle_payday(extra := 0) -> Dictionary:
 	principal -= off
 	paper = make_paper()
 	wanted = make_wanted()
+	paper_tally = run_tally.duplicate()
 	save()
 	var outcome := "free" if off > 0 and principal == 0 else ("repossessed" if taken else "paid")
 	return {"paid": owed, "off": off, "taken": taken, "outcome": outcome}
@@ -1596,6 +1631,8 @@ func load_business() -> void:
 		wanted = make_wanted()
 	if not state.has("day_money"): # from before the day's end: today starts from here
 		day_money = money
+	if not state.has("paper_tally"): # from before the front page: no news yet
+		paper_tally = run_tally.duplicate()
 	_upgrade_save()
 	in_run = true
 	run_over_reason = ""

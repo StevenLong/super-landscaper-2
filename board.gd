@@ -5,7 +5,7 @@ extends Control
 ## lights up what an action will cost before you take it. Friday brings payday (the loan
 ## shark's man), September's end the winter, and a job you never finished the blackout.
 
-const VIEWS := ["calendar", "paper", "crew", "shop"]
+const VIEWS := ["calendar", "paper", "book", "crew", "shop"]
 const PER_PAGE := 3 ## ads to a page of the paper
 const CORK := Color("8a6238")
 const NOTE := Color("efe6cc")
@@ -89,6 +89,7 @@ func _build(keep := "") -> void:
 			open += Game.wanted.size()
 		var asks := Game.helpers.filter(func(h: Dictionary) -> bool: return h.has("asks")).size()
 		var t := UI.button({"calendar": "Calendar", "paper": "Paper (%d to ring)" % open, "shop": "Shop",
+			"book": "Client book" + (" (%d)" % Game.regulars.size() if Game.regulars else ""),
 			"crew": "Crew" + (" (%d)" % Game.helpers.size() if Game.helpers else "") + (" !" if asks else "")}[v], _show.bind(v), 20)
 		t.name = "Tab_" + v
 		if v == _view:
@@ -104,6 +105,8 @@ func _build(keep := "") -> void:
 	match _view:
 		"paper":
 			first = _paper_view(root)
+		"book":
+			first = _book_view(root)
 		"shop":
 			first = _shop_view(root, keep)
 		"crew":
@@ -383,36 +386,28 @@ func _ink(text: String, color := INK, font_size := 20) -> Label:
 ## The week's paper, a few ads to a page, and your regulars beside it. Returns the first
 ## Ring button (or a page button).
 func _paper_view(root: Control) -> Control:
-	var cols := UI.hbox(20)
-	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(cols)
-	var left := UI.vbox(8)
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	left.size_flags_stretch_ratio = 2.0
-	cols.add_child(left)
-	var heading := UI.hbox(14)
-	heading.add_child(UI.label("This week's paper" if Game.paper.any(func(o: Dictionary) -> bool: return o.day >= Game.day) or not Game.wanted.is_empty()
-		else "Nothing else in this week's paper.", 22))
+	var col := UI.vbox(8)
+	col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(col)
 	if _call != "": # what the last one you rang said
 		var said := UI.label(_call, 18, UI.GOLD)
 		said.name = "Call"
 		said.clip_text = true
-		said.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		heading.add_child(said)
-	left.add_child(heading)
-	var ev := Game.day_event()
-	if ev != "": # today's news, a headline over the ads (NOTES 216)
-		var news := _ink(Game.DAY_EVENTS[ev].news.to_upper(), INK, 22) # no shadow on newsprint (NOTES 218)
-		news.name = "News"
-		news.clip_text = false
-		news.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		left.add_child(_newsprint(news))
-	var ads := Game.paper.filter(func(o: Dictionary) -> bool: return o.day >= Game.day) # a day gone, its ad's gone
-	ads.append_array(Game.wanted) # the situations wanted at the back
-	var pages := maxi(1, ceili(ads.size() / float(PER_PAGE)))
+		col.add_child(said)
+	var ads := _paper_ads()
+	var pages := _paper_pages()
 	_page = clampi(_page, 0, pages - 1)
-	for o: Dictionary in ads.slice(_page * PER_PAGE, _page * PER_PAGE + PER_PAGE):
-		left.add_child(_wanted(o) if o.has("care") else _ad(o))
+	if _page == 0:
+		col.add_child(_front_page(ads))
+	else:
+		var page := UI.vbox(8)
+		page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		page.add_child(_ink("CLASSIFIEDS" if ads.slice((_page - 1) * PER_PAGE).any(func(o: Dictionary) -> bool: return not o.has("care")) else "SITUATIONS WANTED", INK, 30))
+		for o: Dictionary in ads.slice((_page - 1) * PER_PAGE, _page * PER_PAGE):
+			page.add_child(_wanted(o) if o.has("care") else _ad(o))
+		if ads.is_empty():
+			page.add_child(_ink("Nothing else in this week's paper.", Color("7a6a50")))
+		col.add_child(_newsprint(page, true))
 	var nav := UI.hbox(14)
 	var prev := UI.button("< Page back", func() -> void:
 		_page -= 1
@@ -421,7 +416,7 @@ func _paper_view(root: Control) -> Control:
 	prev.name = "PrevPage"
 	prev.disabled = _page == 0
 	nav.add_child(prev)
-	var where := UI.label("Page %d of %d" % [_page + 1, pages], 20, UI.DIM)
+	var where := UI.label("Front page" if _page == 0 else "Page %d of %d" % [_page + 1, pages], 20, UI.DIM)
 	where.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	nav.add_child(where)
 	var next := UI.button("Turn the page >", func() -> void:
@@ -431,25 +426,59 @@ func _paper_view(root: Control) -> Control:
 	next.name = "NextPage"
 	next.disabled = _page >= pages - 1
 	nav.add_child(next)
-	left.add_child(nav)
-
-	var side := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
-	side.follow_focus = true
-	side.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(side)
-	var right := UI.vbox(6)
-	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	side.add_child(right)
-	right.add_child(UI.label("Your regulars", 22))
-	if Game.regulars.is_empty():
-		var none := UI.label("None yet. A good job from the paper might earn one.", 18, UI.DIM)
-		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		right.add_child(none)
-	for id: int in Game.regulars:
-		right.add_child(_regular_row(id))
-	var ring := left.find_child("Ring", true, false)
+	col.add_child(nav)
+	var ring := col.find_child("Ring", true, false)
 	return ring if ring else (next if not next.disabled else (prev if not prev.disabled else find_child("Tab_paper", true, false)))
+
+
+## This week's ads still to come (a day gone, its ad's gone), the situations wanted at the back.
+func _paper_ads() -> Array:
+	var ads := Game.paper.filter(func(o: Dictionary) -> bool: return o.day >= Game.day)
+	ads.append_array(Game.wanted)
+	return ads
+
+
+## The front page, then the classifieds three to a page.
+func _paper_pages() -> int:
+	return 1 + maxi(1, ceili(_paper_ads().size() / float(PER_PAGE)))
+
+
+## The front page: the masthead, the week's lead story and the rest of the news (only what
+## the game knows: Game.front_page), and what's inside.
+func _front_page(ads: Array) -> Control:
+	var page := UI.vbox(6)
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var mast := _ink("THE WEEKLY ADVERTISER", INK, 50)
+	mast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	page.add_child(mast)
+	var out := Game.day # it came out last Friday, or with the season
+	var opened := Game.day_of(Game.year, Game.start_month, 1)
+	while Game.date(out).weekday != Game.FRIDAY and out > opened:
+		out -= 1
+	var dated := _ink("%s.   Ads, situations wanted, the week's news.   10p" % Game.date_text(out), Color("5a4a38"), 18)
+	dated.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	page.add_child(dated)
+	page.add_child(HSeparator.new())
+	var news := Game.front_page()
+	var colours := {"bad": Color("8a2018"), "event": INK, "good": Color("2e6a1e"), "dim": Color("5a4a38")}
+	for i in news.size():
+		var n: Array = news[i]
+		var head := _ink(n[0], colours[n[2]], 40 if i == 0 else 30)
+		head.clip_text = false
+		head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		page.add_child(head)
+		var body := _ink(n[1], INK, 20)
+		body.clip_text = false
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		if n[2] == "event" and n[1].begins_with("Today"):
+			body.name = "News" # today's news (NOTES 216)
+		page.add_child(body)
+	page.add_child(HSeparator.new())
+	var ads_n := ads.filter(func(o: Dictionary) -> bool: return not o.has("care")).size()
+	var inside := _ink("INSIDE: %d ad%s to ring%s." % [ads_n, "" if ads_n == 1 else "s",
+		", %d situation%s wanted" % [Game.wanted.size(), "" if Game.wanted.size() == 1 else "s"] if not Game.wanted.is_empty() else ""], INK, 20)
+	page.add_child(inside)
+	return _newsprint(page, true)
 
 
 ## After turning the paper's page: stay on that page button, or the other one once you
@@ -495,15 +524,19 @@ func _ad(o: Dictionary) -> Control:
 	return _newsprint(row)
 
 
-## c on a scrap of newsprint.
-func _newsprint(c: Control) -> Control:
+## c on a scrap of newsprint (`sheet`: a whole page of it, filling the space).
+func _newsprint(c: Control, sheet := false) -> Control:
 	var paper := StyleBoxFlat.new()
 	paper.bg_color = Color("e8e0c8")
 	paper.border_color = Color("b8ac8c")
 	paper.set_border_width_all(2)
 	paper.set_content_margin_all(8)
+	if sheet:
+		paper.set_content_margin_all(16)
 	var p := UI.panel(c)
 	p.add_theme_stylebox_override("panel", paper)
+	if sheet:
+		p.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	return p
 
 
@@ -539,6 +572,26 @@ func _shop_view(root: Control, keep: String) -> Control:
 			first = b
 			break
 	return first if first else find_child("Tab_shop", true, false)
+
+
+## The client book on the desk: your regulars, how often and what they pay, and dropping one.
+func _book_view(root: Control) -> Control:
+	var side := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
+	side.follow_focus = true
+	side.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	side.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(side)
+	var list := UI.vbox(6)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	side.add_child(list)
+	list.add_child(UI.label("Your regulars", 22))
+	if Game.regulars.is_empty():
+		list.add_child(UI.label("None yet. A good job from the paper might earn one.", 18, UI.DIM))
+	for id: int in Game.regulars:
+		list.add_child(_regular_row(id))
+	for b: Button in list.find_children("*", "Button", true, false):
+		return b
+	return find_child("Tab_book", true, false)
 
 
 func _regular_row(id: int) -> Control:
@@ -785,7 +838,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		UI.focus(leave)
 		get_viewport().set_input_as_handled()
 	elif leave and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")):
-		_show(VIEWS[posmod(VIEWS.find(_view) + (1 if event.is_action_pressed("gear_up") else -1), VIEWS.size())])
+		var step := 1 if event.is_action_pressed("gear_up") else -1
+		if _view == "paper" and _page + step >= 0 and _page + step < _paper_pages(): # the paper's pages first
+			_page += step
+			_build()
+			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("NextPage" if step > 0 else "PrevPage", true, false))
+		else:
+			_show(VIEWS[posmod(VIEWS.find(_view) + step, VIEWS.size())])
+			if _view == "paper" and step < 0: # back into the paper: its last page
+				_page = _paper_pages() - 1
+				_build()
+				UI.focus(find_child("Tab_paper", true, false))
 		get_viewport().set_input_as_handled()
 
 

@@ -118,12 +118,15 @@ func _physics_process(_delta: float) -> bool:
 				g.paper[-1].day = g.day + 1
 			current_scene._show("calendar")
 			_wait = 5
-		8, 9, 10, 11:
+		8, 9, 10, 11, 12:
 			_fits()
 			_sideways()
-			current_scene._show(["paper", "crew", "shop", "calendar"][_step - 8])
+			current_scene._show(["paper", "book", "crew", "shop", "calendar"][_step - 8])
+			if _step == 8: # past the front page, a page of ads
+				current_scene._page = 1
+				current_scene._build()
 			_wait = 5
-		12:
+		13:
 			_fits()
 			_sideways()
 			# Shift and Ctrl turn the board's pages.
@@ -132,10 +135,12 @@ func _physics_process(_delta: float) -> bool:
 			shift.physical_keycode = KEY_SHIFT
 			shift.pressed = true
 			current_scene._unhandled_input(shift)
-			assert(current_scene._view == "paper", "Shift turns to the paper")
+			assert(current_scene._view == "paper" and current_scene._page == 0, "Shift turns to the paper, its front page")
+			current_scene._unhandled_input(shift)
+			assert(current_scene._view == "paper" and current_scene._page == 1, "and again turns its page")
 			assert(current_scene.find_children("*", "RichTextLabel", true, false).size() == current_scene.PER_PAGE, "a page of the paper at a time")
 			current_scene.find_child("NextPage", true, false).pressed.emit()
-			assert(current_scene._page == 1 and not current_scene.find_child("PrevPage", true, false).disabled, "and the next page")
+			assert(current_scene._page == 2 and not current_scene.find_child("PrevPage", true, false).disabled, "and the next page")
 			print("PASS controls")
 			quit()
 	_step += 1

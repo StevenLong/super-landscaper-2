@@ -1,7 +1,7 @@
 extends SceneTree
 # Screenshots of the corkboard for eyeballing its layout: a busy day in June with regulars
 # and a helper, the calendar (today open, a Go button focused), who goes (the menu open on
-# tomorrow), a page of the paper (a Ring focused), the shop, and a job's briefing and clock.
+# tomorrow), the paper's front page and a page of ads (a Ring focused), the shop, and a job's briefing and clock.
 # Not a test. Needs a window:
 # SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot_board.gd
 var f := 0
@@ -25,6 +25,7 @@ func _initialize() -> void:
 		var o: Dictionary = g.make_job(60 + i)
 		g._add(g.day + [0, 1, 1, 2, 9][i], o)
 	g.calendar[g.day + 5] = [{"court": {"customer": "Keith Figgis"}}]
+	g.run_tally = {"windows": 2, "dog_returned": 1, "squashed_hedgehog": 3} # the week's mess, for the front page
 	g.vans = 1
 	g.hire(g.wanted[0])
 	g.assign(g.bookings(g.day + 2)[0], g.helpers[0].id)
@@ -45,6 +46,10 @@ func _process(_d: float) -> bool:
 		root.get_texture().get_image().save_png(out + "/board_who.png")
 		(b.find_child("WhoMenu", true, false) as PopupMenu).hide()
 		b._show("paper")
+	if f == 52:
+		root.get_texture().get_image().save_png(out + "/board_front.png")
+		b._page = 1
+		b._build()
 	if f == 54:
 		var r := b.find_child("Ring", true, false) as Control
 		if r:

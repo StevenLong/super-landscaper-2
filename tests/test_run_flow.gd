@@ -57,6 +57,9 @@ func _process(_delta: float) -> bool:
 			ad.from = 600
 			ad.by = 900
 			current_scene._show("paper")
+			assert(current_scene.find_child("Ring", true, false) == null and "THE WEEKLY ADVERTISER" in _labels(), "the paper opens on its front page")
+			current_scene._page = 1
+			current_scene._build()
 			_press("Ring")
 			assert(game.today() == ad and game.paper.size() == game.PAPER_SIZE[4] - 1, "they said yes: booked into today")
 			assert(game.minute == game.DAY_START + game.RING_TIME, "the call took its time")
@@ -113,8 +116,8 @@ func _process(_delta: float) -> bool:
 			_press("Continue")
 		6:
 			assert(current_scene.name == "Board", "then the board")
-			current_scene._show("paper")
-			assert("Your regulars" in _labels(), "your regulars listed, by the paper")
+			current_scene._show("book")
+			assert("Your regulars" in _labels(), "your regulars listed, in the client book")
 			assert(game.bookings(_visit_day).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == game.current_job.seed), "their first visit a fortnight on")
 			assert(game.money > 0 and game.run_tally.get("windows", 0) == 1, "the job paid, the season adds it up")
 			game.money = 1000
@@ -151,6 +154,8 @@ func _process(_delta: float) -> bool:
 			game.paper.push_front(never) # on the first page
 			current_scene._call = game.ring(never)
 			current_scene._show("paper")
+			current_scene._page = 1
+			current_scene._build()
 			var stamped := current_scene.find_children("*", "RichTextLabel", true, false).filter(func(r: RichTextLabel) -> bool: return r.text.contains("NO:"))
 			assert(never.refused and stamped.size() == 1 and stamped[0].get_parent().find_child("Ring", true, false) == null, "no reputation: a no, stamped, and no more ringing it")
 			game.money = 70 # plus the petrol mower's resale covers $150

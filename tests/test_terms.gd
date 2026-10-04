@@ -58,7 +58,7 @@ func _process(_delta: float) -> bool:
 			_press("Continue")
 		1:
 			assert(current_scene.name == "Board", "back at the board")
-			current_scene._show("paper")
+			current_scene._show("book")
 			assert(current_scene.find_children("*", "Button", true, false).any(func(b: Button) -> bool: return b.text == "Drop (owe $360)"), "Drop says what you'd owe back")
 			g.calendar = {g.day: [g._visit(_id)]}
 			current_scene._show("calendar")
