@@ -774,11 +774,13 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			strip.texture = {"hedge": preload("res://art/hedge_h.png"), "fence": preload("res://art/fence_h.png"),
 				"railings": preload("res://art/railings_h.png"), "wall": preload("res://art/wall_h.png")}[s[0]]
 			var foot := box.end.y if key.begins_with("bottom") else (n.end.y if key == "notch_h" else 0.0)
-			# End on the side runs' middle line, where their art stands, not past it or short of it.
+			# End where the side runs' art stands: on a fence's middle line (the posts meet), on
+			# a hedge's or wall's outer edge (a corner block, not a notch of lawn: 2026-10-05).
+			var reach := half if edge in ["fence", "haha"] else half * 2.0
 			var x0 := box.position.x - (b if key == "notch_h" and nl else 0.0)
 			var x1 := box.end.x + (b if key == "notch_h" and nr else 0.0)
-			x0 = maxf(x0, -half)
-			x1 = minf(x1, w + half)
+			x0 = maxf(x0, -reach)
+			x1 = minf(x1, w + reach)
 			box = Rect2(x0, foot - strip.texture.get_height(), x1 - x0, strip.texture.get_height())
 		strip.stretch_mode = TextureRect.STRETCH_TILE
 		strip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE # a run shorter than its tile stays short (by a drive's mouth)

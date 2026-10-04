@@ -70,3 +70,6 @@ VERIFIED  Next door meets the garden: test_next_door (40 gardens; fails on the o
 VERIFIED  The pad on 15 menu screens (test_pad: every control reached, no wrong-way jump),
           the summary's rows included (S23's TRIED). Vans never hide kit (test_hub, and a
           60-yard random sweep).
+VERIFIED  Hedge and wall corners: a run across meets a hedge or wall side at its outer edge
+          (a fence still at its middle), test_next_door (fails on the old notch); corner
+          crops of 12 gardens, all four corners, looked at. The counter card: test_hub.

@@ -4,6 +4,8 @@
 # sides (a fence's art is 8 wide in a 24 border: their plot used to start the full 24 out);
 # and where next door's back fence starts at that corner, it runs on to their house's back
 # wall or the plot's end (it used to stop at their garage, or before a house set forward).
+# And a run across meets a hedge or wall side at its art's outer edge, a fence at its middle
+# (the road-side hedge stopped mid-hedge, leaving a notch of lawn in the corner: 2026-10-05).
 extends SceneTree
 
 var g: Node
@@ -50,6 +52,31 @@ func _outer(left: bool) -> float:
 	return NAN
 
 
+## The garden's runs across that turn the corner into that side run: where each ends, outward.
+func _ends(left: bool) -> Array[float]:
+	var w: float = m.lawn.size_px.x
+	var out: Array[float] = []
+	for c: Node in m.get_node("Borders").get_children():
+		var t := c as TextureRect
+		if t and t.texture and t.texture.resource_path.ends_with("_h.png"):
+			if left and t.position.x < 0.0:
+				out.append(t.position.x)
+			elif not left and t.position.x + t.size.x > w:
+				out.append(t.position.x + t.size.x)
+	return out
+
+
+## Where a run across should end on that side: a fence's middle, a hedge's or wall's outer edge.
+func _corner(left: bool, art: float) -> float:
+	var w: float = m.lawn.size_px.x
+	for c: Node in m.get_node("Borders").get_children():
+		var t := c as TextureRect
+		if t and t.texture and t.texture.resource_path.ends_with("fence_v.png") and (t.position.x < 0.0 if left else t.position.x >= w - 24.0):
+			var used := t.texture.get_image().get_used_rect()
+			return t.position.x + used.get_center().x
+	return art
+
+
 ## How far next door's back fence runs unbroken from the corner at x, outward (dir -1 or 1).
 func _run_from(x: float, dir: int) -> float:
 	var spans: Array[Vector2] = []
@@ -93,6 +120,9 @@ func _process(_delta: float) -> bool:
 		if is_nan(art):
 			continue
 		var edge: float = near[0] if left else near[1]
+		var want := _corner(left, art)
+		for e: float in _ends(left):
+			assert(absf(e - want) <= 1.0, "%s: a run across ends at %.1f, the %s corner is at %.1f" % [what, e, "left" if left else "right", want])
 		assert(absf(edge - art) <= 1.0, "%s: next door's ground starts at %.1f, the %s run's art ends at %.1f" % [what, edge, "left" if left else "right", art])
 		var run := _run_from(edge, -1 if left else 1)
 		var stop := edge + (-run if left else run)
