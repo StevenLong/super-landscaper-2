@@ -756,7 +756,9 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			var used := strip.texture.get_image().get_used_rect()
 			var from := -BORDER_UP
 			if (key == "left" and nl) or (key == "right" and nr):
-				from = n.end.y - b - BORDER_UP # it starts at next door's corner, and takes it
+				# It starts at next door's run as a side starts at the back run: lifted from that
+				# run's foot (NOTES 219), or from its outer edge where none crosses (the church).
+				from = n.end.y - BORDER_UP - (0.0 if sides.has("notch_h") else b)
 				if side_from > n.end.y:
 					from = side_from # at the vestry's back wall, flush with its roof (as notch_v with the nave)
 			var to := h + b - BORDER_UP

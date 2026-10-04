@@ -101,6 +101,15 @@ func _physics_process(_delta: float) -> bool:
 				assert(not n.has_point((c as Node2D).position), "nothing of yours stands in it")
 			var fences: Array = m._edges.filter(func(e: Dictionary) -> bool: return e.from.y == n.end.y and e.to.y == n.end.y)
 			assert(fences.size() == 1, "critters can come over their fence")
+			# Each side run stands up from the run it meets as far as the other does (NOTES 219).
+			var w := float(m.lawn.size_px.x)
+			var sides: Array = m.get_node("Borders").get_children().filter(func(c: Node) -> bool:
+				return c is TextureRect and c.size.y > 200.0 and (c.position.x < 0.0 or c.position.x >= w - 24.0))
+			assert(sides.size() == 2, "a side run each side")
+			var nl := n.position.x <= 0.0
+			var notched: TextureRect = sides[0] if (sides[0].position.x < 0.0) == nl else sides[1]
+			var plain: TextureRect = sides[1] if notched == sides[0] else sides[0]
+			assert(n.end.y - notched.position.y == -plain.position.y, "the notch side's run starts at next door's run as the other starts at the back: %s vs %s" % [notched.position.y, plain.position.y])
 			g.current_job = {}
 			print("PASS shapes")
 			quit()

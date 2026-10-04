@@ -117,6 +117,18 @@ func _initialize() -> void:
 	g.buy("crew_petrol")
 	assert(g.set_kit(h.id, "petrol") and g.crew_free("petrol") == 0, "bought one for the crew, given out")
 
+	# Your name climbing doesn't make them ask (NOTES 222): their wage is priced on the name
+	# they answered the ad at.
+	var was_rep: float = g.reputation
+	g.reputation = minf(100.0, g.reputation + 40.0)
+	var pricier: Dictionary = g.make_job(16)
+	pricier.from = g.WINDOW_START
+	pricier.by = g.DAY_END
+	g.book(_today(pricier))
+	g.assign(pricier, h.id)
+	g.end_day()
+	assert(not h.has("asks"), "a better name alone: no raise asked (wage $%d, now worth $%d)" % [h.wage, g.wage_for(h)])
+	g.reputation = was_rep
 	# A raise: they ask once they're worth it; yes pays it.
 	h.pace = 1.2
 	h.care = 0.9

@@ -272,8 +272,8 @@ func _corkboard() -> Control:
 
 
 ## A line in ink on paper: no drop shadow, clipped so a long name never widens the board.
-func _ink(text: String, color := INK) -> Label:
-	var l := UI.label(text, 20, color)
+func _ink(text: String, color := INK, font_size := 20) -> Label:
+	var l := UI.label(text, font_size, color)
 	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	l.clip_text = true
 	return l
@@ -301,8 +301,9 @@ func _paper_view(root: Control) -> Control:
 	left.add_child(heading)
 	var ev := Game.day_event()
 	if ev != "": # today's news, a headline over the ads (NOTES 216)
-		var news := UI.label(Game.DAY_EVENTS[ev].news.to_upper(), 22, INK)
+		var news := _ink(Game.DAY_EVENTS[ev].news.to_upper(), INK, 22) # no shadow on newsprint (NOTES 218)
 		news.name = "News"
+		news.clip_text = false
 		news.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		left.add_child(_newsprint(news))
 	var ads := Game.paper.filter(func(o: Dictionary) -> bool: return o.day >= Game.day) # a day gone, its ad's gone

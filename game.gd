@@ -1331,16 +1331,18 @@ func make_wanted() -> Array[Dictionary]:
 		var at := clampf(reputation + _rng.randf_range(-20.0, 10.0), 0.0, 100.0) / 100.0
 		var h := {"id": _rng.randi(), "name": "%s %s" % [FIRST[_rng.randi() % FIRST.size()], LAST[_rng.randi() % LAST.size()]],
 			"pace": snappedf(clampf(0.55 + 0.45 * at + _rng.randf_range(-0.1, 0.1), 0.4, 1.2), 0.01),
-			"care": snappedf(clampf(0.2 + 0.7 * at + _rng.randf_range(-0.2, 0.2), 0.05, 0.95), 0.01)}
+			"care": snappedf(clampf(0.2 + 0.7 * at + _rng.randf_range(-0.2, 0.2), 0.05, 0.95), 0.01),
+			"rep": reputation} # the name they priced themselves on: a raise is asked by their growth, not yours (NOTES 222)
 		h.wage = wage_for(h)
 		out.append(h)
 	return out
 
 
 ## What a helper asks a week, by how good they are (pace counts twice: a slow one fits fewer
-## jobs in and burns more fuel on each) and by your name (what the work pays).
+## jobs in and burns more fuel on each) and by your name (what the work pays), as it was
+## when they answered the ad.
 func wage_for(h: Dictionary) -> int:
-	return maxi(5, _round5(WAGE * maxf(10.0, reputation) * h.pace * h.pace * (0.5 + 0.5 * h.care)))
+	return maxi(5, _round5(WAGE * maxf(10.0, h.get("rep", reputation)) * h.pace * h.pace * (0.5 + 0.5 * h.care)))
 
 
 func wages() -> int:
@@ -1614,6 +1616,9 @@ func _upgrade_save() -> void:
 			o.day = day
 	if current_job.has("seed") and not current_job.has("from"):
 		_window(current_job)
+	for h: Dictionary in helpers + wanted: # from before a wage kept its name: the one that prices it now
+		if not h.has("rep"):
+			h.rep = h.wage / (WAGE * h.pace * h.pace * (0.5 + 0.5 * h.care))
 
 
 # ---------------------------------------------------------------- the record
