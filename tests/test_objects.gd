@@ -74,6 +74,21 @@ func _physics_process(_delta: float) -> bool:
 			# Mow the ball in front of it and it sulks.
 			m._on_stone_mowed(balls[0], m.mower)
 			assert(m.dog._grief > 0.0, "a ball mowed in front of the dog: it grieves")
+			# A ball past the house (NOTES 211): it can't get there without running through it,
+			# so it stays put; and you past the house, it brings a ball only as far as its side.
+			var far := Vector2(m._house.rect().position.x - 40.0, m._house.rect().get_center().y) # beside the house, off its side
+			assert(m._on_plot(far) and not m.dog.lawn_rect.has_point(far), "the far side's on the plot, off the dog's side")
+			m.dog.fetch(m.add_stone(far, "ball"), m.walker)
+			assert(m.dog.fetching == null, "a ball past the house: it doesn't go")
+			m.dog._grief = 0.0
+			m.dog.has_ball = true
+			m.dog.bring_to = m.walker
+			m.walker.global_position = far
+			for i in 200:
+				m.dog._physics_process(1.0 / 60.0)
+				assert(m.dog.lawn_rect.has_point(m.dog.position), "it never leaves its side of the house")
+			assert(not m.dog.has_ball, "it drops the ball at the nearest it can get to you")
+			m.walker.global_position = Vector2(500, 400)
 			# Litter: shredded, minded only if they see it done; never found afterwards.
 			var where: String = m.customer.where
 			m.customer.where = "inside"

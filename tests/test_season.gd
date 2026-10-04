@@ -134,6 +134,14 @@ func _climb() -> void:
 		jobs += 1
 	assert(jobs >= 15 and jobs <= 30, "the top band after %d great jobs" % jobs)
 	assert(is_equal_approx(r.rep_lines[0][1] + r.rep_cut, r.rep), "the book adds up to what it moved")
+	# The summary shows the job's gain already cut, no minus line after it (NOTES 214).
+	var screen: Node = load("res://summary.tscn").instantiate()
+	var book: Control = screen._reputation(r)
+	var texts: Array = book.find_children("*", "Label", true, false).map(func(n: Label) -> String: return n.text)
+	assert(not texts.any(func(t: String) -> bool: return t.contains("hear of it")), "no cut line: %s" % [texts])
+	assert(texts.count("%+d" % roundi(r.rep)) == 2, "the job's line shows the cut gain, as does the total: %s" % [texts])
+	book.free()
+	screen.free()
 	var trend: float = g.rep_trend
 	g.record_result({"outcome": "fired", "net": 0, "paid": 0, "rep": -18.0})
 	assert(is_equal_approx(g.rep_trend, trend - 18.0), "a firing costs the lot")
@@ -154,8 +162,8 @@ func _clock() -> void:
 	g.new_run(7)
 	for i in 40: # windows: on the half hour, inside the day, sized from their patience
 		var w: Dictionary = g.make_job(500 + i, i * 2.5)
-		var want := clampi(roundi(w.patience * g.MPS * g.SLACK / 30.0) * 30, 60, g.DAY_END - g.DAY_START)
-		assert(w.from % 30 == 0 and w.from >= g.DAY_START and w.by <= g.DAY_END and w.by - w.from == want, "a window in the day: %s" % [[w.from, w.by, want]])
+		var want := clampi(roundi(w.patience * g.MPS * g.SLACK / 30.0) * 30, 60, g.DAY_END - g.WINDOW_START)
+		assert(w.from % 30 == 0 and w.from >= g.WINDOW_START and w.by <= g.DAY_END and w.by - w.from == want, "a window in the day: %s" % [[w.from, w.by, want]])
 	# Arriving: the drive, or the window opening, whichever's later.
 	var j := _job_for("busy")
 	j.from = 720
@@ -181,7 +189,7 @@ func _clock() -> void:
 	assert(g.rep_trend == trend - g.NO_SHOW_REP and g.missed.size() == 2, "a no-show, said so on the board")
 	assert(g.regulars[9].mood == 70.0 - g.NO_SHOW_MOOD and g.bookings(d0 + 14).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == 9),
 		"the regular, sore, booked again")
-	assert(g.minute == g.DAY_START and g.day == d0 + 1, "a new day at 8am")
+	assert(g.minute == g.DAY_START and g.day == d0 + 1, "a new day at 6am")
 	# The paper swells with the season, and at the peak regulars want you back sooner.
 	g.day = g.day_of(1980, 6, 2)
 	assert(g.make_paper().size() == g.PAPER_SIZE[6] and g.PAPER_SIZE[6] > g.PAPER_SIZE[4], "June's paper is fuller")

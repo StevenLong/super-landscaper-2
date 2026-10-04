@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (3 checks, 2 loads, about 25 minutes)
+PLAY CHECKS OWED  (4 checks, 3 loads, about 35 minutes)
 
 Answer on the line that starts with ">". Leave it blank if you didn't try that one.
 Write whatever you like: "yes", "no, it did X", "didn't try". Prose is fine.
@@ -12,7 +12,7 @@ NOTES
 
 
 ================================================================================
-LOAD 1 of 2: A JOB      (about 15 min; a manor for the hoops, [1] and [2] on the board; a ride-on)
+LOAD 1 of 3: A JOB      (about 15 min; a manor for the hoops, [1] and [2] on the board; a ride-on)
 ================================================================================
 
 S19-LITTER
@@ -31,7 +31,7 @@ start? The horn ([H]): does the honk sound right, and is scattering critters use
 
 
 ================================================================================
-LOAD 2 of 2: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
+LOAD 2 of 3: THE ROBOTS      (about 10 min; [1] on the board, buy two robots)
 ================================================================================
 
 S16-ROBOT
@@ -39,6 +39,19 @@ Two robots on one lawn, you mowing too: do they now feel worth having (they skip
 been cut, cross the drive, and go green when there's nothing left they can reach)? Watch
 one by a gnome and two meeting head on: do they get on with it? (The mechanics are
 verified, below; this is whether it feels right.)
+>
+
+
+================================================================================
+LOAD 3 of 3: THE SMALL FIXES      (about 10 min; any day, a job with a dog, a semi with the patio out the back)
+================================================================================
+
+S20-FIXES
+The day now starts at 6am (no window opens before 8am, so you can be there when it opens);
+an event day's news is a headline on the paper's page, not a gold line on the calendar;
+the summary's reputation book shows each gain already cut, no minus line. Do they read?
+Throw the ball past the house: the dog won't go (it stays its side). Knock on a back-patio
+house's front door: they answer it, then go back in and come out the back later. Fine?
 >
 
 
@@ -65,3 +78,16 @@ VERIFIED  The fences (NOTES 194, session 19), by screenshot: whole gardens of 3 
 VERIFIED  The camera under the briefing (NOTES 155, session 19, the dev's report): it sat where
           the mower stood in the scene file, paused, and jumped to you on closing; it now
           starts on the mower at the truck (new test_camera, screenshot looked at).
+VERIFIED  The dog and the house (NOTES 211, session 21), by test (test_objects): a ball past
+          the house it doesn't go for; you past the house, it brings the ball to the nearest
+          point on its side and never leaves it (no more running through and snapping back).
+VERIFIED  Back-patio front doors (NOTES 212), by test (new test_doors) and screenshot: with them
+          in, either door can be knocked; they answer the one knocked at (the front doorway
+          draws open), go back in after a front-door chat, and the back door works as before.
+VERIFIED  6am start (NOTES 213), by test (test_season) and screenshot: the day and the board's
+          clock start at 6am; windows still open 8am or later, the same windows as before for
+          every job; community service keeps 9am to 6pm.
+VERIFIED  The reputation book (NOTES 214), by test (test_season): gains shown already cut and
+          adding to the total, no "won't hear of it" line.
+VERIFIED  The day's news (NOTES 216), by screenshot: a headline on newsprint over the ads, gone
+          from the calendar.

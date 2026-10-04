@@ -157,7 +157,8 @@ const DAY_EVENTS := {
 const EVENT_CHANCE := 0.12 ## of a day in an event's months
 const EVENT_CROWD := 8 ## critters at once on an event day (5 usually)
 ## The day's clock (design doc, Time is the scarce thing). Minutes since midnight. Guesses.
-const DAY_START := 480 ## 8am
+const DAY_START := 360 ## 6am: up and about, ringing round and driving
+const WINDOW_START := 480 ## 8am: no one wants you before this (NOTES 213)
 const DAY_END := 1200 ## 8pm: no driving to a job after this
 const MPS := 0.4 ## in a job, minutes of the day a real second: a small lawn's 5 minutes of patience is 2 hours
 const SLACK := 1.5 ## a booking's window is their patience times this: you needn't go the moment it opens
@@ -486,8 +487,8 @@ func make_job(seed_value: int, at := -1.0) -> Dictionary:
 func _window(j: Dictionary) -> void:
 	var r := RandomNumberGenerator.new()
 	r.seed = j.seed + 7
-	var length := clampi(roundi(j.patience * MPS * SLACK / 30.0) * 30, 60, DAY_END - DAY_START)
-	j.from = DAY_START + 30 * r.randi_range(0, floori((DAY_END - DAY_START - length) / 30.0))
+	var length := clampi(roundi(j.patience * MPS * SLACK / 30.0) * 30, 60, DAY_END - WINDOW_START)
+	j.from = WINDOW_START + 30 * r.randi_range(0, floori((DAY_END - WINDOW_START - length) / 30.0))
 	j.by = j.from + length
 
 
@@ -524,8 +525,8 @@ func service_job() -> Dictionary:
 		_churchyard(j, rv)
 	j.service = true
 	j.pay = 0
-	j.from = DAY_START + 60 # the council's hours, the day's taken
-	j.by = DAY_START + 540
+	j.from = WINDOW_START + 60 # the council's hours, the day's taken
+	j.by = WINDOW_START + 540
 	j.brief = ["The council sent you, did they? Community service.", "Mind the graves. And no nonsense this time."]
 	return j
 
@@ -1316,8 +1317,8 @@ func _upgrade_save() -> void:
 			calendar[d] = [calendar[d]]
 		for b: Dictionary in calendar[d]:
 			if b.has("service") and not b.has("from"):
-				b.from = DAY_START + 60
-				b.by = DAY_START + 540
+				b.from = WINDOW_START + 60
+				b.by = WINDOW_START + 540
 			elif b.has("seed") and not b.has("from"):
 				_window(b)
 	for reg: Dictionary in regulars.values():

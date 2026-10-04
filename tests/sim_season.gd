@@ -91,7 +91,7 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 		for ad: Dictionary in ads:
 			if ad.get("refused", false) or g.cant_book(ad) != "" or g.yes_chance(ad) < 0.5:
 				continue
-			if _load(ad.day) + g.DRIVE + _mow_minutes(ad, _kind()) > (g.DAY_END - g.DAY_START) * fill:
+			if _load(ad.day) + g.DRIVE + _mow_minutes(ad, _kind()) > (g.DAY_END - g.WINDOW_START) * fill:
 				m.full += 1 # wanted it, no time
 				continue
 			m.rung += 1
@@ -131,7 +131,7 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 				g.take_upfront()
 		m.missed += g.jobs_today().size()
 		m.days += 1
-		m.busy += busy / (g.DAY_END - g.DAY_START)
+		m.busy += busy / (g.DAY_END - g.WINDOW_START)
 		g.end_day()
 		if g.payday_pending:
 			for item: String in BUY:

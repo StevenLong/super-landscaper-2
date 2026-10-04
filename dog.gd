@@ -45,7 +45,7 @@ func _physics_process(delta: float) -> void:
 		if fetching and not is_instance_valid(fetching):
 			fetching = null
 		var goal: Vector2 = fetching.global_position if fetching else (bring_to.global_position if is_instance_valid(bring_to) else home_point)
-		var to := goal - global_position
+		var to := _inside(goal) - global_position # you're past its side of the house: it brings it to the nearest it can get
 		if to.length() < (6.0 if fetching else 22.0):
 			if fetching:
 				fetching.queue_free()
@@ -56,7 +56,7 @@ func _physics_process(delta: float) -> void:
 				dropped_ball.emit(global_position + heading * 8.0)
 		else:
 			heading = to.normalized()
-			position += heading * 170.0 * delta
+			position = _inside(position + heading * 170.0 * delta)
 		queue_redraw()
 		return
 	if limping or following:
@@ -80,8 +80,13 @@ func _physics_process(delta: float) -> void:
 		speed = 120.0 if fmod(_t, 2.0) < 1.4 else 0.0
 	position += heading * speed * delta
 	if not limping:
-		position = position.clamp(lawn_rect.position + Vector2(10, 10), lawn_rect.end - Vector2(10, 10))
+		position = _inside(position)
 	queue_redraw()
+
+
+## p kept on its side of the house (it never runs through it).
+func _inside(p: Vector2) -> Vector2:
+	return p.clamp(lawn_rect.position + Vector2(10, 10), lawn_rect.end - Vector2(10, 10))
 
 
 ## Picked up: it vanishes into your arms until let go.
@@ -101,9 +106,10 @@ func let_go(at: Vector2) -> void:
 	_dash = 1.2
 
 
-## Off after a thrown ball, to bring it back to `to`.
+## Off after a thrown ball, to bring it back to `to`: only one on its side of the house
+## (past it, it would have to run through the house).
 func fetch(ball: Node2D, to: Node2D) -> void:
-	if not limping and not following and not has_ball:
+	if not limping and not following and not has_ball and _inside(ball.global_position) == ball.global_position:
 		fetching = ball
 		bring_to = to
 

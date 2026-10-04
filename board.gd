@@ -142,12 +142,6 @@ func _today(box: Control) -> Button:
 	scroll.add_child(list)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_child(scroll)
-	var ev := Game.day_event()
-	if ev != "": # the morning's news, for every job today
-		var news := UI.label("In the paper: " + Game.DAY_EVENTS[ev].news, 20, UI.GOLD)
-		news.name = "News"
-		col.add_child(news)
-		col.move_child(news, 0)
 	var jobs := Game.jobs_today()
 	scroll.custom_minimum_size.y = 42 * clampi(jobs.size(), 1, 3)
 	var first: Button = null
@@ -290,6 +284,12 @@ func _paper_view(root: Control) -> Control:
 		said.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		heading.add_child(said)
 	left.add_child(heading)
+	var ev := Game.day_event()
+	if ev != "": # today's news, a headline over the ads (NOTES 216)
+		var news := UI.label(Game.DAY_EVENTS[ev].news.to_upper(), 22, INK)
+		news.name = "News"
+		news.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		left.add_child(_newsprint(news))
 	var ads := Game.paper.filter(func(o: Dictionary) -> bool: return o.day >= Game.day) # a day gone, its ad's gone
 	var pages := maxi(1, ceili(ads.size() / float(PER_PAGE)))
 	_page = clampi(_page, 0, pages - 1)
@@ -375,12 +375,17 @@ func _ad(o: Dictionary) -> Control:
 		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_preview(ring, Game.minute + Game.RING_TIME)
 		row.add_child(ring)
+	return _newsprint(row)
+
+
+## c on a scrap of newsprint.
+func _newsprint(c: Control) -> Control:
 	var paper := StyleBoxFlat.new()
 	paper.bg_color = Color("e8e0c8")
 	paper.border_color = Color("b8ac8c")
 	paper.set_border_width_all(2)
 	paper.set_content_margin_all(8)
-	var p := UI.panel(row)
+	var p := UI.panel(c)
 	p.add_theme_stylebox_override("panel", paper)
 	return p
 
@@ -433,7 +438,7 @@ func _regular_row(id: int) -> Control:
 	return UI.panel(row)
 
 
-## The day's clock, 8am to 8pm: today's windows as bars, now as a gold line, the past
+## The day's clock, 6am to 8pm: today's windows as bars, now as a gold line, the past
 ## shaded, and (cost_to) what the focused button would use lit up.
 class DayClock extends Control:
 	var cost_to := -1
@@ -446,7 +451,7 @@ class DayClock extends Control:
 		var top := 22.0
 		var h := size.y - top
 		draw_rect(Rect2(0, top, size.x, h), UI.PANEL)
-		for hh in range(8, 21, 2):
+		for hh in range(6, 21, 2):
 			var x := _x(hh * 60)
 			draw_line(Vector2(x, top), Vector2(x, size.y), UI.PANEL_EDGE, 1.0)
 			var t: String = Game.time_text(hh * 60)

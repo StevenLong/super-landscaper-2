@@ -1366,7 +1366,8 @@ func _targets() -> Array[Dictionary]:
 		if customer.where == "patio":
 			out.append({"at": $Client.position, "hint": "talk to " + job.customer, "act": open_customer_menu})
 		else:
-			out.append({"at": _house.door_point() + Vector2(0, -20), "hint": "knock on the door", "act": _knock})
+			var door := _door_near()
+			out.append({"at": door + Vector2(0, -20), "hint": "knock on the door", "act": _knock.bind(door)})
 	if at_truck():
 		out.append({"at": $Truck.position, "hint": "truck", "act": open_truck_menu})
 	if at.distance_to(mower.global_position) < 44.0:
@@ -1638,15 +1639,30 @@ func _on_hose_mowed(at: Vector2) -> void:
 		_react()
 
 
-## Close enough to the customer to talk: on foot, by the patio (their door's there too).
+## Close enough to the customer to talk: on foot, by the patio (their door's there too),
+## or by either door if they're in.
 func near_customer() -> bool:
-	var at: Vector2 = $Client.position if customer.where == "patio" else _house.door_point()
-	return walker != null and not customer.knocked_out and not _knocking and walker.global_position.distance_to(at) < TALK
+	if walker == null or customer.knocked_out or _knocking:
+		return false
+	if customer.where == "patio":
+		return walker.global_position.distance_to($Client.position) < TALK
+	return _door_near() != Vector2.INF
 
 
-## Knock, and wait: they open the door and stand in it, then you talk. Once the chat's
-## over they step back out onto the patio and the door shuts (_after_door).
-func _knock() -> void:
+## The door you're by (the patio's, or a back-patio house's front door too), or INF.
+func _door_near() -> Vector2:
+	for d: Vector2 in [_house.door_point()] + ([_house.front_step()] if _house.back_patio else []):
+		if walker and walker.global_position.distance_to(d) < TALK:
+			return d
+	return Vector2.INF
+
+
+## Knock at `door`, and wait: they open it and stand in it, then you talk. Once the chat's
+## over they step back out onto the patio and the door shuts (_after_door); at a back-patio
+## house's front door they go back in instead.
+func _knock(door := Vector2.INF) -> void:
+	if door == Vector2.INF:
+		door = _house.door_point()
 	_knocking = true
 	Sfx.play("knock", 0.0)
 	await get_tree().create_timer(0.8).timeout
@@ -1657,8 +1673,11 @@ func _knock() -> void:
 	if _door_tw:
 		_door_tw.kill() # whatever walk they were on, they're at the door now
 	_door_walk = false
-	_house.door_open = true
-	$Client.position = _house.door_point()
+	if door == _house.door_point():
+		_house.door_open = true
+	else:
+		_house.front_open = true
+	$Client.position = door
 	$Client.visible = true
 	await get_tree().create_timer(0.35).timeout
 	_knocking = false
@@ -1670,6 +1689,12 @@ func _knock() -> void:
 ## In and out on their own they walk it too: from the patio to the door and in (the door
 ## shuts behind them), or out of the door to their spot. Never a jump.
 func _after_door() -> void:
+	if _house.front_open and not _knocking and not hud.is_open():
+		_house.front_open = false # back in, the door shut; out the back when they're ready
+		Sfx.play("door")
+		customer.where = "inside"
+		_where = "inside"
+		$Client.position = _house.patio_point()
 	if _house.door_open and not _knocking and not hud.is_open() and not _door_walk:
 		_house.door_open = false
 		Sfx.play("door")

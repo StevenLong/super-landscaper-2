@@ -235,18 +235,23 @@ func _reputation(r: Dictionary) -> Control:
 	box.custom_minimum_size.x = 420
 	box.add_child(UI.label("Reputation", 24, UI.GOLD))
 	var total := 0 # what's shown adds up, whatever the rounding
-	for l: Array in r.get("rep_lines", []):
-		total += _shown(l[1])
-		_line(box, l[0], "%+d" % _shown(l[1]), UI.GOOD if l[1] >= 0.0 else UI.BAD)
 	var noticed: Array = r.get("noticed", [])
+	# Each gain shown already cut by how known you are (Game.climb), not as a minus line after
+	# (NOTES 214: gaining then losing more read as a slap). Losses land whole.
+	var gains := 0.0
+	for l: Array in r.get("rep_lines", []) + noticed:
+		gains += maxf(0.0, l[1])
+	var keep: float = (gains + r.get("rep_cut", 0.0)) / gains if gains > 0.0 else 1.0
+	for l: Array in r.get("rep_lines", []):
+		var v: float = l[1] * (keep if l[1] > 0.0 else 1.0)
+		total += _shown(v)
+		_line(box, l[0], "%+d" % _shown(v), UI.GOOD if v >= 0.0 else UI.BAD)
 	if not noticed.is_empty():
 		box.add_child(UI.label("After you left, the customer noticed:", 20, UI.DIM))
 		for n: Array in noticed:
-			total += _shown(n[1])
-			_line(box, "   " + n[0], "%+d" % _shown(n[1]), UI.GOOD if n[1] >= 0.0 else UI.BAD)
-	if r.has("rep_cut"): # the gains above, cut by how known you are already (Game.climb)
-		total += _shown(r.rep_cut)
-		_line(box, "Most folk won't hear of it", "%+d" % _shown(r.rep_cut), UI.BAD)
+			var v: float = n[1] * (keep if n[1] > 0.0 else 1.0)
+			total += _shown(v)
+			_line(box, "   " + n[0], "%+d" % _shown(v), UI.GOOD if v >= 0.0 else UI.BAD)
 	_line(box, "All told", "%+d" % total, UI.GOOD if total >= 0 else UI.BAD, 24)
 	if r.has("rep_after"):
 		var moved := roundi(r.rep_after - r.rep_before)

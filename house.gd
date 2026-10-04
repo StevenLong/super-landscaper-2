@@ -55,6 +55,11 @@ var door_open := false: ## the front door stands open (they've answered it)
 		door_open = v
 		if _front:
 			_front.queue_redraw()
+var front_open := false: ## a back-patio house's front door stands open (knocked at there)
+	set(v):
+		front_open = v
+		if _front:
+			_front.queue_redraw()
 
 
 func windows() -> Array:
@@ -95,6 +100,11 @@ func patio_point() -> Vector2:
 func door_point() -> Vector2:
 	if back_patio:
 		return patio_point()
+	return front_step()
+
+
+## The front door's step: a back-patio house has one too.
+func front_step() -> Vector2:
 	return position + Vector2(size.x * 0.5, WALL_H + 6.0)
 
 
@@ -161,7 +171,7 @@ func _see_through() -> Texture2D:
 
 func _draw_house() -> void:
 	_front.draw_texture_rect_region(_art, Rect2(0, -ART_FOOT, _art.get_width(), ART_FOOT), Rect2(0, 0, _art.get_width(), ART_FOOT))
-	if door_open and not back_patio: # a dark doorway, the door swung in against its frame
+	if (door_open and not back_patio) or front_open: # a dark doorway, the door swung in against its frame
 		var d: Rect2 = VENUES[venue].door
 		_front.draw_rect(d, Color("1a1820"))
 		_front.draw_rect(Rect2(d.position, Vector2(5, d.size.y)), Color("5a3a20"))
