@@ -182,9 +182,6 @@ LOADs 1 and 2); Claude's calls in the doc's "As built". Left from it:
 235. [DESIGN, small] The phone has nothing of its own yet: ringing stays on the paper's ads
    and situations wanted. The dev listed it with the paper and the client book. Build it
    when something wants ringing that isn't an ad (a regular to move a visit, the shark?).
-236. [VISUAL, small] In the yard a van's tall sprite hides kit stood in the rows behind it
-   (verifier run 9). You behind one: it goes see-through; kit behind one stays hidden. Pack
-   vans to the back rows, or fade a van over kit too. Home: hub.gd _yard, game.gd yard_layout.
 237. [DESIGN, small] Arranging the yard by hand: open (the dev, 2026-10-04: "not fully
    convinced we won't want to"). Auto-placed is biggest first, so free-looking cells may not
    take a van: S24-YARD asks whether that reads wrong.

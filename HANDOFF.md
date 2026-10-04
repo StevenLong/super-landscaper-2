@@ -63,6 +63,15 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
   test_fallout's typed filter on freed critters, test_objects freeing a scene with calls
   queued. docs/TRIBAL.md has the scene-change lesson.
 
+- Then, asked what else could go without the dev: 236 (vans hiding things): vans are placed
+  first along the back, so kit never stands behind one (a 60-yard random sweep: none
+  hidden); a van that would hide kit stays see-through as a safety net. Fading every van
+  that covers another was tried and smeared a row of vans into ghosts: a van's roof and tag
+  showing behind another reads as a car park. New test_pad walks 15 menu screens with the
+  pad (summary, raise, up front, offer, day's end, payday twice, court, winter, the places'
+  cards): all reached, no wrong-way jumps; a mutated copy proves it fails. It found nothing
+  to fix. run_all also skips any "at exit" leak report, not just one wording.
+
 OWED CHECKS: 8 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
 LOAD 2 S24-YARD, S24-RAISE, S24-CREW).
 

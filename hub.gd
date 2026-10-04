@@ -232,6 +232,7 @@ func _yard() -> void:
 	var sign_at := Vector2(-45, depth)
 	var sp := _thing(sign_at, Vector2(20, 8), "read the sign (more yard)", _yard_sign, preload("res://art/signpost.png"))
 	_tag(sp, "More yard $%d" % Game.price_of("yard"), Vector2(0, -62))
+	_mark_covering()
 	_spawn(truck_at + Vector2(-10, 30) if Game.spot == "truck" else Vector2(wide + 60, 14))
 
 
@@ -573,10 +574,27 @@ func _physics_process(_delta: float) -> void:
 	_hint.text = (Game.key("interact") + " " + t.hint) if not t.is_empty() else ""
 	for th: Dictionary in _things: # stood behind something tall (a van): see through it
 		var n: Node2D = th.node
-		var spr := n.get_child(0) as Sprite2D if n.get_child_count() > 0 else null
-		if spr:
-			var behind := walker.position.y < n.position.y and Rect2(n.position + spr.position, spr.texture.get_size()).has_point(walker.position)
-			n.modulate.a = 0.45 if behind else 1.0
+		if _covers(n, walker.position) or th.get("covering", false):
+			n.modulate.a = 0.45
+		else:
+			n.modulate.a = 1.0
+
+
+## Whether a thing's sprite stands in front of a point on the ground behind it (a van is
+## drawn far taller than the floor it takes).
+func _covers(n: Node2D, at: Vector2) -> bool:
+	var spr := n.get_child(0) as Sprite2D if n.get_child_count() > 0 else null
+	return spr != null and at.y < n.position.y and Rect2(n.position + spr.position, spr.texture.get_size()).has_point(at)
+
+
+## Mark what would hide kit stood behind it: it stays see-through (NOTES 236). A van
+## behind a van is left be: its roof and its tag show, as in any car park, and fading
+## every van in a row smeared them all (tried, 2026-10-04).
+func _mark_covering() -> void:
+	for th: Dictionary in _things:
+		for other: Dictionary in _things:
+			if other != th and not (other.hint as String).begins_with("look in") 					and _covers(th.node, (other.node as Node2D).position + Vector2(0, -6)):
+				th.covering = true
 
 
 ## What you'd use: the thing in front of you, else the nearest you're by.

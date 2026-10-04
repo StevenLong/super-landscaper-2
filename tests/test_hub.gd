@@ -115,6 +115,11 @@ func _process(_delta: float) -> bool:
 			assert(s.name == "Hub" and g.place == "yard", "out to the yard")
 			var vans: Array = s._things.filter(func(t: Dictionary) -> bool: return t.hint.begins_with("look in"))
 			assert(vans.size() == g.fleet.size(), "a van for every van: %d" % vans.size())
+			for t: Dictionary in s._things: # no kit hidden behind something you can't see through (NOTES 236); a van's roof shows
+				for o: Dictionary in s._things:
+					assert(o == t or (t.hint as String).begins_with("look in") or o.get("covering", false)
+						or not s._covers(o.node, (t.node as Node2D).position + Vector2(0, -6)),
+						"%s hidden behind %s" % [t.hint, o.hint])
 			s.use("look in %s" % g.helpers[0].name.split(" ")[0])
 			_card("Take the petrol mower out").pressed.emit()
 		4:
