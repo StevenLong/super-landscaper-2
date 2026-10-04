@@ -41,8 +41,9 @@ func _process(_delta: float) -> bool:
 			game.calendar = {game.day: [game.service_job()]}
 			game.day_end = {} # the court day's end, read
 			current_scene._ready()
-			assert(current_scene.find_child("Today", true, false).text.begins_with("Go"), "service to go to")
-			current_scene.find_child("Today", true, false).pressed.emit()
+			assert(game.can_go(game.jobs_today()[0]) and current_scene.find_child("State", true, false).text.begins_with("Opens"), "service to go to")
+			game.next_job = game.jobs_today()[0] # off in the truck (test_hub has the truck)
+			change_scene_to_file("res://pack.tscn")
 		1:
 			assert(current_scene.name == "Main" and current_scene.job.service and current_scene.job.venue == "graveyard", "the churchyard")
 			current_scene._on_choice("start")

@@ -51,7 +51,8 @@ if a session changes the design, edit the vault doc and push game-dev too.
 ## Project
 - 2D, Compatibility renderer (keeps a web export open), 1280x720 viewport, stretch
   `canvas_items` with `keep` aspect. A 2x camera follows the player, bounded by the lawn.
-- Flow: `title.tscn` -> `board.tscn` (job board + shop) -> `main.tscn` (one job) -> board.
+- Flow: `title.tscn` -> `board.tscn` (the desk: calendar, paper, client book; the day's end, payday)
+  <-> `hub.tscn` (on foot: office, yard, shop) -> the truck -> `pack.tscn` -> `main.tscn` -> the yard.
 - `game.gd` (autoload Game): run state, mower specs, customer personas, job generation.
   `customer.gd`: pure mood/pay logic. `main.gd`: the job scene, which builds its garden in code.
 - Art and audio started out generated: `python tools/make_art.py`, `tools/make_faces.py`,

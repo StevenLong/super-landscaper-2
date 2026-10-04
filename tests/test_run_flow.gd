@@ -66,8 +66,9 @@ func _process(_delta: float) -> bool:
 			assert(current_scene.find_child("Call", true, false).text.contains("today after 10am"), "and what they said is shown")
 			current_scene._show("calendar")
 			assert(current_scene.find_child("Calendar", true, false) != null, "the corkboard's calendar")
-			assert(current_scene.find_child("Today", true, false).text == "Go: there at 10am", "today's job to go to, there when it opens")
-			_press("Today")
+			assert(current_scene.find_child("State", true, false).text == "Opens at 10am.", "today's job, and when it opens")
+			game.next_job = game.today() # off in the truck (test_hub has the truck)
+			change_scene_to_file("res://pack.tscn")
 		2:
 			assert(current_scene.name == "Main", "going loads the job")
 			assert(game.in_job and game.has_business(), "saved as started")
@@ -115,7 +116,11 @@ func _process(_delta: float) -> bool:
 			assert(_labels().any(func(t: String) -> bool: return t.contains("A regular")), "and say so")
 			_press("Continue")
 		6:
-			assert(current_scene.name == "Board", "then the board")
+			assert(current_scene.name == "Hub" and game.place == "yard", "then home: the yard, by the truck")
+			var desk: Node = load("res://board.tscn").instantiate() # and in, to the desk
+			current_scene.free()
+			root.add_child(desk)
+			current_scene = desk
 			current_scene._show("book")
 			assert("Your regulars" in _labels(), "your regulars listed, in the client book")
 			assert(game.bookings(_visit_day).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == game.current_job.seed), "their first visit a fortnight on")
@@ -128,9 +133,8 @@ func _process(_delta: float) -> bool:
 			game.day = _visit_day
 			game.minute = game.DAY_START
 			game.calendar[_visit_day][0].drift = ["flamingo", "flamingo", "flamingo"]
-			current_scene._view = "calendar"
-			current_scene._ready()
-			_press("Today")
+			game.next_job = game.today()
+			change_scene_to_file("res://pack.tscn")
 		7:
 			assert(current_scene.name == "Main" and current_scene.job.has("regular"), "the regular's visit")
 			assert(current_scene.customer.mood == 90.0, "they start in the mood they were left in")

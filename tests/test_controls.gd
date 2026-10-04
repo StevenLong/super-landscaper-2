@@ -2,8 +2,8 @@
 # out of a panel with a way out; interact gets you back on the mower; walking into the dog
 # does nothing, interact puts the lead on, again picks it up; the pad's B hops, X throws;
 # with several things in reach, interact does the one you face (NOTES 123); at the truck
-# on the mower, interact opens it only when you're not on the throttle; buying on the
-# board keeps the cursor in that row; left and right on the board stay level.
+# on the mower, interact opens it only when you're not on the throttle; left and right
+# on the desk's pages stay level, and every page fits.
 extends SceneTree
 
 var g: Node
@@ -99,34 +99,26 @@ func _physics_process(_delta: float) -> bool:
 			change_scene_to_file("res://board.tscn")
 			_wait = 10
 		6:
-			var board := current_scene
-			board._show("shop")
-			var row: Control = board.find_child("petrol", true, false)
-			assert(row != null, "the petrol mower's row")
-			var buy: Button = row.find_children("*", "Button", true, false)[0]
-			buy.pressed.emit()
-			_wait = 3
+			_wait = 2
 		7:
-			var focused := root.gui_get_focus_owner()
-			assert(focused != null and current_scene.find_child("petrol", true, false).is_ancestor_of(focused),
-				"after buying, the cursor stays in that row, on %s" % [focused])
-			# Everything bought (rows with Sell and Buy both), and a busy paper: every page fits the screen.
-			for k: String in ["rideon", "robot", "robot"]:
-				g.buy(k)
+			# A busy paper and three regulars: every page fits the screen.
+			for i in 3:
+				var j: Dictionary = g.make_job(40 + i)
+				g.regulars[j.seed] = {"id": j.seed, "job": j, "cadence": 7, "rate": j.pay, "mood": 70.0, "drift": []}
 			for i in 6:
 				g.paper.append(g.make_job(100 + i))
 				g.paper[-1].day = g.day + 1
 			current_scene._show("calendar")
 			_wait = 5
-		8, 9, 10, 11, 12:
+		8, 9, 10:
 			_fits()
 			_sideways()
-			current_scene._show(["paper", "book", "crew", "shop", "calendar"][_step - 8])
+			current_scene._show(["paper", "book", "calendar"][_step - 8])
 			if _step == 8: # past the front page, a page of ads
 				current_scene._page = 1
 				current_scene._build()
 			_wait = 5
-		13:
+		11:
 			_fits()
 			_sideways()
 			# Shift and Ctrl turn the board's pages.

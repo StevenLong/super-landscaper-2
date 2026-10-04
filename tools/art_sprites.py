@@ -899,3 +899,157 @@ def jerrycan():
     c.rect(3, 9, 6, 1, RED[1])
     c.outline(INK)
     return c
+
+
+# ---------------------------------------------------------------- your own places (the hub)
+
+def van():
+    """A helper's box van parked facing right, seen 3/4 like the truck: the box, the cab,
+    a green stripe down the side. Its wheels' foot is the bottom row but two."""
+    W, H = 136, 112
+    c = Canvas(W, H)
+    F = H - 11
+    D = 34
+    box34(c, 4, F, 92, D, 58, CREAM[1:5], CREAM[2:])         # the box
+    c.rect(6, F - 30, 88, 6, LEAF[3])                         # the stripe
+    c.rect(6, F - 30, 88, 1, LEAF[4])
+    c.rect(8, F - 56, 1, 54, CREAM[1])                        # the back doors' seam
+    c.rect(50, F - 56, 1, 54, CREAM[1])                       # the side door
+    c.rect(44, F - 26, 4, 2, STEEL[2])
+    box34(c, 96, F, 26, D, 44, CREAM[2:5], CREAM[3:])         # the cab
+    c.rect(100, F - 40, 18, 14, GLASS[2])                     # side window
+    c.rect(100, F - 40, 18, 2, GLASS[4])
+    c.rect(114, F - 44 - D + 2, 7, D - 3, GLASS[3])          # windscreen
+    box34(c, 122, F, 10, D, 24, CREAM[2:5], CREAM[3:])        # the nose
+    c.rect(129, F - 18, 3, 5, hexc("fff8c0"))
+    c.rect(4, F - 2, 128, 3, STEEL[1])                        # sill
+    for wx in (24, 110):
+        c.ellipse(wx, F + 1, 10, 9, STEEL[0])
+        c.ellipse(wx, F + 1, 4.5, 4, STEEL[3])
+        c.ellipse(wx - 1, F, 1.5, 1.5, STEEL[5])
+    c.outline(INK)
+    return c
+
+
+def desk():
+    """The office desk seen 3/4: a wooden top with the phone, the paper and the client
+    book on it, drawers down the front. 80 wide; the foot is the bottom row."""
+    W, H = 80, 56
+    c = Canvas(W, H)
+    F = H - 1
+    top = box34(c, 2, F, 76, 26, 28, WOOD[1:5], WOOD[2:])     # returns the top's y
+    for x in (6, 52):                                         # two banks of drawers
+        for i in range(3):
+            c.rect(x, F - 26 + i * 8, 22, 7, WOOD[3])
+            c.rect(x, F - 26 + i * 8, 22, 1, WOOD[4])
+            c.rect(x + 9, F - 23 + i * 8, 4, 1, YELLOW[3])
+    shaded_rect(c, 8, top + 6, 16, 10, RED[1:])               # the phone
+    c.rect(9, top + 4, 14, 3, RED[2])
+    c.rect(13, top + 9, 6, 4, RED[0])
+    c.rect(30, top + 5, 24, 16, CREAM[4])                     # the paper, folded
+    for y in range(top + 8, top + 20, 3):
+        c.rect(32, y, 20, 1, CREAM[1])
+    c.rect(32, top + 6, 20, 2, INK)                           # its masthead
+    shaded_rect(c, 58, top + 6, 14, 12, BLUE[1:])             # the client book
+    c.rect(59, top + 7, 2, 10, BLUE[4])
+    c.outline(INK)
+    return c
+
+
+def corkboard():
+    """The corkboard on the wall: a wooden frame, cork, notes pinned up."""
+    W, H = 72, 48
+    c = Canvas(W, H)
+    shaded_rect(c, 0, 0, W, H, WOOD[1:])
+    r = random.Random(31)
+    c.rect(4, 4, W - 8, H - 8, hexc("9a6a3c"))
+    for _ in range(140):
+        c.set(r.randrange(4, W - 4), r.randrange(4, H - 4), hexc(r.choice(("86582e", "b07e48", "a47040"))))
+    for (x, y, w, h) in ((8, 7, 14, 12), (26, 9, 12, 10), (42, 6, 20, 13), (10, 24, 16, 14), (32, 25, 14, 12), (50, 24, 12, 15)):
+        c.rect(x, y, w, h, CREAM[4])
+        for ly in range(y + 3, y + h - 1, 3):
+            c.rect(x + 2, ly, w - 4, 1, CREAM[1])
+        c.set(x + w // 2, y + 1, r.choice((RED[3], YELLOW[3], BLUE[3])))
+    c.outline(INK)
+    return c
+
+
+def door():
+    """A panelled wooden door in its frame, a brass knob."""
+    W, H = 30, 56
+    c = Canvas(W, H)
+    c.rect(0, 0, W, H, CREAM[2])
+    c.rect(0, 0, W, 1, CREAM[4])
+    shaded_rect(c, 3, 3, W - 6, H - 3, WOOD[1:])
+    for y in (7, 31):
+        c.rect(7, y, W - 14, 18, WOOD[2])
+        c.rect(7, y, W - 14, 1, WOOD[1])
+        c.rect(7, y + 17, W - 14, 1, WOOD[4])
+    c.rect(W - 9, 30, 3, 3, YELLOW[3])
+    c.set(W - 9, 30, YELLOW[4])
+    c.outline(INK)
+    return c
+
+
+def floorboards():
+    """32x32 tileable floorboards, running left to right, the joins staggered."""
+    r = random.Random(41)
+    c = Canvas(32, 32, WOOD[3])
+    for row in range(4):
+        y = row * 8
+        for x in range(32):
+            c.px[y][x] = WOOD[1]
+            if r.random() < 0.25:
+                c.px[y + r.randrange(2, 7)][x] = WOOD[r.choice((2, 4))]
+        join = (row * 13 + 5) % 32
+        for yy in range(y, y + 8):
+            c.px[yy][join] = WOOD[1]
+    return c
+
+
+def shelf():
+    """Shop shelving seen from the front: steel uprights, three shelves of boxes and tins."""
+    W, H = 88, 72
+    c = Canvas(W, H)
+    r = random.Random(53)
+    for x in (0, W - 4):
+        shaded_rect(c, x, 0, 4, H, STEEL[1:])
+    for i in range(3):
+        y = 20 + i * 24
+        shaded_rect(c, 0, y, W, 4, STEEL[1:])
+        x = 6
+        while x < W - 14:
+            w = r.choice((10, 12, 14, 8))
+            h = r.choice((10, 12, 14, 16))
+            ramp = r.choice((RED, BLUE, YELLOW, LEAF, CREAM))
+            shaded_rect(c, x, y - h, w, h, ramp[1:])
+            x += w + r.choice((1, 2, 3))
+    c.outline(INK)
+    return c
+
+
+def counter():
+    """The shop's counter seen 3/4, the till on it."""
+    W, H = 96, 56
+    c = Canvas(W, H)
+    F = H - 1
+    top = box34(c, 2, F, 92, 18, 30, WOOD[1:5], WOOD[2:])
+    shaded_rect(c, 60, top - 8, 22, 16, STEEL[1:])            # the till
+    c.rect(62, top - 6, 18, 4, hexc("40c060"))
+    for i in range(3):
+        c.rect(63 + i * 6, top + 1, 4, 3, STEEL[4])
+    c.outline(INK)
+    return c
+
+
+def signpost():
+    """A board on a post (the yard's: more room for sale)."""
+    W, H = 40, 48
+    c = Canvas(W, H)
+    shaded_rect(c, 18, 20, 4, 28, WOOD[1:])
+    c.rect(2, 2, W - 4, 22, RED[2])
+    c.rect(4, 4, W - 8, 18, CREAM[4])
+    c.rect(8, 9, W - 16, 2, RED[2])
+    c.rect(8, 14, W - 20, 2, INK)
+    c.outline(INK)
+    return c

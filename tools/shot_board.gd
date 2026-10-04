@@ -1,7 +1,7 @@
 extends SceneTree
 # Screenshots of the corkboard for eyeballing its layout: a busy day in June with regulars
 # and a helper, the calendar (today open, a Go button focused), who goes (the menu open on
-# tomorrow), the paper's front page and a page of ads (a Ring focused), the shop, and a job's briefing and clock.
+# tomorrow), the paper's front page and a page of ads (a Ring focused), and a job's briefing and clock.
 # Not a test. Needs a window:
 # SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot_board.gd
 var f := 0
@@ -36,7 +36,7 @@ func _process(_d: float) -> bool:
 	f += 1
 	var b := current_scene
 	if f == 30:
-		(b.find_child("Today", true, false) as Control).grab_focus()
+		(b.find_child("EndDay", true, false) as Control).grab_focus()
 	if f == 40:
 		root.get_texture().get_image().save_png(out + "/board_calendar.png")
 		(b.find_child("Tile_%d" % (g.day + 1), true, false) as Control).grab_focus()
@@ -56,10 +56,8 @@ func _process(_d: float) -> bool:
 			r.grab_focus()
 	if f == 60:
 		root.get_texture().get_image().save_png(out + "/board_paper.png")
-		b._show("shop")
-	if f == 80:
-		root.get_texture().get_image().save_png(out + "/board_shop.png")
-		b._go(g.jobs_today()[1]) # the regular's, at 1:30
+		g.next_job = g.jobs_today()[1] # the regular's, at 1:30: off in the truck
+		change_scene_to_file("res://pack.tscn")
 	if f == 100:
 		b.drive()
 	if f == 130:

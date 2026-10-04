@@ -57,7 +57,11 @@ func _process(_delta: float) -> bool:
 			assert(g.money == cash + 360 and g.regulars[_id].prepaid == 4 and g.upfront.is_empty(), "taken: $360 now, four visits owed")
 			_press("Continue")
 		1:
-			assert(current_scene.name == "Board", "back at the board")
+			assert(current_scene.name == "Hub" and g.place == "yard", "home: the yard")
+			var desk: Node = load("res://board.tscn").instantiate() # and in, to the desk
+			current_scene.free()
+			root.add_child(desk)
+			current_scene = desk
 			current_scene._show("book")
 			assert(current_scene.find_children("*", "Button", true, false).any(func(b: Button) -> bool: return b.text == "Drop (owe $360)"), "Drop says what you'd owe back")
 			g.calendar = {g.day: [g._visit(_id)]}

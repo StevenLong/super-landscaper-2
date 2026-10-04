@@ -1,11 +1,12 @@
 extends Control
-## Between jobs (design doc, The Business): the corkboard the office will open (design
-## doc, Time is the scarce thing). Four pages: the calendar (today's jobs, the next two
-## weeks), the week's paper to ring, your crew (who goes where), and the shop. The day's clock runs along the top and
-## lights up what an action will cost before you take it. Friday brings payday (the loan
-## shark's man), September's end the winter, and a job you never finished the blackout.
+## The desk in the office (design doc, The hub): the paper things. Three pages: the
+## calendar (five weeks of tiles, a day open beside them, who goes to each booking), the
+## week's paper to ring, and the client book. Step away and you're in the office (hub.gd),
+## where the yard and the shop are. The desk also has what's waiting to be read: the
+## day's end, Friday's payday (the loan shark's man), court, September's end the winter,
+## and a job you never finished, the blackout.
 
-const VIEWS := ["calendar", "paper", "book", "crew", "shop"]
+const VIEWS := ["calendar", "paper", "book"]
 const PER_PAGE := 3 ## ads to a page of the paper
 const CORK := Color("8a6238")
 const NOTE := Color("efe6cc")
@@ -35,8 +36,8 @@ func _ready() -> void:
 		_build()
 
 
-## Lay the board out. `keep`: the shop row you just bought or sold in, which keeps the
-## cursor instead of it jumping back to the top.
+## Lay the desk out. `keep`: what you just changed (a booking's card), which keeps the
+## cursor there instead of it jumping back to the top.
 func _build(keep := "") -> void:
 	Game.save()
 	for c in get_children():
@@ -66,6 +67,9 @@ func _build(keep := "") -> void:
 	var gap := Control.new()
 	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(gap)
+	var away := UI.button("Step away %s" % Game.key("hop"), _away, 18)
+	away.name = "Away"
+	head.add_child(away)
 	var leave := UI.button("Save and quit", _save_and_quit, 18) # the board's always saved: this just says so
 	leave.name = "Quit"
 	head.add_child(leave)
@@ -87,10 +91,8 @@ func _build(keep := "") -> void:
 		var open := Game.paper.filter(func(o: Dictionary) -> bool: return Game.cant_book(o) == "" and not o.get("refused", false)).size()
 		if Game.cant_hire() == "":
 			open += Game.wanted.size()
-		var asks := Game.helpers.filter(func(h: Dictionary) -> bool: return h.has("asks")).size()
 		var t := UI.button({"calendar": "Calendar", "paper": "Paper (%d to ring)" % open, "shop": "Shop",
-			"book": "Client book" + (" (%d)" % Game.regulars.size() if Game.regulars else ""),
-			"crew": "Crew" + (" (%d)" % Game.helpers.size() if Game.helpers else "") + (" !" if asks else "")}[v], _show.bind(v), 20)
+			"book": "Client book" + (" (%d)" % Game.regulars.size() if Game.regulars else "")}[v], _show.bind(v), 20)
 		t.name = "Tab_" + v
 		if v == _view:
 			t.add_theme_color_override("font_color", UI.GOLD)
@@ -107,10 +109,6 @@ func _build(keep := "") -> void:
 			first = _paper_view(root)
 		"book":
 			first = _book_view(root)
-		"shop":
-			first = _shop_view(root, keep)
-		"crew":
-			first = _crew_view(root, keep)
 		_:
 			first = _calendar(root, keep)
 	UI.focus(first)
@@ -173,9 +171,6 @@ func _calendar(root: Control, keep := "") -> Control:
 			if not b.disabled:
 				return b
 	if _open_day == Game.day:
-		var go := find_child("Today", true, false) as Button
-		if go and not go.disabled:
-			return go
 		return find_child("EndDay", true, false)
 	return find_child("Tile_%d" % _open_day, true, false)
 
@@ -254,13 +249,17 @@ func _fill_day(panel: Control) -> void:
 		panel.add_child(UI.label("Payday: the shark's man, rent and food%s." % (", wages" if Game.helpers else ""), 18, UI.DIM))
 	var l := Game.bookings(d)
 	var mine := Game.jobs_today() if d == Game.day else []
+	if not mine.is_empty():
+		var go := UI.label("Your truck's in the yard: step away from the desk to go.", 18, UI.DIM)
+		go.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		panel.add_child(go)
 	for b: Dictionary in l:
 		if b.has("jail"):
 			panel.add_child(UI.label("A day in jail.", 20, UI.BAD))
 		elif b.has("court"):
 			panel.add_child(UI.label("Court: what happened at %s's." % b.court.customer, 20, UI.BAD))
 		else:
-			panel.add_child(_job_card(b, mine))
+			panel.add_child(_job_card(b))
 	if l.is_empty():
 		panel.add_child(UI.label("Nothing booked.", 20, UI.DIM))
 	if d == Game.day:
@@ -278,8 +277,8 @@ func _fill_day(panel: Control) -> void:
 
 
 ## A booking in the open day: who, when and the pay; how it stands now (today); a regular
-## who wants you; who's going (pick from the crew); and today, going yourself.
-func _job_card(b: Dictionary, mine: Array) -> Control:
+## who wants you; who's going (pick from the crew). Going yourself is the truck's, in the yard.
+func _job_card(b: Dictionary) -> Control:
 	var box := UI.vbox(4)
 	var line := UI.label(b.customer + _job_line(b), 18, UI.BAD if b.has("service") else (UI.GOOD if b.has("regular") else UI.GOLD))
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -300,15 +299,6 @@ func _job_card(b: Dictionary, mine: Array) -> Control:
 		pick.name = "Who"
 		pick.pressed.connect(_pick_who.bind(b, pick))
 		row.add_child(pick)
-	if b in mine:
-		var go: Button
-		if Game.can_go(b):
-			go = UI.button("Go: there at %s" % Game.time_text(Game.arrival(b)), _go.bind(b), 18)
-		else:
-			go = UI.button("Too late", func() -> void: pass, 18)
-			go.disabled = true
-		go.name = "Today" if b == mine[0] else "Go"
-		row.add_child(go)
 	if row.get_child_count() > 0:
 		box.add_child(row)
 	var p := UI.panel(box)
@@ -540,40 +530,6 @@ func _newsprint(c: Control, sheet := false) -> Control:
 	return p
 
 
-## The shop: your mowers, upgrades and robots. Returns the first button (or the row kept).
-func _shop_view(root: Control, keep: String) -> Control:
-	var scroll := ScrollContainer.new() # a long list scrolls, following the cursor
-	scroll.follow_focus = true
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(scroll)
-	var shop := GridContainer.new() # two columns, so it fits without scrolling far
-	shop.columns = 2
-	shop.add_theme_constant_override("h_separation", 16)
-	shop.add_theme_constant_override("v_separation", 6)
-	shop.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(shop)
-	for key: String in Game.MOWERS:
-		shop.add_child(_mower_row(key))
-	for key: String in Game.UPGRADES:
-		shop.add_child(_upgrade_row(key))
-	shop.add_child(_van_row())
-	for key: String in ["petrol", "rideon"]:
-		shop.add_child(_crew_mower_row(key))
-	shop.add_child(_robot_row())
-	for c: Control in shop.get_children():
-		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for l: Label in shop.find_children("*", "Label", true, false): # wrap, so no row's words widen the column off the screen
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var first: Control = null
-	var kept := find_child(keep, true, false) if keep != "" else null
-	for b: Button in (kept if kept else shop).find_children("*", "Button", true, false):
-		if not b.disabled:
-			first = b
-			break
-	return first if first else find_child("Tab_shop", true, false)
-
-
 ## The client book on the desk: your regulars, how often and what they pay, and dropping one.
 func _book_view(root: Control) -> Control:
 	var side := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
@@ -611,71 +567,6 @@ func _regular_row(id: int) -> Control:
 	return UI.panel(row)
 
 
-func _mower_row(key: String) -> Control:
-	var m: Dictionary = Game.MOWERS[key]
-	var row := UI.hbox(10)
-	var info := UI.vbox(2)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var on_truck := key == "push" or Game.packed_has(key)
-	info.add_child(UI.label(m.name + ("  (packed)" if on_truck and key in Game.owned else ""), 20,
-		UI.GOLD if on_truck and key in Game.owned else UI.TEXT))
-	info.add_child(UI.label(m.blurb, 18, UI.DIM))
-	row.add_child(info)
-	if key in Game.owned:
-		if key != "push":
-			row.add_child(_sell_button(key, _build.bind(key)))
-	else:
-		var buy := UI.button("Buy $%d" % m.price, func() -> void:
-			Game.buy(key)
-			_build(key), 18)
-		buy.disabled = Game.money < m.price
-		row.add_child(buy)
-	var p := UI.panel(row)
-	p.name = key # _build(key) finds the row again
-	return p
-
-
-## Robot mowers: as many as you like.
-func _robot_row() -> Control:
-	var row := UI.hbox(10)
-	var info := UI.vbox(2)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(UI.label(Game.ROBOT.name + ("  (you have %d)" % Game.robots if Game.robots > 0 else ""), 20))
-	info.add_child(UI.label(Game.ROBOT.blurb, 18, UI.DIM))
-	row.add_child(info)
-	if Game.robots > 0:
-		row.add_child(_sell_button("robot", _build.bind("robot")))
-	var buy := UI.button("Buy $%d" % Game.ROBOT.price, func() -> void:
-		Game.buy("robot")
-		_build("robot"), 18)
-	buy.disabled = Game.money < Game.ROBOT.price
-	row.add_child(buy)
-	var p := UI.panel(row)
-	p.name = "robot" # _build("robot") finds the row again
-	return p
-
-
-func _upgrade_row(key: String) -> Control:
-	var u: Dictionary = Game.UPGRADES[key]
-	var row := UI.hbox(10)
-	var info := UI.vbox(2)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(UI.label(u.name, 20))
-	info.add_child(UI.label(u.blurb, 18, UI.DIM))
-	row.add_child(info)
-	if key in Game.upgrades:
-		row.add_child(_sell_button(key, _build.bind(key)))
-	else:
-		var buy := UI.button("Buy $%d" % u.price, func() -> void:
-			Game.buy(key)
-			_build(key), 18)
-		buy.disabled = Game.money < u.price or (key == "gear4" and "gear3" not in Game.upgrades)
-		row.add_child(buy)
-	var p := UI.panel(row)
-	p.name = key # _build(key) finds the row again
-	return p
-
-
 ## A situation wanted, on newsprint like the ads: who, how quick and how careful (in
 ## words and out of ten), what they ask a week. Ringing hires them, if you've a van free.
 func _wanted(w: Dictionary) -> Control:
@@ -708,110 +599,6 @@ func _wanted(w: Dictionary) -> Control:
 	return _newsprint(row)
 
 
-## Your crew (design doc, Hired help): each helper, their kit and wage (a raise they've
-## asked for, yes or no), last evening's report; and the week's bookings, each to you or a
-## helper. Returns the first button. `keep`: the row just changed, which keeps the cursor.
-func _crew_view(root: Control, keep: String) -> Control:
-	var cols := UI.hbox(20)
-	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(cols)
-	var crew := ScrollContainer.new() # a big crew and a long report scroll, following the cursor
-	crew.follow_focus = true
-	crew.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	crew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(crew)
-	var left := UI.vbox(6)
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	crew.add_child(left)
-	left.add_child(UI.label("Your crew (%d van%s)" % [Game.vans, "" if Game.vans == 1 else "s"], 22))
-	if Game.helpers.is_empty():
-		var none := UI.label("Nobody yet. Buy a van in the shop, then ring a situation wanted in the paper. A helper's paid every Friday, busy or not.", 18, UI.DIM)
-		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		left.add_child(none)
-	for h: Dictionary in Game.helpers:
-		left.add_child(_helper_row(h))
-	var kept := find_child(keep, true, false) if keep != "" else null
-	for c: Node in (kept.find_children("*", "Button", true, false) if kept else []) + cols.find_children("*", "Button", true, false):
-		if not (c as Button).disabled:
-			return c
-	return find_child("Tab_crew", true, false)
-
-
-## A helper: how good, what they cost, their kit (pressing it tries the next), a raise
-## asked for, letting them go.
-func _helper_row(h: Dictionary) -> Control:
-	var box := UI.vbox(4)
-	box.add_child(UI.label("%s: pace %d, care %d, $%d a week, %d job%s" % [h.name, roundi(h.pace * 10.0), roundi(h.care * 10.0),
-		h.wage, h.jobs, "" if h.jobs == 1 else "s"], 18, UI.GOOD))
-	var row := UI.hbox(10)
-	var kit := UI.button("Kit: " + Game.MOWERS[h.kit].name, func() -> void:
-		var kinds: Array = Game.MOWERS.keys()
-		var i := kinds.find(h.kit)
-		for step in range(1, kinds.size() + 1): # the next one free, round to the push mower
-			if Game.set_kit(h.id, kinds[(i + step) % kinds.size()]):
-				break
-		_build("helper_%d" % h.id), 18)
-	kit.name = "Kit"
-	row.add_child(kit)
-	if h.has("asks"):
-		row.add_child(UI.label("Asks $%d:" % h.asks, 18, UI.GOLD))
-		row.add_child(UI.button("Pay it", func() -> void:
-			Game.answer_raise(h.id, true)
-			_build("helper_%d" % h.id), 18))
-		row.add_child(UI.button("No", func() -> void:
-			Game.answer_raise(h.id, false)
-			_build("helper_%d" % h.id), 18))
-	row.add_child(UI.button("Let go", func() -> void:
-		Game.let_go(h.id)
-		_build(), 18))
-	box.add_child(row)
-	var p := UI.panel(box)
-	p.name = "helper_%d" % h.id
-	return p
-
-
-## Vans: one per helper.
-func _van_row() -> Control:
-	var row := UI.hbox(10)
-	var info := UI.vbox(2)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(UI.label(Game.VAN.name + ("  (you have %d)" % Game.vans if Game.vans > 0 else ""), 20))
-	info.add_child(UI.label(Game.VAN.blurb, 18, UI.DIM))
-	row.add_child(info)
-	if Game.vans > 0:
-		row.add_child(_sell_button("van", _build.bind("van")))
-	var buy := UI.button("Buy $%d" % Game.VAN.price, func() -> void:
-		Game.buy("van")
-		_build("van"), 18)
-	buy.disabled = Game.money < Game.VAN.price
-	row.add_child(buy)
-	var p := UI.panel(row)
-	p.name = "van"
-	return p
-
-
-## A mower for the crew: as many as you like, given out on the Crew page.
-func _crew_mower_row(kind: String) -> Control:
-	var m: Dictionary = Game.MOWERS[kind]
-	var n: int = Game.crew_kit.get(kind, 0)
-	var row := UI.hbox(10)
-	var info := UI.vbox(2)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(UI.label("%s for the crew%s" % [m.name, "  (%d)" % n if n > 0 else ""], 20))
-	info.add_child(UI.label("A helper on it mows quicker. Give it out on the Crew page.", 18, UI.DIM))
-	row.add_child(info)
-	if n > 0:
-		row.add_child(_sell_button("crew_" + kind, _build.bind("crew_" + kind)))
-	var buy := UI.button("Buy $%d" % m.price, func() -> void:
-		Game.buy("crew_" + kind)
-		_build("crew_" + kind), 18)
-	buy.disabled = Game.money < m.price
-	row.add_child(buy)
-	var p := UI.panel(row)
-	p.name = "crew_" + kind
-	return p
-
-
 func _save_and_quit() -> void:
 	Game.save()
 	Game.in_run = false
@@ -836,6 +623,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	var leave := find_child("Quit", true, false) as Button
 	if leave and event.is_action_pressed("pause"):
 		UI.focus(leave)
+		get_viewport().set_input_as_handled()
+	elif leave and event.is_action_pressed("hop"): # away from the desk
+		_away()
 		get_viewport().set_input_as_handled()
 	elif leave and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")):
 		var step := 1 if event.is_action_pressed("gear_up") else -1
@@ -891,9 +681,11 @@ func _sell_button(key: String, then: Callable) -> Button:
 		then.call(), 18)
 
 
-func _go(b: Dictionary) -> void: # packing first (pack.gd), then the job
-	Game.next_job = b
-	get_tree().change_scene_to_file("res://pack.tscn")
+## Step away from the desk: into the office, stood by it.
+func _away() -> void:
+	Game.place = "office"
+	Game.spot = "desk"
+	get_tree().change_scene_to_file("res://hub.tscn")
 
 
 ## A fresh screen with a centred column, for payday, the winter and the business's end.

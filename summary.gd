@@ -26,13 +26,13 @@ func _ready() -> void:
 	var offered := not Game.offer.is_empty() or not Game.upfront.is_empty()
 	var row := UI.hbox(14)
 	root.add_child(row)
-	var go := UI.button("Continue" if offered else "Back to the board", func() -> void:
+	var go := UI.button("Continue" if offered else "Home", func() -> void:
 		if not Game.offer.is_empty():
 			_offer_screen()
 		elif not Game.upfront.is_empty():
 			_upfront_screen()
 		else:
-			get_tree().change_scene_to_file("res://board.tscn"), 24)
+			_home(), 24)
 	go.name = "Continue"
 	row.add_child(go)
 	var id: int = Game.current_job.get("regular", -1)
@@ -76,9 +76,9 @@ func _page(title_text: String, look: Dictionary, expression: String, words: Stri
 	return [root, face, said]
 
 
-## Back to the board, focused.
+## Home, focused.
 func _back(root: Control) -> void:
-	var go := UI.button("Back to the board", func() -> void: get_tree().change_scene_to_file("res://board.tscn"), 24)
+	var go := UI.button("Home", func() -> void: _home(), 24)
 	go.name = "Continue"
 	root.add_child(go)
 	UI.focus(go)
@@ -103,7 +103,7 @@ func _raise_screen(id: int) -> void:
 		_back(root), 20)
 	ask.name = "AskRaise"
 	buttons.add_child(ask)
-	var leave := UI.button("Leave it", func() -> void: get_tree().change_scene_to_file("res://board.tscn"), 20)
+	var leave := UI.button("Leave it", func() -> void: _home(), 20)
 	leave.name = "Leave"
 	buttons.add_child(leave)
 	var row := UI.hbox(14)
@@ -158,7 +158,7 @@ func _offer_screen() -> void:
 	var choices := UI.vbox(12)
 	root.add_child(choices)
 	var buttons := UI.hbox(12)
-	var go := UI.button("Back to the board", func() -> void: get_tree().change_scene_to_file("res://board.tscn"), 24)
+	var go := UI.button("Home", func() -> void: _home(), 24)
 	go.name = "Continue"
 	for b: Array in [["Accept", "accept", "Deal: $%d" % o.rate], ["Haggle", "haggle", "Ask for $%d" % asked[0]], ["Decline", "decline", "Sorry, I'm booked up"]]:
 		var btn := UI.button(b[2], func() -> void:
@@ -318,3 +318,11 @@ func _rundown(r: Dictionary) -> Control:
 	if not tally.is_empty(): # everything the job counted, going by like a news ticker
 		info.add_child(Ticker.new("   *   ".join(tally), 18, UI.GOLD, 640))
 	return UI.panel(row)
+
+
+## Home: the yard, stood by the truck you came back in (hub.gd; anything waiting to be
+## read, the day's end, goes to the desk first).
+func _home() -> void:
+	Game.place = "yard"
+	Game.spot = "truck"
+	get_tree().change_scene_to_file("res://hub.tscn")

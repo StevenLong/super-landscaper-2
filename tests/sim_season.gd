@@ -185,14 +185,16 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 				for w: Dictionary in g.wanted:
 					if w.pace / w.wage > best.pace / best.wage:
 						best = w
-				g.buy("van")
-				g.hire(best)
-				m.bought.append("van")
+				_room(m, "van", buffer)
+				if g.buy("van"):
+					g.hire(best)
+					m.bought.append("van")
 			m.wages += g.wages()
 			for item: String in BUY:
 				if not (item in g.owned or item in g.upgrades) and g.money - g.due() - g.price_of(item) >= buffer:
-					g.buy(item)
-					m.bought.append(item)
+					_room(m, item, buffer)
+					if g.buy(item):
+						m.bought.append(item)
 			var r: Dictionary = g.settle_payday(maxi(0, g.money - g.due() - buffer))
 			m.taken.append_array(r.taken)
 		if g.date().month != month or g.winter_pending or g.run_over_reason != "":
@@ -213,6 +215,15 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 	if g.run_over_reason != "":
 		print("seed %d: %s" % [seed_value, g.run_over_reason])
 	return months
+
+
+## No room in the yard for `item`: buy more yard first, if that leaves the buffer.
+func _room(m: Dictionary, item: String, buffer: int) -> void:
+	var g: Node = root.get_node("Game")
+	var kind: String = g.yard_kind(item)
+	if kind != "" and not g.yard_room(kind) and g.money - g.due() - g.price_of("yard") - g.price_of(item) >= buffer:
+		g.buy("yard")
+		m.bought.append("yard")
 
 
 func _blank() -> Dictionary:

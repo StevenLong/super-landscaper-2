@@ -1,7 +1,6 @@
 # Hired help on the board (NOTES 209): the paper's situations wanted (no van, no ringing),
-# a van from the shop, ringing hires; a calendar day's booking sent to a helper and back
-# (picked from a list); the Crew page gives out crew kit, answers a raise; their day in the
-# day's end.
+# a van, ringing hires; a calendar day's booking sent to a helper and back (picked from a
+# list); their day in the day's end, a raise asked and paid there. Kit and vans: test_hub.
 extends SceneTree
 
 var g: Node
@@ -41,8 +40,7 @@ func _process(_delta: float) -> bool:
 			s._build()
 		1:
 			assert(_texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and t.contains("No van for them")), "no van: they can't be rung")
-			s._show("shop")
-			s.find_child("van", true, false).find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.text.begins_with("Buy"))[0].pressed.emit()
+			assert(g.buy("van"), "a van (the shop's: test_hub)")
 		2:
 			assert(g.vans == 1, "a van bought")
 			s._show("paper")
@@ -83,25 +81,19 @@ func _process(_delta: float) -> bool:
 			(s.find_child("WhoMenu", true, false) as PopupMenu).id_pressed.emit(0)
 		6:
 			assert(not g.bookings(g.day + 1)[0].has("helper"), "picked again: back to you")
-			g.buy("crew_petrol")
-			s._show("crew")
-		7:
-			_button("Kit:").pressed.emit()
-		8:
-			assert(g.helpers[0].kit == "petrol" and _button("Kit: Petrol") != null, "given the crew's petrol mower")
-			g.helpers[0].asks = g.helpers[0].wage + 20
-			s._build()
-		9:
-			var asks: int = g.helpers[0].asks
-			_button("Pay it").pressed.emit()
-			assert(g.helpers[0].wage == asks, "a raise paid")
 			g.assign(g.bookings(g.day + 1)[0], g.helpers[0].id)
+			g.helpers[0].pace = (roundi(g.helpers[0].pace * 10.0) + 0.5) / 10.0 - 0.001 # a whisker under their next point: tomorrow's job ticks it
 			g.end_day() # tomorrow's done by them... first today ends
 			g.day_end = {}
 			g.end_day()
 			s._ready()
-		10:
+		7:
 			assert(_texts().any(func(t: String) -> bool: return t.contains("mowed for")), "their day in the day's end: %s" % [_texts()])
+			assert(g.helpers[0].has("asks") and _texts().any(func(t: String) -> bool: return t.begins_with("Raise ")), "a point up: they ask, at the day's end")
+			_button("Pay it").pressed.emit()
+		8:
+			assert(not g.helpers[0].has("asks"), "paid")
+			assert(not _texts().any(func(t: String) -> bool: return t.begins_with("Raise ")), "and the ask's gone from the day's end")
 			_button("Next day").pressed.emit()
 			print("PASS crew board")
 			quit()

@@ -56,6 +56,15 @@ const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself, i
 ## Hired help (design doc, The Business: Hired help), slice 1. Guesses, tuned with
 ## tests/sim_season.gd: a helper kept busy brings in about twice their wage.
 const VAN := {"name": "Van", "price": 400, "blurb": "One per helper: no van, no crew."}
+## The yard (design doc, The hub): your storage, and storage is a resource. A floor of cells
+## (the truck's packing cells), YARD_W across and yard_rows deep; vans and kit take their
+## footprints, placed for you. A crew petrol mower given out rides in its helper's van. More
+## yard is bought YARD_MORE rows at a time, each lot dearer. Guesses, sim_season to tune.
+const YARD_W := 10
+const YARD_ROWS := 8
+const YARD_MORE := 4
+const YARD_PRICE := 300 ## the first lot; each after costs this much more
+const FOOT := {"push": Vector2i(2, 2), "petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "robot": Vector2i(2, 2), "van": Vector2i(7, 3)}
 const HELP_SECS := {"push": 420.0, "petrol": 262.0, "rideon": 281.0} ## sim_balance's bot, default lawn to 85% (push guessed): a helper at pace 1 mows like it
 const WAGE := 25.0 ## a week per point of your name, asked by a helper of pace 1 and care 1 (less for less): fully booked, one brings in about twice it (tests/_probe in session 21, sim_season SIM_CREW)
 const WANTS_YOU := {"perfectionist": 15.0, "toff": 15.0} ## a regular of these wants you: a helper's visit starts their mood this much lower
@@ -224,6 +233,9 @@ var crew_kit := {} ## mowers bought for the crew (yours aren't lent): kind -> ho
 var crew_report: Array[String] = [] ## the crew's day just gone, for the board
 var day_mine: Array[Dictionary] = [] ## your jobs today, for the day's end: {customer, net, outcome, mood}
 var day_money := 0 ## money as the day began
+var yard_rows := YARD_ROWS ## how deep the yard's floor is
+var place := "office" ## where you are between jobs: "office", "yard" or "shop" (not saved: a load starts at the desk)
+var spot := "desk" ## where in it you stand: a door, the desk, the truck
 var paper_tally := {} ## run_tally when this week's paper came out: the week's mess since is its news
 var day_end := {} ## the day just gone, until its screen's read: {day, mine, crew, crew_net, missed, was, now}
 
@@ -318,7 +330,7 @@ func front_page() -> Array:
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
 	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job",
-	"helpers", "wanted", "vans", "crew_kit", "crew_report", "day_mine", "day_money", "day_end", "paper_tally"]
+	"helpers", "wanted", "vans", "crew_kit", "crew_report", "day_mine", "day_money", "day_end", "paper_tally", "yard_rows"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -402,6 +414,9 @@ func new_run(seed_value := 0) -> void:
 	day_money = money
 	day_end = {}
 	paper_tally = {}
+	yard_rows = YARD_ROWS
+	place = "office"
+	spot = "desk"
 	paper = make_paper()
 	wanted = make_wanted()
 	save()
@@ -739,8 +754,107 @@ func fine(tier: int, at_record: float) -> int:
 	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_record))
 
 
-## An item: a mower, an upgrade, "robot", "van", or "crew_" and a mower (one for the crew).
+## Everything on the yard's floor, biggest first: {kind, crew (a crew mower), n (which of
+## its kind)}. The vans; your mowers (the push mower too: the truck's packed for each job);
+## robots; the crew's petrol mowers not given out (one given out rides in its van) and all
+## their ride-ons (on their trailers, never in a van).
+func yard_kit() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for i in vans:
+		out.append({"kind": "van", "n": i})
+	for k: String in ["rideon", "petrol", "push"]:
+		if k in owned:
+			out.append({"kind": k})
+	for i in crew_kit.get("rideon", 0):
+		out.append({"kind": "rideon", "crew": true, "n": i})
+	for i in maxi(0, crew_free("petrol")):
+		out.append({"kind": "petrol", "crew": true, "n": i})
+	for i in robots:
+		out.append({"kind": "robot", "n": i})
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return _area(a.kind) > _area(b.kind))
+	return out
+
+
+func _area(kind: String) -> int:
+	var f: Vector2i = FOOT[kind]
+	return f.x * f.y
+
+
+## Where everything goes on the yard's floor (`extra`: one more of a kind, to see if it'd
+## fit): each the first place it fits, row by row, turned if that's what fits (a van never
+## turns). Returns {placed: [{item, at, size}], over: [items with no room]}.
+func yard_layout(extra := "") -> Dictionary:
+	var items := yard_kit()
+	if extra != "":
+		items.append({"kind": extra, "extra": true})
+		items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return _area(a.kind) > _area(b.kind))
+	var used := {}
+	var placed: Array[Dictionary] = []
+	var over: Array[Dictionary] = []
+	for it: Dictionary in items:
+		var at := Vector2i(-1, -1)
+		var size: Vector2i = FOOT[it.kind]
+		for turn: bool in ([false] if it.kind == "van" or size.x == size.y else [false, true]):
+			var sz := Vector2i(size.y, size.x) if turn else size
+			at = _yard_spot(used, sz)
+			if at.x >= 0:
+				size = sz
+				break
+		if at.x < 0:
+			over.append(it)
+			continue
+		for y in range(at.y, at.y + size.y):
+			for x in range(at.x, at.x + size.x):
+				used[Vector2i(x, y)] = true
+		placed.append({"item": it, "at": at, "size": size})
+	return {"placed": placed, "over": over}
+
+
+func _yard_spot(used: Dictionary, size: Vector2i) -> Vector2i:
+	for y in yard_rows - size.y + 1:
+		for x in YARD_W - size.x + 1:
+			var free := true
+			for yy in range(y, y + size.y):
+				for xx in range(x, x + size.x):
+					if used.has(Vector2i(xx, yy)):
+						free = false
+						break
+				if not free:
+					break
+			if free:
+				return Vector2i(x, y)
+	return Vector2i(-1, -1)
+
+
+## Is there room in the yard for one more of `kind`?
+func yard_room(kind: String) -> bool:
+	return yard_layout(kind).over.is_empty()
+
+
+## What takes room in the yard when bought: a van, a mower or a robot (yours or the crew's).
+func yard_kind(item: String) -> String:
+	var k := item.trim_prefix("crew_")
+	return k if FOOT.has(k) and k != "push" else ""
+
+
+## Why you can't buy `item` now, or "".
+func cant_buy(item: String) -> String:
+	if MOWERS.has(item) and item in owned:
+		return "You've got one"
+	if UPGRADES.has(item) and (item in upgrades or (item == "gear4" and "gear3" not in upgrades)):
+		return "You've got it" if item in upgrades else "Needs third gear first"
+	if yard_kind(item) != "" and not yard_room(yard_kind(item)):
+		return "No room in the yard"
+	if money < price_of(item):
+		return "Not enough money"
+	return ""
+
+
+## An item: a mower, an upgrade, "robot", "van", "yard" (more of it), or "crew_" and a mower (one for the crew).
 func price_of(item: String) -> int:
+	if item == "yard":
+		@warning_ignore("integer_division")
+		return YARD_PRICE * (1 + (yard_rows - YARD_ROWS) / YARD_MORE)
 	if item == "van":
 		return VAN.price
 	if item.begins_with("crew_"):
@@ -750,9 +864,11 @@ func price_of(item: String) -> int:
 
 func buy(item: String) -> bool:
 	var price := price_of(item)
-	if money < price:
+	if money < price or (yard_kind(item) != "" and not yard_room(yard_kind(item))): # no room, no sale
 		return false
-	if item == "van":
+	if item == "yard":
+		yard_rows += YARD_MORE
+	elif item == "van":
 		vans += 1
 	elif item.begins_with("crew_"):
 		var kind := item.trim_prefix("crew_")
@@ -1461,6 +1577,8 @@ func set_kit(id: int, kind: String) -> bool:
 	var h := helper(id)
 	if h.is_empty() or (kind != "push" and h.kit != kind and crew_free(kind) <= 0):
 		return false
+	if h.kit == "petrol" and kind != "petrol" and not yard_room("petrol"): # out of the van, back on the floor
+		return false
 	h.kit = kind
 	save()
 	return true
@@ -1840,6 +1958,8 @@ func unpacked() -> Array[String]:
 func kit_name(kind: String) -> String:
 	if kind == "van":
 		return VAN.name
+	if kind == "yard":
+		return "More yard"
 	if kind.begins_with("crew_"):
 		return "Crew " + MOWERS[kind.trim_prefix("crew_")].name.to_lower()
 	if kind == "can":
