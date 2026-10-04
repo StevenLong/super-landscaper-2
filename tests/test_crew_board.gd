@@ -1,6 +1,7 @@
 # Hired help on the board (NOTES 209): the paper's situations wanted (no van, no ringing),
-# a van from the shop, ringing hires; the Crew page sends a booking to a helper and back,
-# gives out crew kit, answers a raise; their day's report on the calendar and the Crew page.
+# a van from the shop, ringing hires; a calendar day's booking sent to a helper and back
+# (picked from a list); the Crew page gives out crew kit, answers a raise; their day in the
+# day's end.
 extends SceneTree
 
 var g: Node
@@ -62,41 +63,46 @@ func _process(_delta: float) -> bool:
 			job.from = g.WINDOW_START
 			job.by = g.DAY_END
 			g.book(job)
-			s._show("crew")
+			s._show("calendar")
 		4:
 			var h: Dictionary = g.helpers[0]
-			assert(_texts().any(func(t: String) -> bool: return t.begins_with(h.name + ": pace")), "the helper on the Crew page")
-			var send := _button("You")
-			assert(send != null and not send.disabled, "a booking to send")
-			send.pressed.emit()
+			s._open(g.day + 1) # the cursor on tomorrow's tile opens it
+			var who := s.find_child("DayPanel", true, false).find_child("Who", true, false) as Button
+			assert(who != null and who.text == "Going: you", "tomorrow's booking: you're going")
+			who.pressed.emit()
+			var menu := s.find_child("WhoMenu", true, false) as PopupMenu
+			assert(menu != null and menu.item_count == 2 and menu.get_item_text(1).begins_with(h.name + ": pace") and menu.get_item_text(1).ends_with("free that day"),
+				"who can go: you, and the helper with how good they are and their day")
+			menu.id_pressed.emit(1)
 		5:
 			var h: Dictionary = g.helpers[0]
 			var b: Dictionary = g.bookings(g.day + 1)[0]
-			assert(b.get("helper", -1) == h.id and _button(h.name.split(" ")[0]) != null, "sent: their name on it")
-			_button(h.name.split(" ")[0]).pressed.emit()
+			assert(b.get("helper", -1) == h.id and _button("Going: " + h.name.split(" ")[0]) != null, "sent: their name on it")
+			assert(_texts().any(func(t: String) -> bool: return t.begins_with(h.name.split(" ")[0] + ": ")), "and on the day's tile")
+			_button("Going: ").pressed.emit()
+			(s.find_child("WhoMenu", true, false) as PopupMenu).id_pressed.emit(0)
 		6:
-			assert(not g.bookings(g.day + 1)[0].has("helper"), "pressed again: back to you")
-			_button("You").pressed.emit()
+			assert(not g.bookings(g.day + 1)[0].has("helper"), "picked again: back to you")
 			g.buy("crew_petrol")
-			_button("Kit:").pressed.emit()
+			s._show("crew")
 		7:
+			_button("Kit:").pressed.emit()
+		8:
 			assert(g.helpers[0].kit == "petrol" and _button("Kit: Petrol") != null, "given the crew's petrol mower")
 			g.helpers[0].asks = g.helpers[0].wage + 20
 			s._build()
-		8:
+		9:
 			var asks: int = g.helpers[0].asks
 			_button("Pay it").pressed.emit()
 			assert(g.helpers[0].wage == asks, "a raise paid")
+			g.assign(g.bookings(g.day + 1)[0], g.helpers[0].id)
 			g.end_day() # tomorrow's done by them... first today ends
 			g.day_end = {}
 			g.end_day()
 			s._ready()
-		9:
+		10:
 			assert(_texts().any(func(t: String) -> bool: return t.contains("mowed for")), "their day in the day's end: %s" % [_texts()])
 			_button("Next day").pressed.emit()
-			s._show("crew")
-		10:
-			assert(_texts().has("Their last day"), "and on the Crew page")
 			print("PASS crew board")
 			quit()
 	_step += 1

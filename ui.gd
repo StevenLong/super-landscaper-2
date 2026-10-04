@@ -33,6 +33,15 @@ static func theme() -> Theme:
 	t.set_color("font_color", "Button", TEXT)
 	t.set_color("font_disabled_color", "Button", Color("708060"))
 	t.set_color("font_color", "Label", TEXT)
+	t.set_stylebox("panel", "PopupMenu", box) # a pick from a list (who goes): a panel, the item under the cursor ringed
+	var lit := StyleBoxFlat.new()
+	lit.bg_color = Color("4a7a34")
+	lit.border_color = GOLD
+	lit.set_border_width_all(2)
+	t.set_stylebox("hover", "PopupMenu", lit)
+	t.set_color("font_color", "PopupMenu", TEXT)
+	t.set_color("font_hover_color", "PopupMenu", GOLD)
+	t.set_constant("v_separation", "PopupMenu", 12)
 	return t
 
 

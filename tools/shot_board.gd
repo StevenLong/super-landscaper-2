@@ -1,7 +1,8 @@
 extends SceneTree
-# Screenshots of the corkboard for eyeballing its layout: a busy day in June with regulars,
-# the calendar (a Go button focused, its cost lit on the clock), a page of the paper (a
-# Ring focused), the shop, and a job's briefing and clock. Not a test. Needs a window:
+# Screenshots of the corkboard for eyeballing its layout: a busy day in June with regulars
+# and a helper, the calendar (today open, a Go button focused), who goes (the menu open on
+# tomorrow), a page of the paper (a Ring focused), the shop, and a job's briefing and clock.
+# Not a test. Needs a window:
 # SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot_board.gd
 var f := 0
 var out := OS.get_environment("SHOT_DIR")
@@ -23,7 +24,10 @@ func _initialize() -> void:
 	for i in 5: # and the paper's, across the fortnight
 		var o: Dictionary = g.make_job(60 + i)
 		g._add(g.day + [0, 1, 1, 2, 9][i], o)
-	g.calendar[g.day + 5] = [{"court": {}}]
+	g.calendar[g.day + 5] = [{"court": {"customer": "Keith Figgis"}}]
+	g.vans = 1
+	g.hire(g.wanted[0])
+	g.assign(g.bookings(g.day + 2)[0], g.helpers[0].id)
 	change_scene_to_file("res://board.tscn")
 
 
@@ -34,8 +38,14 @@ func _process(_d: float) -> bool:
 		(b.find_child("Today", true, false) as Control).grab_focus()
 	if f == 40:
 		root.get_texture().get_image().save_png(out + "/board_calendar.png")
+		(b.find_child("Tile_%d" % (g.day + 1), true, false) as Control).grab_focus()
+	if f == 44:
+		(b.find_child("DayPanel", true, false).find_child("Who", true, false) as Button).pressed.emit()
+	if f == 48:
+		root.get_texture().get_image().save_png(out + "/board_who.png")
+		(b.find_child("WhoMenu", true, false) as PopupMenu).hide()
 		b._show("paper")
-	if f == 50:
+	if f == 54:
 		var r := b.find_child("Ring", true, false) as Control
 		if r:
 			r.grab_focus()
