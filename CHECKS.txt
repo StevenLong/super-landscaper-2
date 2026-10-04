@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (7)
+PLAY CHECKS OWED  (8)
 
 LOAD 1 of 2  (about 20 min: a new business, on the pad)
 S24-HUB    Walk the office, out to the yard, drive to the shop and home. Does it feel like
@@ -24,6 +24,10 @@ S24-YARD   When did you first hit "no room in the yard", and did buying more fee
 >
 S24-RAISE  Growth is a fifth as fast; they ask only when their pace ticks a point on their
            card. By the model a busy helper asks every 2 or 3 weeks. Too often, or too rare?
+>
+S24-CREW   Helpers, vans and mowers as three things: hire before you've a van, swap who
+           drives what, sell a van or let someone go. Does each do what you'd expect, and
+           is anything you wanted to do missing from the cards?
 >
 
 Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
@@ -52,5 +56,9 @@ VERIFIED  232-234 the places: test_hub (desk and back, yard room and overlaps, m
           when something's waiting, a day in jail); screenshots of office, yard, shop, cards.
 VERIFIED  sim_season SIM_CREW=0, 1 and 2 run clean; one 2-helper seed bought more yard.
 VERIFIED  Verifier run 9: 12 real finds, fixed (see HANDOFF session 24).
+VERIFIED  Helpers, vans and mowers as three things: test_help (hire with no van, a van
+          seats them, selling it keeps them, an old save converts), test_hub (cards: take
+          out, put in, sell a van, into an empty van, a ride-on card sells its own);
+          screenshots of the yard and the cards; sims clean. Verifier run 10: 10 UI finds, fixed.
 TRIED     A front page with every tally key full pushes its page buttons off screen: not a
           realistic week, left.

@@ -312,7 +312,9 @@ func _yard_card(it: Dictionary) -> void:
 					func() -> void: Game.set_van_kit(v.id, "push"), not free])
 			for kind: String in ["petrol", "rideon"]:
 				if v.kit != kind and Game.crew_free(kind) > 0:
-					acts.append(["Put the crew's %s in it" % Game.MOWERS[kind].name.to_lower(), func() -> void: Game.set_van_kit(v.id, kind)])
+					var stuck: bool = v.kit == "petrol" and not Game.yard_room("petrol")
+					acts.append(["Put the crew's %s in it%s" % [Game.MOWERS[kind].name.to_lower(), " (no room in the yard for its petrol mower)" if stuck else ""],
+						func() -> void: Game.set_van_kit(v.id, kind), stuck])
 			lines.append("Takes %s in the yard." % _cells("van"))
 			var also: Array[String] = []
 			if not h.is_empty():
@@ -342,7 +344,10 @@ func _yard_card(it: Dictionary) -> void:
 							acts.append(["Put it in %s" % _van_name(v), func() -> void: Game.set_van_kit(v.id, it.kind)])
 					if Game.fleet.is_empty():
 						lines.append("It goes out in a van: buy one at the shop.")
-				acts.append(["Sell it, $%d" % Game.resale("crew_" + it.kind), func() -> void: Game.sell("crew_" + it.kind)])
+				acts.append(["Sell it, $%d" % Game.resale("crew_" + it.kind), func() -> void:
+					if not given.is_empty():
+						Game.set_van_kit(given.id, "push") # this one, off its van, not another
+					Game.sell("crew_" + it.kind)])
 			else:
 				title = "Your " + m.name.to_lower()
 				lines.append(m.blurb + (" It rides in the cab." if it.kind == "push" else " Packed in the truck before each job."))
@@ -365,16 +370,18 @@ func _helper_lines(h: Dictionary, lines: Array[String], acts: Array) -> void:
 
 ## The crew without a van, stood about by the office door: talk to one for their card.
 func _standing() -> void:
-	var x := Game.YARD_W * CELL.x + 20.0
+	var i := 0
 	for h: Dictionary in Game.helpers:
 		if not Game.van_of(h.id).is_empty():
 			continue
 		var sheet := preload("res://art/walker.png")
-		var n := _thing(Vector2(x, 40), Vector2(14, 8), "talk to %s" % h.name.split(" ")[0], _standing_card.bind(h), null,
+		@warning_ignore("integer_division")
+		var at := Vector2(Game.YARD_W * CELL.x + 20.0 + (i % 4) * 44.0, 40.0 + (i / 4) * 34.0)
+		i += 1
+		var n := _thing(at, Vector2(14, 8), "talk to %s" % h.name.split(" ")[0], _standing_card.bind(h), null,
 			func(on: Node2D) -> void: Facing.draw(on, sheet, 2, 0, PI / 2.0, Vector2(0, -14)))
 		n.self_modulate = Color("b8d0ff") # not you: a helper (ponytail: your own sprite tinted, till the crew have their own)
 		_tag(n, h.name.split(" ")[0] + (" !" if h.has("asks") else ""), Vector2(0, -40), UI.GOLD if h.has("asks") else TAG)
-		x += 26.0
 
 
 func _standing_card(h: Dictionary) -> void:
@@ -382,10 +389,12 @@ func _standing_card(h: Dictionary) -> void:
 	var acts: Array = []
 	_helper_lines(h, lines, acts)
 	lines.append("No van: they can't go out to jobs. Still on the wage.")
-	for v: Dictionary in Game.fleet:
-		if v.helper < 0:
-			acts.append(["Into the empty van%s" % ("" if v.kit == "push" else " (with the crew's %s)" % Game.MOWERS[v.kit].name.to_lower()),
-				func() -> void: Game.set_driver(v.id, h.id)])
+	var empties := Game.fleet.filter(func(v: Dictionary) -> bool: return v.helper < 0)
+	for k in empties.size():
+		var v: Dictionary = empties[k]
+		acts.append(["Into the empty van%s%s" % [" %d" % (k + 1) if empties.size() > 1 else "",
+			"" if v.kit == "push" else " (with the crew's %s)" % Game.MOWERS[v.kit].name.to_lower()],
+			func() -> void: Game.set_driver(v.id, h.id)])
 	if Game.fleet.all(func(v: Dictionary) -> bool: return v.helper >= 0):
 		lines.append("Every van has a driver: buy another at the shop, or swap someone out.")
 	acts.append(["Let %s go" % h.name.split(" ")[0], func() -> void: Game.let_go(h.id)])
@@ -527,7 +536,7 @@ func _stock_card(kind: String) -> void:
 			_buy(acts, "crew_" + kind, "Buy one for the crew")
 		else:
 			_buy(acts, kind, "Buy it")
-			if not Game.helpers.is_empty():
+			if not Game.fleet.is_empty():
 				_buy(acts, "crew_" + kind, "Buy one for the crew")
 	lines.append("Takes %s in your yard." % _cells(kind))
 	_open_card(title, lines, acts)
@@ -564,7 +573,7 @@ func _physics_process(_delta: float) -> void:
 	_hint.text = (Game.key("interact") + " " + t.hint) if not t.is_empty() else ""
 	for th: Dictionary in _things: # stood behind something tall (a van): see through it
 		var n: Node2D = th.node
-		var spr := n.get_child(0) as Sprite2D
+		var spr := n.get_child(0) as Sprite2D if n.get_child_count() > 0 else null
 		if spr:
 			var behind := walker.position.y < n.position.y and Rect2(n.position + spr.position, spr.texture.get_size()).has_point(walker.position)
 			n.modulate.a = 0.45 if behind else 1.0

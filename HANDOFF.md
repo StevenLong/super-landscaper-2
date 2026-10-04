@@ -4,7 +4,7 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 9 runs, 60 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 10 runs, 70 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
 per run: about 95k to 240k tokens, 9 to 20 minutes.
 
@@ -43,8 +43,21 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
 - Modelled, not played: a busy helper now asks about every 50 jobs (a pace point), 2 to 3
   weeks; reaching the top takes about a season.
 
-OWED CHECKS: 7 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
-LOAD 2 S24-YARD, S24-RAISE).
+- After the handoff, the dev: helpers, vans and crew mowers should be three things, each
+  removable alone. Built (d41fa63) on Claude's picks the dev took: the mower is the van's,
+  a vanless hire is paid and waits in the yard (tinted, its own card), hiring or buying a
+  van seats someone waiting. Old saves' van counts become the fleet (test_help checks).
+- Verifier run 10 (f5b2f83..d41fa63): the logic held (37 Game checks); 10 real finds in the
+  UI, all fixed: the ride-on card sold the first van's ride-on, not its own (test_hub now
+  checks); a disabled-looking-but-silent "put the ride-on in" with no room for the petrol;
+  an engine ERROR every frame in the yard (get_child on a thing with no children, from
+  run 9's see-through fix; run_all only greps SCRIPT ERROR, so it passed); a vanless helper
+  listed on a push mower; "Going:" shown with nobody able to go; the shop's crew mower gated
+  on helpers, not vans; buying a van didn't seat the one waiting; two identical empty-van
+  buttons; standing helpers' tags smeared and the 9th past reach (now 4 to a row).
+
+OWED CHECKS: 8 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
+LOAD 2 S24-YARD, S24-RAISE, S24-CREW).
 
 NEXT:
 1. The dev plays LOADs 1 and 2; triage the fallout.

@@ -293,7 +293,7 @@ func _job_card(b: Dictionary) -> Control:
 		w.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		box.add_child(w)
 	var row := UI.hbox(10)
-	if not Game.helpers.is_empty() and (Game.can_send(b) or b.has("helper")):
+	if Game.helpers.any(func(h: Dictionary) -> bool: return not Game.van_of(h.id).is_empty()) and (Game.can_send(b) or b.has("helper")):
 		var who: Dictionary = Game.helper(b.get("helper", -1))
 		var pick := UI.button("Going: " + ("you" if who.is_empty() else who.name.split(" ")[0]), func() -> void: pass, 18)
 		pick.name = "Who"
@@ -339,8 +339,8 @@ func _pick_who(b: Dictionary, from: Button) -> void:
 		var h: Dictionary = Game.helpers[i]
 		var others := Game.bookings(_open_day).filter(func(x: Dictionary) -> bool: return x.get("helper", -1) == h.id and x != b).size()
 		var no_van: bool = Game.van_of(h.id).is_empty()
-		pop.add_item("%s: %s, %s%s" % [h.name, Game.card_text(h), Game.MOWERS[Game.kit_of(h)].name.to_lower(),
-			", no van" if no_van else (", %d more that day" % others if others else ", free that day")], i + 1)
+		pop.add_item("%s: %s, %s" % [h.name, Game.card_text(h), "no van" if no_van else Game.MOWERS[Game.kit_of(h)].name.to_lower() +
+			(", %d more that day" % others if others else ", free that day")], i + 1)
 		pop.set_item_disabled(i + 1, no_van) # no van, no going out
 	pop.id_pressed.connect(func(id: int) -> void:
 		Game.assign(b, -1 if id == 0 else Game.helpers[id - 1].id)

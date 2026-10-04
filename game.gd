@@ -874,6 +874,10 @@ func buy(item: String) -> bool:
 		for v: Dictionary in fleet:
 			id = maxi(id, v.id + 1)
 		fleet.append({"id": id, "helper": -1, "kit": "push"})
+		for h: Dictionary in helpers: # someone waiting in the yard gets in
+			if van_of(h.id).is_empty():
+				fleet[-1].helper = h.id
+				break
 	elif item.begins_with("crew_"):
 		var kind := item.trim_prefix("crew_")
 		crew_kit[kind] = crew_kit.get(kind, 0) + 1

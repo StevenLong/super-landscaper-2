@@ -27,8 +27,7 @@ func _initialize() -> void:
 	g.assign(early, h.id)
 	assert(not early.has("helper"), "no van: nobody to send")
 	assert(g.buy("van") and g.fleet.size() == 1 and g.money == 5000 - g.VAN.price, "a van from the shop")
-	g.set_driver(g.fleet[0].id, h.id)
-	assert(g.van_of(h.id) == g.fleet[0] and g.kit_of(h) == "push", "in it, on a push mower")
+	assert(g.van_of(h.id) == g.fleet[0] and g.kit_of(h) == "push", "the one waiting gets in, on a push mower")
 
 	# A booking sent out: not on your list; done at the day's end, on the clock's rules.
 	var job: Dictionary = g.make_job(11)

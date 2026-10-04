@@ -164,6 +164,23 @@ func _process(_delta: float) -> bool:
 			change_scene_to_file("res://hub.tscn")
 		15:
 			assert(s.name == "Board" and (s.find_child("Away", true, false) as Button).disabled, "a day inside: the desk, and nowhere to step away to")
+			g.calendar.erase(g.day)
+			g.money = 5000
+			while g.fleet.size() < 2:
+				g.buy("yard")
+				g.buy("van")
+			for v: Dictionary in g.fleet:
+				v.kit = "push"
+			g.crew_kit = {"rideon": 2}
+			g.set_van_kit(g.fleet[0].id, "rideon")
+			g.set_van_kit(g.fleet[1].id, "rideon")
+			g.place = "yard"
+			g.spot = "truck"
+			change_scene_to_file("res://hub.tscn")
+		17:
+			s._yard_card({"kind": "rideon", "crew": true, "n": 1}) # the second van's ride-on
+			_card("Sell it").pressed.emit()
+			assert(g.fleet[0].kit == "rideon" and g.fleet[1].kit == "push" and g.crew_kit.rideon == 1, "its card sells that ride-on, not the first van's")
 			print("PASS hub")
 			quit()
 	_step += 1
