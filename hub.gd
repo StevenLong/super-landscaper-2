@@ -552,8 +552,9 @@ func _counter_card() -> void:
 	var acts: Array = []
 	for u: String in ["gloves", "trailer"]:
 		_upgrade(acts, u)
-	_open_card("The counter", ["Gloves and trailers. Mower upgrades are fitted at home: see your mowers in the yard."] if not acts.is_empty()
-		else ["Nothing else you need. Mower upgrades are fitted at home: see your mowers in the yard."], acts)
+	# a ternary of two literals comes out untyped, so the choice goes inside the one literal
+	_open_card("The counter", [("Gloves and trailers." if not acts.is_empty() else "Nothing else you need.")
+		+ " Mower upgrades are fitted at home: see your mowers in the yard."], acts)
 
 
 func drive_home() -> void:

@@ -144,6 +144,10 @@ func _process(_delta: float) -> bool:
 			_card("Buy it").pressed.emit()
 		7:
 			assert(g.robots == _was + 1, "bought off its card")
+			s._close_card()
+			s.use("look at the counter") # its card's lines came out untyped: an engine error (2026-10-04)
+			assert(current_scene._card != null, "the counter's card opens")
+			s._close_card()
 			_was = g.minute
 			s.use("drive home")
 		8:
