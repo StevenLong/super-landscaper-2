@@ -790,6 +790,16 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 			strip.z_index = 1
 			_front.append(strip)
 		$Borders.add_child(strip)
+	if edge == "fence": # a post on each road corner: the side run's nearest picket shows its front
+		# there, so it stands to the ground; without it, grass showed between the runs (2026-10-05)
+		var post := preload("res://art/fence_post.png")
+		for x: float in [-half, w + half]:
+			var p := TextureRect.new()
+			p.texture = post
+			p.position = Vector2(x - post.get_width() * 0.5, h + b - post.get_height())
+			p.z_index = 1 # with the road's run, over the mower
+			_front.append(p) # and fades with it while you're behind
+			$Borders.add_child(p)
 	if top == "haha" and edge == "haha":
 		_add_haha_corner(Vector2.ZERO, Vector2(-1, -1))
 		_add_haha_corner(Vector2(w, 0.0), Vector2(1, -1))

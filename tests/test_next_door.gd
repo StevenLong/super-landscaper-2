@@ -5,7 +5,8 @@
 # and where next door's back fence starts at that corner, it runs on to their house's back
 # wall or the plot's end (it used to stop at their garage, or before a house set forward).
 # And a run across meets a hedge or wall side at its art's outer edge, a fence at its middle
-# (the road-side hedge stopped mid-hedge, leaving a notch of lawn in the corner: 2026-10-05).
+# (the road-side hedge stopped mid-hedge, leaving a notch of lawn in the corner: 2026-10-05),
+# with a post standing on a fence's road corner.
 extends SceneTree
 
 var g: Node
@@ -77,6 +78,15 @@ func _corner(left: bool, art: float) -> float:
 	return art
 
 
+## Whether a corner post stands over x0..x1.
+func _post_over(x0: float, x1: float) -> bool:
+	for c: Node in m.get_node("Borders").get_children():
+		var t := c as TextureRect
+		if t and t.texture and t.texture.resource_path.ends_with("fence_post.png") and t.position.x <= x0 + 0.5 and t.position.x + t.size.x >= x1 - 0.5:
+			return true
+	return false
+
+
 ## How far next door's back fence runs unbroken from the corner at x, outward (dir -1 or 1).
 func _run_from(x: float, dir: int) -> float:
 	var spans: Array[Vector2] = []
@@ -128,6 +138,8 @@ func _process(_delta: float) -> bool:
 			continue
 		var edge: float = near[0] if left else near[1]
 		var want := _corner(left, art)
+		if want != art: # a fence: a post at the road corner, standing over the run's outer half (grass showed there)
+			assert(_post_over(minf(art, want), maxf(art, want)), "%s: no post on the %s road corner" % [what, "left" if left else "right"])
 		for e: float in _ends(left):
 			assert(absf(e - want) <= 1.0, "%s: a run across ends at %.1f, the %s corner is at %.1f" % [what, e, "left" if left else "right", want])
 		assert(absf(edge - art) <= 1.0, "%s: next door's ground starts at %.1f, the %s run's art ends at %.1f" % [what, edge, "left" if left else "right", art])

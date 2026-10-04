@@ -645,6 +645,21 @@ def fence_v():
     return c
 
 
+def fence_post():
+    """An 8x36 corner post where a side fence meets the road's: square, capped, a head taller
+    than the pickets, so the joint reads as a post and not a gap. The ground line is the bottom row."""
+    c = Canvas(8, 36)
+    c.rect(1, 3, 6, 32, PALE[3])
+    c.rect(1, 3, 1, 32, PALE[4])
+    c.rect(5, 3, 2, 32, PALE[1])
+    c.rect(0, 1, 8, 3, PALE[2])                              # the cap
+    c.rect(0, 1, 8, 1, PALE[4])
+    c.rect(1, 0, 6, 1, PALE[3])
+    c.rect(0, 35, 8, 1, hexc("0c200c", 110))                 # the foot on the grass
+    c.outline(PALE[0])
+    return c
+
+
 def chainlink_h():
     """A 32x32 run of chain-link for the top and bottom edges (the council playground),
     seen 3/4: galvanised diamond mesh, see-through, under a top rail, a post every tile.
