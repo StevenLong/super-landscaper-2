@@ -90,8 +90,7 @@ func _build(keep := "") -> void:
 	var tabs := UI.hbox(10)
 	for v: String in VIEWS:
 		var open := Game.paper.filter(func(o: Dictionary) -> bool: return Game.cant_book(o) == "" and not o.get("refused", false)).size()
-		if Game.cant_hire() == "":
-			open += Game.wanted.size()
+		open += Game.wanted.size()
 		var t := UI.button({"calendar": "Calendar", "paper": "Paper (%d to ring)" % open, "shop": "Shop",
 			"book": "Client book" + (" (%d)" % Game.regulars.size() if Game.regulars else "")}[v], _show.bind(v), 20)
 		t.name = "Tab_" + v
@@ -339,8 +338,10 @@ func _pick_who(b: Dictionary, from: Button) -> void:
 	for i in Game.helpers.size():
 		var h: Dictionary = Game.helpers[i]
 		var others := Game.bookings(_open_day).filter(func(x: Dictionary) -> bool: return x.get("helper", -1) == h.id and x != b).size()
-		pop.add_item("%s: %s, %s%s" % [h.name, Game.card_text(h), Game.MOWERS[h.kit].name.to_lower(),
-			", %d more that day" % others if others else ", free that day"], i + 1)
+		var no_van: bool = Game.van_of(h.id).is_empty()
+		pop.add_item("%s: %s, %s%s" % [h.name, Game.card_text(h), Game.MOWERS[Game.kit_of(h)].name.to_lower(),
+			", no van" if no_van else (", %d more that day" % others if others else ", free that day")], i + 1)
+		pop.set_item_disabled(i + 1, no_van) # no van, no going out
 	pop.id_pressed.connect(func(id: int) -> void:
 		Game.assign(b, -1 if id == 0 else Game.helpers[id - 1].id)
 		_build("job_%d_%d" % [_open_day, b.get("seed", 0)]))
@@ -586,18 +587,15 @@ func _wanted(w: Dictionary) -> Control:
 	ad.text = "[color=#7a1c14]SITUATION WANTED.[/color] %s seeks gardening work. %s (%d/10), %s (%d/10). $%d a week. Ring %s." % [
 		w.name, pace, roundi(w.pace * 10.0), care, roundi(w.care * 10.0), w.wage, w.name.split(" ")[0]]
 	row.add_child(ad)
-	var why := Game.cant_hire()
-	if why != "":
-		ad.text += "\n[color=#b03020]%s: a van each, from the shop.[/color]" % why
-		ad.modulate.a = 0.7
-	else:
-		var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
-			_call = Game.hire(w)
-			_build()
-			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Tab_paper", true, false)), 20)
-		ring.name = "Ring"
-		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(ring)
+	if Game.fleet.all(func(v: Dictionary) -> bool: return v.helper >= 0):
+		ad.text += "\n[color=#7a6a50]No empty van: they'd wait in the yard, on the wage, till they've one.[/color]"
+	var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
+		_call = Game.hire(w)
+		_build()
+		UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Tab_paper", true, false)), 20)
+	ring.name = "Ring"
+	ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ring)
 	return _newsprint(row)
 
 

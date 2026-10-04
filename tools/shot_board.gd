@@ -26,7 +26,9 @@ func _initialize() -> void:
 		g._add(g.day + [0, 1, 1, 2, 9][i], o)
 	g.calendar[g.day + 5] = [{"court": {"customer": "Keith Figgis"}}]
 	g.run_tally = {"windows": 2, "dog_returned": 1, "squashed_hedgehog": 3} # the week's mess, for the front page
-	g.vans = 1
+	g.money = 400
+	g.buy("van")
+	g.money = 0
 	g.hire(g.wanted[0])
 	g.assign(g.bookings(g.day + 2)[0], g.helpers[0].id)
 	change_scene_to_file("res://board.tscn")

@@ -1,5 +1,5 @@
 # Hired help, slice 1 (design doc, The Business: Hired help; NOTES 209): the paper's
-# situations wanted, a van to hire, the wage on Friday, a booking sent to a helper and done
+# situations wanted, hired with no van (waiting, on the wage), a van to drive, the wage on Friday, a booking sent to a helper and done
 # off screen on your clock's rules (as many as fit, too late is a no-show), the money and
 # your name moving, a regular who wanted you, mishaps, crew kit, growth and raises, losing
 # a van, the winter layoff, and the save.
@@ -15,17 +15,20 @@ func _initialize() -> void:
 	assert(g.wanted.size() >= 1 and g.wanted.size() <= 3, "the paper's situations wanted: %d" % g.wanted.size())
 	var w: Dictionary = g.wanted[0]
 	assert(w.wage == g.wage_for(w) and w.pace > 0.0 and w.care > 0.0, "each with a pace, a care and an asking wage")
-	# No van, no hire.
-	assert(g.cant_hire() != "", "no van, no crew")
+	# Hired with no van: on the books and the wage, but they can't go out till they've one.
 	var due0: int = g.due()
 	g.money = 5000
-	assert(g.buy("van") and g.vans == 1 and g.money == 5000 - g.VAN.price, "a van from the shop")
 	var m0: int = g.minute
 	g.hire(w)
-	assert(g.helpers.size() == 1 and w not in g.wanted and g.minute == m0 + g.RING_TIME, "rung and hired")
+	assert(g.helpers.size() == 1 and w not in g.wanted and g.minute == m0 + g.RING_TIME, "rung and hired, no van needed")
 	var h: Dictionary = g.helpers[0]
-	assert(h.kit == "push" and g.due() == due0 + h.wage, "on a push mower, their wage on Friday")
-	assert(g.cant_hire() != "", "one van, one helper")
+	assert(g.van_of(h.id).is_empty() and g.due() == due0 + h.wage, "no van: still their wage on Friday")
+	var early := {"day": g.day, "seed": 1}
+	g.assign(early, h.id)
+	assert(not early.has("helper"), "no van: nobody to send")
+	assert(g.buy("van") and g.fleet.size() == 1 and g.money == 5000 - g.VAN.price, "a van from the shop")
+	g.set_driver(g.fleet[0].id, h.id)
+	assert(g.van_of(h.id) == g.fleet[0] and g.kit_of(h) == "push", "in it, on a push mower")
 
 	# A booking sent out: not on your list; done at the day's end, on the clock's rules.
 	var job: Dictionary = g.make_job(11)
@@ -172,7 +175,9 @@ func _initialize() -> void:
 	g.book(kept)
 	g.assign(kept, h.id)
 	g.sell("van")
-	assert(g.helpers.is_empty() and not kept.has("helper"), "no van: they go, the booking's yours again")
+	assert(g.helpers.size() == 1 and g.fleet.is_empty() and not kept.has("helper"), "no van: they stay on, the booking's yours again")
+	assert(g.crew_free("petrol") == 1, "the van's petrol mower back in the yard")
+	g.let_go(h.id)
 
 	# The winter: laid off unpaid; back by how they were treated.
 	g.money = 5000
@@ -189,11 +194,25 @@ func _initialize() -> void:
 	assert(g.helpers.size() == 1 and g.helpers[0].pace == 0.9, "better, as they left")
 
 	# The save keeps the crew.
+	g.set_kit(g.helpers[0].id, "petrol")
 	g.save()
 	g.helpers.clear()
-	g.vans = 0
+	g.fleet.clear()
 	g.load_business()
-	assert(g.helpers.size() == 1 and g.vans == 2 and g.crew_kit.get("petrol", 0) == 1, "saved and loaded")
+	assert(g.helpers.size() == 1 and g.fleet.size() == 2 and g.kit_of(g.helpers[0]) == "petrol", "saved and loaded, the mower in its van")
+	# A save from before vans were things: the helpers in them in order, with their mowers.
+	var f := FileAccess.open(g.business_path(), FileAccess.READ)
+	var state: Dictionary = f.get_var()
+	f.close()
+	state.erase("fleet")
+	state.vans = 2
+	state.helpers[0].kit = "petrol"
+	f = FileAccess.open(g.business_path(), FileAccess.WRITE)
+	f.store_var(state)
+	f.close()
+	g.load_business()
+	assert(g.fleet.size() == 2 and g.fleet[0].helper == g.helpers[0].id and g.fleet[0].kit == "petrol" and g.fleet[1].helper == -1
+		and not g.helpers[0].has("kit"), "an old save: two vans, the helper in the first with their mower")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(g.business_path()))
 	print("PASS help")
 	quit()

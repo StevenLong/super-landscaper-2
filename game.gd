@@ -55,7 +55,7 @@ const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself, i
 
 ## Hired help (design doc, The Business: Hired help), slice 1. Guesses, tuned with
 ## tests/sim_season.gd: a helper kept busy brings in about twice their wage.
-const VAN := {"name": "Van", "price": 400, "blurb": "One per helper: no van, no crew."}
+const VAN := {"name": "Van", "price": 400, "blurb": "A helper drives one: no van, no going out to jobs."}
 ## The yard (design doc, The hub): your storage, and storage is a resource. A floor of cells
 ## (the truck's packing cells), YARD_W across and yard_rows deep; vans and kit take their
 ## footprints, placed for you. A crew petrol mower given out rides in its helper's van. More
@@ -228,7 +228,7 @@ var run_tally := {} ## the job tallies added up over the run
 var run_tally_cost := {}
 var helpers: Array[Dictionary] = [] ## your crew: {id, name, pace, care, wage, kit, jobs, happy, asks (a raise asked for)}
 var wanted: Array[Dictionary] = [] ## this week's paper's situations wanted: {id, name, pace, care, wage}
-var vans := 0
+var fleet: Array[Dictionary] = [] ## your vans, each a thing of its own: {id, helper (who drives it, or -1), kit (the crew mower in it: push, petrol, rideon)}
 var crew_kit := {} ## mowers bought for the crew (yours aren't lent): kind -> how many
 var crew_report: Array[String] = [] ## the crew's day just gone, job by job
 var crew_day: Array[String] = [] ## the same, a line a helper, for the day's end
@@ -331,7 +331,7 @@ func front_page() -> Array:
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
 	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job",
-	"helpers", "wanted", "vans", "crew_kit", "crew_report", "day_mine", "day_money", "day_end", "paper_tally", "yard_rows"]
+	"helpers", "wanted", "fleet", "crew_kit", "crew_report", "day_mine", "day_money", "day_end", "paper_tally", "yard_rows"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -408,7 +408,7 @@ func new_run(seed_value := 0) -> void:
 	in_job = false
 	blackout = {}
 	helpers = []
-	vans = 0
+	fleet = []
 	crew_kit = {}
 	crew_report = []
 	day_mine = []
@@ -761,8 +761,8 @@ func fine(tier: int, at_record: float) -> int:
 ## their ride-ons (on their trailers, never in a van).
 func yard_kit() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for i in vans:
-		out.append({"kind": "van", "n": i})
+	for v: Dictionary in fleet:
+		out.append({"kind": "van", "van": v.id})
 	for k: String in ["rideon", "petrol", "push"]:
 		if k in owned:
 			out.append({"kind": k})
@@ -869,8 +869,11 @@ func buy(item: String) -> bool:
 		return false
 	if item == "yard":
 		yard_rows += YARD_MORE
-	elif item == "van":
-		vans += 1
+	elif item == "van": # empty, a push mower in it
+		var id := 0
+		for v: Dictionary in fleet:
+			id = maxi(id, v.id + 1)
+		fleet.append({"id": id, "helper": -1, "kit": "push"})
 	elif item.begins_with("crew_"):
 		var kind := item.trim_prefix("crew_")
 		crew_kit[kind] = crew_kit.get(kind, 0) + 1
@@ -911,7 +914,7 @@ func sellable() -> Array[String]:
 	out.assign(owned.filter(func(k: String) -> bool: return k != "push") + upgrades)
 	for i in robots:
 		out.append("robot")
-	for i in vans:
+	for v: Dictionary in fleet:
 		out.append("van")
 	for kind: String in crew_kit:
 		for i in crew_kit[kind]:
@@ -923,18 +926,20 @@ func sellable() -> Array[String]:
 func sell(item: String) -> void:
 	if item == "gear3" and "gear4" in upgrades: # the fourth's no use without the third: it goes too
 		sell("gear4")
-	money += resale(item)
-	if item == "van": # a helper without one goes, the last hired first
-		vans -= 1
-		if helpers.size() > vans:
-			let_go(helpers[-1].id)
+	if item == "van": # one standing empty if there is one, else the last
+		var pick: Dictionary = fleet[-1]
+		for v: Dictionary in fleet:
+			if v.helper < 0:
+				pick = v
+		sell_van(pick.id)
 		return
-	if item.begins_with("crew_"): # off whoever had one: back on a push mower
+	money += resale(item)
+	if item.begins_with("crew_"): # a spare one if there is, else out of a van (a push mower in its place)
 		var kind := item.trim_prefix("crew_")
 		crew_kit[kind] -= 1
-		for h: Dictionary in helpers:
-			if h.kit == kind and crew_free(kind) < 0:
-				h.kit = "push"
+		for v: Dictionary in fleet:
+			if v.kit == kind and crew_free(kind) < 0:
+				v.kit = "push"
 		return
 	if item == "robot": # one of them; off the truck only if none's left at home
 		robots -= 1
@@ -1462,6 +1467,7 @@ func settle_winter() -> Dictionary:
 		else:
 			crew_gone.append(h.name)
 			helpers.erase(h)
+			_unseat(h.id)
 	reputation = lerpf(reputation, 50.0, 0.2)
 	rep_trend = lerpf(rep_trend, 50.0, 0.2)
 	record = maxf(0.0, record - 1.0) # a winter fades it, a little
@@ -1516,22 +1522,21 @@ func wages() -> int:
 	return w
 
 
-## Why you can't hire, or "".
-func cant_hire() -> String:
-	return "No van for them" if helpers.size() >= vans else ""
-
-
 ## Ring a situation wanted: the call's time, and they start at their asking wage (on a
 ## push mower, in a van of yours). Returns what they said.
 func hire(w: Dictionary) -> String:
 	minute += RING_TIME
-	if cant_hire() != "":
-		return "\"You've no van for me? Ring back when you have.\""
 	wanted.erase(w)
 	var h := w.duplicate()
-	h.merge({"kit": "push", "jobs": 0, "happy": 70.0})
+	h.merge({"jobs": 0, "happy": 70.0})
 	helpers.append(h)
+	for v: Dictionary in fleet: # an empty van: theirs
+		if v.helper < 0:
+			v.helper = h.id
+			break
 	save()
+	if van_of(h.id).is_empty():
+		return "\"Right you are. No van? Find me one and I'll start.\""
 	return "\"Right you are. Give me a job and I'll be there.\""
 
 
@@ -1543,14 +1548,90 @@ func helper(id: int) -> Dictionary:
 
 
 ## Let a helper go: their bookings come back to you.
-func let_go(id: int) -> void:
+func let_go(id: int) -> void: # their van stays, its mower in it
 	helpers = helpers.filter(func(h: Dictionary) -> bool: return h.id != id)
+	_unseat(id)
+	save()
+
+
+## Out of their van: it stands empty, and what they'd been sent to is yours again.
+func _unseat(id: int) -> void:
+	var v := van_of(id)
+	if not v.is_empty():
+		v.helper = -1
+	_unsend(id)
+
+
+func _unsend(id: int) -> void:
 	for l: Array in calendar.values():
 		for b: Dictionary in l:
 			if b.get("helper", -1) == id:
 				b.erase("helper")
 				b.erase("sent_at")
+
+
+## A van by its id, or {}.
+func van(id: int) -> Dictionary:
+	for v: Dictionary in fleet:
+		if v.id == id:
+			return v
+	return {}
+
+
+## The van a helper drives, or {} (no van: they can't go out).
+func van_of(helper_id: int) -> Dictionary:
+	for v: Dictionary in fleet:
+		if v.helper == helper_id:
+			return v
+	return {}
+
+
+## The mower a helper goes out with: their van's.
+func kit_of(h: Dictionary) -> String:
+	return h.kit if h.has("kit") else van_of(h.get("id", -1)).get("kit", "push")
+
+
+## Who drives a van (-1: nobody). Its old driver steps out; a helper in another van moves over.
+func set_driver(van_id: int, helper_id: int) -> void:
+	var v := van(van_id)
+	if v.is_empty() or v.helper == helper_id:
+		return
+	if v.helper >= 0:
+		_unsend(v.helper)
+	if helper_id >= 0:
+		var old := van_of(helper_id)
+		if not old.is_empty():
+			old.helper = -1
+	v.helper = helper_id
 	save()
+
+
+## Sell a van: its driver steps out (still yours), its mower back on the floor.
+func sell_van(id: int) -> void:
+	var v := van(id)
+	if v.is_empty():
+		return
+	money += resale("van")
+	if v.helper >= 0:
+		_unsend(v.helper)
+	fleet.erase(v)
+	save()
+
+
+## Put a crew mower in a van (a push mower: take its own out, onto the floor if there's room).
+func set_van_kit(van_id: int, kind: String) -> bool:
+	var v := van(van_id)
+	if v.is_empty():
+		return false
+	if v.kit == kind:
+		return true
+	if kind != "push" and crew_free(kind) <= 0:
+		return false
+	if v.kit == "petrol" and not yard_room("petrol"): # out of the van, back on the floor
+		return false
+	v.kit = kind
+	save()
+	return true
 
 
 ## Whether a booking can go to a helper: a later day's, or today's if it could still be
@@ -1559,8 +1640,10 @@ func can_send(b: Dictionary) -> bool:
 	return b.has("seed") and not b.has("service") and (b.day > day or can_go(b))
 
 
-## Send a helper to a booking, or (id -1) take it back yourself.
+## Send a helper to a booking (one with a van), or (id -1) take it back yourself.
 func assign(b: Dictionary, id: int) -> void:
+	if id >= 0 and van_of(id).is_empty():
+		return
 	if id < 0:
 		b.erase("helper")
 		b.erase("sent_at")
@@ -1572,21 +1655,15 @@ func assign(b: Dictionary, id: int) -> void:
 	save()
 
 
-## Crew mowers of a kind not yet given out (negative: more given than there are).
+## Crew mowers of a kind not in a van (negative: more in vans than there are).
 func crew_free(kind: String) -> int:
-	return crew_kit.get(kind, 0) - helpers.filter(func(h: Dictionary) -> bool: return h.kit == kind).size()
+	return crew_kit.get(kind, 0) - fleet.filter(func(v: Dictionary) -> bool: return v.kit == kind).size()
 
 
-## A helper's kit: a push mower always, a crew mower if one's free.
+## A helper's kit: their van's mower (set_van_kit). False with no van.
 func set_kit(id: int, kind: String) -> bool:
-	var h := helper(id)
-	if h.is_empty() or (kind != "push" and h.kit != kind and crew_free(kind) <= 0):
-		return false
-	if h.kit == "petrol" and kind != "petrol" and not yard_room("petrol"): # out of the van, back on the floor
-		return false
-	h.kit = kind
-	save()
-	return true
+	var v := van_of(id)
+	return not v.is_empty() and set_van_kit(v.id, kind)
 
 
 ## Whether a regular minds a helper turning up instead of you, and how much.
@@ -1599,7 +1676,8 @@ func wants_you(b: Dictionary) -> float:
 ## mishap now and then, by want of care). Returns the result, as a job's.
 func help_job(b: Dictionary, h: Dictionary, late: float) -> Dictionary:
 	var area := float(b.size.x * b.size.y) / (1280.0 * 720.0)
-	var minutes: float = HELP_SECS[h.kit] * area * MPS / h.pace
+	var kit := kit_of(h)
+	var minutes: float = HELP_SECS[kit] * area * MPS / h.pace
 	var patience := float(b.by - b.from)
 	var over := late + minutes > patience
 	var start: float = b.get("start_mood", PERSONAS[b.persona].get("start_mood", 60.0))
@@ -1615,7 +1693,7 @@ func help_job(b: Dictionary, h: Dictionary, late: float) -> Dictionary:
 	var prepaid: bool = b.has("regular") and regulars.has(b.regular) and regulars[b.regular].get("prepaid", 0) > 0
 	var pay := 0 if prepaid else roundi(b.pay * time_f * (0.5 + md / 100.0))
 	var tip := roundi(b.pay * 0.25) if not over and md >= 75.0 and not b.has("regular") else 0
-	var spec: Dictionary = MOWERS[h.kit]
+	var spec: Dictionary = MOWERS[kit]
 	var fuel := roundi(maxf(0.0, minutes / MPS * spec.fuel_burn - spec.max_fuel) * spec.fuel_price)
 	r.paid = pay + tip
 	r.net = pay + tip - fuel - r.bill
@@ -1641,6 +1719,9 @@ func _crew_day() -> void:
 	offer = {} # yours wait for you: only what the crew wins is answered here
 	upfront = {}
 	for h: Dictionary in helpers:
+		if van_of(h.id).is_empty(): # no van, no going out: anything sent is yours again
+			_unsend(h.id)
+			continue
 		var t := DAY_START
 		var who: String = h.name.split(" ")[0]
 		var done := 0
@@ -1774,6 +1855,13 @@ func load_business() -> void:
 		day_money = money
 	if not state.has("paper_tally"): # from before the front page: no news yet
 		paper_tally = run_tally.duplicate()
+	if state.has("vans") and not state.has("fleet"): # from before vans were things: the helpers in them in order, with their mowers
+		fleet.clear()
+		for i in int(state.vans):
+			var hh: Dictionary = helpers[i] if i < helpers.size() else {}
+			fleet.append({"id": i, "helper": hh.get("id", -1), "kit": hh.get("kit", "push")})
+	for hh: Dictionary in helpers:
+		hh.erase("kit")
 	_upgrade_save()
 	in_run = true
 	run_over_reason = ""

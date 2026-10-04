@@ -39,7 +39,7 @@ func _initialize() -> void:
 	assert(g.set_kit(h.id, "petrol") and _crew_petrols() == 0, "given out: it rides in their van")
 	while g.buy("robot"):
 		pass
-	assert(not g.set_kit(h.id, "push") and h.kit == "petrol", "the yard full: their mower stays in the van")
+	assert(not g.set_kit(h.id, "push") and g.kit_of(h) == "petrol", "the yard full: their mower stays in the van")
 	g.sell("robot")
 	g.sell("robot")
 	g.place = "office"
@@ -111,15 +111,15 @@ func _process(_delta: float) -> bool:
 		3:
 			assert(s.name == "Hub" and g.place == "yard", "out to the yard")
 			var vans: Array = s._things.filter(func(t: Dictionary) -> bool: return t.hint.begins_with("look in"))
-			assert(vans.size() == g.vans, "a van for every van: %d" % vans.size())
+			assert(vans.size() == g.fleet.size(), "a van for every van: %d" % vans.size())
 			s.use("look in %s" % g.helpers[0].name.split(" ")[0])
-			_card("Take the petrol mower back").pressed.emit()
+			_card("Take the petrol mower out").pressed.emit()
 		4:
-			assert(g.helpers[0].kit == "push" and _crew_petrols() == 1, "taken back: on the floor again")
+			assert(g.kit_of(g.helpers[0]) == "push" and _crew_petrols() == 1, "taken out: on the floor again")
 			s.use("look at the crew's petrol mower")
-			_card("Give it to").pressed.emit()
+			_card("Put it in %s" % g.helpers[0].name.split(" ")[0]).pressed.emit()
 		5:
-			assert(g.helpers[0].kit == "petrol", "given out from its card")
+			assert(g.kit_of(g.helpers[0]) == "petrol", "put in their van from its card")
 			_job = g.make_job(31)
 			_job.day = g.day
 			_job.from = g.WINDOW_START + 60
@@ -140,23 +140,29 @@ func _process(_delta: float) -> bool:
 			s.use("drive home")
 		8:
 			assert(g.place == "yard" and g.minute == _was + g.DRIVE, "home, a drive")
-			_was = g.helpers[0].id
+			_was = g.fleet.size()
 			s.use("look in %s" % g.helpers[0].name.split(" ")[0])
 			_card("Sell the van").pressed.emit()
 		9:
-			assert(g.helpers.size() == 1 and g.helpers[0].id != _was, "selling their van lets them go, not the last hired")
-			s.go(_job)
+			assert(g.helpers.size() == 2 and g.fleet.size() == _was - 1 and g.van_of(g.helpers[0].id).is_empty() and _crew_petrols() == 1,
+				"their van sold: they step out (still yours), its mower back in the yard")
+			assert(s._things.any(func(t: Dictionary) -> bool: return t.hint == "talk to %s" % g.helpers[0].name.split(" ")[0]), "and stand in the yard")
+			s.use("talk to %s" % g.helpers[0].name.split(" ")[0])
+			_card("Into the empty van").pressed.emit()
 		10:
+			assert(not g.van_of(g.helpers[0].id).is_empty(), "into an empty van from their card")
+			s.go(_job)
+		11:
 			assert(s.name == "Pack" and g.next_job == _job, "going: packing first")
 			g.day_end = {"day": g.day, "mine": [], "crew": [], "crew_net": 0, "missed": [], "was": 0, "now": 0}
 			change_scene_to_file("res://hub.tscn")
-		12:
+		13:
 			assert(s.name == "Board" and "DAY'S END" in s.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text),
 				"something to read: the desk, first")
 			g.day_end = {}
 			g.calendar[g.day] = [{"jail": true}]
 			change_scene_to_file("res://hub.tscn")
-		14:
+		15:
 			assert(s.name == "Board" and (s.find_child("Away", true, false) as Button).disabled, "a day inside: the desk, and nowhere to step away to")
 			print("PASS hub")
 			quit()

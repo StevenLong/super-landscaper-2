@@ -1,6 +1,7 @@
 extends SceneTree
 # Screenshots of your own places for eyeballing their layout (hub.gd): the office, the yard
-# with a van, a helper and kit on its floor, a van's card, the shop and a card of its stock.
+# with a van, a helper and kit on its floor and one with no van stood by, their cards, the shop
+# and a card of its stock.
 # Not a test. Needs a window:
 # SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot_hub.gd
 var f := 0
@@ -20,6 +21,8 @@ func _initialize() -> void:
 	g.buy("crew_petrol")
 	g.set_kit(g.helpers[0].id, "petrol")
 	g.buy("van")
+	g.wanted.append({"id": 77, "name": "Agnes Crumb", "pace": 0.7, "care": 0.5, "wage": 80, "rep": 50.0})
+	g.hire(g.wanted[-1]) # no van left: she waits in the yard
 	g.place = "office"
 	g.spot = "desk"
 	change_scene_to_file("res://hub.tscn")
@@ -36,6 +39,10 @@ func _process(_d: float) -> bool:
 		h.use("look in")
 	if f == 46:
 		root.get_texture().get_image().save_png(out + "/hub_van_card.png")
+		h._close_card()
+		h.use("talk to")
+	if f == 50:
+		root.get_texture().get_image().save_png(out + "/hub_standing_card.png")
 		g.place = "shop"
 		g.spot = "door"
 		change_scene_to_file("res://hub.tscn")

@@ -39,16 +39,16 @@ func _process(_delta: float) -> bool:
 			s._page = 99 # the situations wanted are at the back
 			s._build()
 		1:
-			assert(_texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and t.contains("No van for them")), "no van: they can't be rung")
+			assert(_texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and t.contains("No empty van")), "no van: rung, they'd wait in the yard")
 			assert(g.buy("van"), "a van (the shop's: test_hub)")
 		2:
-			assert(g.vans == 1, "a van bought")
+			assert(g.fleet.size() == 1, "a van bought")
 			s._show("paper")
 			s._page = 99
 			s._build()
 		3:
 			var ring: Button = s.find_child("Ring", true, false)
-			assert(ring != null and _texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and not t.contains("No van")), "a van: ring them")
+			assert(ring != null and _texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and not t.contains("No empty van")), "a van: ring them")
 			# The last page's first Ring is a situation wanted if no ads are left on it.
 			var n: int = g.helpers.size()
 			for b: Node in s.find_children("Ring", "Button", true, false):
