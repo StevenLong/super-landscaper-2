@@ -53,6 +53,17 @@ const SHAPES := {"petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "can": Vect
 ## Robot mowers (design doc, Mowers and Equipment): own as many as you like.
 const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself, in neat stripes. Slowly."}
 
+## Hired help (design doc, The Business: Hired help), slice 1. Guesses, tuned with
+## tests/sim_season.gd: a helper kept busy brings in about twice their wage.
+const VAN := {"name": "Van", "price": 400, "blurb": "One per helper: no van, no crew."}
+const HELP_SECS := {"push": 420.0, "petrol": 262.0, "rideon": 281.0} ## sim_balance's bot, default lawn to 85% (push guessed): a helper at pace 1 mows like it
+const WAGE := 150 ## a week, asked by a helper of pace 1 and care 1 (less for less)
+const WANTS_YOU := {"perfectionist": 15.0, "toff": 15.0} ## a regular of these wants you: a helper's visit starts their mood this much lower
+const MISHAPS := [["put a stone through a window", 60], ["dented the car", 80], ["flattened a flowerbed", 0]] ## [what, bill]: likelier the less care
+const MISHAP_CHANCE := 0.3 ## a job's chance of one at no care at all (none at full care)
+const GROW := 0.01 ## pace and care each job adds
+const RAISE_AT := 1.15 ## worth this times their wage, they ask for a raise
+
 const FIRST := ["Margaret", "Derek", "Priya", "Gordon", "Yvonne", "Colin", "Shirley", "Nigel",
 	"Bernadette", "Keith", "Fatima", "Trevor", "Agnes", "Barry", "Hilary", "Rajesh", "Doreen", "Clive"]
 const LAST := ["Pemberton", "Figgis", "Oakley", "Thistlewood", "Grubb", "Hedges", "Mowbray",
@@ -207,6 +218,11 @@ var current_job := {}
 var last_result := {}
 var run_tally := {} ## the job tallies added up over the run
 var run_tally_cost := {}
+var helpers: Array[Dictionary] = [] ## your crew: {id, name, pace, care, wage, kit, jobs, happy, asks (a raise asked for)}
+var wanted: Array[Dictionary] = [] ## this week's paper's situations wanted: {id, name, pace, care, wage}
+var vans := 0
+var crew_kit := {} ## mowers bought for the crew (yours aren't lent): kind -> how many
+var crew_report: Array[String] = [] ## the crew's day just gone, for the board
 
 ## Names for everything the jobs count, in the order they're shown. Only counts above
 ## zero appear, so most of these are a surprise the first time.
@@ -266,7 +282,8 @@ var blackout := {} ## the job you blacked out on, for the board to break the new
 ## What the save keeps: the whole business.
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
-	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job"]
+	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job",
+	"helpers", "wanted", "vans", "crew_kit", "crew_report"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -342,7 +359,12 @@ func new_run(seed_value := 0) -> void:
 	winter_pending = false
 	in_job = false
 	blackout = {}
+	helpers = []
+	vans = 0
+	crew_kit = {}
+	crew_report = []
 	paper = make_paper()
+	wanted = make_wanted()
 	save()
 
 
@@ -601,6 +623,21 @@ func tally_lines(counts: Dictionary, costs: Dictionary, beaten: Array = []) -> A
 	return out
 
 
+## A job's reputation onto the trend and your standing: only the gains are cut, the job's
+## and what they noticed; losses land whole (193d).
+func _rep(result: Dictionary) -> void:
+	var lines: Array = result.get("rep_lines", []) + result.get("noticed", [])
+	var gains := maxf(0.0, result.rep) if lines.is_empty() else 0.0
+	for l: Array in lines:
+		gains += maxf(0.0, l[1])
+	var cut := climb(gains) - gains
+	result.rep += cut
+	if roundi(cut) != 0:
+		result.rep_cut = cut # the summary's book shows it
+	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
+	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
+
+
 ## How much of a gain in reputation lands: the better known you are, the less (193d).
 func climb(gain: float) -> float:
 	return gain * pow(1.0 - rep_trend / 100.0, REP_CLIMB)
@@ -619,17 +656,7 @@ func record_result(result: Dictionary) -> void:
 		run_tally_cost[k] = run_tally_cost.get(k, 0.0) + result.tally_cost[k]
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
-	# Only the gains are cut, the job's and what they noticed; losses land whole (193d).
-	var lines: Array = result.get("rep_lines", []) + result.get("noticed", [])
-	var gains := maxf(0.0, result.rep) if lines.is_empty() else 0.0
-	for l: Array in lines:
-		gains += maxf(0.0, l[1])
-	var cut := climb(gains) - gains
-	result.rep += cut
-	if roundi(cut) != 0:
-		result.rep_cut = cut # the summary's book shows it
-	rep_trend = clampf(rep_trend + float(result.rep), 0.0, 100.0)
-	reputation = clampf(reputation + (rep_trend - reputation) * 0.5 + float(result.rep) * 0.25, 0.0, 100.0)
+	_rep(result)
 	jobs_done += 1
 	in_job = false
 	result.rep_after = reputation
@@ -671,7 +698,12 @@ func fine(tier: int, at_record: float) -> int:
 	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_record))
 
 
+## An item: a mower, an upgrade, "robot", "van", or "crew_" and a mower (one for the crew).
 func price_of(item: String) -> int:
+	if item == "van":
+		return VAN.price
+	if item.begins_with("crew_"):
+		return MOWERS[item.trim_prefix("crew_")].price
 	return ROBOT.price if item == "robot" else (MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price)
 
 
@@ -679,7 +711,12 @@ func buy(item: String) -> bool:
 	var price := price_of(item)
 	if money < price:
 		return false
-	if item == "robot":
+	if item == "van":
+		vans += 1
+	elif item.begins_with("crew_"):
+		var kind := item.trim_prefix("crew_")
+		crew_kit[kind] = crew_kit.get(kind, 0) + 1
+	elif item == "robot":
 		robots += 1
 		pack_first(item)
 	elif MOWERS.has(item):
@@ -716,6 +753,11 @@ func sellable() -> Array[String]:
 	out.assign(owned.filter(func(k: String) -> bool: return k != "push") + upgrades)
 	for i in robots:
 		out.append("robot")
+	for i in vans:
+		out.append("van")
+	for kind: String in crew_kit:
+		for i in crew_kit[kind]:
+			out.append("crew_" + kind)
 	out.sort_custom(func(a: String, b: String) -> bool: return resale(a) > resale(b))
 	return out
 
@@ -724,6 +766,18 @@ func sell(item: String) -> void:
 	if item == "gear3" and "gear4" in upgrades: # the fourth's no use without the third: it goes too
 		sell("gear4")
 	money += resale(item)
+	if item == "van": # a helper without one goes, the last hired first
+		vans -= 1
+		if helpers.size() > vans:
+			let_go(helpers[-1].id)
+		return
+	if item.begins_with("crew_"): # off whoever had one: back on a push mower
+		var kind := item.trim_prefix("crew_")
+		crew_kit[kind] -= 1
+		for h: Dictionary in helpers:
+			if h.kit == kind and crew_free(kind) < 0:
+				h.kit = "push"
+		return
 	if item == "robot": # one of them; off the truck only if none's left at home
 		robots -= 1
 		if packed_count("robot") > robots:
@@ -766,6 +820,7 @@ func settle_payday(extra := 0) -> Dictionary:
 	money -= off
 	principal -= off
 	paper = make_paper()
+	wanted = make_wanted()
 	save()
 	var outcome := "free" if off > 0 and principal == 0 else ("repossessed" if taken else "paid")
 	return {"paid": owed, "off": off, "taken": taken, "outcome": outcome}
@@ -809,9 +864,9 @@ func vig() -> int:
 	return roundi(principal * VIG)
 
 
-## What Friday takes: the vig and the week's keep.
+## What Friday takes: the vig, the week's keep and the crew's wages.
 func due() -> int:
-	return vig() + LIVING
+	return vig() + LIVING + wages()
 
 
 ## Today through the coming Friday (or the season's end): the days this week's paper books into.
@@ -890,9 +945,9 @@ func jobs_on(d: int) -> int:
 	return bookings(d).filter(func(b: Dictionary) -> bool: return b.has("seed")).size()
 
 
-## Today's jobs still to go to, earliest first.
+## Today's jobs still to go to, earliest first (not those you've sent a helper to).
 func jobs_today() -> Array:
-	return bookings().filter(func(b: Dictionary) -> bool: return b.has("seed"))
+	return bookings().filter(func(b: Dictionary) -> bool: return b.has("seed") and not b.has("helper"))
 
 
 ## When you'd get to a booking if you set off now: the drive, or its window opening.
@@ -954,6 +1009,7 @@ func _unbook(b: Dictionary) -> void:
 ## The day's over, worked or not: whatever's left you never turned up to. Friday brings
 ## payday, September's last day the winter.
 func end_day() -> void:
+	_crew_day()
 	for b: Dictionary in jobs_today():
 		_no_show(b)
 	calendar.erase(day)
@@ -986,7 +1042,7 @@ func _no_show(b: Dictionary) -> void:
 
 ## Through the days with no job (or in jail) to the next booking, court, payday or the winter.
 func skip() -> void:
-	while not today().has("seed") and not today().has("court") and not payday_pending and not winter_pending:
+	while jobs_today().is_empty() and not today().has("court") and not payday_pending and not winter_pending:
 		end_day()
 
 
@@ -1235,6 +1291,14 @@ func settle_winter() -> Dictionary:
 	var topped := maxi(0, cost - money)
 	principal += topped
 	money += topped - cost
+	var crew_back: Array[String] = []
+	var crew_gone: Array[String] = []
+	for h: Dictionary in helpers.duplicate(): # laid off unpaid: back, and better, by how they were treated
+		if _rng.randf() < h.happy / 100.0:
+			crew_back.append(h.name)
+		else:
+			crew_gone.append(h.name)
+			helpers.erase(h)
 	reputation = lerpf(reputation, 50.0, 0.2)
 	rep_trend = lerpf(rep_trend, 50.0, 0.2)
 	record = maxf(0.0, record - 1.0) # a winter fades it, a little
@@ -1251,8 +1315,207 @@ func settle_winter() -> Dictionary:
 	for id: int in regulars:
 		_place(id, day + posmod(id, regulars[id].cadence))
 	paper = make_paper()
+	wanted = make_wanted()
+	crew_report = []
 	save()
-	return {"cost": cost, "topped": topped, "back": back, "gone": gone, "owed_back": owed_back}
+	return {"cost": cost, "topped": topped, "back": back, "gone": gone, "owed_back": owed_back, "crew_back": crew_back, "crew_gone": crew_gone}
+
+
+# ---------------------------------------------------------------- hired help
+
+## The paper's situations wanted: 1 to 3 a week, better the better your name.
+func make_wanted() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for i in _rng.randi_range(1, 3):
+		var at := clampf(reputation + _rng.randf_range(-20.0, 10.0), 0.0, 100.0) / 100.0
+		var h := {"id": _rng.randi(), "name": "%s %s" % [FIRST[_rng.randi() % FIRST.size()], LAST[_rng.randi() % LAST.size()]],
+			"pace": snappedf(clampf(0.55 + 0.45 * at + _rng.randf_range(-0.1, 0.1), 0.4, 1.2), 0.01),
+			"care": snappedf(clampf(0.2 + 0.7 * at + _rng.randf_range(-0.2, 0.2), 0.05, 0.95), 0.01)}
+		h.wage = wage_for(h)
+		out.append(h)
+	return out
+
+
+## What a helper asks a week, by how good they are.
+func wage_for(h: Dictionary) -> int:
+	return maxi(5, _round5(WAGE * h.pace * (0.5 + 0.5 * h.care)))
+
+
+func wages() -> int:
+	var w := 0
+	for h: Dictionary in helpers:
+		w += h.wage
+	return w
+
+
+## Why you can't hire, or "".
+func cant_hire() -> String:
+	return "No van for them" if helpers.size() >= vans else ""
+
+
+## Ring a situation wanted: the call's time, and they start at their asking wage (on a
+## push mower, in a van of yours). Returns what they said.
+func hire(w: Dictionary) -> String:
+	minute += RING_TIME
+	if cant_hire() != "":
+		return "\"You've no van for me? Ring back when you have.\""
+	wanted.erase(w)
+	var h := w.duplicate()
+	h.merge({"kit": "push", "jobs": 0, "happy": 70.0})
+	helpers.append(h)
+	save()
+	return "\"Right you are. Give me a job and I'll be there.\""
+
+
+func helper(id: int) -> Dictionary:
+	for h: Dictionary in helpers:
+		if h.id == id:
+			return h
+	return {}
+
+
+## Let a helper go: their bookings come back to you.
+func let_go(id: int) -> void:
+	helpers = helpers.filter(func(h: Dictionary) -> bool: return h.id != id)
+	for l: Array in calendar.values():
+		for b: Dictionary in l:
+			if b.get("helper", -1) == id:
+				b.erase("helper")
+	save()
+
+
+## Send a helper to a booking, or (id -1) take it back yourself.
+func assign(b: Dictionary, id: int) -> void:
+	if id < 0:
+		b.erase("helper")
+	else:
+		b.helper = id
+	save()
+
+
+## Crew mowers of a kind not yet given out (negative: more given than there are).
+func crew_free(kind: String) -> int:
+	return crew_kit.get(kind, 0) - helpers.filter(func(h: Dictionary) -> bool: return h.kit == kind).size()
+
+
+## A helper's kit: a push mower always, a crew mower if one's free.
+func set_kit(id: int, kind: String) -> bool:
+	var h := helper(id)
+	if h.is_empty() or (kind != "push" and h.kit != kind and crew_free(kind) <= 0):
+		return false
+	h.kit = kind
+	save()
+	return true
+
+
+## Whether a regular minds a helper turning up instead of you, and how much.
+func wants_you(b: Dictionary) -> float:
+	return WANTS_YOU.get(b.persona, 0.0) if b.has("regular") else 0.0
+
+
+## One helper's go at a booking, `late` minutes into its window (the sim's model: minutes
+## by kit and pace; their mood by care and luck, less if it overran or they wanted you; a
+## mishap now and then, by want of care). Returns the result, as a job's.
+func help_job(b: Dictionary, h: Dictionary, late: float) -> Dictionary:
+	var area := float(b.size.x * b.size.y) / (1280.0 * 720.0)
+	var minutes: float = HELP_SECS[h.kit] * area * MPS / h.pace
+	var patience := float(b.by - b.from)
+	var over := late + minutes > patience
+	var start: float = b.get("start_mood", PERSONAS[b.persona].get("start_mood", 60.0))
+	var md: float = 45.0 + 35.0 * h.care + _rng.randf_range(-15.0, 15.0) + start - 60.0 - (25.0 if over else 0.0) - wants_you(b)
+	var r := {"outcome": "paid", "minutes": minutes, "over": over, "bill": 0}
+	if _rng.randf() < (1.0 - h.care) * MISHAP_CHANCE:
+		var m: Array = MISHAPS[_rng.randi() % MISHAPS.size()]
+		r.mishap = m[0]
+		r.bill = m[1]
+		md -= 15.0
+	md = clampf(md, 0.0, 100.0)
+	var time_f := 1.0 if not over else maxf(0.4, 1.0 - (late + minutes - patience) / patience)
+	var prepaid: bool = b.has("regular") and regulars.has(b.regular) and regulars[b.regular].get("prepaid", 0) > 0
+	var pay := 0 if prepaid else roundi(b.pay * time_f * (0.5 + md / 100.0))
+	var tip := roundi(b.pay * 0.25) if not over and md >= 75.0 and not b.has("regular") else 0
+	var spec: Dictionary = MOWERS[h.kit]
+	var fuel := roundi(maxf(0.0, minutes / MPS * spec.fuel_burn - spec.max_fuel) * spec.fuel_price)
+	r.paid = pay + tip
+	r.net = pay + tip - fuel - r.bill
+	r.mood = md
+	r.rep = (md - 50.0) / 5.0 + 2.0
+	r.rep_lines = [["The job", r.rep]]
+	r.prepaid = prepaid
+	return r
+
+
+## Today's bookings sent to a helper, earliest first.
+func help_today(id: int) -> Array:
+	return bookings().filter(func(b: Dictionary) -> bool: return b.get("helper", -1) == id)
+
+
+## The crew's day, at its end: each helper on your clock's rules (the drive, the window,
+## as many as fit), the money and your name moving as yours do, regulars too; what came
+## of it into crew_report for the board.
+func _crew_day() -> void:
+	crew_report = []
+	var mine := [current_job, booked, offer, upfront]
+	for h: Dictionary in helpers:
+		var t := DAY_START
+		var who: String = h.name.split(" ")[0]
+		for b: Dictionary in help_today(h.id):
+			_unbook(b)
+			b.erase("helper")
+			if not (t < DAY_END and t + DRIVE <= b.by):
+				_no_show(b)
+				crew_report.append("%s couldn't get to %s in time." % [who, b.customer])
+				continue
+			var at := maxi(t + DRIVE, b.from)
+			var r := help_job(b, h, at - b.from)
+			t = at + ceili(r.minutes)
+			money += r.net
+			total_earned += maxi(0, r.paid)
+			_rep(r)
+			var line := "%s mowed for %s: $%d%s" % [who, b.customer, r.paid, ", late" if r.over else ""]
+			if r.has("mishap"):
+				line += "; %s%s" % [r.mishap, " ($%d)" % r.bill if r.bill > 0 else ""]
+			if wants_you(b) > 0.0:
+				line += "; they wanted you"
+			line += ". " + ("Pleased." if r.mood >= 70.0 else ("Not happy." if r.mood < 45.0 else "Fine."))
+			current_job = b
+			current_job.prepaid = r.prepaid
+			booked = b
+			if b.has("regular"):
+				_visited(b.regular, r)
+				if r.get("lost_regular", false):
+					line += " They've let you go."
+			elif not regulars.has(b.seed):
+				_maybe_offer(r)
+				if not offer.is_empty():
+					answer_offer("accept")
+					line += " They want you back: a regular now."
+			upfront = {}
+			crew_report.append(line)
+			h.jobs += 1
+			h.pace = snappedf(minf(1.4, h.pace + GROW), 0.01)
+			h.care = snappedf(minf(0.95, h.care + GROW), 0.01)
+			if not h.has("asks") and wage_for(h) >= h.wage * RAISE_AT:
+				h.asks = wage_for(h)
+				crew_report.append("%s's getting good: asks $%d a week." % [who, h.asks])
+	current_job = mine[0]
+	booked = mine[1]
+	offer = mine[2]
+	upfront = mine[3]
+
+
+## A helper's raise: yes, at what they ask (and they're pleased); no, and they're sore.
+func answer_raise(id: int, yes: bool) -> void:
+	var h := helper(id)
+	if h.is_empty() or not h.has("asks"):
+		return
+	if yes:
+		h.wage = h.asks
+		h.happy = minf(100.0, h.happy + 10.0)
+	else:
+		h.happy = maxf(0.0, h.happy - 25.0)
+	h.erase("asks")
+	save()
 
 
 # ---------------------------------------------------------------- the save
