@@ -124,7 +124,8 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    the dev's call, with LOAD 3's play. Help and robots are now priced by 209/210 (a busy
    helper about twice their wage, 2026-10-04 grill), which may make some of these moot.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect
-   screenshots here. (The strip of outside grass inside side fences: fixed in session 18.
+   screenshots here. (2026-10-04: the bare strip and broken back fence between gardens fixed
+   at the root, see docs/TRIBAL.md; test_next_door.) (The strip of outside grass inside side fences: fixed in session 18.
    Session 19's sweep of 18 whole gardens found nothing new.)
 206. [DESIGN, small] The horn (199, built): does using it a lot annoy the customer? The dev
    was unsure; left out for now.

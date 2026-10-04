@@ -1,4 +1,4 @@
-PLAY CHECKS OWED  (8)
+PLAY CHECKS OWED  (9)
 
 LOAD 1 of 2  (about 20 min: a new business, on the pad)
 S24-HUB    Walk the office, out to the yard, drive to the shop and home. Does it feel like
@@ -24,6 +24,9 @@ S24-YARD   When did you first hit "no room in the yard", and did buying more fee
 >
 S24-RAISE  Growth is a fifth as fast; they ask only when their pace ticks a point on their
            card. By the model a busy helper asks every 2 or 3 weeks. Too often, or too rare?
+>
+S24-FENCE  Next door's gardens: does the fence between you and them, and along the back,
+           look whole now on every kind of plot you play? Screenshot anything that doesn't.
 >
 S24-CREW   Helpers, vans and mowers as three things: hire before you've a van, swap who
            drives what, sell a van or let someone go. Does each do what you'd expect, and
@@ -62,6 +65,8 @@ VERIFIED  Helpers, vans and mowers as three things: test_help (hire with no van,
           screenshots of the yard and the cards; sims clean. Verifier run 10: 10 UI finds, fixed.
 TRIED     A front page with every tally key full pushes its page buttons off screen: not a
           realistic week, left.
+VERIFIED  Next door meets the garden: test_next_door (40 gardens; fails on the old gap);
+          contact sheets of both back corners, every plot kind, looked at.
 VERIFIED  The pad on 15 menu screens (test_pad: every control reached, no wrong-way jump),
           the summary's rows included (S23's TRIED). Vans never hide kit (test_hub, and a
           60-yard random sweep).

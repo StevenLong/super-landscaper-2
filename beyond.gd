@@ -13,6 +13,8 @@ const TINTS := [Color(1, 1, 1), Color(1, 0.92, 0.84), Color(0.86, 0.94, 1.0), Co
 var _r: RandomNumberGenerator
 var _tree_i := 0
 var _house_y := 0.0
+var _args := {} ## build()'s, for sides()
+var near := [0.0, 0.0] ## where next door's ground meets the garden's side runs: the left's right edge, the right's left
 
 
 ## w, h: the lawn; border: the hedge/fence run's depth; far: y of the road's far
@@ -23,27 +25,7 @@ func build(w: float, h: float, border: float, far: float, up: float, r: RandomNu
 	y_sort_enabled = true
 	_r = r
 	_house_y = house_y
-	for side in [-1, 1]:
-		if shape == "park": # the manor's estate: parkland past the ha-ha, no neighbours
-			_park(Rect2(-border - PLOT * 2.0 if side < 0 else w + border, 0, PLOT * 2.0, h))
-			continue
-		if shape == "terrace":
-			var park := r.randf() < 0.35 # the council playground at the end of the row
-			for i in 3:
-				var at := -border - (i + 1) * (w + border) if side < 0 else w + border + i * (w + border)
-				if park and i == 0:
-					_playground(Rect2(at, 0, w, h), border)
-				else:
-					_terrace(Rect2(at, 0, w, h), border, up)
-			continue
-		var plot := Rect2(-border - PLOT if side < 0 else w + border, 0, PLOT, h)
-		match ["house", "house", "woods", "lot"][r.randi() % 4]:
-			"house":
-				_neighbour(plot, side, h, border, up)
-			"woods":
-				_woods(plot, side)
-			"lot":
-				_lot(plot, h, border, up)
+	_args = {"w": w, "h": h, "border": border, "up": up, "shape": shape, "seed": r.seed}
 	# Trees behind the back fence close the world off, poking up over the roofs.
 	var x := -PLOT - border - 100.0
 	while x < w + PLOT + 100.0:
@@ -81,9 +63,13 @@ func _neighbour(plot: Rect2, side: int, h: float, border: float, up: float) -> v
 	var kind: Texture2D = [preload("res://art/hedge_h.png"), preload("res://art/fence_h.png")][_r.randi() % 2]
 	for run: Vector2 in [Vector2(plot.position.x, drive.position.x), Vector2(drive.end.x, plot.end.x)]:
 		_strip(kind, Rect2(run.x, h + border - kind.get_height(), run.y - run.x, kind.get_height()), 0)
-	for run: Vector2 in [Vector2(plot.position.x, hs.rect().position.x), Vector2(hs.rect().end.x, plot.end.x)]:
-		if hs.garage < 0 and run.x < hs.rect().position.x:
-			run.y = g.position.x
+	# Their back fence: either side of the house where it stands at the back, running on behind
+	# the lower garage as the garden's own does; the whole width where the house is set forward
+	# with a garden behind (open grass showed behind both, 2026-10-04).
+	var runs := [Vector2(plot.position.x, hs.rect().position.x), Vector2(hs.rect().end.x, plot.end.x)]
+	if hs.rect().position.y > 1.0:
+		runs = [Vector2(plot.position.x, plot.end.x)]
+	for run: Vector2 in runs:
 		_strip(preload("res://art/fence_h.png"), Rect2(run.x, -32, run.y - run.x, 32), 0)
 	var edge := plot.position.x - border if side < 0 else plot.end.x
 	_strip(preload("res://art/fence_v.png"), Rect2(edge, -up, border, h + border), 0)
@@ -104,9 +90,10 @@ func _neighbour(plot: Rect2, side: int, h: float, border: float, up: float) -> v
 
 ## Another terrace like the customer's: the house at the road end with its passage, a
 ## long thin garden behind, fenced from the next.
-func _terrace(plot: Rect2, border: float, up: float) -> void:
+func _terrace(plot: Rect2, border: float, up: float, divider := true) -> void:
 	var tidy := _r.randf() < 0.5
-	_ground(preload("res://art/grass_light.png") if tidy else preload("res://art/grass_long.png"), plot, Color(0.85, 0.92, 0.8))
+	var ground := Rect2(plot.position, plot.size + Vector2(border if divider else 0.0, 0)) # under its fence to the next, so no bare grass beside it
+	_ground(preload("res://art/grass_light.png") if tidy else preload("res://art/grass_long.png"), ground, Color(0.85, 0.92, 0.8))
 	var passage: int = [-1, 1][_r.randi() % 2]
 	var hs: Node2D = HouseScript.new()
 	hs.passage = true
@@ -116,8 +103,9 @@ func _terrace(plot: Rect2, border: float, up: float) -> void:
 	add_child(hs)
 	var g: Rect2 = hs.garage_rect()
 	_ground(preload("res://art/paving.png"), Rect2(g.position.x + 10, g.position.y, g.size.x - 20, plot.end.y + border + 40.0 - g.position.y))
-	_strip(preload("res://art/fence_v.png"), Rect2(plot.end.x, -up, border, plot.size.y + border), 0)
-	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, -32, plot.size.x, 32), 0)
+	if divider:
+		_strip(preload("res://art/fence_v.png"), Rect2(plot.end.x, -up, border, plot.size.y + border), 0)
+	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, -32, ground.size.x, 32), 0)
 	_strip(preload("res://art/hedge_h.png"), Rect2(plot.position.x, plot.end.y + border - 44, hs.rect().size.x, 44), 0)
 	for i in _r.randi_range(0, 2): # beds, or dug-over patches, down the garden
 		var sz := Vector2(_r.randf_range(90, 200), _r.randf_range(40, 80))
@@ -257,6 +245,45 @@ func _tree(base: Vector2, canopy: float) -> void:
 	cs.disabled = true
 	t.add_child(cs)
 	add_child(t)
+
+
+## Next door either side, once the garden's side runs are laid (main.gd _build_borders):
+## their ground starts where the run's art ends, `gap` past the lawn's edge, so no strip of
+## nobody's grass lies between (a fence's art is 8 wide in a 24 border: 16 of bare grass
+## showed there, and a hole in the back fence line, till 2026-10-04). Their own rng, so the
+## street and the trees keep theirs.
+func sides(gap: float) -> void:
+	var w: float = _args.w
+	var h: float = _args.h
+	var border: float = _args.border
+	var up: float = _args.up
+	var keep := _r
+	_r = RandomNumberGenerator.new()
+	_r.seed = _args.seed + 3
+	for side in [-1, 1]:
+		var r := _r
+		if _args.shape == "park": # the manor's estate: parkland past the ha-ha, no neighbours
+			_park(Rect2(-gap - PLOT * 2.0 if side < 0 else w + gap, 0, PLOT * 2.0, h))
+			continue
+		if _args.shape == "terrace":
+			var park := r.randf() < 0.35 # the council playground at the end of the row
+			for i in 3: # each its width, fenced from the next by a border's width
+				var at := -gap - (i + 1) * w - i * border if side < 0 else w + gap + i * (w + border)
+				if park and i == 0: # on the right, its ground runs on to the next garden's fence
+					_playground(Rect2(at, 0, w + (border if side > 0 else 0.0), h), border)
+				else: # the first on the left meets your own run: no fence of theirs there
+					_terrace(Rect2(at, 0, w, h), border, up, not (side < 0 and i == 0))
+			continue
+		var plot := Rect2(-gap - PLOT if side < 0 else w + gap, 0, PLOT, h)
+		match ["house", "house", "woods", "lot"][r.randi() % 4]:
+			"house":
+				_neighbour(plot, side, h, border, up)
+			"woods":
+				_woods(plot, side)
+			"lot":
+				_lot(plot, h, border, up)
+	near = [-gap, w + gap]
+	_r = keep
 
 
 func _ground(tex: Texture2D, box: Rect2, tint := Color.WHITE) -> void:

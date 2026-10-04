@@ -735,6 +735,7 @@ func _build_borders(r: RandomNumberGenerator, drive: Control) -> void:
 	# A side run's art stands on the lawn's edge, not mid-strip, so no strip of next door's
 	# grass shows inside it, looking uncut (S15-FENCE); the runs across end on its middle.
 	var half := b * 0.5 if edge == "haha" else (art_v[edge] as Texture2D).get_image().get_used_rect().size.x * 0.5
+	($Beyond as Node).call("sides", half * 2.0) # next door's ground meets the run's art, not the strip's far side
 	for key: String in sides:
 		var s: Array = sides[key]
 		if not s[2].is_empty() and (s[2][0] as Vector2).distance_to(s[2][1]) > 40.0: # too short to come out of

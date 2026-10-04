@@ -72,6 +72,13 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
   cards): all reached, no wrong-way jumps; a mutated copy proves it fails. It found nothing
   to fix. run_all also skips any "at exit" leak report, not just one wording.
 
+- The dev's fence screenshots (a bare strip between gardens, a hole in the back fence): the
+  root cause was two files laying one boundary with different widths (docs/TRIBAL.md). Next
+  door now starts at the side run's art (beyond.sides(gap) from _build_borders), their back
+  fence runs behind their garage and behind a house set forward. New test_next_door (40
+  gardens, 76 sides; fails on the old gap); contact sheets of both back corners for every
+  plot kind looked at.
+
 OWED CHECKS: 8 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
 LOAD 2 S24-YARD, S24-RAISE, S24-CREW).
 

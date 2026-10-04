@@ -36,3 +36,10 @@ Traps and "we tried X, it failed because Y". Current rules live in CLAUDE.md.
   pad's B on the desk crashed that way (2026-10-04). Mark the input handled first (or hold
   the viewport, as pack.gd does). run_all now fails on engine `ERROR:` lines too, bar the
   "resources still in use at exit" each headless run prints.
+- Fences between gardens broke three times (S15-FENCE, 219, then the dev's 2026-10-04
+  screenshots) because two files lay the one boundary: main.gd _build_borders draws the
+  garden's runs, beyond.gd draws next door. S15-FENCE moved the side run's art onto the lawn
+  edge (8 wide for a fence, in a 24 border) but next door still started a full border out,
+  leaving 16 of nobody's grass and a hole in the back fence line. Now beyond.sides(gap) is
+  called from _build_borders with the art's real width, and tests/test_next_door.gd checks
+  the meeting over 40 gardens. Change either file's geometry and run that test.
