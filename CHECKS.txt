@@ -73,3 +73,5 @@ VERIFIED  The pad on 15 menu screens (test_pad: every control reached, no wrong-
 VERIFIED  Hedge and wall corners: a run across meets a hedge or wall side at its outer edge
           (a fence still at its middle), test_next_door (fails on the old notch); corner
           crops of 12 gardens, all four corners, looked at. The counter card: test_hub.
+VERIFIED  The playground on the left no longer stands its side railings on your lawn (a
+          ghost fence inside yours): test_next_door (fails on the old seed 190); a corner crop.

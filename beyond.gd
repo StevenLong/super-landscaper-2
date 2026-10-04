@@ -115,14 +115,16 @@ func _terrace(plot: Rect2, border: float, up: float, divider := true) -> void:
 
 
 ## The council playground next to the terraces: rough grass, a tarmac pad by the road with
-## swings, a slide and a roundabout, railings along the front.
-func _playground(plot: Rect2, border: float) -> void:
+## swings, a slide and a roundabout, railings along the front. On the left its railings
+## down the side would stand on your lawn (2026-10-05): your own run is the boundary there.
+func _playground(plot: Rect2, border: float, divider := true) -> void:
 	_ground(preload("res://art/grass_long.png"), plot, Color(0.9, 0.95, 0.75))
 	var pad := Rect2(plot.position.x + 30, _house_y + 40, plot.size.x - 60, plot.end.y - _house_y - 60)
 	_ground(preload("res://art/paving.png"), pad, Color(0.95, 0.55, 0.45)) # the red safety surface
 	var rail := Color(0.45, 0.6, 0.5)
 	_strip(preload("res://art/fence_h.png"), Rect2(plot.position.x, plot.end.y + border - 32, plot.size.x, 32), 0, rail)
-	_strip(preload("res://art/fence_v.png"), Rect2(plot.end.x, -32.0, border, plot.size.y + border), 0, rail)
+	if divider:
+		_strip(preload("res://art/fence_v.png"), Rect2(plot.end.x, -32.0, border, plot.size.y + border), 0, rail)
 	_kit(Vector2(pad.position.x + 90, pad.position.y + 90), "swings")
 	_kit(Vector2(pad.end.x - 90, pad.position.y + 100), "slide")
 	_kit(Vector2(pad.get_center().x, pad.end.y - 70), "roundabout")
@@ -270,7 +272,7 @@ func sides(gap: float) -> void:
 			for i in 3: # each its width, fenced from the next by a border's width
 				var at := -gap - (i + 1) * w - i * border if side < 0 else w + gap + i * (w + border)
 				if park and i == 0: # on the right, its ground runs on to the next garden's fence
-					_playground(Rect2(at, 0, w + (border if side > 0 else 0.0), h), border)
+					_playground(Rect2(at, 0, w + (border if side > 0 else 0.0), h), border, side > 0)
 				else: # the first on the left meets your own run: no fence of theirs there
 					_terrace(Rect2(at, 0, w, h), border, up, not (side < 0 and i == 0))
 			continue

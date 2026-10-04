@@ -115,6 +115,13 @@ func _process(_delta: float) -> bool:
 	var job: Dictionary = _jobs[_i]
 	var near: Array = m.get_node("Beyond").near
 	var what := "seed %d (%s)" % [job.seed, job.get("venue", job.get("shape", "rect"))]
+	var w: float = m.lawn.size_px.x
+	for c: Node in m.get_node("Beyond").get_children(): # none of next door's side fences stands on the lawn
+		var t := c as TextureRect
+		if t and t.texture and t.texture.resource_path.ends_with("_v.png"):
+			var used := t.texture.get_image().get_used_rect()
+			assert(t.position.x + used.end.x <= 0.5 or t.position.x + used.position.x >= w - 0.5,
+				"%s: next door's side fence stands on the lawn at %.1f" % [what, t.position.x + used.position.x])
 	for left: bool in [true, false]:
 		var art := _outer(left)
 		if is_nan(art):
