@@ -94,13 +94,6 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
 
 ### Open after session 16 (2026-10-02; what's left of the S13 to S15 fallout)
 
-189. [DESIGN, moderate] Robot mowers, what's still open: tiers (cheap bouncers that run till
-   they die, dear ones upgradeable or cleverer round critters), consumable vs permanent vs
-   destroyable, speed and price. How it behaves now is in the design doc (Mowers and
-   Equipment). Measured: two robots take about 8 minutes to cut 85% of a 1280 x 720 lawn,
-   and only 8 to 25% of a big one (1600 x 900 or more) in 5 minutes: slow. S15-ROBOT: $150
-   is pocket change after the first month, and cheap doesn't make it good: price it with
-   the tiers and 193's pace.
 193. Grilled 2026-10-02: time is the scarce thing (design doc, The Business). 193a to 193c built in session 17; left:
 193d. Retunes after 193a (mine, measured): reputation's climb done in session 18 (gains
    scaled by how known you are, design doc Reputation; the top band after about 20 great
@@ -130,8 +123,9 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
      never reached 85% with it).
    The sim flatters income (every job meets its target; the ride-on's manor time is a
    guess), so MOOD 75's dollars are the least trustworthy; the verifier (run 6) re-ran and
-   matched the core numbers. No numbers changed: which lever (pay, PAPER_SIZE, the offer's mood threshold, fuel, or
-   pricing 189/168 at this scale) is the dev's call, with LOAD 3's play.
+   matched the core numbers. No numbers changed: which lever (pay, PAPER_SIZE, the offer's mood threshold, fuel) is
+   the dev's call, with LOAD 3's play. Help and robots are now priced by 209/210 (a busy
+   helper about twice their wage, 2026-10-04 grill), which may make some of these moot.
 194. [VISUAL, moderate] Fences and walls: more broken bits to come as the dev plays. Collect
    screenshots here. (The strip of outside grass inside side fences: fixed in session 18.
    Session 19's sweep of 18 whole gardens found nothing new.)
@@ -151,8 +145,29 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    to see a little growth, leave again. For the hub grill.
 Also: S14-CAL, the board reads but will be redone when things split out (no item).
 
-PROPOSED ORDER: play LOAD 3 of CHECKS (the clock, terms, events), then 193d's retunes; grill 189 (robots) and 168 (hired
-help), priced as ways to buy time.
+PROPOSED ORDER: play LOAD 3 of CHECKS (the clock, terms, events), then 193d's lever; build
+209 (hired help, slice 1), then 210.
+
+### Grilled 2026-10-04 (168 hired help with 189 robots: ways to buy time)
+
+Decided in the design doc (The Business, Hired help; Mowers and Equipment, robot mowers).
+
+209. [FEATURE, large] Hired help, slice 1 (design doc, Hired help): the paper's "situations
+   wanted" column (1 to 3 a week, pace, care, asking wage, better with your name), ringing
+   to hire, a weekly wage at payday, a van per helper (shop), more than one of a mower,
+   assigning a booking and kit on the board, the off-screen result on your clock's rules
+   (reuse tests/sim_season.gd's model: pace by kit, care and luck for mood), the evening
+   report, your name and regulars counting, mishaps by care, persona "wants you" shown
+   on the booking and in the report, growth and raises, the winter layoff. Tune with
+   the sim: a busy helper brings in about twice their wage. Board UI is the bulk.
+210. [FEATURE, large] Hired help slice 2 and robots: a helper nicked or sacked over a
+   crime, quitting and poaching when underpaid, robot tiers (a cheap stop-for-everything
+   one, a dear faster one that goes round critters), robots lent to helpers as kit,
+   packing a helper's van, quirks. Robots measured slow (two take 8 minutes to cut 85% of
+   a small lawn): price the tiers with the sim's scale.
+168b. Later layers on record in the doc (from the 160 grill): upfront pay and raises,
+   evidence surfacing, the off-season events, selling up, the front page, referrals, wear
+   and overheads.
 
 ### Grilled 2026-09-29 (160: the season calendar, regular clients)
 
@@ -160,9 +175,6 @@ Decided in the design doc (Direction, The Business, Season Prototype). The game 
 small business across seasons, not a roguelite run. 162 to 166 (the season prototype) and
 167 (the record) were built in session 14; the rest wait.
 
-168. [DESIGN, large] Hired help: its own grill (wages, a helper's pace, off-screen jobs).
-   Later layers on record in the doc: upfront pay and raises, evidence surfacing, the
-   off-season events, selling up, the front page, referrals, wear and overheads.
 
 ### Grilled 2026-09-27 (91: packing the truck, robot mowers, how each mower plays)
 
