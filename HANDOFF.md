@@ -79,8 +79,14 @@ per run: about 95k to 240k tokens, 9 to 20 minutes.
   gardens, 76 sides; fails on the old gap); contact sheets of both back corners for every
   plot kind looked at.
 
-OWED CHECKS: 8 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
-LOAD 2 S24-YARD, S24-RAISE, S24-CREW).
+- The dev: the road-side fence went see-through with the mower well clear of it, and "can't
+  go as far behind the fence". Measured: reach and the fence's place are identical before
+  and after the fence change (12 gardens), and neither rule has changed since 2026-09-27.
+  The fade zone reached 40 above the fence: now its own height (+6), test_front (fails on
+  the old 40). Reach varies by garden (the drive's mouth goes further): asked for a shot.
+
+OWED CHECKS: 9 (CHECKS.txt: LOAD 1 S24-HUB, S24-CAL, S24-PAPER, S24-DAYEND, S24-PAD;
+LOAD 2 S24-YARD, S24-RAISE, S24-FENCE, S24-CREW).
 
 NEXT:
 1. The dev plays LOADs 1 and 2; triage the fallout.

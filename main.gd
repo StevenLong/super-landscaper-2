@@ -1012,9 +1012,10 @@ func _process(delta: float) -> void:
 	for t in $Scenery.get_children():
 		if "canopy" in t:
 			t.near = t.crown_rect().grow(20.0).has_point(me) or me.distance_to(t.position) < t.radius + 30.0
-	# So does the front hedge or fence while you're behind it.
+	# So does the front hedge or fence while you're behind it: in its own height, which is all
+	# it can hide (40 above it faded it a mower's length off, the dev saw, 2026-10-04).
 	for strip in _front:
-		var behind := Rect2(strip.position - Vector2(0, 40), strip.size + Vector2(0, 40)).has_point(me)
+		var behind := Rect2(strip.position - Vector2(0, 6), strip.size + Vector2(0, 6)).has_point(me)
 		strip.modulate.a = move_toward(strip.modulate.a, 0.45 if behind else 1.0, delta * 4.0)
 
 
