@@ -4,11 +4,38 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 7 runs, 47 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 8 runs, 48 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
 per run: about 95k to 240k tokens, 9 to 20 minutes.
 
 ---
+
+## Session 23 (2026-10-04): solo, 218, 219, 221 with 47, and the raise half of 222
+- 218: the paper's headline is ink, no shadow (new test_newsprint; screenshot reads).
+- 219: the fence corners were only on L plots: the side run on next door's side started a
+  BORDER (24px) higher than at a plain back corner. Found by matching the dev's screenshots
+  (plain grass beyond the run = next door's corner). test_shapes checks it.
+- 221 and 47: measured every board page's pad left/right (a scratch script): the Shop's
+  columns sent left/right up or down (Godot picks a button a pixel that way in a row far
+  below), and Quit to the day button on the Calendar. Now left/right on the board only goes
+  more sideways than up or down, within a row's height (UI.row_step); disabled buttons stay
+  reachable, as up/down already allowed. test_controls checks every page. Measured on the
+  board only: the summary's rows are unmeasured.
+- 222, raise half: a helper's wage is priced on your name when they answered the ad, so
+  only their growth asks for a raise (design doc line updated, game-dev da036e1). Growth
+  alone still asks after 4 to 6 jobs (modelled, not played): S23-RAISE asks the dev.
+- Verifier run 8 (f554ccb..dfa9ad3): 3 claims held (a 463-plot sweep of L corners, both
+  sides, every style), 1 real find: an old save's helper hired at a name near 10 back-solved
+  under the floor and asked for a raise at once; fixed (the floor moved to where the name is
+  stored), its repro round-trips every case. The 221 work was after its range.
+- Verified: run_all green, 48 PASS; sim_season SIM_CREW=1 runs clean.
+
+OWED CHECKS: 2 (CHECKS.txt: S23-PAD, S23-RAISE).
+
+NEXT:
+1. The dev's answers to S23-PAD and S23-RAISE (a GROW/RAISE_AT change if wanted).
+2. A /grill on the office/hub: 220, 222, 223, 224, 225 with 217, 208, S14-CAL. Hold 210.
+3. 227 when the dev's clock drawing arrives.
 
 ## Session 22 (2026-10-04): LOADs 1 to 4 played and triaged, nothing built
 - All six checks answered. S19-LITTER passes (the sapling's sprite unclear, for the sprite
@@ -248,49 +275,3 @@ NEXT:
 1. Grill 193 (pace and escalation), now, after clearing context.
 2. Then grill 189 (robot tiers, price, speed) and 168 (hired help).
 3. Play LOAD 1 and 2 of CHECKS.txt when there's time.
-
-## Session 15 (2026-10-01): S13 and S14 played and triaged, the fallout built, the robot redone
-- **Played (dev):** all 19 checks answered. Passed: S13-WALL, KILL, STONE, PATIO,
-  POCKETS, CORD (a bit better), RIDEDRY, IDLE; S14-PAYDAY, VISIT, COURT, BLACKOUT (seen
-  for free through a crash). Raised issues, all triaged into NOTES 178 to 195: S13-HEDGE,
-  S14-CAL (readable, to be redone later), RING, OFFER, PACK, ROBOT (useless: it ping-ponged
-  in a corner and bowled the dog off screen, police and all), PACE.
-- **Fixed during play:** pack.gd crashed driving off (17dec2f: `change_scene_to_file`
-  takes the scene out of the tree at once in 4.2+, so get the viewport first); fence and
-  wall corners (dc5e08f: the side runs' art is a column mid-strip, so ends met nothing).
-- **The dev's calls** (folded into the design doc, 3ae9a5f and 7cc843c in game-dev, veto
-  there): the robot like a real one (knows the garden, straight stripes, never runs
-  critters over, stops; destroys stones for a little wear); ringing the police fires you;
-  seeing the throw is enough to react; pick the figure for the haggle and the debt; payday
-  shows what a payment does instead of defining the vig; the regular's offer as a win on its
-  own screen, a polite no still earns a little name; the customer walks, never jumps;
-  the portrait's where and seen as separate discrete states; packing cursor per item.
-- **Built after** (178 to 192, 195, all pushed, unplayed): see the commits 550b718 to
-  e2fb9e2. **My calls, veto any:** the robot plans on a 20 px AStarGrid2D from the lawn
-  grid, lanes along the way it's set down facing, waits 2 s then gives a spot up, -10 a
-  stone, broken for the job at 0, crosses a drive to reach the rest of the lawn; the haggle
-  slider runs to 1.5x their rate, each 10% under 1.2x adds 25% to the yes; declining gives
-  +2 reputation; the debt slider steps $5 to $25 by what you can spare, its top end exact;
-  the siren peaks at -16 dB (was -6); a customer's hitbox is 16 px round their feet; the
-  portrait switches after 0.2 s held, no fade; they walk the door at 50 px/s and indoors at
-  70 px/s, glimpsed through the panes; Start or [P] drives from packing (Esc stays put back).
-- **Process:** the dev's free-form notes go in a NOTES section at the top of CHECKS.txt;
-  the handoff skill now triages and empties it (6b7dcf0).
-- Verified: run_all green (parse, smoke, 37 tests); new or changed assertions in
-  test_pack (drive through real input; item stops), test_controls (the paper's last ad),
-  test_police (fired on the call, not when out cold), test_robot (rewritten: plan covers
-  every open cell, lanes straight, stone ground, stops for a body then goes round, wear
-  carried), test_season (ask odds, decline rep), test_run_flow (the offer screen),
-  test_seen (stroll), test_throw (seen throw). Screenshotted and looked at: the truck menu,
-  the board, payday, the offer and its decline, the portrait states, the face at and
-  passing behind the glass, the door walk, the packing cursor, a robot's stripes after a
-  few game minutes, fence corners on six L plots and two churchyards. Not played.
-
-OWED CHECKS: 14, in CHECKS.txt (3 loads, about 40 minutes).
-
-NEXT:
-1. Play LOAD 1 to 3 of CHECKS.txt; keep catching broken fences (194).
-2. Grill 193 (pace and escalation, the dev's biggest concern) before retuning PAPER,
-   REACH, the vig or pay; it may also reshape S14-RING's stratified bars.
-3. Then 189's open parts (robot tiers), and the text pass (159, with 158).
-4. Grills still waiting: 168 (hired help), 147 with 94 and 100, 136, 137, 96.

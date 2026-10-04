@@ -1,6 +1,16 @@
-PLAY CHECKS OWED  (none)
+PLAY CHECKS OWED  (2)
 
-Nothing owed.
+LOAD 1 of 1  (about 15 min: any save with a van, on the pad)
+S23-PAD    On the board with the pad, left and right go where you'd expect on every page
+           (the Shop's two columns, the Crew page, the paper). Anything odd, say which page.
+>
+S23-RAISE  Hire a helper and keep them busy: they now ask for a raise only as they get
+           better, not as your name climbs. By the model that's after about 4 to 6 jobs
+           (2 or 3 busy days). Too soon? Options: grow slower (fewer raises, slower
+           improvement), ask only after a set time (say a month since hire or the last
+           raise), or a bigger jump before asking. Recommend the set time: growth stays
+           visible and the asks stay rare. Your call.
+>
 
 Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
 [3] skips to Friday's payday; in a job [0] finishes it perfectly.
@@ -15,4 +25,11 @@ NOTES
 VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
-CHANGED   Session 22 was triage only (NOTES 218 to 227): no code changed. run_all green, 47.
+VERIFIED  218 headline: test_newsprint (fails on the old code); screenshot of the paper reads.
+VERIFIED  219 L-plot corners: test_shapes (fails on the old code); screenshots both sides;
+          the verifier swept 463 L plots, every style pairing, zero mismatches.
+VERIFIED  221/47 board left/right: a scratch script pressed left/right on every button of
+          every page, before and after; test_controls now checks it. Feel owed: S23-PAD.
+VERIFIED  222 raise by growth: test_help (fails on the old code); old saves back-solve the
+          name (repro round-trips 7 cases, incl. the verifier's find near the floor).
+TRIED     The summary screen's pad left/right: not measured (the note was about the board).

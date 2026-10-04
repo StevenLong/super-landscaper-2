@@ -10,9 +10,6 @@ BLOCKS = spoils the next playtest.
 
 ### Build (no design call needed)
 
-47. [BUG, small] Board: pad (and arrows) left/right step up and down the mower list
-   (S4-PAD-MENUS). Home: `board.gd` `_mower_row`. Waits on the walkable hub, which may
-   replace this menu.
 62b. [FEATURE, small] Leftover thoughts from ramming the car (not decided): a direct hit
    shoves the car a little; dents show on the sprite.
 75b. [FEATURE, large] Venues, what's left after the manor and churchyard: the golf course (its
@@ -145,7 +142,7 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    to see a little growth, leave again. For the hub grill.
 Also: S14-CAL, the board reads but will be redone when things split out (no item).
 
-PROPOSED ORDER: see Notes 2026-10-04b (218, 219, then the office/hub grill).
+PROPOSED ORDER: see Notes 2026-10-04b (the office/hub grill).
 
 ### Notes 2026-10-04 (LOAD 3 played, S17 and S18 check fallout, two bugs)
 
@@ -169,26 +166,18 @@ reframed into 225. S20-FIXES: the 6am start fine, the summary an improvement, th
 unreadable (218); the dog and doors not commented (verified by test). S20-DIAL: doesn't
 read (227). S21-CREW: the whole flow confusing (222).
 
-218. [BUG, small, BLOCKS] The paper's headline is unreadable: black on newsprint with a
-   drop shadow. Root cause: board.gd _paper_view's "News" label is a UI.label, which always
-   shadows (ui.gd label -> shadow). FIX: no shadow, as _ink does; check every newsprint text.
-219. [BUG, small] Fence corners (the dev's two screenshots): where a side fence meets the
-   back fence, the side run's posts stand up past the back run's pickets, both corners.
-   Suspected (not run): main.gd ~760, a side run starts at -BORDER_UP whatever the back
-   run's art height, and a fence's art is shorter than a hedge's or a wall's. FIX: start
-   the side run at the back run's art top; screenshot every plot's corners with each kind.
 220. [DESIGN, large] Everything outside the mowing is overwhelming, confusing and doesn't
-   operate smoothly (the dev). For the office/hub grill with 217, 208, S14-CAL and 47.
-221. [BUG, moderate] On a pad, left and right on some screens don't go where you'd expect.
-   Home: board.gd, Godot's automatic focus neighbours over hbox/grid layouts (47 is one
-   case). QUESTION: which screens? Likely folds into 220's redesign.
+   operate smoothly (the dev). For the office/hub grill with 217, 208 and S14-CAL.
 222. [DESIGN, large] The crew flow needs rethinking (S21-CREW): the results are hidden (hard
    to notice; the report runs off the bottom and a pad can't scroll to it, since only
    buttons take focus); equipping went unnoticed (a Kit toggle); assigning is a wall of jobs
    each toggled through names. Also "they asked for money after the first day": a raise
    ask, diagnosed: wage_for uses your reputation now, so as your name climbs (50 to 70 in
-   days) every helper soon asks; ask by their own growth, not your name, whatever the
-   redesign. Only three in the paper: 1 to 3 a week, by design. For the hub grill.
+   days) every helper soon asks. Fixed in session 23: priced on your name when they
+   answered the ad, raises by growth only. But growth alone still earns an ask after about
+   4 to 6 jobs (modelled, GROW 0.01 a job, RAISE_AT 1.15), so a busy helper asks within 2 or
+   3 days: QUESTION (balance) in CHECKS S23-RAISE. Only three in the paper: 1 to 3 a week,
+   by design. For the hub grill.
 223. [DESIGN, moderate] The shop (inventory): a growing list of buttons doesn't scale, and
    it doesn't scroll down (on a pad: follow_focus only follows a focused button). For the
    hub grill.
@@ -203,9 +192,8 @@ read (227). S21-CREW: the whole flow confusing (222).
    pictures Graveyard Keeper's: markers for when the window starts, rolling round to where
    it ends (a sunrise and a sunset). Waits on the dev's drawing. Home: hud.gd _draw_dial.
 
-PROPOSED ORDER: 218 and 219 (small bugs, one spoils the paper), then the office/hub grill
-(220, 222, 223, 224, 225 with 217, 208, S14-CAL, 47; 221 checked against it), then 227 once
-the drawing comes. The grill first after the bugs: every menu note points at one redesign.
+PROPOSED ORDER: the office/hub grill (220, 222, 223, 224, 225 with 217, 208, S14-CAL), then
+227 once the drawing comes. 218, 219, 221 and 47 built in session 23.
 
 ### Grilled 2026-10-04 (168 hired help with 189 robots: ways to buy time)
 

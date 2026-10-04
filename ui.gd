@@ -97,6 +97,28 @@ static func focus(c: Control) -> void:
 			c.grab_focus()).call_deferred()
 
 
+## Left or right (dir -1 or 1) from button c, never up or down a column (NOTES 221): Godot's
+## own pick takes a button a pixel that way in a row far below. The nearest button more that
+## way than up or down, at most a row's height off c's row (level counts most), or null.
+static func row_step(c: BaseButton, dir: int) -> Control:
+	var r := c.get_global_rect()
+	var best: Control = null
+	var best_score := INF
+	for o: Node in c.get_tree().current_scene.find_children("*", "BaseButton", true, false):
+		var b := o as BaseButton
+		var ro := b.get_global_rect()
+		var v := ro.get_center() - r.get_center()
+		var gap := maxf(0.0, maxf(ro.position.y - r.end.y, r.position.y - ro.end.y))
+		if b == c or v.x * dir <= absf(v.y) or gap > r.size.y or b.focus_mode != Control.FOCUS_ALL \
+				or not b.is_visible_in_tree():
+			continue
+		var score := v.x * dir + 4.0 * absf(v.y)
+		if score < best_score:
+			best = b
+			best_score = score
+	return best
+
+
 static func panel(child: Control) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.add_child(child)

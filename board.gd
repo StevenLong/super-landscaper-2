@@ -769,6 +769,18 @@ func _save_and_quit() -> void:
 
 ## Pause (Esc, Start) on the board goes to Save and quit; Shift and Ctrl (RB and LB)
 ## turn its pages.
+## Left and right step along a row of buttons, never up or down a column (NOTES 221, 47).
+func _input(event: InputEvent) -> void:
+	var dir := 1 if event.is_action_pressed("ui_right", true) else (-1 if event.is_action_pressed("ui_left", true) else 0)
+	var c := get_viewport().gui_get_focus_owner()
+	if dir == 0 or not c is BaseButton:
+		return
+	var to := UI.row_step(c, dir)
+	if to:
+		to.grab_focus()
+	get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	var leave := find_child("Quit", true, false) as Button
 	if leave and event.is_action_pressed("pause"):

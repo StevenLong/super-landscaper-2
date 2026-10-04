@@ -3,7 +3,7 @@
 # does nothing, interact puts the lead on, again picks it up; the pad's B hops, X throws;
 # with several things in reach, interact does the one you face (NOTES 123); at the truck
 # on the mower, interact opens it only when you're not on the throttle; buying on the
-# board keeps the cursor in that row.
+# board keeps the cursor in that row; left and right on the board stay level.
 extends SceneTree
 
 var g: Node
@@ -120,10 +120,12 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 5
 		8, 9, 10, 11:
 			_fits()
+			_sideways()
 			current_scene._show(["paper", "crew", "shop", "calendar"][_step - 8])
 			_wait = 5
 		12:
 			_fits()
+			_sideways()
 			# Shift and Ctrl turn the board's pages.
 			var shift := InputEventKey.new()
 			shift.keycode = KEY_SHIFT
@@ -138,6 +140,23 @@ func _physics_process(_delta: float) -> bool:
 			quit()
 	_step += 1
 	return false
+
+
+## Left and right on the board's page never step up or down a column (NOTES 221, 47).
+func _sideways() -> void:
+	for b: Button in current_scene.find_children("*", "Button", true, false):
+		if not b.is_visible_in_tree():
+			continue
+		for a: String in ["ui_left", "ui_right"]:
+			b.grab_focus()
+			var ev := InputEventAction.new()
+			ev.action = a
+			ev.pressed = true
+			root.push_input(ev)
+			var to := root.gui_get_focus_owner()
+			var v := to.get_global_rect().get_center() - b.get_global_rect().get_center()
+			assert(to == b or absf(v.x) > absf(v.y) and signf(v.x) == (1.0 if a == "ui_right" else -1.0),
+				"%s from %s (%s page) goes to %s, up or down a column" % [a, b.text, current_scene._view, to.text if to is Button else to])
 
 
 ## Every button on the board's page is on the screen (one in a scrolling list: the list is,
