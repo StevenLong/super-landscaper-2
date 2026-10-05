@@ -132,6 +132,11 @@ static func row_step(c: BaseButton, dir: int) -> Control:
 	return best
 
 
+## A phrase as a sentence's start: its first letter a capital, the rest as it was.
+static func sentence(s: String) -> String:
+	return s.left(1).to_upper() + s.substr(1)
+
+
 static func panel(child: Control) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.add_child(child)

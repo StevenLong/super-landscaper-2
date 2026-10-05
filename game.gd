@@ -736,10 +736,12 @@ func record_result(result: Dictionary) -> void:
 		run_tally_cost[k] = run_tally_cost.get(k, 0.0) + result.tally_cost[k]
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
-	day_mine.append({"customer": current_job.get("customer", "?"), "net": int(result.net), "outcome": result.get("outcome", "paid"),
-		"mood": end_mood(result), "at": current_job.get("from", minute), "paid": int(result.get("paid", 0)) - int(result.get("tip", 0)),
-		"tip": int(result.get("tip", 0)), "fuel": int(result.get("fuel_cost", 0)), "rep": float(result.get("rep", 0.0))})
+	var rep_was := reputation
 	_rep(result)
+	var bills := roundi(float(result.get("bills", 0.0)))
+	day_mine.append({"customer": current_job.get("customer", "?"), "net": int(result.net), "outcome": result.get("outcome", "paid"),
+		"mood": end_mood(result), "at": current_job.get("arrived", current_job.get("from", minute)), "paid": int(result.get("paid", 0)) - int(result.get("tip", 0)),
+		"tip": int(result.get("tip", 0)), "fuel": roundi(float(result.get("fuel_cost", 0.0))) - bills, "damages": bills, "rep": reputation - rep_was})
 	jobs_done += 1
 	in_job = false
 	result.rep_after = reputation
@@ -1082,6 +1084,7 @@ func price_of(item: String) -> int:
 
 func buy(item: String) -> bool:
 	var price := price_of(item)
+	var bought := kit_name(item).to_lower()
 	if money < price or (item == "staff" and staff_next() == "") or (yard_kind(item) != "" and cant_buy(item) != ""): # no room, no sale
 		return false
 	if item == "staff":
@@ -1107,15 +1110,17 @@ func buy(item: String) -> bool:
 			return false
 		upgrades.append(item)
 	money -= price
-	day_ledger.append(["Bought " + kit_name(item).to_lower(), -price])
+	day_ledger.append(["Bought " + bought, -price])
 	return true
 
 
 ## Kit left behind when you fled the police: gone, no money for it.
 func lose(item: String) -> void:
 	var cash := money
+	var logged := day_ledger.size()
 	sell(item)
 	money = cash
+	day_ledger.resize(logged) # not sold: gone
 
 
 ## What kit fetches sold: everything but the push mower.
@@ -1397,6 +1402,7 @@ func start_job(b := {}) -> void:
 		current_job.patience = (b.by - b.from) / MPS
 		current_job.late = (at - b.from) / MPS
 		minute = at
+		current_job.arrived = at
 	_unbook(b)
 	in_job = true
 	save()
@@ -2131,9 +2137,11 @@ func _crew_day() -> void:
 						notes.append("%s wants you back: a regular now" % b.customer)
 				upfront = {}
 				crew_report.append(line)
-				var lines: Array = [["Paid", "$%d" % r.paid], ["Fuel", "-$%d" % (r.paid - r.net - r.bill)]]
+				var lines: Array = [["Paid", "$%d" % r.paid]]
+				if r.paid - r.net - r.bill > 0:
+					lines.append(["Fuel", "-$%d" % (r.paid - r.net - r.bill)])
 				if r.has("mishap"):
-					lines.append([r.mishap.capitalize(), "-$%d" % r.bill])
+					lines.append([r.mishap.left(1).to_upper() + r.mishap.substr(1), "-$%d" % r.bill])
 				lines.append_array([["Mood", "%s, %d" % [mood_word(r.mood), roundi(r.mood)]], ["Reputation", "%+d" % roundi(r.rep)]])
 				if r.over:
 					lines.append(["Ran past the window", "paid less"])

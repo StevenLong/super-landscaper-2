@@ -29,6 +29,7 @@ var _pick: Control = null ## who-goes list open beside a booking
 var planner := false ## the planner over the premises, not the office's fitting
 var _client := -1 ## the client book's page: a regular's id, or -1 for its index
 var _open_card := -1 ## the day's end card opened to its report
+var _card_at := -1 ## the day's end card the cursor was last on (opened or closed there)
 
 
 func _ready() -> void:
@@ -1187,7 +1188,7 @@ func _day_end() -> void:
 		if not h.has("asks"):
 			continue
 		var row := UI.hbox(12)
-		var ask := UI.label("%s asks for $%d a week (now $%d). %s." % [h.name.split(" ")[0], h.asks, h.wage, Game.card_text(h).capitalize()], 20, UI.GOLD)
+		var ask := UI.label("%s asks for $%d a week (now $%d). %s." % [h.name.split(" ")[0], h.asks, h.wage, UI.sentence(Game.card_text(h))], 20, UI.GOLD)
 		ask.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		ask.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		row.add_child(ask)
@@ -1227,6 +1228,7 @@ func _day_end() -> void:
 		Game.day_end = {}
 		Game.missed.clear()
 		_open_card = -1
+		_card_at = -1
 		Game.save()
 		_ready(), 22)
 	go.name = "NextDay"
@@ -1235,7 +1237,7 @@ func _day_end() -> void:
 	right.add_child(go)
 	sum.add_child(right)
 	list.add_child(UI.panel(sum))
-	UI.focus(first if first else (list.get_child(_open_card) if _open_card >= 0 and _open_card < cards.size() else go))
+	UI.focus(list.get_child(_card_at) if _card_at >= 0 and _card_at < cards.size() else (first if first else go))
 
 
 ## The day's jobs as cards, in the day's order: yours, the crew's, and those nobody went to.
@@ -1248,10 +1250,13 @@ func _day_cards(e: Dictionary) -> Array:
 			lines.append(["Paid", "$%d" % m.paid])
 			if m.tip > 0:
 				lines.append(["Tip", "$%d" % m.tip])
-			lines.append(["Fuel", "-$%d" % m.fuel])
-			var other: int = m.net - m.paid - m.tip + m.fuel
-			if other != 0:
-				lines.append(["Damages, fines and the rest", _signed(other)])
+			if m.fuel > 0:
+				lines.append(["Fuel and repairs", "-$%d" % m.fuel])
+			if m.get("damages", 0) > 0:
+				lines.append(["Damages", "-$%d" % m.damages])
+			var other: int = m.net - m.paid - m.tip + m.fuel + m.get("damages", 0)
+			if absi(other) > 1: # a dollar either way is the rounding
+				lines.append(["Fines and the rest", _signed(other)])
 		lines.append(["Mood", "%s, %d" % [Game.mood_word(m.mood), roundi(m.mood)]])
 		if m.has("rep"):
 			lines.append(["Reputation", "%+d" % roundi(m.rep)])
@@ -1306,6 +1311,7 @@ func _day_card(c: Dictionary, i: int) -> Control:
 	b.custom_minimum_size.y = 40.0 + (22.0 * c.lines.size() + 4.0 if open else 0.0)
 	b.pressed.connect(func() -> void:
 		_open_card = -1 if open else i
+		_card_at = i
 		_day_end())
 	return b
 

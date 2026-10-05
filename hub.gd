@@ -384,7 +384,7 @@ func _cabinet_card() -> void:
 
 ## A helper on their card: how good, their wage, a raise they've asked for, today.
 func _helper_lines(h: Dictionary, lines: Array[String], acts: Array) -> void:
-	lines.append("%s. $%d a week, %d job%s done." % [Game.card_text(h).capitalize(), h.wage, h.jobs, "" if h.jobs == 1 else "s"])
+	lines.append("%s. $%d a week, %d job%s done." % [UI.sentence(Game.card_text(h)), h.wage, h.jobs, "" if h.jobs == 1 else "s"])
 	if h.has("asks"):
 		lines.append("Asking $%d a week." % h.asks)
 		acts.append(["Pay it", func() -> void: Game.answer_raise(h.id, true)])

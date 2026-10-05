@@ -16,6 +16,16 @@ func _initialize() -> void:
 	g = root.get_node("Game")
 	g.save_path = "user://test_best.cfg"
 	g.new_run(7)
+	g.money = 50000
+	# The ledger: kit left behind isn't sold; a breakroom's a breakroom (the verifier's run 13).
+	g.premises = 2
+	g.buy("petrol")
+	g.lose("petrol")
+	assert(not g.day_ledger.any(func(l: Array) -> bool: return (l[0] as String).begins_with("Sold")), "left behind: not sold")
+	g.buy("staff")
+	assert(g.day_ledger[-1][0] == "Bought breakroom", "the breakroom, by its name: %s" % [g.day_ledger])
+	g.day_ledger.clear()
+	g.helpers.assign([{"id": 9, "name": "Nigel Pratt", "pace": 0.7, "care": 0.4, "wage": 470, "jobs": 3, "happy": 70.0, "asks": 520}])
 	g.money = 1000
 	g.day_end = {"day": g.day, "was": 1000, "now": 1060, "crew": [], "crew_net": 40, "missed": ["Gwen Hughes"],
 		"mine": [{"customer": "Tom Okafor", "net": 140, "outcome": "paid", "mood": 88.0, "at": 840, "paid": 160, "tip": 0, "fuel": 20, "rep": 3.0}],
@@ -57,7 +67,9 @@ func _process(_delta: float) -> bool:
 			(s.find_child("Card_1", true, false) as Button).pressed.emit()
 		1:
 			var opened: Node = s.find_children("Card_1", "Button", true, false)[-1]
-			assert("Fuel" in _labels(opened) and "-$20" in _labels(opened), "A opens a card's report")
+			assert("Fuel and repairs" in _labels(opened) and "-$20" in _labels(opened), "A opens a card's report")
+			assert(root.gui_get_focus_owner() == opened and g.helpers[0].has("asks"),
+				"the cursor stays on the card, not on a raise's Pay it (the verifier's run 13)")
 			(s.find_child("NextDay", true, false) as Button).pressed.emit()
 		2:
 			assert(g.day_end.is_empty() and s._view == "book" and s.find_child("Index", true, false) != null, "then the desk: the client book's index")
