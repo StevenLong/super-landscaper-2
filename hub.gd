@@ -342,8 +342,9 @@ func _yard_card(it: Dictionary) -> void:
 	_open_card(title, lines, acts)
 
 
-## The phone, with the paper beside it: read the paper, or ring round (the estate agent for
-## bigger premises, a builder for a staff room, the shark if his offer stands).
+## The phone, with the paper beside it: read the paper (the ads, situations wanted and
+## Vince's are rung from it), or ring the estate agent for bigger premises, a builder for a
+## staff room.
 func _phone_card() -> void:
 	var p: Dictionary = Game.PREMISES[Game.premises]
 	var lines: Array[String] = ["You're in %s: %d by %d, $%d a week on top of rent and food." % [p.name.to_lower(), p.w, p.d, p.rent]]
@@ -361,11 +362,6 @@ func _phone_card() -> void:
 			"" if why == "" else " (%s)" % why.to_lower()], func() -> void: Game.buy("staff"), why != ""])
 	elif Game.staff_room == "":
 		lines.append("No room for staff here: hiring needs a staff room, and those need a bigger place.")
-	if Game.shark_offer and Game.premises + 1 < Game.PREMISES.size():
-		acts.append(["Ring Vince: he fronts the $%d for %s (his vig on it, weekly)" % [Game.PREMISES[Game.premises + 1].deposit,
-			Game.PREMISES[Game.premises + 1].name.to_lower()], func() -> void:
-				Game.take_shark_offer()
-				Game.spot = "phone"])
 	_open_card("The phone", lines, acts)
 
 

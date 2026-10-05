@@ -112,7 +112,8 @@ func _physics_process(_delta: float) -> bool:
 			_wait = 5
 		8, 9, 10:
 			_fits()
-			_sideways()
+			if current_scene._view != "paper": # the paper's left and right turn its page at an edge
+				_sideways()
 			current_scene._show(["paper", "book", "calendar"][_step - 8])
 			if _step == 8: # past the front page, a page of ads
 				current_scene._page = 1
@@ -133,9 +134,16 @@ func _physics_process(_delta: float) -> bool:
 			assert(current_scene._view == "paper" and current_scene._page == 0, "the paper, its front page")
 			current_scene._unhandled_input(shift)
 			assert(current_scene._view == "paper" and current_scene._page == 1, "Shift turns its page")
-			assert(current_scene.find_children("*", "RichTextLabel", true, false).size() == current_scene.PER_PAGE, "a page of the paper at a time")
+			var ads := current_scene.find_children("Ad", "Button", true, false)
+			assert(ads.size() > 0 and ads.size() <= current_scene.PER_PAGE, "a page of the paper at a time: %d ads" % ads.size())
 			current_scene.find_child("NextPage", true, false).pressed.emit()
 			assert(current_scene._page == 2 and not current_scene.find_child("PrevPage", true, false).disabled, "and the next page")
+			(current_scene.find_child("PrevPage", true, false) as Button).grab_focus()
+			var left := InputEventAction.new()
+			left.action = "ui_left"
+			left.pressed = true
+			root.push_input(left)
+			assert(current_scene._page == 1, "left past the page's edge: the page before")
 			print("PASS controls")
 			quit()
 	_step += 1

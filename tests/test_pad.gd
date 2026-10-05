@@ -5,7 +5,8 @@
 # Screens: the summary (a raise to ask, a month up front, a regular's offer), the desk's
 # day's end with raises to answer, payday (paying, and short with kit to sell), court, the
 # winter, the places' cards (a van, a helper, a mower, the truck, the shop's stock, paused),
-# and the calendar (a day, who goes, the month; B shuts the list, then goes up to the month).
+# the calendar (a day, who goes, the month; B shuts the list, then goes up to the month), the
+# paper's classifieds, a call (B hangs up) and Vince's (with no offer, and with one: taken).
 extends SceneTree
 
 var g: Node
@@ -207,7 +208,38 @@ func _process(_delta: float) -> bool:
 		22:
 			assert(s._cal_month, "B on a day: its month")
 			_audit("the calendar's month")
-			assert(_walked.size() == 18, "every screen walked: %s" % [_walked])
+			g.paper = g.make_paper()
+			s._show("paper")
+			s._turn_page(1)
+		23:
+			s.edge_turns = false # the walk stays on the page (test_controls turns it)
+			_audit("the paper's classifieds")
+			s.edge_turns = true
+			(s.find_child("Ad", true, false) as Button).pressed.emit()
+		24:
+			_audit("a call")
+			_press("hop")
+		25:
+			assert(s._pick == null, "B hangs up")
+			s._page = 0
+			g.principal = 0
+			g.shark_offer = false
+			s._build()
+			(s.find_child("Vince", true, false) as Button).pressed.emit()
+		26:
+			assert(s.find_child("Said", true, false).text.contains("ready to grow"), "Vince, with no offer: come back later")
+			_press("hop")
+			g.principal = 0
+			g.premises = 0 # the lock-up, outgrown: his offer stands
+			g.shark_offer = true
+			g.money = 0
+		27:
+			(s.find_child("Vince", true, false) as Button).pressed.emit()
+		28:
+			_audit("Vince's offer")
+			(s.find_children("Reply", "Button", true, false)[0] as Button).pressed.emit() # Take it
+			assert(g.premises == 1 and g.principal == g.PREMISES[1].deposit, "his offer taken: the unit, on his money")
+			assert(_walked.size() == 21, "every screen walked: %s" % [_walked])
 			print("PASS pad: %s" % ", ".join(_walked))
 			quit()
 	_step += 1

@@ -20,6 +20,15 @@ func _labels() -> Array:
 	return current_scene.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
 
 
+## Say something in the open talk.
+func _reply(text: String) -> void:
+	for b: Node in current_scene.find_children("Reply", "Button", true, false):
+		if (b as Button).text == text and not b.is_queued_for_deletion():
+			(b as Button).pressed.emit()
+			return
+	assert(false, "no %s to say" % text)
+
+
 func _press(button: String) -> void:
 	var b: Button = current_scene.find_child(button, true, false)
 	assert(b != null and not b.disabled, "a %s button to press" % button)
@@ -57,12 +66,14 @@ func _process(_delta: float) -> bool:
 			ad.from = 600
 			ad.by = 900
 			current_scene._show("paper")
-			assert(current_scene.find_child("Ring", true, false) == null and "THE WEEKLY ADVERTISER" in _labels(), "the paper opens on its front page")
+			assert(current_scene.find_child("Ad", true, false) == null and "THE WEEKLY ADVERTISER" in _labels(), "the paper opens on its front page")
 			current_scene._page = 1
 			current_scene._build()
-			_press("Ring")
+			_press("Ad") # ring it: they pick up, and you book it
+			_reply("Book it")
 			assert(game.today() == ad and game.paper.size() == game.PAPER_SIZE[4] - 1, "they said yes: booked into today")
 			assert(game.minute == game.DAY_START + game.RING_TIME, "the call took its time")
+			_reply("Bye")
 			assert(current_scene.find_child("Call", true, false).text.contains("today after 10am"), "and what they said is shown")
 			current_scene._show("calendar")
 			assert(current_scene.find_child("Calendar", true, false) != null, "the corkboard's calendar")
@@ -164,8 +175,8 @@ func _process(_delta: float) -> bool:
 			current_scene._show("paper")
 			current_scene._page = 1
 			current_scene._build()
-			var stamped := current_scene.find_children("*", "RichTextLabel", true, false).filter(func(r: RichTextLabel) -> bool: return r.text.contains("NO:"))
-			assert(never.refused and stamped.size() == 1 and stamped[0].get_parent().find_child("Ring", true, false) == null, "no reputation: a no, stamped, and no more ringing it")
+			var stamped := current_scene.find_children("Ad", "Button", true, false).filter(func(b: Button) -> bool: return b.text.contains("NO:"))
+			assert(never.refused and stamped.size() == 1 and stamped[0].disabled, "no reputation: a no, stamped, and no more ringing it")
 			game.money = 70 # plus the petrol mower's resale covers $150
 			game.payday_pending = true
 			current_scene._ready()

@@ -199,7 +199,7 @@ committed, the verifier after each; the dev plays a LOAD after 249 and after 252
    deposits with sim_season. LOAD for the dev after this.
 250. [BUILT 2026-10-05, unplayed] Step 3, the day's end as cards (from 242) and the client book (index,
    then a page per client, reputation on its first page).
-251. [FEATURE, moderate] Step 4, the paper as a newspaper (newsprint, red-pen circles, three
+251. [BUILT 2026-10-05, unplayed] Step 4, the paper as a newspaper (newsprint, red-pen circles, three
    pages, the shark's standing ad) and calls as short dialogues in hud.gd's portrait box.
 252. [VISUAL, large] Step 5, the look (from 238, 244): vans, truck, furniture and fittings as
    voxel models; four walls, windows, the building and street around them; clutter; the desk

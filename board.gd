@@ -10,7 +10,12 @@ signal closed ## the planner, put away
 signal end_day_asked ## the planner's End the day
 
 const VIEWS := {"corkboard": "calendar", "paper": "paper", "desk": "book"} ## each fitting's view
-const PER_PAGE := 3 ## ads to a page of the paper
+const PER_PAGE := 6 ## classifieds to a page of the paper
+const NEWSPRINT := Color("e8e0c8")
+const SHARK_LOOK := {"hair_style": 2, "skin": 1, "hair": 0, "shirt": 6} ## Vince, and his man
+const DEAD_ADS := ["PIANO, FREE. You collect. Stairs.", "LOST CAT. Answers to Biscuit. Doesn't.", "BIKE FOR SALE. One careful owner, one not.",
+	"ROOM TO LET. No dogs, no gardeners.", "CAR BOOT SALE, Sunday, the church field.", "WANTED: GARDEN GNOMES. Good homes, no questions.",
+	"PIANO LESSONS. Mrs Pratt. Patience extra.", "DRUM KIT. Offers. Please.", "FOUND: ONE WELLY. Left foot.", "BUDGIE, TALKS. Swears."]
 const CORK := Color("8a6238")
 const NOTE := Color("efe6cc")
 const INK := Color("2a2420")
@@ -29,6 +34,7 @@ var _pick: Control = null ## who-goes list open beside a booking
 var planner := false ## the planner over the premises, not the office's fitting
 var _client := -1 ## the client book's page: a regular's id, or -1 for its index
 var _open_card := -1 ## the day's end card opened to its report
+var edge_turns := true ## the paper's left and right past a page's edge turn it (test_pad's walk turns it off)
 var _card_at := -1 ## the day's end card the cursor was last on (opened or closed there)
 
 
@@ -546,162 +552,395 @@ func _ink(text: String, color := INK, font_size := 20) -> Label:
 	return l
 
 
-## The week's paper, a few ads to a page, and your regulars beside it. Returns the first
-## Ring button (or a page button).
+## The paper (design doc, The hub, redesigned): The Weekly Advertiser, picked up off the
+## table, a little askew. Three columns of newsprint: filler as grey bars, ads you'd never
+## ring faded, and what's worth acting on circled in red pen (faintly if you can't yet).
+## Pages: the front page (the week's news and Vince's standing ad), the gardening
+## classifieds, situations wanted. The directions move between circles, past a page's edge
+## or the shoulders turn it, A rings: the call's a short talk in the portrait box.
 func _paper_view(root: Control) -> Control:
-	var col := UI.vbox(8)
-	col.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(col)
-	if _call != "": # what the last one you rang said
-		var said := UI.label(_call, 18, UI.GOLD)
-		said.name = "Call"
-		said.clip_text = true
-		col.add_child(said)
-	var ads := _paper_ads()
-	var pages := _paper_pages()
-	_page = clampi(_page, 0, pages - 1)
-	if _page == 0:
-		col.add_child(_front_page(ads))
-	else:
-		var page := UI.vbox(8)
-		page.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		var here := ads.slice((_page - 1) * PER_PAGE, _page * PER_PAGE)
-		page.add_child(_ink("SITUATIONS WANTED" if not here.is_empty() and here.all(func(o: Dictionary) -> bool: return o.has("care")) else "CLASSIFIEDS", INK, 30))
-		for o: Dictionary in ads.slice((_page - 1) * PER_PAGE, _page * PER_PAGE):
-			page.add_child(_wanted(o) if o.has("care") else _ad(o))
-		if ads.is_empty():
-			page.add_child(_ink("Nothing else in this week's paper.", Color("7a6a50")))
-		col.add_child(_newsprint(page, true))
-	var nav := UI.hbox(14)
-	var prev := UI.button("< Page back", func() -> void:
-		_page -= 1
-		_build()
-		_focus_page("PrevPage"), 20)
-	prev.name = "PrevPage"
-	prev.disabled = _page == 0
-	nav.add_child(prev)
-	var where := UI.label("Front page" if _page == 0 else "Page %d of %d" % [_page + 1, pages], 20, UI.DIM)
-	where.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	nav.add_child(where)
-	var next := UI.button("Turn the page >", func() -> void:
-		_page += 1
-		_build()
-		_focus_page("NextPage"), 20)
-	next.name = "NextPage"
-	next.disabled = _page >= pages - 1
-	nav.add_child(next)
-	col.add_child(nav)
-	var ring := col.find_child("Ring", true, false)
-	return ring if ring else (next if not next.disabled else (prev if not prev.disabled else find_child("Away", true, false)))
-
-
-## This week's ads still to come (a day gone, its ad's gone), the situations wanted at the back.
-func _paper_ads() -> Array:
-	var ads := Game.paper.filter(func(o: Dictionary) -> bool: return o.day >= Game.day)
-	ads.append_array(Game.wanted)
-	return ads
-
-
-## The front page, then the classifieds three to a page.
-func _paper_pages() -> int:
-	return 1 + maxi(1, ceili(_paper_ads().size() / float(PER_PAGE)))
-
-
-## The front page: the masthead, the week's lead story and the rest of the news (only what
-## the game knows: Game.front_page), and what's inside.
-func _front_page(ads: Array) -> Control:
-	var page := UI.vbox(6)
-	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var mast := _ink("THE WEEKLY ADVERTISER", INK, 50)
+	var pages := _paper_page_list()
+	_page = clampi(_page, 0, pages.size() - 1)
+	var sheet := PanelContainer.new()
+	sheet.name = "Sheet"
+	var news := StyleBoxFlat.new()
+	news.bg_color = NEWSPRINT
+	news.border_color = Color("b8ac8c")
+	news.set_border_width_all(2)
+	news.set_content_margin_all(18)
+	sheet.add_theme_stylebox_override("panel", news)
+	sheet.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sheet.rotation = deg_to_rad(-0.5) # picked up off the table
+	sheet.resized.connect(func() -> void: sheet.pivot_offset = sheet.size / 2.0)
+	root.add_child(sheet)
+	var col := UI.vbox(4)
+	sheet.add_child(col)
+	var mast := _ink("THE WEEKLY ADVERTISER", INK, 44)
 	mast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	page.add_child(mast)
+	col.add_child(mast)
 	var out := Game.day # it came out last Friday, or with the season
 	var opened := Game.day_of(Game.year, Game.start_month, 1)
 	while Game.date(out).weekday != Game.FRIDAY and out > opened:
 		out -= 1
-	var dated := _ink("%s.   Ads, situations wanted, the week's news.   10p" % Game.date_text(out), Color("5a4a38"), 18)
+	var dated := _ink("%s        %s        10p" % [Game.date_text(out), {"front": "Front page", "wanted": "Situations wanted"}.get(pages[_page],
+		"Classifieds: gardening")], Color("5a4a38"), 16)
 	dated.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	page.add_child(dated)
-	page.add_child(HSeparator.new())
+	col.add_child(dated)
+	col.add_child(_rule())
+	var body := UI.hbox(18)
+	body.name = "Columns"
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(body)
+	var cols: Array[VBoxContainer] = []
+	for i in 3:
+		var c := UI.vbox(8)
+		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		c.size_flags_stretch_ratio = 1.0
+		body.add_child(c)
+		cols.append(c)
+	var seed_from: int = out * 31 + _page # the same filler for the week's page
+	match pages[_page]:
+		"front":
+			_front_page(cols, seed_from)
+		"wanted":
+			_wanted_page(cols, seed_from)
+		_:
+			_ads_page(cols, int(pages[_page].trim_prefix("ads:")), seed_from)
+	col.add_child(_rule())
+	var nav := UI.hbox(14)
+	var prev := UI.button("< %s" % Game.key("gear_down"), _turn_page.bind(-1), 18)
+	prev.name = "PrevPage"
+	prev.disabled = _page == 0
+	nav.add_child(prev)
+	var where := _ink("Page %d of %d" % [_page + 1, pages.size()], Color("5a4a38"), 16)
+	where.clip_text = false
+	where.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	nav.add_child(where)
+	var next := UI.button("%s >" % Game.key("gear_up"), _turn_page.bind(1), 18)
+	next.name = "NextPage"
+	next.disabled = _page >= pages.size() - 1
+	nav.add_child(next)
+	if _call != "": # what the last one you rang said
+		var said := _ink("   Last call: " + _call, Color("7a1c14"), 16)
+		said.name = "Call"
+		said.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nav.add_child(said)
+	col.add_child(nav)
+	# Up and down stay in a column: the ad above or below, the header at the top, the page's buttons at the foot.
+	var foot: Control = next if not next.disabled else prev
+	for c: Node in body.get_children():
+		var stops: Array = c.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return not b.disabled)
+		for i in stops.size():
+			var b: Button = stops[i]
+			b.focus_neighbor_top = b.get_path_to(stops[i - 1] if i > 0 else find_child("Away", true, false))
+			b.focus_neighbor_bottom = b.get_path_to(stops[i + 1] if i < stops.size() - 1 else foot)
+	for a: Node in sheet.find_children("*", "Button", true, false):
+		if a is PaperAd and a.circle > 0 and not a.disabled:
+			return a
+	return next if not next.disabled else (prev if not prev.disabled else find_child("Away", true, false))
+
+
+## The paper's pages: the front, the classifieds six to a page, situations wanted.
+func _paper_page_list() -> Array[String]:
+	var out: Array[String] = ["front"]
+	var n := _paper_ads().size()
+	for i in maxi(1, ceili(n / float(PER_PAGE))):
+		out.append("ads:%d" % i)
+	out.append("wanted")
+	return out
+
+
+## This week's ads still to come (a day gone, its ad's gone).
+func _paper_ads() -> Array:
+	return Game.paper.filter(func(o: Dictionary) -> bool: return o.day >= Game.day)
+
+
+func _paper_pages() -> int:
+	return _paper_page_list().size()
+
+
+func _turn_page(by: int) -> void:
+	var to := _page + by
+	if to < 0 or to >= _paper_pages():
+		return
+	_page = to
+	_build()
+
+
+## The front page: the week's news (only what the game knows: Game.front_page) across two
+## columns, Vince's standing ad and what's inside in the third.
+func _front_page(cols: Array[VBoxContainer], seed_from: int) -> void:
+	cols[0].size_flags_stretch_ratio = 2.0
 	var news := Game.front_page()
 	var colours := {"bad": Color("8a2018"), "event": INK, "good": Color("2e6a1e"), "dim": Color("5a4a38")}
 	for i in news.size():
 		var n: Array = news[i]
-		var head := _ink(n[0], colours[n[2]], 40 if i == 0 else 30)
+		var head := _ink(n[0], colours[n[2]], 34 if i == 0 else 26)
 		head.clip_text = false
 		head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		page.add_child(head)
-		var body := _ink(n[1], INK, 20)
-		body.clip_text = false
-		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		cols[0].add_child(head)
+		var story := _ink(n[1], INK, 18)
+		story.clip_text = false
+		story.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		if n[2] == "event" and n[1].begins_with("Today"):
-			body.name = "News" # today's news (NOTES 216)
-		page.add_child(body)
-	page.add_child(HSeparator.new())
-	var ads_n := ads.filter(func(o: Dictionary) -> bool: return not o.has("care")).size()
-	var inside := _ink("INSIDE: %d ad%s to ring%s." % [ads_n, "" if ads_n == 1 else "s",
-		", %d situation%s wanted" % [Game.wanted.size(), "" if Game.wanted.size() == 1 else "s"] if not Game.wanted.is_empty() else ""], INK, 20)
-	page.add_child(inside)
-	return _newsprint(page, true)
+			story.name = "News" # today's news (NOTES 216)
+		cols[0].add_child(story)
+		cols[0].add_child(_filler(seed_from + i, 3))
+	cols.pop_at(1).queue_free() # the news takes two
+	var side := cols[1]
+	var shark := PaperAd.new()
+	shark.name = "Vince"
+	_ad_look(shark, "CASH LOANS", "No questions asked. Ask for Vince.", 2)
+	shark.pressed.connect(_ring_vince)
+	side.add_child(shark)
+	side.add_child(_filler(seed_from + 7, 4))
+	var ads_n := _paper_ads().filter(func(o: Dictionary) -> bool: return Game.cant_book(o) == "" and not o.get("refused", false)).size()
+	var inside := _ink("INSIDE\n%d ad%s to ring, %d situation%s wanted." % [ads_n, "" if ads_n == 1 else "s", Game.wanted.size(),
+		"" if Game.wanted.size() == 1 else "s"], INK, 18)
+	inside.clip_text = false
+	inside.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	side.add_child(inside)
+	side.add_child(_dead_ad(seed_from + 3))
+	side.add_child(_filler(seed_from + 9, 5))
 
 
-## After turning the paper's page: stay on that page button, or the other one once you
-## reach an end (a disabled button can't hold the cursor).
-func _focus_page(pressed: String) -> void:
-	var b := find_child(pressed, true, false) as Button
-	UI.focus(b if b and not b.disabled else find_child("NextPage" if pressed == "PrevPage" else "PrevPage", true, false))
+## A page of the gardening classifieds: six ads across the columns, filler and faded ads between.
+func _ads_page(cols: Array[VBoxContainer], at: int, seed_from: int) -> void:
+	var ads := _paper_ads().slice(at * PER_PAGE, (at + 1) * PER_PAGE)
+	cols[0].add_child(_ink("GARDENING", INK, 24))
+	for i in ads.size():
+		var c := cols[i % 3]
+		if i < 3 and i > 0:
+			c.add_child(_filler(seed_from + i, 2))
+		c.add_child(_ad(ads[i]))
+	if ads.is_empty():
+		cols[0].add_child(_ink("Nothing else in this week's paper.", Color("7a6a50"), 18))
+	for i in 3:
+		cols[i].add_child(_dead_ad(seed_from + 11 * i))
+		cols[i].add_child(_filler(seed_from + 5 + i, 4))
 
 
-## An ad as a classified on newsprint: no picture, just the words and the hints buried
-## in them, and when they want it. You meet the customer at the briefing. Ringing gets an
-## answer at once (Game.ring) and takes the call's time: yes books it on its day, no stamps it.
+## Situations wanted: who's after work this week, faintly circled till you've a staff room.
+func _wanted_page(cols: Array[VBoxContainer], seed_from: int) -> void:
+	cols[0].add_child(_ink("SITUATIONS WANTED", INK, 24))
+	for i in Game.wanted.size():
+		cols[i % 3].add_child(_wanted(Game.wanted[i]))
+	if Game.wanted.is_empty():
+		cols[0].add_child(_ink("Nobody this week.", Color("7a6a50"), 18))
+	for i in 3:
+		cols[i].add_child(_filler(seed_from + i, 3))
+		cols[i].add_child(_dead_ad(seed_from + 7 * i + 1))
+
+
+## A classified: the ad's words, circled if you can ring it; booked, refused or out of reach
+## says why, uncircled. A rings.
 func _ad(o: Dictionary) -> Control:
-	var row := UI.hbox(14)
-	var ad := RichTextLabel.new()
-	ad.bbcode_enabled = true
-	ad.fit_content = true
-	ad.scroll_active = false
-	ad.custom_minimum_size.x = 480
-	ad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ad.add_theme_color_override("default_color", INK)
-	ad.add_theme_font_size_override("normal_font_size", UI.px(18))
-	ad.text = Game.ad_text(o)
+	var a := PaperAd.new()
+	a.name = "Ad"
+	var text: String = Game.ad_text(o)
 	var busy := Game.jobs_on(o.day)
 	if busy > 0:
-		ad.text += "\n[color=#2e6a1e]You've %d job%s that day.[/color]" % [busy, "" if busy == 1 else "s"]
-	row.add_child(ad)
+		text += " You've %d job%s that day." % [busy, "" if busy == 1 else "s"]
 	var why := Game.cant_book(o)
-	if o.get("refused", false): # stamped for the week, what's above you kept in view
-		ad.text += "\n[color=#b03020]NO: %s[/color]" % o.reply
-		ad.modulate.a = 0.7
+	if o.get("refused", false):
+		text += " NO: %s" % o.reply
 	elif why != "":
-		ad.text += "\n[color=#b03020]%s.[/color]" % why
-		ad.modulate.a = 0.7
-	else:
-		var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
-			_call = Game.ring(o)
-			_build()
-			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Away", true, false)), 20)
-		ring.name = "Ring"
-		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(ring)
-	return _newsprint(row)
+		text += " %s." % why
+	_ad_look(a, "", _plain(text), 0 if o.get("refused", false) or why != "" else 2) # the ad's own words lead
+	a.disabled = a.circle == 0
+	a.pressed.connect(_ring_ad.bind(o))
+	return a
 
 
-## c on a scrap of newsprint (`sheet`: a whole page of it, filling the space).
-func _newsprint(c: Control, sheet := false) -> Control:
-	var paper := StyleBoxFlat.new()
-	paper.bg_color = Color("e8e0c8")
-	paper.border_color = Color("b8ac8c")
-	paper.set_border_width_all(2)
-	paper.set_content_margin_all(8)
-	if sheet:
-		paper.set_content_margin_all(16)
-	var p := UI.panel(c)
-	p.add_theme_stylebox_override("panel", paper)
-	if sheet:
-		p.size_flags_vertical = Control.SIZE_EXPAND_FILL
+## A situation wanted: who, how quick and careful (in words and out of ten), the wage. Circled
+## faintly if you can't take anyone on (the call says why).
+func _wanted(w: Dictionary) -> Control:
+	var a := PaperAd.new()
+	a.name = "Wanted"
+	var pace: String = "Steady rather than quick" if w.pace < 0.65 else ("Reasonably quick" if w.pace < 0.85 else "A quick worker")
+	var care: String = "not fussy" if w.care < 0.4 else ("tidy" if w.care < 0.7 else "careful, takes a pride")
+	_ad_look(a, "SITUATION WANTED", "%s seeks gardening work. %s (%d/10), %s (%d/10). $%d a week. Ring %s." % [w.name, pace, roundi(w.pace * 10.0), care,
+		roundi(w.care * 10.0), w.wage, w.name.split(" ")[0]], 1 if Game.cant_hire() != "" else 2)
+	a.pressed.connect(_ring_wanted.bind(w))
+	return a
+
+
+## An ad's words on newsprint, boxed: a heading in capitals, then the rest; `circle`: 0 none,
+## 1 faint (can't yet), 2 red pen.
+func _ad_look(a: PaperAd, head: String, words: String, circle: int) -> void:
+	a.circle = circle
+	a.custom_minimum_size.x = 120
+	a.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	a.text = words if head == "" else "%s\n%s" % [head, words]
+	a.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	a.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	a.add_theme_font_size_override("font_size", UI.px(16))
+	for c: String in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
+		a.add_theme_color_override(c, INK)
+	a.add_theme_color_override("font_disabled_color", Color(INK, 0.6))
+	a.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
+	for state: String in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed"]:
+		var box := StyleBoxFlat.new()
+		box.bg_color = Color(0, 0, 0, 0.04) if state in ["hover", "focus"] else Color(0, 0, 0, 0)
+		box.border_color = Color(INK, 0.5)
+		box.set_border_width_all(1)
+		box.set_content_margin_all(6)
+		a.add_theme_stylebox_override(state, box)
+
+
+## Text without the paper's colour tags (an ad's words, for a button).
+func _plain(t: String) -> String:
+	var r := RegEx.new()
+	r.compile("\\[/?[a-z]+(=[^\\]]*)?\\]")
+	return r.sub(t, "", true)
+
+
+## An ad nobody would ring, faded: the paper's texture.
+func _dead_ad(n: int) -> Control:
+	var l := _ink(DEAD_ADS[posmod(n, DEAD_ADS.size())], Color(INK, 0.5), 15)
+	l.clip_text = false
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0, 0, 0, 0)
+	box.border_color = Color(INK, 0.25)
+	box.set_border_width_all(1)
+	box.set_content_margin_all(6)
+	var p := UI.panel(l)
+	p.add_theme_stylebox_override("panel", box)
 	return p
+
+
+## Lines of print nobody reads: grey bars.
+func _filler(n: int, lines: int) -> Control:
+	var f := Control.new()
+	f.custom_minimum_size.y = lines * 9.0
+	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	f.draw.connect(func() -> void:
+		var r := RandomNumberGenerator.new()
+		r.seed = n
+		for i in lines:
+			var w := f.size.x * (r.randf_range(0.55, 1.0) if i < lines - 1 else r.randf_range(0.25, 0.6))
+			f.draw_rect(Rect2(0, i * 9.0 + 2.0, w, 4.0), Color("b4b2a9")))
+	return f
+
+
+func _rule() -> Control:
+	var r := ColorRect.new()
+	r.custom_minimum_size.y = 2
+	r.color = Color(INK, 0.6)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+## Ringing a classified: they pick up, say what it is; you book it or don't. Booking asks
+## them (Game.ring: the call's time, and yes or no by your name).
+func _ring_ad(o: Dictionary) -> void:
+	_talk(o.customer, o.get("look", {}), [_hello(o), "About the lawn: %s, %s to %s. $%d." % [Game.day_word(o.day), Game.time_text(o.from),
+		Game.time_text(o.by), o.pay]], [["Book it", func() -> void:
+			_call = Game.ring(o)
+			_talk(o.customer, o.get("look", {}), [_call], [["Bye", _hang_up]])], ["Never mind", func() -> void:
+			Game.minute += Game.RING_TIME
+			_hang_up()]])
+
+
+## How a customer picks up, by who they are.
+func _hello(o: Dictionary) -> String:
+	match o.get("persona", ""):
+		"grump":
+			return "\"What.\""
+		"vicar":
+			return "\"St. Swithin's, the vicarage. Bless you for calling.\""
+		"toff":
+			return "\"%s residence.\"" % o.customer.split(" ")[-1]
+	return "\"Hello? %s speaking.\"" % o.customer
+
+
+## Ringing a situation wanted: who they are; you take them on or don't. With nowhere for staff,
+## they say so.
+func _ring_wanted(w: Dictionary) -> void:
+	var r := RandomNumberGenerator.new()
+	r.seed = int(w.id)
+	var look := {"hair_style": r.randi() % 5, "skin": r.randi() % 5, "hair": r.randi() % 6, "shirt": r.randi() % 6}
+	var lines: Array[String] = ["\"%s speaking.\"" % w.name.split(" ")[0], "\"Gardening work? I can start Monday. $%d a week.\"" % w.wage]
+	var why := Game.cant_hire()
+	if why != "":
+		lines.append("\"%s\"" % ("Where would I work out of? Ring back when you've a staff room." if Game.staff_room == "" else
+			"Sounds like you're full up. Ring back when there's a seat."))
+		_talk(w.name, look, lines, [["Not now", _hang_up]])
+		return
+	_talk(w.name, look, lines, [["You're hired", func() -> void:
+		_call = Game.hire(w)
+		_talk(w.name, look, [_call], [["Bye", _hang_up]])], ["Not now", _hang_up]])
+
+
+## Ringing Vince's ad: his offer if it stands, else a word.
+func _ring_vince() -> void:
+	var lines: Array[String] = ["\"Vince.\""]
+	var replies: Array = []
+	if Game.shark_offer and Game.premises + 1 < Game.PREMISES.size():
+		var nx: Dictionary = Game.PREMISES[Game.premises + 1]
+		lines.append("\"You've outgrown that place. I'll front the $%d for %s. Usual terms: my vig, every Friday.\"" % [nx.deposit, nx.name.to_lower()])
+		replies = [["Take it", func() -> void:
+			Game.take_shark_offer()
+			_talk("Vince", SHARK_LOOK, ["\"Pleasure doing business. See you Friday.\""], [["Bye", _hang_up]])], ["Not now", _hang_up]]
+	elif Game.principal > 0:
+		lines.append("\"You still owe me $%d. Friday. Don't make me send someone.\"" % Game.principal)
+		replies = [["Bye", _hang_up]]
+	else:
+		lines.append("\"Come back when you're ready to grow.\"")
+		replies = [["Bye", _hang_up]]
+	_talk("Vince", SHARK_LOOK, lines, replies)
+
+
+func _hang_up() -> void:
+	_close_pick()
+	_build()
+
+
+## A talk in the portrait box (the job's: their face, their name, what they say, a word at a
+## time; your replies the real choices). Over the paper, the cursor kept in it; B hangs up.
+func _talk(who: String, look: Dictionary, lines: Array, replies: Array) -> void:
+	_close_pick()
+	var row := UI.hbox(18)
+	if not look.is_empty():
+		var f := Face.new()
+		f.custom_minimum_size = Vector2(132, 132)
+		f.set_look(look)
+		f.talking = true
+		row.add_child(f)
+	var col := UI.vbox(8)
+	col.custom_minimum_size.x = 640
+	col.add_child(UI.label(who, 28, UI.GOLD))
+	var said := UI.label("\n".join(lines), 20)
+	said.name = "Said"
+	said.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	said.visible_ratio = 0.0
+	col.add_child(said)
+	var tw := create_tween()
+	tw.tween_property(said, "visible_ratio", 1.0, 0.03 * said.text.length())
+	var answers := UI.hbox(12)
+	for r: Array in replies:
+		var b := UI.button(r[0], r[1], 20)
+		b.name = "Reply"
+		answers.add_child(b)
+	col.add_child(answers)
+	row.add_child(col)
+	for c: Control in find_children("*", "BaseButton", true, false): # the talk's the only thing the cursor can be on
+		if c.focus_mode != Control.FOCUS_NONE:
+			c.set_meta("focus_was", c.focus_mode)
+			c.focus_mode = Control.FOCUS_NONE
+	_pick = ColorRect.new()
+	_pick.name = "Talk"
+	(_pick as ColorRect).color = Color(0, 0, 0, 0.45)
+	_pick.top_level = true
+	_pick.size = get_viewport_rect().size
+	add_child(_pick)
+	var panel := UI.panel(row)
+	panel.name = "TalkBox"
+	_pick.add_child(panel)
+	panel.position = Vector2(40, 720 - 260)
+	panel.custom_minimum_size.x = 1200
+	UI.focus(answers.get_child(0))
 
 
 ## The client book on the desk (design doc, The hub, redesigned): inside the cover your name
@@ -825,39 +1064,6 @@ func _mood_color(m: float) -> Color:
 	return UI.GOOD if m >= 70.0 else (UI.GOLD if m >= 45.0 else UI.BAD)
 
 
-## A situation wanted, on newsprint like the ads: who, how quick and how careful (in
-## words and out of ten), what they ask a week. Ringing hires them, if you've a van free.
-func _wanted(w: Dictionary) -> Control:
-	var row := UI.hbox(14)
-	var ad := RichTextLabel.new()
-	ad.bbcode_enabled = true
-	ad.fit_content = true
-	ad.scroll_active = false
-	ad.custom_minimum_size.x = 480
-	ad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ad.add_theme_color_override("default_color", INK)
-	ad.add_theme_font_size_override("normal_font_size", UI.px(18))
-	var pace: String = "Steady rather than quick" if w.pace < 0.65 else ("Reasonably quick" if w.pace < 0.85 else "A quick worker")
-	var care: String = "not fussy" if w.care < 0.4 else ("tidy" if w.care < 0.7 else "careful, takes a pride")
-	ad.text = "[color=#7a1c14]SITUATION WANTED.[/color] %s seeks gardening work. %s (%d/10), %s (%d/10). $%d a week. Ring %s." % [
-		w.name, pace, roundi(w.pace * 10.0), care, roundi(w.care * 10.0), w.wage, w.name.split(" ")[0]]
-	row.add_child(ad)
-	if Game.vans == 0:
-		ad.text += "\n[color=#7a6a50]No van yet: they'd wait in the yard, on the wage, till you've one.[/color]"
-	var cant := Game.cant_hire()
-	if cant != "":
-		ad.text += "\n[color=#7a1c14]Can't take anyone on: %s.[/color]" % cant
-	var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
-		_call = Game.hire(w)
-		_build()
-		UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Away", true, false)), 20)
-	ring.name = "Ring"
-	ring.disabled = cant != ""
-	ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(ring)
-	return _newsprint(row)
-
-
 func _save_and_quit() -> void:
 	if planner:
 		get_parent().get_parent().set("_leaving", true) # the premises: nothing more of theirs
@@ -877,13 +1083,18 @@ func _input(event: InputEvent) -> void:
 	var to := UI.row_step(c, dir)
 	if to:
 		to.grab_focus()
+	elif _view == "paper" and _pick == null and edge_turns: # past the page's edge: turn it
+		_turn_page(dir)
 	get_viewport().set_input_as_handled()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	var leave := find_child("Quit", true, false) as Button
 	var day_open := leave != null and _view == "calendar" and not _cal_month
-	if _pick and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel")): # shut the who-goes list
+	if _pick and _pick.name == "Talk" and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel")): # hang up
+		get_viewport().set_input_as_handled()
+		_hang_up()
+	elif _pick and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel")): # shut the who-goes list
 		var row := _pick_row()
 		_close_pick()
 		UI.focus(row)
@@ -914,10 +1125,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_away()
 	elif leave and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")):
 		var step := 1 if event.is_action_pressed("gear_up") else -1
-		if _view == "paper" and _page + step >= 0 and _page + step < _paper_pages(): # the paper's pages first
-			_page += step
-			_build()
-			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("NextPage" if step > 0 else "PrevPage", true, false))
+		if _view == "paper":
+			_turn_page(step)
 		get_viewport().set_input_as_handled()
 
 
@@ -1067,15 +1276,17 @@ func _collect(extra: int) -> void:
 	if Game.principal > 0:
 		_centred(col, "\"See you next Friday. $%d.\"" % Game.vig(), 24)
 	_centred(col, "You have $%d left." % Game.money, 22, UI.DIM)
-	if Game.shark_offer:
+	var read := _centred_button(col, "Read the paper", _ready)
+	UI.focus(read)
+	if Game.shark_offer: # his man has a word anyway
 		var nx: Dictionary = Game.PREMISES[Game.premises + 1]
-		_centred(col, "His man has a word anyway: \"You've outgrown that place. Vince'll front the $%d for %s. His usual terms. Ring him.\"" % [
-			nx.deposit, nx.name.to_lower()], 22, UI.GOLD)
-		var take := _centred_button(col, "Take it now: move to %s" % nx.name.to_lower(), func() -> void:
-			Game.take_shark_offer()
-			_ready())
-		take.name = "TakeOffer"
-	UI.focus(_centred_button(col, "Read the paper" if not Game.shark_offer else "Not now (the offer stands)", _ready))
+		_talk("The shark's man", SHARK_LOOK, ["\"You've outgrown that place.\"", "\"Vince'll front the $%d for %s. His usual terms.\"" % [nx.deposit, nx.name.to_lower()]],
+			[["Take it now", func() -> void:
+				Game.take_shark_offer()
+				_close_pick()
+				_ready()], ["Not now", func() -> void:
+				_close_pick()
+				UI.focus(read)]])
 
 
 ## September's done: the winter in one ledger (Game.settle_winter), then April.
@@ -1412,3 +1623,27 @@ class DayLine extends Control:
 			draw_rect(Rect2(0, 0, _x(Game.minute), size.y), Color(0, 0, 0, 0.35))
 			draw_line(Vector2(_x(Game.minute), 0), Vector2(_x(Game.minute), size.y), UI.GOLD, 3.0)
 		draw_rect(Rect2(Vector2.ZERO, size), UI.PANEL_EDGE, false, 2.0)
+
+
+## An ad in the paper: a boxed classified, circled in red pen if it's worth ringing (faintly
+## if you can't yet), the circle heavier under the cursor.
+class PaperAd extends Button:
+	var circle := 0 ## 0 none, 1 faint, 2 red pen
+
+	func _init() -> void:
+		focus_entered.connect(queue_redraw)
+		focus_exited.connect(queue_redraw)
+
+	func _draw() -> void:
+		if circle == 0:
+			return
+		var r := RandomNumberGenerator.new()
+		r.seed = hash(text)
+		var c := size / 2.0
+		var rad := size / 2.0 + Vector2(6, 6)
+		var start := r.randf_range(0.0, TAU)
+		var pts := PackedVector2Array()
+		for i in 41: # round once and a bit past, as a pen does
+			var t := start + TAU * 1.08 * i / 40.0
+			pts.append(c + Vector2(cos(t) * rad.x, sin(t) * rad.y) * (1.0 + r.randf_range(-0.025, 0.025)))
+		draw_polyline(pts, Color("c03028", 0.9 if circle == 2 else 0.35), 3.0 if has_focus() else 2.0, true)

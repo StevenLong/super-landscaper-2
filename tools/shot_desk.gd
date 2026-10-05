@@ -1,6 +1,7 @@
 extends SceneTree
 # Screenshots of the desk's paper things for eyeballing (board.gd): the day's end as cards
-# (one opened), the client book's index and a client's page.
+# (one opened), the client book's index and a client's page, the paper's front page, a page
+# of classifieds, situations wanted, and a call.
 # Not a test. Needs a window:
 # SHOT_DIR=<dir> "$GODOT" --path . --fixed-fps 60 -s tools/shot_desk.gd
 var f := 0
@@ -47,6 +48,28 @@ func _process(_d: float) -> bool:
 		(b.find_children("Client", "Button", true, false)[0] as Button).pressed.emit()
 	if f == 38:
 		_shot("desk_client")
+		b._client = -1
+		g.paper = g.make_paper()
+		g.wanted = g.make_wanted()
+		b._show("paper")
+	if f == 44:
+		_shot("paper_front")
+		b._turn_page(1)
+	if f == 50:
+		_shot("paper_ads")
+		b._turn_page(1)
+		b._turn_page(1)
+	if f == 56:
+		_shot("paper_wanted")
+		b._page = 1
+		b._build()
+	if f == 60:
+		for a: Node in b.find_children("Ad", "Button", true, false):
+			if not (a as Button).disabled:
+				(a as Button).pressed.emit()
+				break
+	if f == 70:
+		_shot("paper_call")
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(g.business_path()))
 		quit()
 	return false

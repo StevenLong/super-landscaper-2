@@ -19,11 +19,13 @@ func _initialize() -> void:
 
 
 func _on_paper(n: Node) -> bool:
-	for p: Node in [n.get_parent(), n.get_parent().get_parent()]:
+	var p := n.get_parent()
+	while p:
 		if p is PanelContainer:
 			var sb := (p as PanelContainer).get_theme_stylebox("panel")
 			if sb is StyleBoxFlat and (sb as StyleBoxFlat).bg_color == Color("e8e0c8"):
 				return true
+		p = p.get_parent()
 	return false
 
 

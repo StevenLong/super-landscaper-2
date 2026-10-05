@@ -24,6 +24,15 @@ func _texts() -> Array:
 		.map(func(n: Node) -> String: return n.text)
 
 
+## Press a reply in the open talk.
+func _reply(s: Node, text: String) -> void:
+	for b: Node in s.find_children("Reply", "Button", true, false):
+		if (b as Button).text == text and b.is_inside_tree() and not b.is_queued_for_deletion():
+			(b as Button).pressed.emit()
+			return
+	assert(false, "no %s to say" % text)
+
+
 func _button(text: String) -> Button:
 	for b: Node in current_scene.find_children("*", "Button", true, false):
 		if (b as Button).text.begins_with(text):
@@ -42,7 +51,7 @@ func _process(_delta: float) -> bool:
 			s._page = 99 # the situations wanted are at the back
 			s._build()
 		1:
-			assert(_texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and t.contains("No van yet")), "no van: rung, they'd wait in the yard")
+			assert(_texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED")), "situations wanted, at the back of the paper")
 			assert(g.buy("van"), "a van (the shop's: test_hub)")
 		2:
 			assert(g.vans == 1, "a van bought")
@@ -50,15 +59,12 @@ func _process(_delta: float) -> bool:
 			s._page = 99
 			s._build()
 		3:
-			var ring: Button = s.find_child("Ring", true, false)
-			assert(ring != null and _texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and not t.contains("No van yet")), "a van: ring them")
-			# The last page's first Ring is a situation wanted if no ads are left on it.
 			var n: int = g.helpers.size()
-			for b: Node in s.find_children("Ring", "Button", true, false):
-				if b.get_parent().get_child(0).text.contains("SITUATION WANTED"):
-					(b as Button).pressed.emit()
-					break
+			(s.find_child("Wanted", true, false) as Button).pressed.emit() # ring them: a talk in the portrait box
+			assert(s.find_child("Talk", true, false) != null, "they pick up")
+			_reply(s, "You're hired")
 			assert(g.helpers.size() == n + 1, "rung, hired")
+			_reply(s, "Bye")
 			var job: Dictionary = g.make_job(21)
 			job.day = g.day + 1
 			job.from = g.WINDOW_START

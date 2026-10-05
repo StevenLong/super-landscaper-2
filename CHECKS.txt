@@ -52,5 +52,10 @@ VERIFIED  250 the day's end as cards and the client book: test_day_end (the day'
           nobody's last, a card's report, the sum from the ledger, the index's mood dots, a
           page, the shoulders, B), test_crew_board, test_terms, test_run_flow; screenshots
           of the day's end with a card open, the index and a client's page.
+VERIFIED  251 the paper and calls: test_controls (a page at a time, the shoulders, left past
+          an edge turns it), test_pad (the classifieds, a call, B hangs up, Vince with and
+          without an offer), test_crew_board (hired by a call), test_run_flow (booked by a
+          call, a refused ad stamped), test_newsprint; screenshots of the front page, the
+          classifieds, situations wanted and a call.
 VERIFIED  sim_season SIM_CREW=0 and 2: no bankruptcies once the bot counts the move, the staff
           room and a month's rent and wages before it hires or moves.
