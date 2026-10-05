@@ -185,10 +185,21 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 				for w: Dictionary in g.wanted:
 					if w.pace / w.wage > best.pace / best.wage:
 						best = w
-				_room(m, "van", buffer)
-				if g.buy("van"):
-					g.hire(best)
-					m.bought.append("van")
+				# The whole bill first: a month of their wage, a van, a staff room (and the move for one) if need be.
+				var bill: int = best.wage * 4 + g.VAN.price
+				if g.cant_hire() != "":
+					bill += g.STAFF.corner.price + (g.PREMISES[1].deposit if g.premises == 0 else 0)
+				if g.money - g.due() - bill >= buffer:
+					if g.cant_hire() != "": # a staff room, moving up for one if need be
+						if g.PREMISES[g.premises].staff == "":
+							_move_up(m, g.STAFF.corner.price, buffer)
+						_room(m, "staff", buffer)
+						if g.staff_next() != "" and g.buy("staff"):
+							m.bought.append("staff")
+					_room(m, "van", buffer)
+					if g.cant_hire() == "" and g.buy("van"):
+						g.hire(best)
+						m.bought.append("van")
 			m.wages += g.wages()
 			for item: String in BUY:
 				if not (item in g.owned or item in g.upgrades) and g.money - g.due() - g.price_of(item) >= buffer:
@@ -218,12 +229,26 @@ func _season_run(seed_value: int, seasons: int) -> Array:
 
 
 ## No room in the yard for `item`: buy more yard first, if that leaves the buffer.
+## No room on the floor for `item`: move up, if that leaves the buffer after it's bought.
 func _room(m: Dictionary, item: String, buffer: int) -> void:
 	var g: Node = root.get_node("Game")
 	var kind: String = g.yard_kind(item)
-	if kind != "" and not g.yard_room(kind) and g.money - g.due() - g.price_of("yard") - g.price_of(item) >= buffer:
-		g.buy("yard")
-		m.bought.append("yard")
+	if kind != "" and not g.yard_room(kind):
+		_move_up(m, g.price_of(item), buffer)
+
+
+## To the next premises: on your own money if `then` (what you'll buy there) and a month of
+## the rent and wages there still leave the buffer, else on the shark's if he's offered.
+func _move_up(m: Dictionary, then: int, buffer: int) -> void:
+	var g: Node = root.get_node("Game")
+	if g.premises + 1 >= g.PREMISES.size():
+		return
+	var nx: Dictionary = g.PREMISES[g.premises + 1]
+	if g.money - g.due() - nx.deposit - then - 4 * (nx.rent + g.wages()) >= buffer: # a month of the rent and wages there in hand
+		if g.move_to(g.premises + 1):
+			m.bought.append("move")
+	elif g.shark_offer and g.take_shark_offer():
+		m.bought.append("shark's move")
 
 
 func _blank() -> Dictionary:

@@ -20,6 +20,7 @@ func _initialize() -> void:
 	assert(g.fits("petrol", "bed", Vector2i(2, 0), false) and not g.fits("petrol", "bed", Vector2i(3, 0), false), "2 x 3 in a 4 x 3 bed: only where it fits")
 	assert(not g.fits("can", "trailer", Vector2i.ZERO, false), "no trailer, nothing on it")
 	g.money = 2000
+	g.premises = 1 # room for a ride-on
 	assert(g.buy("petrol") and g.packed_has("petrol"), "a new mower packs itself")
 	assert(g.fits("can", "bed", Vector2i(2, 0), false) and not g.fits("can", "bed", Vector2i(0, 0), false), "the mower's cells are taken")
 	assert(g.buy("rideon") and "trailer" in g.upgrades, "a ride-on brings a trailer")

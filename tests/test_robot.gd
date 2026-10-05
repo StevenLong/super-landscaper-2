@@ -17,6 +17,7 @@ func _initialize() -> void:
 	g = root.get_node("Game")
 	g.save_path = "user://test_best.cfg"
 	g.new_run(7)
+	g.premises = 2 # room for three
 	g.money = 1000
 	for i in 3:
 		assert(g.buy("robot"), "robots on sale")

@@ -109,6 +109,8 @@ func _process(_delta: float) -> bool:
 		3:
 			_audit("they want you back")
 			g.money = 5000
+			g.premises = 2 # a warehouse with a breakroom: room and seats (test_premises)
+			g.staff_room = "breakroom"
 			g.buy("van")
 			g.buy("van")
 			g.wanted.assign([{"id": 1, "name": "Keith Pratt", "pace": 0.8, "care": 0.5, "wage": 80, "rep": 50.0},
@@ -141,8 +143,9 @@ func _process(_delta: float) -> bool:
 			s._winter()
 		8:
 			_audit("the winter")
+			g.money = 5000 # the winter's keep took the rest
 			g.buy("petrol")
-			g.place = "yard"
+			g.place = "home"
 			g.spot = "truck"
 			change_scene_to_file("res://hub.tscn")
 		9:
@@ -169,7 +172,7 @@ func _process(_delta: float) -> bool:
 			pause.pressed = true
 			root.push_input(pause)
 		15:
-			_audit("paused in the yard")
+			_audit("the planner")
 			s._close_card()
 			g.place = "shop"
 			change_scene_to_file("res://hub.tscn")
@@ -184,8 +187,8 @@ func _process(_delta: float) -> bool:
 				j.by = g.DAY_END
 				g.book(j)
 			g.assign(g.bookings(g.day + 1)[0], g.helpers[0].id)
-			g.place = "office"
-			g.spot = "desk"
+			g.place = "home"
+			g.spot = "corkboard"
 			change_scene_to_file("res://board.tscn")
 		18:
 			s._open_day = g.day + 1

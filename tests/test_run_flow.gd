@@ -116,7 +116,7 @@ func _process(_delta: float) -> bool:
 			assert(_labels().any(func(t: String) -> bool: return t.contains("A regular")), "and say so")
 			_press("Continue")
 		6:
-			assert(current_scene.name == "Hub" and game.place == "yard", "then home: the yard, by the truck")
+			assert(current_scene.name == "Hub" and game.place == "home" and game.spot == "truck", "then home: your premises, by the truck")
 			var desk: Node = load("res://board.tscn").instantiate() # and in, to the desk
 			current_scene.free()
 			root.add_child(desk)
@@ -126,11 +126,13 @@ func _process(_delta: float) -> bool:
 			assert(game.bookings(_visit_day).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == game.current_job.seed), "their first visit a fortnight on")
 			assert(game.money > 0 and game.run_tally.get("windows", 0) == 1, "the job paid, the season adds it up")
 			game.money = 1000
+			game.premises = 1 # room for two petrol mowers (the lock-up's: test_premises)
 			assert(game.buy("petrol") and game.equipped == "petrol", "buying a mower equips it")
 			assert(game.money == 1000 - game.MOWERS.petrol.price, "the price came off")
 			assert(game.buy("petrol") and game.total("petrol") == 2 and game.equipped == "petrol", "another goes in the pool")
 			game.sell("petrol")
 			assert(game.total("petrol") == 1 and "petrol" in game.owned, "and sold, one's left")
+			game.premises = 0 # back in the lock-up: its rent's the one the sums below expect
 			# To the regular's day, with things crept into the garden since.
 			game.day = _visit_day
 			game.minute = game.DAY_START

@@ -323,6 +323,6 @@ func _rundown(r: Dictionary) -> Control:
 ## Home: the yard, stood by the truck you came back in (hub.gd; anything waiting to be
 ## read, the day's end, goes to the desk first).
 func _home() -> void:
-	Game.place = "yard"
+	Game.place = "home"
 	Game.spot = "truck"
 	get_tree().change_scene_to_file("res://hub.tscn")

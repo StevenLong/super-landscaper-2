@@ -56,14 +56,21 @@ const ROBOT := {"name": "Robot mower", "price": 150, "blurb": "Mows by itself, i
 ## Hired help (design doc, The Business: Hired help), slice 1. Guesses, tuned with
 ## tests/sim_season.gd: a helper kept busy brings in about twice their wage.
 const VAN := {"name": "Van", "price": 400, "blurb": "A helper drives one: no van, no going out to jobs."}
-## The yard (design doc, The hub): your storage, and storage is a resource. A floor of cells
-## (the truck's packing cells), YARD_W across and yard_rows deep; vans and kit take their
-## footprints, placed for you. A crew petrol mower given out rides in its helper's van. More
-## yard is bought YARD_MORE rows at a time, each lot dearer. Guesses, sim_season to tune.
-const YARD_W := 10
-const YARD_ROWS := 8
-const YARD_MORE := 4
-const YARD_PRICE := 300 ## the first lot; each after costs this much more
+## Your premises (design doc, The hub, redesigned): one at a time, the office in it and the
+## floor your storage. The floor's cells are the truck's packing cells, w across and d deep,
+## the truck's bay at its back right by the roller door. Everything you own takes its
+## footprint on it, where you put it. Moving up costs a deposit, then rent on Friday's bill
+## on top of LIVING; never back down. A staff room fits from the unit. Guesses, sim_season to tune.
+const PREMISES := [
+	{"name": "The lock-up", "w": 11, "d": 5, "deposit": 0, "rent": 0, "staff": "", "street": false},
+	{"name": "The unit", "w": 18, "d": 10, "deposit": 1500, "rent": 150, "staff": "corner", "street": true},
+	{"name": "The warehouse", "w": 30, "d": 16, "deposit": 8000, "rent": 600, "staff": "breakroom", "street": true},
+]
+const BAY := Vector2i(8, 4) ## the truck's bay on the floor
+## A staff room: hiring needs one, its seats how many you can employ. Bought and placed on
+## your floor (it comes with you when you move); the warehouse takes a breakroom.
+const STAFF := {"corner": {"name": "Staff corner", "size": Vector2i(5, 4), "seats": 2, "price": 600},
+	"breakroom": {"name": "Breakroom", "size": Vector2i(9, 6), "seats": 6, "price": 2000}}
 const FOOT := {"push": Vector2i(2, 2), "petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "robot": Vector2i(2, 2), "van": Vector2i(7, 3)}
 const HELP_SECS := {"push": 420.0, "petrol": 262.0, "rideon": 281.0} ## sim_balance's bot, default lawn to 85% (push guessed): a helper at pace 1 mows like it
 const WAGE := 25.0 ## a week per point of your name, asked by a helper of pace 1 and care 1 (less for less): fully booked, one brings in about twice it (tests/_probe in session 21, sim_season SIM_CREW)
@@ -238,8 +245,11 @@ var crew_report: Array[String] = [] ## the crew's day just gone, job by job
 var crew_day: Array[String] = [] ## the same, a line a helper, for the day's end
 var day_mine: Array[Dictionary] = [] ## your jobs today, for the day's end: {customer, net, outcome, mood}
 var day_money := 0 ## money as the day began
-var yard_rows := YARD_ROWS ## how deep the yard's floor is
-var place := "office" ## where you are between jobs: "office", "yard" or "shop" (not saved: a load starts at the desk)
+var premises := 0 ## which of PREMISES you're in
+var staff_room := "" ## the STAFF kind you've fitted, or ""
+var spots := {} ## where each thing stands on the floor: "kind:n" -> {at (Vector2i), turned}
+var shark_offer := false ## the shark's man has offered the next deposit: it stands till taken
+var place := "home" ## where you are between jobs: "home" (your premises) or "shop" (not saved: a load starts at the corkboard)
 var spot := "desk" ## where in it you stand: a door, the desk, the truck
 var paper_tally := {} ## run_tally when this week's paper came out: the week's mess since is its news
 var day_end := {} ## the day just gone, until its screen's read: {day, mine, crew, crew_net, missed, was, now}
@@ -335,7 +345,7 @@ func front_page() -> Array:
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
 	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job",
-	"helpers", "wanted", "vans", "spares", "mine", "crew_trips", "my_trips", "crew_cant", "crew_report", "day_mine", "day_money", "day_end", "paper_tally", "yard_rows"]
+	"helpers", "wanted", "vans", "spares", "mine", "crew_trips", "my_trips", "crew_cant", "crew_report", "day_mine", "day_money", "day_end", "paper_tally", "premises", "staff_room", "spots", "shark_offer"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -423,9 +433,12 @@ func new_run(seed_value := 0) -> void:
 	day_money = money
 	day_end = {}
 	paper_tally = {}
-	yard_rows = YARD_ROWS
-	place = "office"
-	spot = "desk"
+	premises = 0
+	staff_room = ""
+	spots = {}
+	shark_offer = false
+	place = "home"
+	spot = "corkboard"
 	paper = make_paper()
 	wanted = make_wanted()
 	save()
@@ -766,9 +779,10 @@ func fine(tier: int, at_record: float) -> int:
 	return int((50.0 if tier <= 1 else 150.0) * (1.0 + 0.25 * at_record))
 
 
-## Everything on the yard's floor, biggest first: {kind, n (which of its kind), mine (a
-## mower marked yours: the first `mine` of a kind)}. The vans, every mower (the push mower
-## too: the truck's packed for each job), robots. Out with the crew or not, each keeps its room.
+## Everything on the floor, biggest first: {kind, n (which of its kind), mine (a mower
+## marked yours: the first `mine` of a kind)}. The vans, every mower (the push mower too:
+## the truck's packed for each job), robots, the staff room ("staff_" and its kind). Out with
+## the crew or not, each keeps its room.
 func yard_kit() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for i in vans:
@@ -778,70 +792,244 @@ func yard_kit() -> Array[Dictionary]:
 			out.append({"kind": k, "n": i, "mine": i < mine.get(k, 0)})
 	for i in robots:
 		out.append({"kind": "robot", "n": i})
+	if staff_room != "":
+		out.append({"kind": "staff_" + staff_room, "n": 0})
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return _area(a.kind) > _area(b.kind))
 	return out
 
 
+## A thing's footprint in cells (`turned`: on its side).
+func foot(kind: String, turned := false) -> Vector2i:
+	var f: Vector2i = STAFF[kind.trim_prefix("staff_")].size if kind.begins_with("staff_") else FOOT[kind]
+	return Vector2i(f.y, f.x) if turned else f
+
+
 func _area(kind: String) -> int:
-	var f: Vector2i = FOOT[kind]
+	var f := foot(kind)
 	return f.x * f.y
 
 
-## Where everything goes on the yard's floor (`extra`: one more of a kind, to see if it'd
-## fit): each the first place it fits, row by row, turned if that's what fits (a van never
-## turns). Returns {placed: [{item, at, size}], over: [items with no room]}.
+func floor_size() -> Vector2i:
+	return Vector2i(PREMISES[premises].w, PREMISES[premises].d)
+
+
+## The truck's bay: at the floor's back right, by the roller door.
+func bay() -> Rect2i:
+	return Rect2i(Vector2i(floor_size().x - BAY.x, 0), BAY)
+
+
+## A thing's key in spots.
+func spot_key(it: Dictionary) -> String:
+	return "%s:%d" % [it.kind, it.n]
+
+
+## Where everything stands on the floor: where you put it, if that's still clear, else
+## (new, or after a move) the first place it fits, row by row, turned if that's what fits
+## (a van never turns), and remembered. `extra`: one more of a kind, to see if it'd fit
+## without shifting anything (a van brings its push mower). Returns {placed: [{item, at,
+## size, turned}], over: [items with no room]}.
 func yard_layout(extra := "") -> Dictionary:
-	var items := yard_kit()
-	if extra != "":
-		items.append({"kind": extra, "extra": true})
-		if extra == "van": # its push mower comes too
-			items.append({"kind": "push", "extra": true})
-		items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return _area(a.kind) > _area(b.kind))
 	var used := {}
+	_fill(used, bay().position, bay().size)
 	var placed: Array[Dictionary] = []
 	var over: Array[Dictionary] = []
-	for it: Dictionary in items:
+	var rest: Array[Dictionary] = []
+	for it: Dictionary in yard_kit():
+		var sp: Dictionary = spots.get(spot_key(it), {})
+		var size := foot(it.kind, sp.get("turned", false))
+		if not sp.is_empty() and _clear(used, sp.at, size):
+			_fill(used, sp.at, size)
+			placed.append({"item": it, "at": sp.at, "size": size, "turned": sp.get("turned", false)})
+		else:
+			rest.append(it)
+	if extra != "":
+		rest.append({"kind": extra, "n": -1, "extra": true})
+		if extra == "van":
+			rest.append({"kind": "push", "n": -1, "extra": true})
+	rest.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return _area(a.kind) > _area(b.kind))
+	for it: Dictionary in rest:
 		var at := Vector2i(-1, -1)
-		var size: Vector2i = FOOT[it.kind]
-		for turn: bool in ([false] if it.kind == "van" or size.x == size.y else [false, true]):
-			var sz := Vector2i(size.y, size.x) if turn else size
-			at = _yard_spot(used, sz)
+		var turned := false
+		var base := foot(it.kind)
+		for turn: bool in ([false] if it.kind == "van" or base.x == base.y else [false, true]):
+			at = _yard_spot(used, foot(it.kind, turn), it.kind.begins_with("staff_")) # a staff room at the front: nothing tall in front of it
 			if at.x >= 0:
-				size = sz
+				turned = turn
 				break
 		if at.x < 0:
 			over.append(it)
 			continue
-		for y in range(at.y, at.y + size.y):
-			for x in range(at.x, at.x + size.x):
-				used[Vector2i(x, y)] = true
-		placed.append({"item": it, "at": at, "size": size})
+		_fill(used, at, foot(it.kind, turned))
+		placed.append({"item": it, "at": at, "size": foot(it.kind, turned), "turned": turned})
+		if not it.has("extra"):
+			spots[spot_key(it)] = {"at": at, "turned": turned}
 	return {"placed": placed, "over": over}
 
 
-func _yard_spot(used: Dictionary, size: Vector2i) -> Vector2i:
-	for y in yard_rows - size.y + 1:
-		for x in YARD_W - size.x + 1:
-			var free := true
-			for yy in range(y, y + size.y):
-				for xx in range(x, x + size.x):
-					if used.has(Vector2i(xx, yy)):
-						free = false
-						break
-				if not free:
-					break
-			if free:
+func _fill(used: Dictionary, at: Vector2i, size: Vector2i) -> void:
+	for y in range(at.y, at.y + size.y):
+		for x in range(at.x, at.x + size.x):
+			used[Vector2i(x, y)] = true
+
+
+## Whether a footprint's on the floor and clear.
+func _clear(used: Dictionary, at: Vector2i, size: Vector2i) -> bool:
+	if not Rect2i(Vector2i.ZERO, floor_size()).encloses(Rect2i(at, size)):
+		return false
+	for y in range(at.y, at.y + size.y):
+		for x in range(at.x, at.x + size.x):
+			if used.has(Vector2i(x, y)):
+				return false
+	return true
+
+
+## The first spot a footprint fits, row by row from the back (`front`: from the front).
+func _yard_spot(used: Dictionary, size: Vector2i, front := false) -> Vector2i:
+	var rows := range(floor_size().y - size.y + 1)
+	if front:
+		rows.reverse()
+	for y: int in rows:
+		for x in floor_size().x - size.x + 1:
+			if _clear(used, Vector2i(x, y), size):
 				return Vector2i(x, y)
 	return Vector2i(-1, -1)
 
 
-## Is there room in the yard for one more of `kind`?
+## Is there room on the floor for one more of `kind` without shifting anything?
 func yard_room(kind: String) -> bool:
 	return yard_layout(kind).over.is_empty()
 
 
-## What takes room in the yard when bought: a van, a mower or a robot.
+## Why one more of `kind` won't go on the floor, or "": none ("No room"), or it would if
+## you shifted things ("No space as things stand").
+func room_for(kind: String) -> String:
+	if yard_room(kind):
+		return ""
+	var free := floor_size().x * floor_size().y - BAY.x * BAY.y
+	for it: Dictionary in yard_kit():
+		free -= _area(it.kind)
+	return "No space as things stand: shift things about" if free >= _area(kind) + (_area("push") if kind == "van" else 0) else "No room"
+
+
+## Set a thing down at `at` (turned or not), if it's clear of everything else and the bay
+## (`commit` false: only whether it would go).
+func put_down(it: Dictionary, at: Vector2i, turned: bool, commit := true) -> bool:
+	if it.kind == "van":
+		turned = false
+	var used := {}
+	_fill(used, bay().position, bay().size)
+	for p: Dictionary in yard_layout().placed:
+		if spot_key(p.item) != spot_key(it):
+			_fill(used, p.at, p.size)
+	if not _clear(used, at, foot(it.kind, turned)):
+		return false
+	if commit:
+		spots[spot_key(it)] = {"at": at, "turned": turned}
+		save()
+	return true
+
+
+## Forget where things that are gone stood (one sold: the last of its kind goes, unless
+## shift_from says which, and those after it move down a number).
+func _prune_spots(kind := "", shift_from := -1) -> void:
+	if kind != "" and shift_from >= 0:
+		var i := shift_from
+		while spots.has("%s:%d" % [kind, i + 1]):
+			spots["%s:%d" % [kind, i]] = spots["%s:%d" % [kind, i + 1]]
+			i += 1
+		spots.erase("%s:%d" % [kind, i])
+	var have := {}
+	for it: Dictionary in yard_kit():
+		have[spot_key(it)] = true
+	for k: String in spots.keys():
+		if not have.has(k):
+			spots.erase(k)
+
+
+## Sell this one of a kind (its card's): what stood after it keeps its place.
+func sell_at(kind: String, n: int) -> void:
+	if n < mine.get(kind, 0):
+		mine[kind] -= 1 # a marked one sold: the marks stay on the rest of them
+	_prune_spots(kind, n)
+	sell(kind)
+
+
+## How many you can employ: the staff room's seats.
+func seats() -> int:
+	return STAFF[staff_room].seats if staff_room != "" else 0
+
+
+## Why you can't take anyone on, or "".
+func cant_hire() -> String:
+	if staff_room == "":
+		return "nowhere for staff: a staff room first"
+	if helpers.size() >= seats():
+		return "the staff room's full: %d seats" % seats()
+	return ""
+
+
+## The staff room you'd fit next here, or "" (none in a lock-up, or you've the biggest).
+func staff_next() -> String:
+	var kind: String = PREMISES[premises].staff
+	if kind == "" or staff_room == kind:
+		return ""
+	return "corner" if staff_room == "" else kind
+
+
+## The rent on top of LIVING, a week.
+func rent() -> int:
+	return PREMISES[premises].rent
+
+
+## Why you can't move to premises `i`, or "". Never down; the deposit; everything must fit.
+func cant_move(i: int) -> String:
+	if i <= premises or i >= PREMISES.size():
+		return "No"
+	if money < PREMISES[i].deposit:
+		return "Not enough money"
+	var was := premises
+	var had := spots
+	premises = i
+	spots = {}
+	var room: bool = yard_layout().over.is_empty()
+	premises = was
+	spots = had
+	return "" if room else "Your things won't fit"
+
+
+## Move up to premises `i`: the deposit, then everything set down afresh there.
+func move_to(i: int) -> bool:
+	if cant_move(i) != "":
+		return false
+	money -= PREMISES[i].deposit
+	premises = i
+	spots = {}
+	yard_layout()
+	shark_offer = false
+	save()
+	return true
+
+
+## Whether you've outgrown your premises (the shark's offer): no room for another petrol
+## mower in a lock-up, or another van from the unit up, as things stand.
+func outgrown() -> bool:
+	return not yard_room("petrol" if premises == 0 else "van")
+
+
+## The shark's offer taken: he fronts the next deposit, at his vig, and you move.
+func take_shark_offer() -> bool:
+	if not shark_offer or premises + 1 >= PREMISES.size():
+		return false
+	var deposit: int = PREMISES[premises + 1].deposit
+	principal += deposit
+	money += deposit
+	return move_to(premises + 1)
+
+
+## What takes room on the floor when bought: a van, a mower, a robot, a staff room.
 func yard_kind(item: String) -> String:
+	if item == "staff":
+		return "staff_" + staff_next() if staff_next() != "" else ""
 	return item if FOOT.has(item) and item != "push" else ""
 
 
@@ -856,18 +1044,26 @@ func cant_buy(item: String) -> String:
 		return "You've got one"
 	if UPGRADES.has(item) and (item in upgrades or (item == "gear4" and "gear3" not in upgrades)):
 		return "You've got it" if item in upgrades else "Needs third gear first"
-	if yard_kind(item) != "" and not yard_room(yard_kind(item)):
-		return "No room in the yard"
+	if item == "staff" and staff_next() == "":
+		return "No room for one here" if PREMISES[premises].staff == "" else "You've got one"
+	if yard_kind(item) != "":
+		var kind := yard_kind(item)
+		var was := staff_room
+		if item == "staff":
+			staff_room = "" # a corner made a breakroom: its room's the breakroom's
+		var why := room_for(kind)
+		staff_room = was
+		if why != "":
+			return why
 	if money < price_of(item):
 		return "Not enough money"
 	return ""
 
 
-## An item: a mower, an upgrade, "robot", "van" or "yard" (more of it).
+## An item: a mower, an upgrade, "robot", "van" or "staff" (the staff room you'd fit next).
 func price_of(item: String) -> int:
-	if item == "yard":
-		@warning_ignore("integer_division")
-		return YARD_PRICE * (1 + (yard_rows - YARD_ROWS) / YARD_MORE)
+	if item == "staff":
+		return STAFF[staff_next() if staff_next() != "" else "corner"].price
 	if item == "van":
 		return VAN.price
 	return ROBOT.price if item == "robot" else (MOWERS[item].price if MOWERS.has(item) else UPGRADES[item].price)
@@ -875,10 +1071,11 @@ func price_of(item: String) -> int:
 
 func buy(item: String) -> bool:
 	var price := price_of(item)
-	if money < price or (yard_kind(item) != "" and not yard_room(yard_kind(item))): # no room, no sale
+	if money < price or (item == "staff" and staff_next() == "") or (yard_kind(item) != "" and cant_buy(item) != ""): # no room, no sale
 		return false
-	if item == "yard":
-		yard_rows += YARD_MORE
+	if item == "staff":
+		staff_room = staff_next()
+		_prune_spots()
 	elif item == "van": # a push mower comes with it, into the pool
 		vans += 1
 		add_mower("push")
@@ -996,6 +1193,8 @@ func settle_payday(extra := 0) -> Dictionary:
 	var off := mini(extra, mini(money, principal))
 	money -= off
 	principal -= off
+	if principal == 0 and premises + 1 < PREMISES.size() and outgrown():
+		shark_offer = true # outgrown the place: his man has a word
 	paper = make_paper()
 	wanted = make_wanted()
 	paper_tally = run_tally.duplicate()
@@ -1045,7 +1244,12 @@ func vig() -> int:
 
 ## What Friday takes: the vig, the week's keep and the crew's wages.
 func due() -> int:
-	return vig() + LIVING + wages()
+	return vig() + living() + wages()
+
+
+## Rent and food, a week: LIVING and your premises' rent.
+func living() -> int:
+	return LIVING + rent()
 
 
 ## Today through the coming Friday (or the season's end): the days this week's paper books into.
@@ -1475,7 +1679,7 @@ func settle_winter() -> Dictionary:
 			gone.append(reg.job.customer)
 			owed_back += _repay(reg) # what they paid up front for next year goes back
 			regulars.erase(id)
-	var cost := LIVING * WINTER_WEEKS
+	var cost := living() * WINTER_WEEKS
 	var topped := maxi(0, cost - money)
 	principal += topped
 	money += topped - cost
@@ -1545,6 +1749,8 @@ func wages() -> int:
 ## Ring a situation wanted: the call's time, and they start at their asking wage. Returns
 ## what they said.
 func hire(w: Dictionary) -> String:
+	if cant_hire() != "":
+		return ""
 	minute += RING_TIME
 	wanted.erase(w)
 	var h := w.duplicate()
@@ -1990,6 +2196,15 @@ func load_business() -> void:
 			upgrades.append("trailer")
 	for hh: Dictionary in helpers:
 		hh.erase("kit")
+	if not state.has("premises"): # from before premises: the smallest your things fit in, a staff room if you've a crew
+		for i in PREMISES.size():
+			premises = i
+			var kind: String = PREMISES[i].staff
+			staff_room = "" if helpers.is_empty() or kind == "" else ("breakroom" if helpers.size() > 2 and kind == "breakroom" else "corner")
+			spots = {}
+			if yard_layout().over.is_empty() and (helpers.is_empty() or staff_room != ""):
+				break
+		shark_offer = false
 	_upgrade_save()
 	in_run = true
 	run_over_reason = ""
@@ -2207,8 +2422,8 @@ func unpacked() -> Array[String]:
 func kit_name(kind: String) -> String:
 	if kind == "van":
 		return VAN.name
-	if kind == "yard":
-		return "More yard"
+	if kind.begins_with("staff"):
+		return STAFF[kind.trim_prefix("staff_") if kind != "staff" else (staff_next() if staff_next() != "" else "corner")].name
 	if kind == "can":
 		return "Petrol can"
 	if kind == "robot":

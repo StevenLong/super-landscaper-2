@@ -57,7 +57,7 @@ func _process(_delta: float) -> bool:
 			assert(g.money == cash + 360 and g.regulars[_id].prepaid == 4 and g.upfront.is_empty(), "taken: $360 now, four visits owed")
 			_press("Continue")
 		1:
-			assert(current_scene.name == "Hub" and g.place == "yard", "home: the yard")
+			assert(current_scene.name == "Hub" and g.place == "home", "home: your premises")
 			var desk: Node = load("res://board.tscn").instantiate() # and in, to the desk
 			current_scene.free()
 			root.add_child(desk)

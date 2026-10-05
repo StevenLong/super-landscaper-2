@@ -14,6 +14,8 @@ func _initialize() -> void:
 	g = root.get_node("Game")
 	g.save_path = "user://test_best.cfg"
 	g.new_run(7)
+	g.premises = 2 # a warehouse with a breakroom: room and seats (test_premises)
+	g.staff_room = "breakroom"
 	assert(g.wanted.size() >= 1 and g.wanted.size() <= 3, "the paper's situations wanted: %d" % g.wanted.size())
 	var w: Dictionary = g.wanted[0]
 	assert(w.wage == g.wage_for(w) and w.pace > 0.0 and w.care > 0.0, "each with a pace, a care and an asking wage")
@@ -229,6 +231,7 @@ func _initialize() -> void:
 	assert(g.helpers.size() == 1 and g.helpers[0].pace == 0.9, "better, as they left")
 
 	# The save keeps the crew and the pool.
+	g.money = 5000 # the winter's keep took the rest
 	g.buy("van")
 	g.buy("van")
 	g.mark_mine("petrol", true)
@@ -238,7 +241,7 @@ func _initialize() -> void:
 	g.spares = {}
 	g.mine = {}
 	g.load_business()
-	assert(g.helpers.size() == 1 and g.vans == 2 and g.total("push") == 3 and g.mine.get("petrol", 0) == 1, "saved and loaded, the pool and its marks")
+	assert(g.helpers.size() == 1 and g.vans == 2 and g.total("push") == 3 and g.mine.get("petrol", 0) == 1, "saved and loaded, the pool and its marks: %s" % [[g.helpers.size(), g.vans, g.total("push"), g.mine]])
 	# A save from before kit was one pool: its vans a count, each with a push mower; the crew's mowers spares.
 	var f := FileAccess.open(g.business_path(), FileAccess.READ)
 	var state: Dictionary = f.get_var()

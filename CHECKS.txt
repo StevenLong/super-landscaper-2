@@ -1,141 +1,52 @@
-PLAY CHECKS OWED  (9)
+PLAY CHECKS OWED  (5)
 
-LOAD 1 of 2  (about 20 min: a new business, on the pad)
-S24-HUB    Walk the office, out to the yard, drive to the shop and home. Does it feel like
-           your own space? Anything that should be a thing in the room but is a card (or
-           the other way round)? Walking pace and the drive's half hour fine?
->The rooms don't really read that well. They have an eerie, hollow voidness to them, and everything feels completely flat. Nothing is interactable or alive. For example, the doors don't open and they don't animate, and the desk placement makes it feel like an alien tried to design an office space.
+The hub redesign's steps 1 and 2 (NOTES 248, 249): the crew and kit, and the building. Judge
+how it works, not how it looks: the art is step 5 (voxel vans and furniture, walls, windows).
 
-I'm not sure you should be the one fixing it. Maybe I will start making some prototype visuals that we can use as guidance, or maybe I will ask someone who's actually good at that to do it.
-S24-CAL    The calendar's tiles and the day beside them: can you tell where now is, if
-           you're missing something, and whether a booking's started? Picking who goes?
->I'm not getting what I want out of the calendar at all. Right now, I'm not sure what I'm supposed to gain from it other than skipping a day entirely, and I don't like that. It's a calendar, the paper, and the client book all crammed into the same place.
+LOAD 1 of 1  (about 30 min: a new business, on the pad; [1] for money once you're past April)
+S25-PLACE  Start in the lock-up, move up to the unit (ring the estate agent from the phone),
+           later the warehouse. Does each read as your own place, tight at first? Pick
+           things up and set them down (a mower's card, Move it): does it feel right on the pad?
+>
+S25-CREW   Fit a staff room (ring a builder), hire from the paper, send people from the
+           calendar's day. Is the who-goes list clear? Does marking a mower yours do what you'd
+           expect? Do helpers leaving and coming back read (gone from the staff room, van and all)?
+>
+S25-CAL    The corkboard: today as rows and bars, the month a tap of B away. Can you tell at a
+           glance what's on, who's going and what's wrong?
+>
+S25-END    Ending the day: the truck's "Drive home for the night", the street door (from the
+           unit), Start's planner. Is there always one near you? Does the check ("still yours to
+           do") help or nag?
+>
+S25-PRICE  The unit $1,500 down and $150 a week, the warehouse $8,000 and $600, a staff corner
+           $600, a breakroom $2,000. Too cheap, too dear? (The sim's bot: no bankruptcies, a crew
+           earning about 1.5 times their wages by the second season.) Did the shark's offer
+           come, and was it welcome?
+>
 
-The purpose of the calendar by itself should be your planning phase. The old number line time display was decent because it actually showed you what was going on at any given point during the day. Right now, this is just a list of dates, names, and oddly mixed numbers: some are whole numbers, some are time signatures, and I'm not sure how any of it is helpful.
-
-There are also a lot of details on the current screen that don't present any real value splashed all over the place:
-• The date and time directly above the calendar (which already tells you the date)
-• Three different money descriptions
-• The reputation description
-• A third description of the date for the element on the right
-
-It ends up being both overwhelming and uninformative.
-
-Here is how I think we should separate it out:
-
-1. Calendar & Planning:
-Add back the timeline. You select a day on the calendar, see what is scheduled for that day alongside the number line, and when you highlight a job in the list, it highlights it on the number line so it's easy to read. From there, you can choose to assign people.
-2. Newspaper & Phone:
-Placed separately in a different part of the office, the newspaper sits next to a phone. Together, they form the interactable you use to call people.
-3. Client Book:
-Placed in on the desk, where you manage your existing repeat customers.
-4. Filing cabinet:
-By the desk, where you manage employees. Firing them, checking their stats. Maybe more things if we expand it: this is where we could decide to send them for training, but that's out of scope.
-S24-PAPER  The paper's front page, then its ads: does it read as a paper?
->It does not read as a paper. It reads as the worst webpage ever made: a big white square, a centered title, and then just left-aligned text blocks. 
-
-I think, again, as long as this kind of thing is stuffed into a menu like this, it's not going to read the way I want it to. I want it to feel like you've picked up an actual newspaper. But because it's a game, we can have the actual parts you would be interested in highlighted. 
-
-It can still work like a menu, left/right at the edge of a page, or shoulder buttons, turn the page, directions move the focus to things worth interacting with, interacting calls or does anything else relevant.
-S24-DAYEND A day's end every day, worked or not. Does a free day read as a chance to do
-           something, or a screen to click past? Are the money lines clear?
->Having the end-of-day summary is fine. Having to go to the office to select it from a menu sucks. I think the office needs a sort of shopfront entrance, where trying to leave through it gives you the option to end the day. 
-
-Alternatively, or additionally, I think it should maybe be an option that travels with you in a menu. For example, the player has a pocket planner that lets them access some of the important things they would otherwise have to walk back to the office for:
-• See the day's plan
-• End the day
-
-As for the actual end of day screen, I don't like it. I don't know why these would be presented as sentences (for example, the crew results). I'll include a screenshot again for this, but I think it should be more like a list of cards, one for each job. 
-
-The card structure should work like this:
-• Top level: Just shows the money change, who went, and to where.
-• Expanded view: Clicking on the card expands it to show the full job report.
-
-Crew jobs and your own jobs should just be in the same list of these cards, so we can lose those additional headings. Then, at the bottom, we can have a summary card that shows the full change of everything tallied up.
-S24-PAD    On the pad: walking, the cards (A picks, B backs out), B to step away from the
-           desk, the who-goes list. Anything that fights you?
->Not more than I've already described.
-
-LOAD 2 of 2  (about 20 min: any save, [1] for money, hire one or two helpers, play weeks)
-S24-YARD   When did you first hit "no room in the yard", and did buying more feel fair
-           ($300 a lot, dearer each time)? Did auto-placing ever look wrong (room that
-           looks free but won't take a van)?
->Trying to add a second van and a ride-on mower a few weeks in using dev cheats was when I hit the space ceiling for the first time.
-
-There is nothing particularly satisfying about this setup. It's an arbitrary box in a much larger room, and you buy more of the box to put your own stuff in. I was hoping to have something that felt like a real space, not this kind of surreal, Backrooms-esque location we have here where we're only allowed to put stuff in the yellow box for arbitrary reasons. I wanted the actual space to be the actual inventory.
-
-It might be that we need to start even smaller than that. Maybe we only have a shed, one of those little storage lockups, or a garage. We use the whole space: the truck goes in there, the lawnmower goes in there, and it starts to become a tight fit. Then, rather than buying new squares on the ground in the same place, we pay for a new, larger location.
-
-The placing always looked wrong. The new vans, and honestly a lot of the new assets, are weirdly narrow. They feel very two-dimensional.
-S24-RAISE  Growth is a fifth as fast; they ask only when their pace ticks a point on their
-           card. By the model a busy helper asks every 2 or 3 weeks. Too often, or too rare?
->I'll bring this back up myself if it feels wrong after playing it for a while.
-S24-FENCE  Next door's gardens: does the fence between you and them, and along the back,
-           look whole now on every kind of plot you play? Screenshot anything that doesn't.
->This check doesn't need to be here. I'll report it if I see it.
-S24-CREW   Helpers, vans and mowers as three things: hire before you've a van, swap who
-           drives what, sell a van or let someone go. Does each do what you'd expect, and
-           is anything you wanted to do missing from the cards?
->I'm including a screenshot, and I hope it conveys the issues I'm having with this whole pattern. It's a screenshot of the interaction with a van after having gone to the paper, gone to the shop, hired crew, and bought equipment. 
-
-This UX is insane. Look at what's written on this menu. This doesn't read like any sane menu ever would. 
-
-I think I'd like for you to try to blank slate this. Imagine we hadn't built it piece by piece, and think about how to sensibly build it from scratch so it's a more intuitive, less insane list of buttons in a menu.
-
-We have an employee roster. We have equipment. We have jobs that employees assigned equipment will go to. 
-
-There shouldn't be a menu with every combination of:
-• Van stays, equipment stays, employee goes
-• Van goes, employee goes, equipment stays
-• Etc.
-
-Let's keep it to simple, sensible defaults, please.
-
-Cheats (debug builds): on the board [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
+Cheats (debug builds): on a board page [1] adds $500, [2] adds 20 rep, [4] takes 20 rep off,
 [3] skips to Friday's payday; in a job [0] finishes it perfectly.
 
 
 ================================================================================
 NOTES
 ================================================================================
-Some text in the section to the right of the calendar doesn't wrap and is wider, which changes the size of the calendar. Specifically, the text on every Friday.
+
 
 ================================================================================
 VERIFIED      (no answer needed; skim it, and say if anything looks wrong)
 ================================================================================
 Tags: VERIFIED (and how), TRIED (couldn't settle it, and why), CHANGED (nothing to verify).
-VERIFIED  228 raises: test_help (a care point alone asks nothing; a pace point asks; growth
-          not rounded away). Pace every 50 jobs is modelled, not played: S24-RAISE.
-VERIFIED  229 day's end: test_help, test_season, test_court, test_run_flow, test_hub (the
-          day after payday starts afresh; a job lost to jail is listed); screenshot read.
-VERIFIED  230 calendar: test_crew_board (who goes from the list), test_controls (left/right
-          on every page, every page fits); screenshots of the month and the menu.
-VERIFIED  231 paper: test_controls (pages before tabs), test_newsprint, test_hub (April's
-          front page fresh); screenshots of the front page and a page of ads.
-VERIFIED  232-234 the places: test_hub (desk and back, yard room and overlaps, more yard,
-          van cards, crew mower in and out, truck, shop drive and buying, the desk first
-          when something's waiting, a day in jail); screenshots of office, yard, shop, cards.
-VERIFIED  sim_season SIM_CREW=0, 1 and 2 run clean; one 2-helper seed bought more yard.
-VERIFIED  Verifier run 9: 12 real finds, fixed (see HANDOFF session 24).
-VERIFIED  Helpers, vans and mowers as three things: test_help (hire with no van, a van
-          seats them, selling it keeps them, an old save converts), test_hub (cards: take
-          out, put in, sell a van, into an empty van, a ride-on card sells its own);
-          screenshots of the yard and the cards; sims clean. Verifier run 10: 10 UI finds, fixed.
-TRIED     A front page with every tally key full pushes its page buttons off screen: not a
-          realistic week, left.
-VERIFIED  Next door meets the garden: test_next_door (40 gardens; fails on the old gap);
-          contact sheets of both back corners, every plot kind, looked at.
-VERIFIED  The pad on 15 menu screens (test_pad: every control reached, no wrong-way jump),
-          the summary's rows included (S23's TRIED). Vans never hide kit (test_hub, and a
-          60-yard random sweep).
-VERIFIED  Hedge and wall corners: a run across meets a hedge or wall side at its outer edge
-          (a fence still at its middle), test_next_door (fails on the old notch); corner
-          crops of 12 gardens, all four corners, looked at. The counter card: test_hub.
-VERIFIED  The playground on the left no longer stands its side railings on your lawn (a
-          ghost fence inside yours): test_next_door (fails on the old seed 190); a corner crop.
-CHANGED   The council playground's fence is galvanised chain-link (new art: chainlink_h/_v,
-          make_art.py playground), not green-tinted pickets; screenshot looked at.
-VERIFIED  A post on each road corner of a fenced garden (no grass between the runs):
-          test_next_door (fails without it); corner crops of 6 gardens looked at.
-VERIFIED  Gate posts either side of the drive's mouth on a fenced road run, not cut pickets:
-          test_next_door (fails without them); crops of 3 drives' mouths looked at.
+VERIFIED  248 crew and kit: test_help (the pool, marks, best free, your trips, out and back,
+          no van free, chaining, let go refused on a worked day, old saves), test_crew_board
+          (the who-goes list, the mower button), test_pad (the day, the list modal, the
+          month), test_hub; screenshots of the day, the month, the list. Verifier run 11: 7
+          finds, fixed.
+VERIFIED  249 the building: test_premises (the lock-up's room, set down by hand, as things
+          stand, sell keeps places, moving up and its rent, staff seats, the breakroom, the
+          shark's offer, the winter's rent, old saves), test_hub (the stations, the phone,
+          the cabinet, carrying, the truck, the street door, the planner, ending the day);
+          screenshots of the lock-up, unit, warehouse, carrying, the phone, the planner.
+VERIFIED  sim_season SIM_CREW=0 and 2: no bankruptcies once the bot counts the move, the staff
+          room and a month's rent and wages before it hires or moves.

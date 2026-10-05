@@ -14,6 +14,8 @@ func _initialize() -> void:
 	g.save_path = "user://test_best.cfg"
 	g.new_run(7)
 	g.money = 5000
+	g.premises = 1 # a unit with a staff corner: two seats (test_premises)
+	g.staff_room = "corner"
 	change_scene_to_file("res://board.tscn")
 
 

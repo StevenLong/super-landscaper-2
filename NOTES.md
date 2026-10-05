@@ -190,7 +190,7 @@ committed, the verifier after each; the dev plays a LOAD after 249 and after 252
    mower spot); van, mower and helper cards cut down; 246 rides along. Old saves: crew_kit
    and fleet fold into the pool. Home: game.gd (owned, crew_kit, fleet, kit_of, _crew_day,
    help_job), board.gd (calendar; the old DayClock in git at 8f755a5^), hub.gd (cards).
-249. [FEATURE, large] Step 2, the building: the lock-up, unit and warehouse (deposit, weekly
+249. [BUILT 2026-10-05, unplayed: CHECKS LOAD 1] Step 2, the building: the lock-up, unit and warehouse (deposit, weekly
    rent, no moving down); placing by hand (pick up, footprint green or red, set down; new
    things in the first spot that fits); the truck's fixed bay and "Drive home"; the street
    door; the staff room and its seats (hiring gated); the filing cabinet with it; the

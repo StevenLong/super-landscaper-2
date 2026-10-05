@@ -1,12 +1,15 @@
 extends Control
-## The desk in the office (design doc, The hub): the paper things. Three pages: the
-## calendar (five weeks of tiles, a day open beside them, who goes to each booking), the
-## week's paper to ring, and the client book. Step away and you're in the office (hub.gd),
-## where the yard and the shop are. The desk also has what's waiting to be read: the
-## day's end, Friday's payday (the loan shark's man), court, September's end the winter,
-## and a job you never finished, the blackout.
+## The office's paper things (design doc, The hub, redesigned), each its own fitting: the
+## corkboard's calendar (a day, or the month), the paper by the phone, the desk's client
+## book. Game.spot says which; step away and you're back in your premises (hub.gd). What's
+## waiting to be read comes first: the day's end, Friday's payday (the loan shark's man),
+## court, September's end the winter, and a job you never finished, the blackout. As the
+## planner (Start, in the premises): today's plan, read-only, ending the day, save and quit.
 
-const VIEWS := ["calendar", "paper", "book"]
+signal closed ## the planner, put away
+signal end_day_asked ## the planner's End the day
+
+const VIEWS := {"corkboard": "calendar", "paper": "paper", "desk": "book"} ## each fitting's view
 const PER_PAGE := 3 ## ads to a page of the paper
 const CORK := Color("8a6238")
 const NOTE := Color("efe6cc")
@@ -22,10 +25,14 @@ var _page := 0 ## the paper's page
 var _open_day := -1 ## the calendar's day (today by default)
 var _cal_month := false ## the calendar showing the month, to pick a day from
 var _pick: Control = null ## who-goes list open beside a booking
+var planner := false ## the planner over the premises, not the office's fitting
 
 
 func _ready() -> void:
 	theme = UI.theme()
+	if planner:
+		_build()
+		return
 	Sfx.music("music_menu")
 	if not Game.blackout.is_empty():
 		_blackout()
@@ -46,6 +53,7 @@ func _ready() -> void:
 func _build(keep := "") -> void:
 	Game.advance_crew() # whoever's due off has gone
 	_close_pick()
+	_view = "calendar" if planner else VIEWS.get(Game.spot, "calendar")
 	Game.save()
 	for c in get_children():
 		remove_child(c)
@@ -72,7 +80,11 @@ func _build(keep := "") -> void:
 	var gap := Control.new()
 	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(gap)
-	var away := UI.button("Step away %s" % Game.key("hop"), _away, 18)
+	if planner:
+		var end := UI.button("End the day", func() -> void: end_day_asked.emit(), 18)
+		end.name = "PlannerEnd"
+		head.add_child(end)
+	var away := UI.button(("Put it away " if planner else "Step away ") + Game.key("hop"), _away, 18)
 	away.name = "Away"
 	away.disabled = Game.today().has("jail") # a day inside: nowhere to step to
 	head.add_child(away)
@@ -81,23 +93,9 @@ func _build(keep := "") -> void:
 	head.add_child(leave)
 	root.add_child(head)
 
-	# The pages, as tabs: Shift and Ctrl (RB and LB) turn them too.
-	var tabs := UI.hbox(10)
-	for v: String in VIEWS:
-		var open := Game.paper.filter(func(o: Dictionary) -> bool: return Game.cant_book(o) == "" and not o.get("refused", false)).size()
-		open += Game.wanted.size()
-		var t := UI.button({"calendar": "Calendar", "paper": "Paper (%d to ring)" % open, "shop": "Shop",
-			"book": "Client book" + (" (%d)" % Game.regulars.size() if Game.regulars else "")}[v], _show.bind(v), 20)
-		t.name = "Tab_" + v
-		if v == _view:
-			t.add_theme_color_override("font_color", UI.GOLD)
-			t.add_theme_color_override("font_focus_color", UI.GOLD)
-		tabs.add_child(t)
-	if not (_view == "calendar" and not _cal_month): # a day's shoulders step its days
-		var hint := UI.label("%s %s turn the page" % [Game.key("gear_down"), Game.key("gear_up")], 18, UI.DIM)
-		hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		tabs.add_child(hint)
-	root.add_child(tabs)
+	var title := UI.label({"calendar": "Your planner" if planner else "The corkboard", "paper": "The Weekly Advertiser", "book": "The client book"}[_view], 22, UI.GOLD)
+	title.name = "Station"
+	root.add_child(title)
 
 	var first: Control
 	match _view:
@@ -110,11 +108,13 @@ func _build(keep := "") -> void:
 	UI.focus(first)
 
 
+## Open a fitting's view (the paper, the client book, the calendar).
 func _show(view: String) -> void:
-	_view = view
+	for k: String in VIEWS:
+		if VIEWS[k] == view:
+			Game.spot = k
 	_page = 0
 	_build()
-	UI.focus(find_child("Tab_" + view, true, false))
 
 
 ## The calendar (design doc, The hub, redesigned): a day, or the month to get to one. It
@@ -228,9 +228,10 @@ func _day_view(root: Control, keep := "") -> Control:
 	var next := UI.button(Game.key("gear_up") + " >", _step_day.bind(1), 18)
 	next.name = "NextDay"
 	top.add_child(next)
-	var month := UI.button("Month " + Game.key("hop"), _to_month, 18)
-	month.name = "Month"
-	top.add_child(month)
+	if not planner: # the planner's B puts it away
+		var month := UI.button("Month " + Game.key("hop"), _to_month, 18)
+		month.name = "Month"
+		top.add_child(month)
 	if t.weekday == Game.FRIDAY:
 		var pay := UI.label("Payday: $%d due" % Game.due(), 18, UI.DIM)
 		pay.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -266,7 +267,7 @@ func _day_view(root: Control, keep := "") -> Control:
 			rows.add_child(_row(b, plan))
 	if l.is_empty():
 		rows.add_child(UI.label("Nothing booked. A free day.", 20, UI.DIM))
-	if d == Game.day:
+	if d == Game.day and not planner:
 		# Every day ends on its own day's end, worked or not (the hub grill): nothing skips.
 		var mine := Game.jobs_today()
 		var end := UI.button("Call it a day" + (" (miss %d)" % mine.size() if mine else ""), func() -> void:
@@ -285,7 +286,8 @@ func _day_view(root: Control, keep := "") -> Control:
 	for b: Button in rows.find_children("Who", "Button", true, false):
 		if not b.disabled:
 			return b
-	return find_child("EndDay", true, false) if d == Game.day else next
+	var end_day := find_child("EndDay", true, false)
+	return end_day if end_day else next
 
 
 func _step_day(by: int) -> void:
@@ -352,7 +354,7 @@ func _row(b: Dictionary, plan: Dictionary) -> Control:
 	for c: Control in lines.find_children("*", "Control", true, false):
 		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	who.custom_minimum_size.y = 26.0 * lines.get_child_count() + 12.0
-	var can_pick: bool = not Game.helpers.is_empty() and Game.can_send(b) and not Game.set_off(b)
+	var can_pick: bool = not planner and not Game.helpers.is_empty() and Game.can_send(b) and not Game.set_off(b)
 	who.disabled = not can_pick
 	if can_pick:
 		who.pressed.connect(_pick_who.bind(b, who))
@@ -367,7 +369,7 @@ func _row(b: Dictionary, plan: Dictionary) -> Control:
 			UI.focus(find_child(row.name, true, false).find_child("Mower", true, false)), 18)
 		mower.name = "Mower"
 		mower.custom_minimum_size.x = MOWER_W
-		mower.disabled = Game.set_off(b)
+		mower.disabled = planner or Game.set_off(b)
 		row.add_child(mower)
 	else:
 		var yours := UI.label("You pack it", 18, UI.DIM)
@@ -586,7 +588,7 @@ func _paper_view(root: Control) -> Control:
 	nav.add_child(next)
 	col.add_child(nav)
 	var ring := col.find_child("Ring", true, false)
-	return ring if ring else (next if not next.disabled else (prev if not prev.disabled else find_child("Tab_paper", true, false)))
+	return ring if ring else (next if not next.disabled else (prev if not prev.disabled else find_child("Away", true, false)))
 
 
 ## This week's ads still to come (a day gone, its ad's gone), the situations wanted at the back.
@@ -675,7 +677,7 @@ func _ad(o: Dictionary) -> Control:
 		var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
 			_call = Game.ring(o)
 			_build()
-			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Tab_paper", true, false)), 20)
+			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Away", true, false)), 20)
 		ring.name = "Ring"
 		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(ring)
@@ -721,7 +723,7 @@ func _book_view(root: Control) -> Control:
 		list.add_child(_regular_row(id))
 	for b: Button in list.find_children("*", "Button", true, false):
 		return b
-	return find_child("Tab_book", true, false)
+	return find_child("Away", true, false)
 
 
 func _regular_row(id: int) -> Control:
@@ -760,17 +762,23 @@ func _wanted(w: Dictionary) -> Control:
 	row.add_child(ad)
 	if Game.vans == 0:
 		ad.text += "\n[color=#7a6a50]No van yet: they'd wait in the yard, on the wage, till you've one.[/color]"
+	var cant := Game.cant_hire()
+	if cant != "":
+		ad.text += "\n[color=#7a1c14]Can't take anyone on: %s.[/color]" % cant
 	var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
 		_call = Game.hire(w)
 		_build()
-		UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Tab_paper", true, false)), 20)
+		UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("Away", true, false)), 20)
 	ring.name = "Ring"
+	ring.disabled = cant != ""
 	ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(ring)
 	return _newsprint(row)
 
 
 func _save_and_quit() -> void:
+	if planner:
+		get_parent().get_parent().set("_leaving", true) # the premises: nothing more of theirs
 	Game.save()
 	Game.in_run = false
 	get_tree().change_scene_to_file("res://title.tscn")
@@ -800,6 +808,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif _pick and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down") or event.is_action_pressed("pause")):
 		get_viewport().set_input_as_handled() # the list's open: nothing else
+	elif planner and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause")): # put the planner away
+		get_viewport().set_input_as_handled()
+		closed.emit()
 	elif day_open and event.is_action_pressed("hop"): # the day, up to its month
 		get_viewport().set_input_as_handled()
 		_to_month()
@@ -818,19 +829,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			_page += step
 			_build()
 			UI.focus(find_child("Ring", true, false) if find_child("Ring", true, false) else find_child("NextPage" if step > 0 else "PrevPage", true, false))
-		else:
-			_show(VIEWS[posmod(VIEWS.find(_view) + step, VIEWS.size())])
-			if _view == "paper" and step < 0: # back into the paper: its last page
-				_page = _paper_pages() - 1
-				_build()
-				UI.focus(find_child("Tab_paper", true, false))
 		get_viewport().set_input_as_handled()
 
 
 ## Playtest cheats, debug builds only: [1] adds $500, [2] adds 20 reputation and [4]
 ## takes 20 off (both reprint the paper), [3] skips to payday. No function keys: the editor owns them.
 func _unhandled_key_input(event: InputEvent) -> void:
-	if not (OS.is_debug_build() and event is InputEventKey and event.pressed):
+	if planner or not (OS.is_debug_build() and event is InputEventKey and event.pressed):
 		return
 	if event.keycode == KEY_1:
 		Game.money += 500
@@ -869,8 +874,10 @@ func _sell_button(key: String, then: Callable) -> Button:
 
 ## Step away from the desk: into the office, stood by it.
 func _away() -> void:
-	Game.place = "office"
-	Game.spot = "desk"
+	if planner:
+		closed.emit()
+		return
+	Game.place = "home"
 	get_tree().change_scene_to_file("res://hub.tscn")
 
 
@@ -914,7 +921,7 @@ func _payday() -> void:
 		_centred(col, "The shark's man is leaning on your van. The vig: $%d on the $%d you owe." % [Game.vig(), Game.principal], 24)
 	else:
 		_centred(col, "No shark's man this week. You're free of him.", 24, UI.GOOD)
-	_centred(col, "Rent and food: $%d.%s You have $%d." % [Game.LIVING, " Wages: $%d." % Game.wages() if Game.helpers else "", Game.money], 26, UI.GOOD if Game.money >= due else UI.BAD)
+	_centred(col, "Rent and food: $%d.%s You have $%d." % [Game.living(), " Wages: $%d." % Game.wages() if Game.helpers else "", Game.money], 26, UI.GOOD if Game.money >= due else UI.BAD)
 	var go: Button
 	if Game.money >= due:
 		# Pick what comes off the debt; the sum says what the payment does. The vig is
@@ -934,7 +941,7 @@ func _payday() -> void:
 		var tell := func(off: int) -> void:
 			extra[0] = off
 			pay.text = "Hand over $%d" % (due + off)
-			var keep := "$%d rent and food%s" % [Game.LIVING, " + $%d wages" % Game.wages() if Game.helpers else ""]
+			var keep := "$%d rent and food%s" % [Game.living(), " + $%d wages" % Game.wages() if Game.helpers else ""]
 			sums.text = ("$%d interest + %s + $%d off the debt. Owed after: $%d." % [Game.vig(), keep, off, Game.principal - off]) 				if Game.principal > 0 else keep + "."
 		if spare > 0:
 			holder.add_child(UI.amount(0, spare, maxi(5, roundi(spare / 40.0 / 5.0) * 5), 0, tell))
@@ -959,7 +966,7 @@ func _collect(extra: int) -> void:
 		_run_over()
 		return
 	var col := _screen()
-	_centred(col, "He counts it twice." if r.paid > Game.LIVING else "Paid up.", 40, UI.GOLD)
+	_centred(col, "He counts it twice." if r.paid > Game.living() else "Paid up.", 40, UI.GOLD)
 	if r.taken:
 		var names: Array = r.taken.map(func(k: String) -> String:
 			return Game.kit_name(k))
@@ -971,7 +978,15 @@ func _collect(extra: int) -> void:
 	if Game.principal > 0:
 		_centred(col, "\"See you next Friday. $%d.\"" % Game.vig(), 24)
 	_centred(col, "You have $%d left." % Game.money, 22, UI.DIM)
-	UI.focus(_centred_button(col, "Read the paper", _ready))
+	if Game.shark_offer:
+		var nx: Dictionary = Game.PREMISES[Game.premises + 1]
+		_centred(col, "His man has a word anyway: \"You've outgrown that place. Vince'll front the $%d for %s. His usual terms. Ring him.\"" % [
+			nx.deposit, nx.name.to_lower()], 22, UI.GOLD)
+		var take := _centred_button(col, "Take it now: move to %s" % nx.name.to_lower(), func() -> void:
+			Game.take_shark_offer()
+			_ready())
+		take.name = "TakeOffer"
+	UI.focus(_centred_button(col, "Read the paper" if not Game.shark_offer else "Not now (the offer stands)", _ready))
 
 
 ## September's done: the winter in one ledger (Game.settle_winter), then April.
@@ -1098,7 +1113,7 @@ func _day_end() -> void:
 		parts.append("bought, sold and the rest " + _signed(other))
 	_centred(col, "Today %s (%s). You have $%d." % [_signed(today), ", ".join(parts), Game.money], 22)
 	var due := Game.due()
-	var bill := "rent and food $%d" % Game.LIVING
+	var bill := "rent and food $%d" % Game.living()
 	if not Game.helpers.is_empty():
 		bill += ", wages $%d" % Game.wages()
 	if Game.principal > 0:
