@@ -829,6 +829,7 @@ func spot_key(it: Dictionary) -> String:
 ## without shifting anything (a van brings its push mower). Returns {placed: [{item, at,
 ## size, turned}], over: [items with no room]}.
 func yard_layout(extra := "") -> Dictionary:
+	_prune_spots()
 	var used := {}
 	_fill(used, bay().position, bay().size)
 	var placed: Array[Dictionary] = []
@@ -905,10 +906,11 @@ func yard_room(kind: String) -> bool:
 func room_for(kind: String) -> String:
 	if yard_room(kind):
 		return ""
-	var free := floor_size().x * floor_size().y - BAY.x * BAY.y
-	for it: Dictionary in yard_kit():
-		free -= _area(it.kind)
-	return "No space as things stand: shift things about" if free >= _area(kind) + (_area("push") if kind == "van" else 0) else "No room"
+	var had := spots
+	spots = {}
+	var shifted: bool = yard_layout(kind).over.is_empty()
+	spots = had
+	return "No space as things stand: shift things about" if shifted else "No room"
 
 
 ## Set a thing down at `at` (turned or not), if it's clear of everything else and the bay
@@ -973,7 +975,7 @@ func staff_next() -> String:
 	var kind: String = PREMISES[premises].staff
 	if kind == "" or staff_room == kind:
 		return ""
-	return "corner" if staff_room == "" else kind
+	return kind
 
 
 ## The rent on top of LIVING, a week.
@@ -1049,10 +1051,12 @@ func cant_buy(item: String) -> String:
 	if yard_kind(item) != "":
 		var kind := yard_kind(item)
 		var was := staff_room
+		var had := spots.duplicate()
 		if item == "staff":
 			staff_room = "" # a corner made a breakroom: its room's the breakroom's
 		var why := room_for(kind)
 		staff_room = was
+		spots = had
 		if why != "":
 			return why
 	if money < price_of(item):
@@ -1824,9 +1828,28 @@ func free_for_you(kind: String) -> bool:
 
 
 ## Mark one more of a kind yours (`yes`), or one fewer: the crew never take one marked.
-func mark_mine(kind: String, yes: bool) -> void:
-	mine[kind] = clampi(mine.get(kind, 0) + (1 if yes else -1), 0, total(kind))
+func mark_mine(kind: String, yes: bool, n := -1) -> void:
+	var m: int = mine.get(kind, 0)
+	if n >= 0: # this one: its number swapped with the one that turns (the first `mine` are the marked)
+		_swap_spots(kind, n, m if yes else m - 1)
+	mine[kind] = clampi(m + (1 if yes else -1), 0, total(kind))
 	save()
+
+
+## Two things of a kind trade numbers, so each keeps where it stands.
+func _swap_spots(kind: String, a: int, b: int) -> void:
+	if a == b or b < 0:
+		return
+	var ka := "%s:%d" % [kind, a]
+	var kb := "%s:%d" % [kind, b]
+	var sa: Variant = spots.get(ka)
+	var sb: Variant = spots.get(kb)
+	spots.erase(ka)
+	spots.erase(kb)
+	if sb != null:
+		spots[ka] = sb
+	if sa != null:
+		spots[kb] = sa
 
 
 ## Whether a booking can go to a helper: a later day's, or today's if it could still be
@@ -2200,9 +2223,9 @@ func load_business() -> void:
 		for i in PREMISES.size():
 			premises = i
 			var kind: String = PREMISES[i].staff
-			staff_room = "" if helpers.is_empty() or kind == "" else ("breakroom" if helpers.size() > 2 and kind == "breakroom" else "corner")
+			staff_room = "" if helpers.is_empty() else kind
 			spots = {}
-			if yard_layout().over.is_empty() and (helpers.is_empty() or staff_room != ""):
+			if yard_layout().over.is_empty() and helpers.size() <= seats():
 				break
 		shark_offer = false
 	_upgrade_save()

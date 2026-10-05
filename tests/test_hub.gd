@@ -145,11 +145,13 @@ func _process(_delta: float) -> bool:
 					if _cell == Vector2i.ZERO and Vector2i(x, y) != g.spots["petrol:0"].at and g.put_down(petrol, Vector2i(x, y), false, false):
 						_cell = Vector2i(x, y)
 			s.walker.rotation = 0.0 # stood so it'd go there: the footprint's a step ahead of you
-			s.walker.position = s._floor_at + (Vector2(_cell) + Vector2(g.foot("petrol")) / 2.0) * s.CELL - Vector2(18, 0)
+			s.walker.position = s._floor_at + (Vector2(_cell) + Vector2(g.foot("petrol")) / 2.0) * s.CELL - Vector2(12.0 + g.foot("petrol").x * s.CELL.x / 2.0, 0)
 			assert(s._carry_cell() == _cell, "where you stand says where it goes")
 			s._end_carry(false)
 		10:
 			assert(g.spots["petrol:0"].at == _cell, "set down where you put it")
+			var put := Rect2(s._floor_at + Vector2(_cell) * s.CELL, Vector2(g.foot("petrol")) * s.CELL)
+			assert(not put.has_point(s.walker.position), "and not on top of you (the verifier's run 12)")
 			# A helper out on a job: gone from the staff room, their van with them.
 			var h: Dictionary = g.helpers[0]
 			var sent: Dictionary = g.make_job(32)

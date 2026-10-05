@@ -19,6 +19,7 @@ func _initialize() -> void:
 	g.money = 50000
 	assert(g.premises == 0 and g.floor_size() == Vector2i(11, 5) and g.living() == g.LIVING, "a lock-up, rent and food as ever")
 	assert(g.cant_hire() != "" and g.cant_buy("staff") == "No room for one here", "no staff in a lock-up")
+	assert(g.cant_buy("rideon") == "No room", "a ride-on won't go in a lock-up however you shift things (the verifier's run 12)")
 	assert(g.buy("petrol"), "a petrol mower fits")
 	assert(g.cant_buy("rideon") == "No room" and not g.buy("rideon"), "a ride-on doesn't: no room, no sale")
 	_placed_apart()
@@ -57,8 +58,23 @@ func _initialize() -> void:
 	assert(g.total("petrol") == count - 1 and g.spots["petrol:%d" % (count - 2)] == last and not g.spots.has("petrol:%d" % (count - 1)),
 		"one sold: the others keep their places")
 	_placed_apart()
+	# A mark goes on the mower you click, which stays where it stands.
+	while g.total("petrol") < 3:
+		g.buy("petrol")
+	g.yard_layout()
+	var third: Dictionary = g.spots["petrol:2"].duplicate()
+	g.mark_mine("petrol", true, 2)
+	assert(g.mine.petrol == 1 and g.spots["petrol:0"] == third, "the one clicked is marked, where it stood (the verifier's run 12)")
+	g.mark_mine("petrol", false, 0)
+	assert(g.mine.petrol == 0, "and unmarked")
 	for i in g.total("petrol"):
 		g.sell("petrol")
+	# A van sold from its card: that van goes, the other stays where it stood.
+	g.buy("van")
+	g.yard_layout()
+	var other: Dictionary = g.spots["van:1"].duplicate()
+	g.sell_at("van", 0)
+	assert(g.spots["van:0"] == other and not g.spots.has("van:1"), "the other van keeps its place (the verifier's run 12)")
 
 	# Hiring needs a staff room, its seats the cap.
 	assert(g.cant_hire().begins_with("nowhere") and g.hire({"id": 1, "name": "A B", "pace": 0.7, "care": 0.5, "wage": 80}) == "" and g.helpers.is_empty(),
@@ -70,6 +86,9 @@ func _initialize() -> void:
 	assert(g.helpers.size() == 2 and g.cant_hire().begins_with("the staff room's full"), "two taken on, then full")
 	assert(g.staff_next() == "" and g.cant_buy("staff") == "You've got one", "the unit takes a corner, no more")
 	assert(g.move_to(2) and g.staff_room == "corner" and g.staff_next() == "breakroom", "it comes with you; the warehouse takes a breakroom")
+	g.staff_room = ""
+	assert(g.staff_next() == "breakroom", "a warehouse with none: a breakroom straight off")
+	g.staff_room = "corner"
 	assert(g.buy("staff") and g.staff_room == "breakroom" and g.seats() == 6 and g.cant_hire() == "", "a breakroom: six seats")
 	_placed_apart()
 
@@ -111,6 +130,13 @@ func _initialize() -> void:
 	f.close()
 	g.load_business()
 	assert(g.premises == 1 and g.staff_room == "corner" and g.yard_layout().over.is_empty(), "an old save with a van and a helper: the unit, a staff corner")
+	for i in 2:
+		state.helpers.append({"id": 6 + i, "name": "G H", "pace": 0.7, "care": 0.5, "wage": 80, "jobs": 0, "happy": 70.0})
+	f = FileAccess.open(g.business_path(), FileAccess.WRITE)
+	f.store_var(state)
+	f.close()
+	g.load_business()
+	assert(g.premises == 2 and g.staff_room == "breakroom" and g.seats() >= 3, "three helpers: the warehouse, a breakroom (the verifier's run 12)")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(g.business_path()))
 	print("PASS premises")
 	quit()

@@ -234,7 +234,7 @@ func _premises() -> void:
 	_thing(truck_at, Vector2(120, 30), "get in your truck", _truck_card, preload("res://art/truck.png"))
 	_standing()
 	_mark_covering()
-	var at: Vector2 = {"truck": truck_at + Vector2(-10, 26), "phone": phone_at + Vector2(0, 22), "door": Vector2(ow * 0.62, 24)}.get(Game.spot, Vector2(ow * 0.3, 60))
+	var at: Vector2 = {"truck": truck_at + Vector2(-10, 26), "phone": phone_at + Vector2(0, 22), "paper": phone_at + Vector2(0, 22), "door": Vector2(ow * 0.62, 24)}.get(Game.spot, Vector2(ow * 0.3, 60))
 	_spawn(at)
 	_ghost = Node2D.new() # what you're carrying, set down where it'd go
 	_ghost.z_index = 30
@@ -320,7 +320,7 @@ func _yard_card(it: Dictionary) -> void:
 				title = Game.VAN.name
 				lines.append("A helper takes a free one when they set off for a job.")
 				lines.append("You've %d%s." % [Game.vans, ", %d out now" % Game.out_now("van") if Game.out_now("van") > 0 else ""])
-				acts.append(["Sell it, $%d" % Game.resale("van"), func() -> void: Game.sell("van")])
+				acts.append(["Sell it, $%d" % Game.resale("van"), func() -> void: Game.sell_at("van", it.n)])
 			"robot":
 				title = Game.ROBOT.name
 				lines.append(Game.ROBOT.blurb + " You pack it in the truck's bed, or the trailer.")
@@ -332,7 +332,7 @@ func _yard_card(it: Dictionary) -> void:
 				title = ("Your " if it.mine else "A ") + m.name.to_lower()
 				lines.append(m.blurb + (" It rides in the cab." if it.kind == "push" else " Packed in the truck before each job."))
 				lines.append("Marked yours: the crew never take it." if it.mine else "The crew take it if it's the best free when they set off.")
-				acts.append(["Let the crew use it" if it.mine else "Mark it yours", func() -> void: Game.mark_mine(it.kind, not it.mine)])
+				acts.append(["Let the crew use it" if it.mine else "Mark it yours", func() -> void: Game.mark_mine(it.kind, not it.mine, it.n)])
 				for u: String in ["tank", "blades"] + (["gear3", "gear4"] if it.kind == "rideon" else []):
 					_upgrade(acts, u)
 				if it.kind != "push":
@@ -413,8 +413,8 @@ func _standing() -> void:
 		if Game.out_till(h.id) >= 0:
 			continue
 		var sheet := preload("res://art/walker.png")
-		@warning_ignore("integer_division")
-		var at := (room.position + Vector2(16.0 + (i % 4) * 36.0, 24.0 + (i / 4) * 22.0)) if room.size != Vector2.ZERO \
+		var per := maxi(1, floori((room.size.x - 16.0) / 36.0)) # to a row, as many as the room's wide enough for
+		var at := (room.position + Vector2(16.0 + (i % per) * 36.0, 24.0 + floorf(float(i) / per) * 22.0)) if room.size != Vector2.ZERO \
 			else Vector2(20.0 + i * 36.0, 70.0)
 		i += 1
 		var n := _thing(at, Vector2(12, 6), "talk to %s" % h.name.split(" ")[0], _standing_card.bind(h), null,
@@ -460,7 +460,9 @@ func _start_carry(it: Dictionary) -> void:
 ## Where what you're carrying would go: the cells under you, a step ahead.
 func _carry_cell() -> Vector2i:
 	var size := Vector2(Game.foot(_carry.item.kind, _carry.turned))
-	var ahead := walker.position + Vector2.RIGHT.rotated(walker.rotation) * 18.0
+	var dir := Vector2.RIGHT.rotated(walker.rotation)
+	var half := size * CELL / 2.0
+	var ahead := walker.position + dir * (12.0 + absf(dir.x) * half.x + absf(dir.y) * half.y) # its near edge a step ahead
 	return Vector2i(((ahead - _floor_at) / CELL - size / 2.0).round())
 
 
@@ -478,8 +480,9 @@ func _draw_ghost() -> void:
 func _end_carry(back: bool) -> void:
 	if not back and not Game.put_down(_carry.item, _carry_cell(), _carry.turned):
 		return
+	var r := Rect2(_floor_at + Vector2(_carry_cell()) * CELL, Vector2(Game.foot(_carry.item.kind, _carry.turned)) * CELL).grow(10.0)
 	_carry = {}
-	_stood = walker.position
+	_stood = walker.position if back or not r.has_point(walker.position) else Vector2(walker.position.x, r.end.y) # never inside what you set down
 	_leaving = true
 	get_tree().reload_current_scene()
 
@@ -662,7 +665,7 @@ func _physics_process(_delta: float) -> void:
 	if walker == null or _card:
 		return
 	if not _carry.is_empty():
-		_hint.text = "%s set it down   %s turn it   %s put it back" % [Game.key("interact"), Game.key("throw"), Game.key("hop")]
+		_hint.text = "%s set it down   %s%s put it back" % [Game.key("interact"), "" if _carry.item.kind == "van" else Game.key("throw") + " turn it   ", Game.key("hop")]
 		_ghost.queue_redraw()
 		return
 	var t := _target()
