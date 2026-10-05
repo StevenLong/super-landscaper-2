@@ -22,7 +22,8 @@ func _labels() -> Array:
 
 ## Say something in the open talk.
 func _reply(text: String) -> void:
-	for b: Node in current_scene.find_children("Reply", "Button", true, false):
+	var talks := current_scene.find_children("Talk", "", true, false).filter(func(t: Node) -> bool: return not t.is_queued_for_deletion())
+	for b: Node in (talks[-1].find_children("*", "Button", true, false) if talks else []):
 		if (b as Button).text == text and not b.is_queued_for_deletion():
 			(b as Button).pressed.emit()
 			return

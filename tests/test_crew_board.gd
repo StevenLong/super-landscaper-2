@@ -26,8 +26,9 @@ func _texts() -> Array:
 
 ## Press a reply in the open talk.
 func _reply(s: Node, text: String) -> void:
-	for b: Node in s.find_children("Reply", "Button", true, false):
-		if (b as Button).text == text and b.is_inside_tree() and not b.is_queued_for_deletion():
+	var talks := s.find_children("Talk", "", true, false).filter(func(t: Node) -> bool: return not t.is_queued_for_deletion())
+	for b: Node in (talks[-1].find_children("*", "Button", true, false) if talks else []):
+		if (b as Button).text == text and not b.is_queued_for_deletion():
 			(b as Button).pressed.emit()
 			return
 	assert(false, "no %s to say" % text)

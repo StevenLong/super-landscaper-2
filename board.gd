@@ -34,6 +34,11 @@ var _pick: Control = null ## who-goes list open beside a booking
 var planner := false ## the planner over the premises, not the office's fitting
 var _client := -1 ## the client book's page: a regular's id, or -1 for its index
 var _open_card := -1 ## the day's end card opened to its report
+var _talk_back := Callable() ## what B does in the open talk (hang up, by default)
+var _ringing := false ## a call's open: its time's owed when you put the phone down
+var _charged := false ## something said in it took the call's time already (a booking, a hire)
+var _rang_from := "" ## the paper's page you rang from
+var _rang_at := 0 ## and which of its circled ads
 var edge_turns := true ## the paper's left and right past a page's edge turn it (test_pad's walk turns it off)
 var _card_at := -1 ## the day's end card the cursor was last on (opened or closed there)
 
@@ -489,6 +494,8 @@ func _picked(b: Dictionary, id: int) -> void:
 
 func _close_pick() -> void:
 	if _pick:
+		if _pick.get_parent(): # out at once: the next one takes its name
+			_pick.get_parent().remove_child(_pick)
 		_pick.queue_free()
 		_pick = null
 		for c: Control in find_children("*", "BaseButton", true, false):
@@ -611,14 +618,16 @@ func _paper_view(root: Control) -> Control:
 	var prev := UI.button("< %s" % Game.key("gear_down"), _turn_page.bind(-1), 18)
 	prev.name = "PrevPage"
 	prev.disabled = _page == 0
+	prev.focus_mode = Control.FOCUS_NONE if prev.disabled else Control.FOCUS_ALL
 	nav.add_child(prev)
-	var where := _ink("Page %d of %d" % [_page + 1, pages.size()], Color("5a4a38"), 16)
+	var where := _ink("Page %d of %d.   A call takes %d min." % [_page + 1, pages.size(), Game.RING_TIME], Color("5a4a38"), 16)
 	where.clip_text = false
 	where.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	nav.add_child(where)
 	var next := UI.button("%s >" % Game.key("gear_up"), _turn_page.bind(1), 18)
 	next.name = "NextPage"
 	next.disabled = _page >= pages.size() - 1
+	next.focus_mode = Control.FOCUS_NONE if next.disabled else Control.FOCUS_ALL
 	nav.add_child(next)
 	if _call != "": # what the last one you rang said
 		var said := _ink("   Last call: " + _call, Color("7a1c14"), 16)
@@ -690,7 +699,7 @@ func _front_page(cols: Array[VBoxContainer], seed_from: int) -> void:
 	var side := cols[1]
 	var shark := PaperAd.new()
 	shark.name = "Vince"
-	_ad_look(shark, "CASH LOANS", "No questions asked. Ask for Vince.", 2)
+	_ad_look(shark, "CASH LOANS", "No questions asked. Ask for Vince." + (" He has an offer for you." if Game.shark_offer else ""), 2)
 	shark.pressed.connect(_ring_vince)
 	side.add_child(shark)
 	side.add_child(_filler(seed_from + 7, 4))
@@ -737,6 +746,7 @@ func _wanted_page(cols: Array[VBoxContainer], seed_from: int) -> void:
 func _ad(o: Dictionary) -> Control:
 	var a := PaperAd.new()
 	a.name = "Ad"
+	a.add_to_group("paper_ad")
 	var text: String = Game.ad_text(o)
 	var busy := Game.jobs_on(o.day)
 	if busy > 0:
@@ -748,6 +758,8 @@ func _ad(o: Dictionary) -> Control:
 		text += " %s." % why
 	_ad_look(a, "", _plain(text), 0 if o.get("refused", false) or why != "" else 2) # the ad's own words lead
 	a.disabled = a.circle == 0
+	if a.disabled:
+		a.focus_mode = Control.FOCUS_NONE # nothing to do there: the cursor passes it by
 	a.pressed.connect(_ring_ad.bind(o))
 	return a
 
@@ -835,12 +847,12 @@ func _rule() -> Control:
 ## Ringing a classified: they pick up, say what it is; you book it or don't. Booking asks
 ## them (Game.ring: the call's time, and yes or no by your name).
 func _ring_ad(o: Dictionary) -> void:
+	_dial()
 	_talk(o.customer, o.get("look", {}), [_hello(o), "About the lawn: %s, %s to %s. $%d." % [Game.day_word(o.day), Game.time_text(o.from),
 		Game.time_text(o.by), o.pay]], [["Book it", func() -> void:
 			_call = Game.ring(o)
-			_talk(o.customer, o.get("look", {}), [_call], [["Bye", _hang_up]])], ["Never mind", func() -> void:
-			Game.minute += Game.RING_TIME
-			_hang_up()]])
+			_charged = true
+			_talk(o.customer, o.get("look", {}), [_call], [["Bye", _hang_up]])], ["Never mind", _hang_up]])
 
 
 ## How a customer picks up, by who they are.
@@ -856,8 +868,9 @@ func _hello(o: Dictionary) -> String:
 
 
 ## Ringing a situation wanted: who they are; you take them on or don't. With nowhere for staff,
-## they say so.
+## they say so; with no van, they'd wait on the wage, and say that too.
 func _ring_wanted(w: Dictionary) -> void:
+	_dial()
 	var r := RandomNumberGenerator.new()
 	r.seed = int(w.id)
 	var look := {"hair_style": r.randi() % 5, "skin": r.randi() % 5, "hair": r.randi() % 6, "shirt": r.randi() % 6}
@@ -868,21 +881,26 @@ func _ring_wanted(w: Dictionary) -> void:
 			"Sounds like you're full up. Ring back when there's a seat."))
 		_talk(w.name, look, lines, [["Not now", _hang_up]])
 		return
+	if Game.vans == 0:
+		lines.append("\"You've a van for me? No? I'll wait about on the wage till you have.\"")
 	_talk(w.name, look, lines, [["You're hired", func() -> void:
 		_call = Game.hire(w)
+		_charged = true
 		_talk(w.name, look, [_call], [["Bye", _hang_up]])], ["Not now", _hang_up]])
 
 
 ## Ringing Vince's ad: his offer if it stands, else a word.
 func _ring_vince() -> void:
+	_dial()
 	var lines: Array[String] = ["\"Vince.\""]
 	var replies: Array = []
 	if Game.shark_offer and Game.premises + 1 < Game.PREMISES.size():
 		var nx: Dictionary = Game.PREMISES[Game.premises + 1]
 		lines.append("\"You've outgrown that place. I'll front the $%d for %s. Usual terms: my vig, every Friday.\"" % [nx.deposit, nx.name.to_lower()])
 		replies = [["Take it", func() -> void:
-			Game.take_shark_offer()
-			_talk("Vince", SHARK_LOOK, ["\"Pleasure doing business. See you Friday.\""], [["Bye", _hang_up]])], ["Not now", _hang_up]]
+			var taken := Game.take_shark_offer()
+			_talk("Vince", SHARK_LOOK, ["\"Pleasure doing business. See you Friday.\"" if taken else "\"Your stuff won't fit. Sort it out.\""], [["Bye", _hang_up]])],
+			["Not now", _hang_up]]
 	elif Game.principal > 0:
 		lines.append("\"You still owe me $%d. Friday. Don't make me send someone.\"" % Game.principal)
 		replies = [["Bye", _hang_up]]
@@ -892,15 +910,45 @@ func _ring_vince() -> void:
 	_talk("Vince", SHARK_LOOK, lines, replies)
 
 
+## A call starts: where you rang from (the page, and which of its circled ads), to come
+## back to; its time's owed till something you said took it (a booking, a hire).
+func _dial() -> void:
+	var pages := _paper_page_list()
+	_rang_from = pages[clampi(_page, 0, pages.size() - 1)]
+	var ads := _circled()
+	_rang_at = maxi(0, ads.find(get_viewport().gui_get_focus_owner()))
+	_charged = false
+	_ringing = true
+
+
+## The page's ads you can act on, in order.
+func _circled() -> Array:
+	return find_children("*", "Button", true, false).filter(func(b: Node) -> bool:
+		return b is PaperAd and (b as PaperAd).circle > 0 and not (b as Button).disabled and not b.is_queued_for_deletion())
+
+
+## Put the phone down: the call's time if nothing you said took it; back on the page you
+## rang from (not past the classifieds into situations wanted, if a booking took the last
+## ad off it), the cursor on the ad you rang or the nearest.
 func _hang_up() -> void:
 	_close_pick()
+	if _ringing and not _charged:
+		Game.minute += Game.RING_TIME
+	_ringing = false
+	var pages := _paper_page_list()
+	if _rang_from.begins_with("ads") and _page < pages.size() and pages[_page] == "wanted" and _page > 1:
+		_page -= 1
 	_build()
+	var ads := _circled()
+	if not ads.is_empty():
+		UI.focus(ads[mini(_rang_at, ads.size() - 1)])
 
 
 ## A talk in the portrait box (the job's: their face, their name, what they say, a word at a
 ## time; your replies the real choices). Over the paper, the cursor kept in it; B hangs up.
-func _talk(who: String, look: Dictionary, lines: Array, replies: Array) -> void:
+func _talk(who: String, look: Dictionary, lines: Array, replies: Array, back := Callable()) -> void:
 	_close_pick()
+	_talk_back = back if back.is_valid() else _hang_up
 	var row := UI.hbox(18)
 	if not look.is_empty():
 		var f := Face.new()
@@ -1083,7 +1131,7 @@ func _input(event: InputEvent) -> void:
 	var to := UI.row_step(c, dir)
 	if to:
 		to.grab_focus()
-	elif _view == "paper" and _pick == null and edge_turns: # past the page's edge: turn it
+	elif _view == "paper" and _pick == null and edge_turns and (c is PaperAd or String(c.name) in ["PrevPage", "NextPage"]): # past the page's edge: turn it
 		_turn_page(dir)
 	get_viewport().set_input_as_handled()
 
@@ -1093,7 +1141,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var day_open := leave != null and _view == "calendar" and not _cal_month
 	if _pick and _pick.name == "Talk" and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel")): # hang up
 		get_viewport().set_input_as_handled()
-		_hang_up()
+		_talk_back.call()
 	elif _pick and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel")): # shut the who-goes list
 		var row := _pick_row()
 		_close_pick()
@@ -1277,16 +1325,18 @@ func _collect(extra: int) -> void:
 		_centred(col, "\"See you next Friday. $%d.\"" % Game.vig(), 24)
 	_centred(col, "You have $%d left." % Game.money, 22, UI.DIM)
 	var read := _centred_button(col, "Read the paper", _ready)
-	UI.focus(read)
-	if Game.shark_offer: # his man has a word anyway
-		var nx: Dictionary = Game.PREMISES[Game.premises + 1]
-		_talk("The shark's man", SHARK_LOOK, ["\"You've outgrown that place.\"", "\"Vince'll front the $%d for %s. His usual terms.\"" % [nx.deposit, nx.name.to_lower()]],
-			[["Take it now", func() -> void:
-				Game.take_shark_offer()
-				_close_pick()
-				_ready()], ["Not now", func() -> void:
-				_close_pick()
-				UI.focus(read)]])
+	if not Game.shark_offer:
+		UI.focus(read)
+		return
+	var nx: Dictionary = Game.PREMISES[Game.premises + 1] # his man has a word anyway
+	var not_now := func() -> void:
+		_close_pick()
+		UI.focus(read)
+	_talk("The shark's man", SHARK_LOOK, ["\"You've outgrown that place.\"", "\"Vince'll front the $%d for %s. His usual terms. The offer stands: ring him.\"" % [
+		nx.deposit, nx.name.to_lower()]], [["Take it now", func() -> void:
+			Game.take_shark_offer()
+			_close_pick()
+			_ready()], ["Not now", not_now]], not_now)
 
 
 ## September's done: the winter in one ledger (Game.settle_winter), then April.
@@ -1640,7 +1690,7 @@ class PaperAd extends Button:
 		var r := RandomNumberGenerator.new()
 		r.seed = hash(text)
 		var c := size / 2.0
-		var rad := size / 2.0 + Vector2(6, 6)
+		var rad := size / 2.0 * Vector2(1.06, 1.3) + Vector2(4, 4) # round the words, the box's corners poking out
 		var start := r.randf_range(0.0, TAU)
 		var pts := PackedVector2Array()
 		for i in 41: # round once and a bit past, as a pen does

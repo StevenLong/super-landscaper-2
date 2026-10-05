@@ -1031,6 +1031,8 @@ func take_shark_offer() -> bool:
 	if not shark_offer or premises + 1 >= PREMISES.size():
 		return false
 	var deposit: int = PREMISES[premises + 1].deposit
+	if cant_move(premises + 1) not in ["", "Not enough money"]: # your things won't fit: no loan for nothing
+		return false
 	principal += deposit
 	money += deposit
 	day_ledger.append(["Vince's loan", deposit])

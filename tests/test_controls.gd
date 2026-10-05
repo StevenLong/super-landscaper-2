@@ -134,7 +134,7 @@ func _physics_process(_delta: float) -> bool:
 			assert(current_scene._view == "paper" and current_scene._page == 0, "the paper, its front page")
 			current_scene._unhandled_input(shift)
 			assert(current_scene._view == "paper" and current_scene._page == 1, "Shift turns its page")
-			var ads := current_scene.find_children("Ad", "Button", true, false)
+			var ads := root.get_tree().get_nodes_in_group("paper_ad").filter(func(n: Node) -> bool: return not n.is_queued_for_deletion())
 			assert(ads.size() > 0 and ads.size() <= current_scene.PER_PAGE, "a page of the paper at a time: %d ads" % ads.size())
 			current_scene.find_child("NextPage", true, false).pressed.emit()
 			assert(current_scene._page == 2 and not current_scene.find_child("PrevPage", true, false).disabled, "and the next page")
