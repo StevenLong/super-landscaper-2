@@ -197,7 +197,7 @@ committed, the verifier after each; the dev plays a LOAD after 249 and after 252
    office's fittings inside the building; the planner on Start (day view, End the day, Save
    and quit) and the end-the-day check; the shark's standing offer. Tune the rents and
    deposits with sim_season. LOAD for the dev after this.
-250. [FEATURE, moderate] Step 3, the day's end as cards (from 242) and the client book (index,
+250. [BUILT 2026-10-05, unplayed] Step 3, the day's end as cards (from 242) and the client book (index,
    then a page per client, reputation on its first page).
 251. [FEATURE, moderate] Step 4, the paper as a newspaper (newsprint, red-pen circles, three
    pages, the shark's standing ad) and calls as short dialogues in hud.gd's portrait box.

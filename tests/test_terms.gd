@@ -63,7 +63,9 @@ func _process(_delta: float) -> bool:
 			root.add_child(desk)
 			current_scene = desk
 			current_scene._show("book")
-			assert(current_scene.find_children("*", "Button", true, false).any(func(b: Button) -> bool: return b.text == "Drop (owe $360)"), "Drop says what you'd owe back")
+			(current_scene.find_child("Client", true, false) as Button).pressed.emit() # their page in the client book
+			assert(current_scene.find_children("*", "Button", true, false).any(func(b: Button) -> bool: return b.text == "Drop them (owe $360)"), "Drop says what you'd owe back")
+			current_scene._client = -1
 			g.calendar = {g.day: [g._visit(_id)]}
 			current_scene._show("calendar")
 			assert(_labels().any(func(t: String) -> bool: return t.to_lower().contains("paid up front")), "today's visit: paid up front")

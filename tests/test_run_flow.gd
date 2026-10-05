@@ -122,7 +122,7 @@ func _process(_delta: float) -> bool:
 			root.add_child(desk)
 			current_scene = desk
 			current_scene._show("book")
-			assert("Your regulars" in _labels(), "your regulars listed, in the client book")
+			assert("Your regulars (1)" in _labels(), "your regulars listed, in the client book")
 			assert(game.bookings(_visit_day).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == game.current_job.seed), "their first visit a fortnight on")
 			assert(game.money > 0 and game.run_tally.get("windows", 0) == 1, "the job paid, the season adds it up")
 			game.money = 1000

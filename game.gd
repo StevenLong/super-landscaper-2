@@ -243,7 +243,9 @@ var my_trips: Array[Dictionary] = [] ## today's trips out by you: {from, to, kin
 var crew_cant: Array[Dictionary] = [] ## today's bookings a helper couldn't set off for: {helper, customer, why}
 var crew_report: Array[String] = [] ## the crew's day just gone, job by job
 var crew_day: Array[String] = [] ## the same, a line a helper, for the day's end
-var day_mine: Array[Dictionary] = [] ## your jobs today, for the day's end: {customer, net, outcome, mood}
+var day_mine: Array[Dictionary] = [] ## your jobs today, for the day's end: {customer, net, outcome, mood, at, paid, tip, fuel, rep}
+var crew_jobs: Array[Dictionary] = [] ## the crew's jobs, the day just gone, for its cards: {who, helper, customer, at, net, flag, lines: [[what, how]]}
+var day_ledger: Array = [] ## today's buying and selling, for the day's end: [what, money]
 var day_money := 0 ## money as the day began
 var premises := 0 ## which of PREMISES you're in
 var staff_room := "" ## the STAFF kind you've fitted, or ""
@@ -345,7 +347,7 @@ func front_page() -> Array:
 const SAVED := ["money", "total_earned", "reputation", "rep_trend", "owned", "equipped", "packed", "robots", "upgrades",
 	"jobs_done", "record", "run_tally", "run_tally_cost", "start_month", "year", "day", "minute", "principal",
 	"calendar", "paper", "regulars", "offer", "upfront", "booked", "payday_pending", "winter_pending", "in_job", "current_job",
-	"helpers", "wanted", "vans", "spares", "mine", "crew_trips", "my_trips", "crew_cant", "crew_report", "day_mine", "day_money", "day_end", "paper_tally", "premises", "staff_room", "spots", "shark_offer"]
+	"helpers", "wanted", "crew_jobs", "day_ledger", "vans", "spares", "mine", "crew_trips", "my_trips", "crew_cant", "crew_report", "day_mine", "day_money", "day_end", "paper_tally", "premises", "staff_room", "spots", "shark_offer"]
 
 var _rng := RandomNumberGenerator.new()
 
@@ -429,6 +431,8 @@ func new_run(seed_value := 0) -> void:
 	my_trips = []
 	crew_cant = []
 	crew_report = []
+	crew_jobs = []
+	day_ledger = []
 	day_mine = []
 	day_money = money
 	day_end = {}
@@ -733,7 +737,8 @@ func record_result(result: Dictionary) -> void:
 	money += int(result.net)
 	total_earned += maxi(0, int(result.paid))
 	day_mine.append({"customer": current_job.get("customer", "?"), "net": int(result.net), "outcome": result.get("outcome", "paid"),
-		"mood": end_mood(result)})
+		"mood": end_mood(result), "at": current_job.get("from", minute), "paid": int(result.get("paid", 0)) - int(result.get("tip", 0)),
+		"tip": int(result.get("tip", 0)), "fuel": int(result.get("fuel_cost", 0)), "rep": float(result.get("rep", 0.0))})
 	_rep(result)
 	jobs_done += 1
 	in_job = false
@@ -1004,6 +1009,7 @@ func move_to(i: int) -> bool:
 	if cant_move(i) != "":
 		return false
 	money -= PREMISES[i].deposit
+	day_ledger.append(["The deposit on %s" % PREMISES[i].name.to_lower(), -PREMISES[i].deposit])
 	premises = i
 	spots = {}
 	yard_layout()
@@ -1025,6 +1031,7 @@ func take_shark_offer() -> bool:
 	var deposit: int = PREMISES[premises + 1].deposit
 	principal += deposit
 	money += deposit
+	day_ledger.append(["Vince's loan", deposit])
 	return move_to(premises + 1)
 
 
@@ -1100,6 +1107,7 @@ func buy(item: String) -> bool:
 			return false
 		upgrades.append(item)
 	money -= price
+	day_ledger.append(["Bought " + kit_name(item).to_lower(), -price])
 	return true
 
 
@@ -1146,11 +1154,13 @@ func sell(item: String) -> void:
 		if vans > 0:
 			vans -= 1
 			money += resale(item)
+			day_ledger.append(["Sold a van", resale(item)])
 			if spares.get("push", 0) > 0 and total("push") - out_now("push") > 1:
 				spares.push -= 1
 				mine["push"] = mini(mine.get("push", 0), total("push"))
 		return
 	money += resale(item)
+	day_ledger.append(["Sold " + kit_name(item).to_lower(), resale(item)])
 	if spares.get(item, 0) > 0: # one of several: the rest stay, and a mark stays on as many as are left
 		spares[item] -= 1
 		mine[item] = mini(mine.get(item, 0), total(item))
@@ -1203,6 +1213,7 @@ func settle_payday(extra := 0) -> Dictionary:
 	wanted = make_wanted()
 	paper_tally = run_tally.duplicate()
 	day_money = money # Saturday starts from what payday left
+	day_ledger = [] # what the heavies took is payday's, not Saturday's
 	save()
 	var outcome := "free" if off > 0 and principal == 0 else ("repossessed" if taken else "paid")
 	return {"paid": owed, "off": off, "taken": taken, "outcome": outcome}
@@ -1411,7 +1422,8 @@ func end_day() -> void:
 	for b: Dictionary in jobs_today():
 		_no_show(b)
 	day_end = {"day": day, "mine": day_mine.duplicate(true), "crew": crew_day.duplicate(), "crew_net": crew_net,
-		"missed": earlier + missed.slice(gone), "was": day_money, "now": money}
+		"crew_jobs": crew_jobs.duplicate(true), "ledger": day_ledger.duplicate(true), "missed": earlier + missed.slice(gone), "was": day_money, "now": money}
+	day_ledger = []
 	day_mine = []
 	day_money = money
 	calendar.erase(day)
@@ -1992,7 +2004,7 @@ func crew_plan(d := day, until := -1) -> Dictionary:
 			if until >= 0: # not going: yours again
 				b.erase("helper")
 				b.erase("sent_at")
-				crew_cant.append({"helper": who, "customer": b.customer, "why": cant})
+				crew_cant.append({"helper": who, "customer": b.customer, "why": cant, "at": leave})
 			continue
 		var h := helper(who)
 		var trip := {"helper": who, "kit": kit, "from": leave, "jobs": []}
@@ -2048,6 +2060,7 @@ func _crew_day() -> void:
 	advance_crew(1 << 30)
 	crew_report = []
 	crew_day = []
+	crew_jobs = []
 	var mine_now := [current_job, booked, offer, upfront]
 	offer = {} # yours wait for you: only what the crew wins is answered here
 	upfront = {}
@@ -2063,6 +2076,8 @@ func _crew_day() -> void:
 		for c: Dictionary in crew_cant:
 			if c.helper == h.id:
 				crew_report.append("%s couldn't go to %s: %s." % [who, c.customer, c.why])
+				crew_jobs.append({"who": who, "helper": h.id, "customer": c.customer, "at": c.get("at", DAY_START), "net": 0,
+					"flag": "couldn't go", "lines": [["Couldn't go", c.why]]})
 				notes.append("couldn't go to %s: %s" % [c.customer, c.why])
 		for trip: Dictionary in crew_trips:
 			if trip.helper != h.id:
@@ -2076,6 +2091,8 @@ func _crew_day() -> void:
 				if j.get("late", false):
 					_no_show(b)
 					crew_report.append("%s couldn't get to %s in time." % [who, b.customer])
+					crew_jobs.append({"who": who, "helper": h.id, "customer": b.customer, "at": j.at, "net": 0, "flag": "missed",
+						"lines": [["Couldn't get there", "in time"]]})
 					notes.append("couldn't get to %s in time" % b.customer)
 					continue
 				var r := help_job(b, h, j.at - b.from, trip.kit, j.minutes)
@@ -2114,6 +2131,20 @@ func _crew_day() -> void:
 						notes.append("%s wants you back: a regular now" % b.customer)
 				upfront = {}
 				crew_report.append(line)
+				var lines: Array = [["Paid", "$%d" % r.paid], ["Fuel", "-$%d" % (r.paid - r.net - r.bill)]]
+				if r.has("mishap"):
+					lines.append([r.mishap.capitalize(), "-$%d" % r.bill])
+				lines.append_array([["Mood", "%s, %d" % [mood_word(r.mood), roundi(r.mood)]], ["Reputation", "%+d" % roundi(r.rep)]])
+				if r.over:
+					lines.append(["Ran past the window", "paid less"])
+				if wants_you(b) > 0.0:
+					lines.append(["They wanted you", "started sour"])
+				if line.ends_with("a regular now."):
+					lines.append(["They want you back", "a regular now"])
+				elif line.ends_with("let you go."):
+					lines.append(["They've let you go", "a regular lost"])
+				crew_jobs.append({"who": who, "helper": h.id, "customer": b.customer, "at": j.at, "net": r.net,
+					"flag": r.mishap if r.has("mishap") else ("ran over" if r.over else ""), "lines": lines})
 				h.jobs += 1
 				var points := points_of(h)
 				h.pace = snappedf(minf(1.4, h.pace + GROW), 0.001)
@@ -2132,6 +2163,11 @@ func _crew_day() -> void:
 	booked = mine_now[1]
 	offer = mine_now[2]
 	upfront = mine_now[3]
+
+
+## A mood in a word, for the day's end.
+func mood_word(m: float) -> String:
+	return "delighted" if m >= 85.0 else ("pleased" if m >= 70.0 else ("fine" if m >= 45.0 else "not happy"))
 
 
 ## Pace and care as their card shows them, whole numbers out of 10.

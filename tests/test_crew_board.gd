@@ -112,12 +112,17 @@ func _process(_delta: float) -> bool:
 			g.end_day()
 			s._ready()
 		7:
-			assert(_texts().any(func(t: String) -> bool: return t.begins_with(g.helpers[0].name.split(" ")[0] + ": 1 job")), "their day in the day's end: %s" % [_texts()])
-			assert(g.helpers[0].has("asks") and _texts().any(func(t: String) -> bool: return t.begins_with("Raise ")), "a point up: they ask, at the day's end")
+			var card := s.find_child("Card_0", true, false) as Button
+			assert(card != null and card.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return l.text == g.helpers[0].name.split(" ")[0]),
+				"their job a card in the day's end: %s" % [_texts()])
+			card.pressed.emit()
+			var opened: Node = s.find_children("Card_0", "Button", true, false)[-1] # the old one's freed at the frame's end
+			assert(opened.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return l.text == "Paid"), "A opens its report")
+			assert(g.helpers[0].has("asks") and _texts().any(func(t: String) -> bool: return t.contains(" asks for $")), "a point up: they ask, a card at the day's end")
 			_button("Pay it").pressed.emit()
 		8:
 			assert(not g.helpers[0].has("asks"), "paid")
-			assert(not _texts().any(func(t: String) -> bool: return t.begins_with("Raise ")), "and the ask's gone from the day's end")
+			assert(not _texts().any(func(t: String) -> bool: return t.contains(" asks for $")), "and the ask's gone from the day's end")
 			_button("Next day").pressed.emit()
 			print("PASS crew board")
 			quit()

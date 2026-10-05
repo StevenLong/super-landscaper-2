@@ -18,6 +18,7 @@ const CREW_COLORS := [Color("1d9e75"), Color("7f77dd"), Color("e07050"), Color("
 const INFO_W := 430.0 ## a calendar row's who-and-what
 const MOWER_W := 130.0 ## and its mower
 const ROW_SEP := 10
+const CARD_W := 860.0 ## a day's end card
 
 var _call := "" ## what the last ad you rang said, shown by the paper
 var _view := "calendar"
@@ -26,6 +27,8 @@ var _open_day := -1 ## the calendar's day (today by default)
 var _cal_month := false ## the calendar showing the month, to pick a day from
 var _pick: Control = null ## who-goes list open beside a booking
 var planner := false ## the planner over the premises, not the office's fitting
+var _client := -1 ## the client book's page: a regular's id, or -1 for its index
+var _open_card := -1 ## the day's end card opened to its report
 
 
 func _ready() -> void:
@@ -700,14 +703,19 @@ func _newsprint(c: Control, sheet := false) -> Control:
 	return p
 
 
-## The client book on the desk: your regulars, how often and what they pay, and dropping one.
+## The client book on the desk (design doc, The hub, redesigned): inside the cover your name
+## and an index of your regulars, each with a dot for their mood; A on one opens their page.
 func _book_view(root: Control) -> Control:
+	if _client >= 0 and Game.regulars.has(_client):
+		return _client_page(root, _client)
+	_client = -1
 	var side := ScrollContainer.new() # a long list of regulars scrolls, following the cursor
 	side.follow_focus = true
 	side.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	side.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(side)
 	var list := UI.vbox(6)
+	list.name = "Index"
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side.add_child(list)
 	var trend := Game.rep_trend - Game.reputation
@@ -716,31 +724,104 @@ func _book_view(root: Control) -> Control:
 		UI.GOOD if Game.reputation >= 45.0 else (UI.GOLD if Game.reputation >= 20.0 else UI.BAD)))
 	list.add_child(UI.label(("Owed the shark: $%d" % Game.principal if Game.principal > 0 else "Free of the shark")
 		+ ("   Record: %d" % roundi(Game.record) if Game.record > 0.0 else ""), 20, UI.DIM))
-	list.add_child(UI.label("Your regulars", 22))
+	list.add_child(UI.label("Your regulars (%d)" % Game.regulars.size(), 22))
 	if Game.regulars.is_empty():
 		list.add_child(UI.label("None yet. A good job from the paper might earn one.", 18, UI.DIM))
 	for id: int in Game.regulars:
-		list.add_child(_regular_row(id))
+		var reg: Dictionary = Game.regulars[id]
+		var row := UI.hbox(12)
+		var dot := ColorRect.new()
+		dot.custom_minimum_size = Vector2(14, 14)
+		dot.color = _mood_color(reg.mood)
+		dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(dot)
+		var b := UI.button("%s   %s, %s to %s   $%d" % [reg.job.customer, _every(reg), Game.time_text(reg.job.from), Game.time_text(reg.job.by), reg.rate],
+			func() -> void:
+				_client = id
+				_build(), 18)
+		b.name = "Client"
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(b)
+		list.add_child(row)
 	for b: Button in list.find_children("*", "Button", true, false):
 		return b
 	return find_child("Away", true, false)
 
 
-func _regular_row(id: int) -> Control:
+## A regular's page: their face, how often and when, what they pay, how they feel, what's
+## paid up front, the next visit; dropping them. The shoulders turn the pages, B is the index.
+func _client_page(root: Control, id: int) -> Control:
 	var reg: Dictionary = Game.regulars[id]
-	var row := UI.hbox(10)
-	var every: String = {7: "weekly", 14: "fortnightly", 28: "four-weekly"}[reg.cadence]
+	var ids := Game.regulars.keys()
+	var at := ids.find(id)
+	var top := UI.hbox(14)
+	var prev := UI.button("< " + Game.key("gear_down"), _turn_client.bind(-1), 18)
+	prev.name = "PrevClient"
+	prev.disabled = at <= 0
+	top.add_child(prev)
+	top.add_child(UI.label("%d of %d" % [at + 1, ids.size()], 18, UI.DIM))
+	var next := UI.button(Game.key("gear_up") + " >", _turn_client.bind(1), 18)
+	next.name = "NextClient"
+	next.disabled = at >= ids.size() - 1
+	top.add_child(next)
+	var index := UI.button("The index " + Game.key("hop"), func() -> void:
+		_client = -1
+		_build(), 18)
+	index.name = "BookIndex"
+	top.add_child(index)
+	root.add_child(top)
+	var page := UI.hbox(24)
+	var face := Face.new()
+	face.custom_minimum_size = Vector2(160, 160)
+	face.set_look(reg.job.get("look", {}))
+	face.expression = "delighted" if reg.mood >= 85.0 else ("happy" if reg.mood >= 70.0 else ("neutral" if reg.mood >= 45.0 else "annoyed"))
+	page.add_child(face)
+	var col := UI.vbox(6)
+	col.add_child(UI.label(reg.job.customer, 30, UI.GOLD))
+	var lines: Array[String] = ["How often: %s." % _every(reg), "When: %s to %s." % [Game.time_text(reg.job.from), Game.time_text(reg.job.by)],
+		"Pays: $%d a visit." % reg.rate, "Mood: %s." % Game.mood_word(reg.mood), "Visits so far: %d." % reg.get("visits", 0)]
+	if reg.get("prepaid", 0) > 0:
+		lines.append("Paid up front: %d visit%s still owed." % [reg.prepaid, "" if reg.prepaid == 1 else "s"])
+	var nxt := -1
+	for d: int in Game.calendar.keys():
+		if d >= Game.day and (nxt < 0 or d < nxt) and Game.bookings(d).any(func(b: Dictionary) -> bool: return b.get("regular", -1) == id):
+			nxt = d
+	lines.append("Next visit: %s." % (Game.date_text(nxt) if nxt >= 0 else "none booked"))
+	for l: String in lines:
+		col.add_child(UI.label(l, 20))
+	var owed := roundi(reg.get("prepaid", 0) * reg.get("prepaid_each", 0.0))
+	var drop := UI.button("Drop them" + (" (owe $%d)" % owed if owed > 0 else ""), func() -> void:
+		Game.drop(id)
+		_client = -1
+		_build(), 18)
+	drop.name = "Drop"
+	var holder := HBoxContainer.new()
+	holder.add_child(drop)
+	col.add_child(holder)
+	page.add_child(col)
+	root.add_child(UI.panel(page))
+	return next if not next.disabled else index
+
+
+func _turn_client(by: int) -> void:
+	var ids := Game.regulars.keys()
+	var at := ids.find(_client) + by
+	if at >= 0 and at < ids.size():
+		_client = ids[at]
+		_build()
+
+
+## How often a regular wants you, in words.
+func _every(reg: Dictionary) -> String:
+	var every: String = {7: "weekly", 14: "fortnightly", 28: "four-weekly"}.get(reg.cadence, "every %d days" % reg.cadence)
 	if Game.cadence_now(reg) < reg.cadence:
 		every += " (more in summer)"
-	var l := UI.label("%s, %s, %s, $%d" % [reg.job.customer, every, _hours(reg.job.from) + "-" + _hours(reg.job.by), reg.rate], 18, UI.GOOD)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(l)
-	var owed := roundi(reg.get("prepaid", 0) * reg.get("prepaid_each", 0.0))
-	row.add_child(UI.button("Drop" + (" (owe $%d)" % owed if owed > 0 else ""), func() -> void:
-		Game.drop(id)
-		_build(), 18))
-	return UI.panel(row)
+	return every
+
+
+func _mood_color(m: float) -> Color:
+	return UI.GOOD if m >= 70.0 else (UI.GOLD if m >= 45.0 else UI.BAD)
 
 
 ## A situation wanted, on newsprint like the ads: who, how quick and how careful (in
@@ -811,6 +892,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif planner and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause")): # put the planner away
 		get_viewport().set_input_as_handled()
 		closed.emit()
+	elif leave and _view == "book" and _client >= 0 and event.is_action_pressed("hop"): # a client's page, back to the index
+		get_viewport().set_input_as_handled()
+		_client = -1
+		_build()
+	elif leave and _view == "book" and _client >= 0 and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")):
+		get_viewport().set_input_as_handled()
+		_turn_client(1 if event.is_action_pressed("gear_up") else -1)
 	elif day_open and event.is_action_pressed("hop"): # the day, up to its month
 		get_viewport().set_input_as_handled()
 		_to_month()
@@ -1059,38 +1147,50 @@ func _verdict(lawyer: int) -> void:
 	UI.focus(_centred_button(col, "Carry on", _ready))
 
 
-## The day's end (design doc, The hub): every day, worked or not. Your jobs, the crew's
-## (a raise asked is answered here), then the money: today's, and what Friday will take.
+## The day's end (design doc, The hub, redesigned): a card a job in the day's order, yours
+## and the crew's together (who, where, the net, a word if something happened; A opens the
+## full report), the jobs nobody went to, a helper's raise ask as a card of its own, then a
+## card adding it all up: the jobs, what you bought and sold, today, what you have, Friday's
+## bill and what it leaves.
 func _day_end() -> void:
 	var e: Dictionary = Game.day_end
 	var col := _screen()
+	col.alignment = BoxContainer.ALIGNMENT_BEGIN
 	col.add_theme_constant_override("separation", 8)
-	_centred(col, "DAY'S END", 48, UI.GOLD)
-	_centred(col, Game.date_text(e.day), 24, UI.DIM)
-	_centred(col, "Your day", 26, UI.GOLD)
-	var mine_net := 0
-	for m: Dictionary in e.mine:
-		mine_net += m.net
-		var how: String = {"fired": "fired you", "walked": "you drove off unpaid", "ko": "knocked out",
-			"nicked": "nicked"}.get(m.outcome, "pleased" if m.mood >= 70.0 else ("not happy" if m.mood < 45.0 else "fine"))
-		_centred(col, "%s: %s, %s" % [m.customer, how, _signed(m.net)], 22,
-			UI.GOOD if m.outcome == "paid" and m.net > 0 else (UI.TEXT if m.outcome == "paid" else UI.BAD))
-	if not e.missed.is_empty():
-		_centred(col, "You never turned up for %s. They'll remember." % ", ".join(e.missed), 22, UI.BAD)
-	if e.mine.is_empty() and e.missed.is_empty():
-		_centred(col, "You didn't work today.", 22, UI.DIM)
-	if not Game.helpers.is_empty() or not e.crew.is_empty():
-		_centred(col, "Your crew", 26, UI.GOLD)
-		for line: String in e.crew: # a line a helper: the yard's room keeps the crew few
-			_centred(col, line, 18)
-		if e.crew.is_empty():
-			_centred(col, "Nothing on today.", 18, UI.DIM)
+	var top := Control.new()
+	top.custom_minimum_size.y = 12
+	col.add_child(top)
+	_centred(col, "DAY'S END", 34, UI.GOLD)
+	_centred(col, Game.date_text(e.day), 20, UI.DIM)
+	var scroll := ScrollContainer.new() # a busy day scrolls, following the cursor
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(scroll)
+	var holder := CenterContainer.new()
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(holder)
+	var list := UI.vbox(6)
+	list.name = "Cards"
+	list.custom_minimum_size.x = CARD_W
+	holder.add_child(list)
+	var cards := _day_cards(e)
+	var jobs_net := 0
+	for i in cards.size():
+		var c: Dictionary = cards[i]
+		jobs_net += c.net
+		list.add_child(_day_card(c, i))
+	if cards.is_empty():
+		list.add_child(UI.label("A free day: no jobs.", 20, UI.DIM))
 	var first: Button = null
-	for h: Dictionary in Game.helpers:
+	for h: Dictionary in Game.helpers: # a raise asked: a card of its own, answered here
 		if not h.has("asks"):
 			continue
 		var row := UI.hbox(12)
-		row.add_child(UI.label("Raise %s to $%d a week (now $%d)?" % [h.name.split(" ")[0], h.asks, h.wage], 20, UI.GOLD))
+		var ask := UI.label("%s asks for $%d a week (now $%d). %s." % [h.name.split(" ")[0], h.asks, h.wage, Game.card_text(h).capitalize()], 20, UI.GOLD)
+		ask.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ask.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.add_child(ask)
 		var yes := UI.button("Pay it", func() -> void:
 			Game.answer_raise(h.id, true)
 			_day_end(), 20)
@@ -1099,35 +1199,133 @@ func _day_end() -> void:
 		row.add_child(UI.button("No", func() -> void:
 			Game.answer_raise(h.id, false)
 			_day_end(), 20))
-		var holder := CenterContainer.new()
-		holder.add_child(row)
-		col.add_child(holder)
+		list.add_child(UI.panel(row))
 		if first == null:
 			first = yes
+	# The sum of it.
+	var sum := UI.vbox(2)
+	sum.name = "Summary"
 	var today: int = e.now - e.was
-	var other: int = today - mine_net - e.crew_net
-	var parts := ["your jobs " + _signed(mine_net)]
-	if not Game.helpers.is_empty() or e.crew_net != 0:
-		parts.append("the crew " + _signed(e.crew_net))
-	if other != 0:
-		parts.append("bought, sold and the rest " + _signed(other))
-	_centred(col, "Today %s (%s). You have $%d." % [_signed(today), ", ".join(parts), Game.money], 22)
+	_sum_line(sum, "The jobs", jobs_net)
+	var rest := today - jobs_net
+	for l: Array in e.get("ledger", []):
+		_sum_line(sum, l[0], l[1])
+		rest -= int(l[1])
+	if rest != 0: # fines, court, what the heavies took: whatever else moved the money
+		_sum_line(sum, "Everything else", rest)
+	_sum_line(sum, "Today", today, true)
+	_sum_line(sum, "You have", Game.money, false, false)
 	var due := Game.due()
 	var bill := "rent and food $%d" % Game.living()
 	if not Game.helpers.is_empty():
 		bill += ", wages $%d" % Game.wages()
 	if Game.principal > 0:
 		bill += ", the vig $%d" % Game.vig()
-	_centred(col, "%s takes $%d: %s. That leaves %s." % ["Payday" if Game.payday_pending else "Friday", due, bill,
-		_signed(Game.money - due).trim_prefix("+")], 22,
-		UI.GOOD if Game.money >= due else UI.BAD)
-	var go := _centred_button(col, "Payday" if Game.payday_pending else ("The winter" if Game.winter_pending else "Next day"), func() -> void:
+	_sum_line(sum, "%s: %s" % ["Payday" if Game.payday_pending else "Friday", bill], -due)
+	_sum_line(sum, "That leaves", Game.money - due, true, false)
+	var go := UI.button("Payday" if Game.payday_pending else ("The winter" if Game.winter_pending else "Next day"), func() -> void:
 		Game.day_end = {}
 		Game.missed.clear()
+		_open_card = -1
 		Game.save()
-		_ready())
+		_ready(), 22)
 	go.name = "NextDay"
-	UI.focus(first if first else go)
+	var right := HBoxContainer.new()
+	right.alignment = BoxContainer.ALIGNMENT_END
+	right.add_child(go)
+	sum.add_child(right)
+	list.add_child(UI.panel(sum))
+	UI.focus(first if first else (list.get_child(_open_card) if _open_card >= 0 and _open_card < cards.size() else go))
+
+
+## The day's jobs as cards, in the day's order: yours, the crew's, and those nobody went to.
+func _day_cards(e: Dictionary) -> Array:
+	var cards: Array = []
+	for m: Dictionary in e.mine:
+		var how: String = {"fired": "fired", "walked": "drove off", "ko": "knocked out", "nicked": "nicked"}.get(m.outcome, "")
+		var lines: Array = []
+		if m.has("paid"):
+			lines.append(["Paid", "$%d" % m.paid])
+			if m.tip > 0:
+				lines.append(["Tip", "$%d" % m.tip])
+			lines.append(["Fuel", "-$%d" % m.fuel])
+			var other: int = m.net - m.paid - m.tip + m.fuel
+			if other != 0:
+				lines.append(["Damages, fines and the rest", _signed(other)])
+		lines.append(["Mood", "%s, %d" % [Game.mood_word(m.mood), roundi(m.mood)]])
+		if m.has("rep"):
+			lines.append(["Reputation", "%+d" % roundi(m.rep)])
+		cards.append({"who": "You", "helper": -1, "customer": m.customer, "at": m.get("at", 0), "net": m.net, "flag": how, "lines": lines})
+	cards.append_array(e.get("crew_jobs", []))
+	for gone: String in e.missed:
+		cards.append({"who": "Nobody", "helper": -2, "customer": gone, "at": 1 << 20, "net": 0, "flag": "missed",
+			"lines": [["Nobody went", "they'll remember"]]})
+	cards.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.at < b.at)
+	return cards
+
+
+## A job's card: who, where, a word if something happened, the net; A opens its report.
+func _day_card(c: Dictionary, i: int) -> Control:
+	var b := Button.new()
+	b.name = "Card_%d" % i
+	b.custom_minimum_size = Vector2(CARD_W, 0)
+	b.clip_contents = true
+	var box := UI.vbox(2)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.set_anchors_preset(Control.PRESET_FULL_RECT)
+	box.offset_left = 12
+	box.offset_right = -12
+	box.offset_top = 6
+	b.add_child(box)
+	var row := UI.hbox(14)
+	var who := UI.label(c.who, 20, UI.BAD if c.helper == -2 else _who_color(c.helper))
+	who.custom_minimum_size.x = 90
+	row.add_child(who)
+	var where := UI.label(c.customer, 20)
+	where.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	where.clip_text = true
+	row.add_child(where)
+	if c.flag != "":
+		row.add_child(UI.label(c.flag, 18, UI.BAD if c.flag in ["missed", "couldn't go", "fired", "nicked"] else UI.GOLD))
+	var net := UI.label(_signed(c.net) if c.net != 0 else "$0", 20, UI.GOOD if c.net > 0 else (UI.BAD if c.net < 0 else UI.DIM))
+	net.custom_minimum_size.x = 80
+	net.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(net)
+	box.add_child(row)
+	var open := i == _open_card
+	if open:
+		for l: Array in c.lines:
+			var r := UI.hbox(10)
+			var what := UI.label(l[0], 18, UI.DIM)
+			what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			r.add_child(what)
+			r.add_child(UI.label(l[1], 18))
+			box.add_child(r)
+	for n: Control in box.find_children("*", "Control", true, false):
+		n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.custom_minimum_size.y = 40.0 + (22.0 * c.lines.size() + 4.0 if open else 0.0)
+	b.pressed.connect(func() -> void:
+		_open_card = -1 if open else i
+		_day_end())
+	return b
+
+
+## A line of the sum: what, and the money (signed, or `plain`), bold for a total.
+func _sum_line(box: Control, what: String, money: int, total := false, signed := true) -> void:
+	var r := UI.hbox(10)
+	var l := UI.label(what, 20 if total else 18, UI.TEXT if total else UI.DIM)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	r.add_child(l)
+	var m := UI.label(_signed(money) if signed else ("$%d" % money if money >= 0 else "-$%d" % -money), 20 if total else 18,
+		UI.GOOD if money > 0 and signed else (UI.BAD if money < 0 else UI.TEXT))
+	r.add_child(m)
+	if total:
+		var line := ColorRect.new()
+		line.custom_minimum_size.y = 1
+		line.color = UI.PANEL_EDGE
+		box.add_child(line)
+	box.add_child(r)
 
 
 func _signed(n: int) -> String:
