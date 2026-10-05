@@ -4,11 +4,59 @@
 The ledger lives in `CHECKS.txt` (answer on the `>` lines). A SessionStart hook opens it in
 Notepad whenever an answer is still blank.
 
-Verifier tally (the adversarial agent, scored by /handoff): 10 runs, 70 real finds (1 of them
+Verifier tally (the adversarial agent, scored by /handoff): 15 runs, 114 real finds (1 of them
 a regression of mine it caught before the dev did), 0 false alarms, 0 misses so far. Cost
-per run: about 95k to 240k tokens, 9 to 20 minutes.
+per run: about 95k to 240k tokens, 9 to 26 minutes.
 
 ---
+
+## Session 25 (2026-10-05): the hub redesigned and built in five steps (NOTES 248 to 252); verifier runs 11 to 15
+- Dev's answers on session 24's LOADs, triaged as NOTES 238 to 247 (216d573): the rooms
+  hollow and flat, the calendar a list with nothing to plan, the paper "the worst webpage
+  ever made", the day's end sentences, the yard an arbitrary box, the vans narrow, the crew
+  cards "insane". The dev: don't wait on their visuals, improve what's here.
+- Grilled (design doc, Outside the Season, "The hub, redesigned"; rejected options there):
+  one pool of kit with a "yours" mark; people the only thing assigned; helpers' days on
+  your clock; helpers in a staff room (the dev's idea: sofas, a vending machine, an arcade
+  cabinet); three premises one at a time, a deposit then rent; hiring needs a staff room,
+  its seats the cap; the shark offers the next deposit (the dev's idea); one building that
+  grows (the dev: no filing cabinet till there's staff; the truck's Drive home ends the
+  day too); a pocket planner on Start; the calendar a month or a day (the dev chose the
+  swap after seeing sketches); a who-goes list; the day's end as cards; the paper as a
+  newspaper; calls as short talks (the dev's ask); the client book an index and pages;
+  placing by hand; voxel art. Mid-grill sketches (show_widget) settled the calendar, the
+  pick list, the cards and the paper.
+- Built, step by step (each green and pushed, then the verifier, then its finds fixed):
+  248 crew and kit (3346e5a, run 11: 7 finds, d540142); 249 the building (e32cbe7, run 12:
+  9, ddf64ba); 250 day's end and client book (ff052f7, run 13: 8, c6cb232); 251 the paper
+  and calls (8c5d761, run 14: 11, a175651); 252 the look (c6e7713, run 15: 9, 7aff3aa).
+  Each step's Claude's calls are in the doc's "Step n as built" bullets (veto any): the
+  floors' sizes and prices, "outgrown" as no room for another petrol mower (lock-up) or
+  van (unit up), vans and the truck parked 15 degrees askew (8 by 4, the bay 8 by 5;
+  side-on read flat, nose-in read top-down), the office's layout, B from a calendar day up
+  to the month then away, no "unassigned" booking state.
+- Run 11's worst: letting a helper go after their trip lost the job and orphaned a regular.
+  Run 12's: Move it set things on top of you, unable to walk. Run 13's: opening a day's end
+  card with a raise pending put the cursor on Pay it. Run 14's: B on the shark's man at
+  payday skipped the payday screen. Run 15's: you could spawn wedged between the truck and
+  a van; the corkboard couldn't be reached on foot.
+- The sim's bot learned to move up and fit a staff room, counting the deposit, the room and
+  a month of rent and wages first (it went bankrupt otherwise). SIM_CREW=2: no bankruptcies,
+  reputation 80 to 87, the crew about 1.5 times their wages by the second season; SIM_CREW=0
+  as healthy as before.
+- Verified: run_all green at 7aff3aa (56 PASS lines incl. the parse check; new
+  test_premises, test_day_end, test_paper, test_reach_hub); screenshots of every new screen
+  and premises looked at (tools/shot_hub.gd, new tools/shot_desk.gd). Nothing played.
+- Promoted to the design doc this session: all of the above (the grill and five "as built"
+  bullets). NOTES: 238 to 252 gone (built), 235 reworded as incoming calls, 253 parked.
+
+OWED CHECKS: 8 (CHECKS.txt LOAD 1: S25-LOOK, PLACE, CREW, CAL, DAYEND, PAPER, END, PRICE).
+
+NEXT:
+1. The dev plays LOAD 1 (about 40 min); triage the fallout.
+2. 227 when the clock drawing arrives.
+3. Grill-ready: 225 (upgrades as work, at the premises) with 223's leftovers; 207 with 136;
+   208 (your own garden). Hold 210.
 
 ## Session 24 (2026-10-04): the hub grilled and built (228 to 234), vans as things, the B crash, fences at the root; verifier runs 9 and 10
 - Dev's answers: S23-PAD yes, bar the Calendar's ad Ring being hard to reach (moot: that
@@ -275,45 +323,4 @@ OWED CHECKS: 12, in CHECKS.txt (3 loads, about 55 minutes; LOAD 3 is the clock).
 NEXT:
 1. Play LOAD 3 (the clock, terms, event days, the slower climb); LOAD 1 and 2 when there's time.
 2. 193d's other retunes from what play says (the paper's size, REACH, pay, the vig, the clock).
-3. Grill 189 (robots) and 168 (hired help) together, as ways to buy time; then 207 with 136.
-
-## Session 17 (2026-10-02): the 193 grill (time is the scarce thing), the clock built
-- **Grilled 193** (pace and escalation, the dev's biggest concern), all in the design doc
-  (The Business, "Time is the scarce thing", rejected options listed): the squeeze changes
-  as the business grows, money in April, time in summer, stakes from season 2; money's
-  lasting use is buying time (so 189 robots and 168 help get priced as that); difficulty
-  is not the dial. One clock (a booking is a window, patience is that window); outside a
-  job actions cost time and walking doesn't, shown before you commit; demand follows the
-  season; regulars change softly, never churn; loyalty compounds; upfront pay only from
-  loyal regulars; jobs stay fresh by variety and event days, not more on screen. The
-  dev's reasons: the money number isn't the fun; Vampire Survivors' power curve doesn't
-  fit (kit makes jobs easier); a hub without a clock is a task list. Build order the
-  dev's call: the clock first, with the corkboard screen built as the screen the office
-  will open.
-- **Filed from the dev's dumps**: 207 (taking things from gardens pays, a market so
-  hoarding can't win; conflicts with "afterwards, ownership decides") and 208 (your own
-  garden: time frozen inside, seeds growing across visits).
-- **Built** (my calls in the doc's "as built" bullets, veto any): 193a the day's clock and
-  the corkboard (600a03f), 193b regulars change softly, the raise, upfront pay, loyalty
-  (1e68685), 193c critters by month and event days (7158b48). Old saves load and get
-  their windows. New tests: test_terms; big additions to test_season; tools/shot_board.gd
-  for the board's screenshots.
-- **Verifier, 2 runs** (3 and 4 of the tally): run 3 on the clock, 13 real finds (worst:
-  being nicked didn't end the day; time after being paid was free; Ring could turn a sure
-  yes into a no; court lost classifieds silently; the board ran off screen when busy);
-  run 4 on terms and events, 8 real finds (worst: upfront money paid back twice and below
-  zero at the winter; a stale offer crashed a summary; an event day's critters leaked into
-  a new regular's every visit). All fixed with a test (65b7e12, da85a9c). 0 false alarms.
-- Verified: run_all green (parse, smoke, 39 tests). Screenshots looked at: each board page,
-  crowded (8 regulars, 6 jobs, an event day), the job's HUD clock and briefing, the raise
-  and upfront screens. Not played: whether the clock is fun is the dev's (LOAD 3).
-- Not done: 193d's retunes wait for play (reputation tops out in about 3 jobs, now day
-  one with free booking; the dev says the exact number doesn't matter, it just shouldn't
-  saturate so early). S15-POLICE and S15-FENCE have now rolled two sessions.
-
-OWED CHECKS: 12, in CHECKS.txt (3 loads, about 60 minutes; LOAD 3 is the clock).
-
-NEXT:
-1. Play LOAD 3 (the clock, the terms, event days); LOAD 1 and 2 when there's time.
-2. 193d's retunes from what play says (reputation's climb, the paper's size, pay, the vig).
 3. Grill 189 (robots) and 168 (hired help) together, as ways to buy time; then 207 with 136.

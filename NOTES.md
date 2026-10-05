@@ -142,8 +142,8 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    Seeds got on a job or elsewhere, planted there, grow over several days: leave, come back
    to see a little growth, leave again. Later: another door off the hub (2026-10-04 grill).
 
-PROPOSED ORDER: superseded, see Notes 2026-10-05 (248 to 252, the hub redesign). Still
-waiting: 227 when the drawing comes; grills on 225, 207 with 136, 208.
+PROPOSED ORDER: the dev plays CHECKS.txt LOAD 1 (the hub redesign) and its fallout is triaged;
+227 when the drawing comes; grills on 225, 207 with 136, 208.
 
 ### Notes 2026-10-04 (LOAD 3 played, S17 and S18 check fallout, two bugs)
 
@@ -173,44 +173,13 @@ read (227). S21-CREW: the whole flow confusing (222).
 220, 222, 223, 224 and 217 grilled and built (228 to 234, session 24). 218, 219, 221 and 47
 built in session 23.
 
-### Notes 2026-10-05 (session 24's LOADs 1 and 2 played: the hub, the desk and the crew want another big pass)
+### Notes 2026-10-05 (session 24's LOADs 1 and 2 played: the hub redesign)
 
-Verdicts: S24-PAD nothing beyond the notes below. S24-RAISE retired (the dev raises it if it
-plays wrong). S24-FENCE retired (the dev reports fences as seen, 194). The dev's overall
-read: the hub as built doesn't feel good yet; 239 to 245 are one redesign, grill them together.
+238 to 247 grilled and built as 248 to 252 in session 25 (the design doc's "The hub,
+redesigned"; CHECKS.txt LOAD 1 plays it). Left:
 
-238 to 245 grilled 2026-10-05 (the dev: don't wait on their visuals, improve what's here; both
-the door and the planner; placing by hand). Decided in the design doc (Outside the Season,
-"The hub, redesigned"), rejected options there too. Built in five steps, each green and
-committed, the verifier after each; the dev plays a LOAD after 249 and after 252.
-
-248. [BUILT 2026-10-05, unplayed: LOAD after 249] Step 1, crew and kit: one pool of kit (no crew kit and yours; a "yours"
-   mark on a mower's card); people the only thing assigned; helpers away on your clock with
-   a van and a mower; the calendar swaps month and day (a Gantt day, the pick list, the
-   mower spot); van, mower and helper cards cut down; 246 rides along. Old saves: crew_kit
-   and fleet fold into the pool. Home: game.gd (owned, crew_kit, fleet, kit_of, _crew_day,
-   help_job), board.gd (calendar; the old DayClock in git at 8f755a5^), hub.gd (cards).
-249. [BUILT 2026-10-05, unplayed: CHECKS LOAD 1] Step 2, the building: the lock-up, unit and warehouse (deposit, weekly
-   rent, no moving down); placing by hand (pick up, footprint green or red, set down; new
-   things in the first spot that fits); the truck's fixed bay and "Drive home"; the street
-   door; the staff room and its seats (hiring gated); the filing cabinet with it; the
-   office's fittings inside the building; the planner on Start (day view, End the day, Save
-   and quit) and the end-the-day check; the shark's standing offer. Tune the rents and
-   deposits with sim_season. LOAD for the dev after this.
-250. [BUILT 2026-10-05, unplayed] Step 3, the day's end as cards (from 242) and the client book (index,
-   then a page per client, reputation on its first page).
-251. [BUILT 2026-10-05, unplayed] Step 4, the paper as a newspaper (newsprint, red-pen circles, three
-   pages, the shark's standing ad) and calls as short dialogues in hud.gd's portrait box.
-252. [BUILT 2026-10-05, unplayed: CHECKS LOAD 1] Step 5, the look (from 238, 244): vans, truck, furniture and fittings as
-   voxel models; four walls, windows, the building and street around them; clutter; the desk
-   against a wall; doors that swing; helpers idling in the staff room. LOAD for the dev.
 253. [PARKED since 2026-10-05] An answering machine for missed incoming calls (the dev: fits
    the theme, not for now). Wants incoming calls first (235).
-246. [BUG, small] "Back ((B))" on the hub's cards: hub.gd:672 wraps Game.key("hop") in
-   parens, and key() already adds them (game.gd:371). Drop the outer parens; grep for other
-   "(%s)" % Game.key callers. Rides with 248.
-247. [BUG, small] On Fridays the day panel's payday line doesn't wrap and squeezes the
-   calendar (CHECKS NOTES). Moot: 248 rebuilds the panel; check the new one wraps.
 
 ### Grilled 2026-10-04c (the hub: 217, 220, 222, 223, 224, S14-CAL, S23-RAISE)
 
@@ -219,12 +188,9 @@ pace). S23-PAD: left and right fine; the Calendar's ad button sits far right, so
 the tabs drops past it (moot once 230 and 231 replace the page). 228 to 234 built in session 24 (CHECKS.txt
 LOADs 1 and 2); Claude's calls in the doc's "As built". Left from it:
 
-235. [DESIGN, small] The phone has nothing of its own yet: ringing stays on the paper's ads
-   and situations wanted. The dev listed it with the paper and the client book. Build it
-   when something wants ringing that isn't an ad (a regular to move a visit, the shark?).
-237. [DESIGN, small] Arranging the yard by hand: open (the dev, 2026-10-04: "not fully
-   convinced we won't want to"). Auto-placed is biggest first, so free-looking cells may not
-   take a van: S24-YARD asks whether that reads wrong. (2026-10-05: it did; folded into 243.)
+235. [DESIGN, small] Incoming calls: nobody rings you yet (session 25's phone rings out: the
+   paper's ads and situations wanted, Vince's ad, the estate agent, a builder). Build when
+   something wants to reach you (a regular moving a visit, Vince chasing, 253's machine).
 
 ### Grilled 2026-10-04 (168 hired help with 189 robots: ways to buy time)
 

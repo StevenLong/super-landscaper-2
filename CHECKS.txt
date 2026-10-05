@@ -72,5 +72,8 @@ VERIFIED  252 the look: test_hub (the walk round the building with the new art);
           of the lock-up, unit, warehouse, the shop, carrying, the planner. Vans and the
           truck are voxel stills parked 15 degrees askew (8 by 4 cells now, the bay 8 by 5);
           the premises still hold what they did (test_premises).
+VERIFIED  Verifier runs 11 to 15, one a step, each run's finds fixed before the next step:
+          7, 9, 8, 11 and 9 real finds (see HANDOFF session 25); test_reach_hub, test_paper,
+          test_day_end and test_premises came of them.
 VERIFIED  sim_season SIM_CREW=0 and 2: no bankruptcies once the bot counts the move, the staff
           room and a month's rent and wages before it hires or moves.
