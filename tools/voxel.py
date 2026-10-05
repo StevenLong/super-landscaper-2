@@ -380,6 +380,12 @@ def truck():
     m.box(-66, 20, -28, 28, 6, 26, TRUCK_P)                                   # the bed's sides
     m.box(-64, 18, -25, 25, 7, 24, STEEL[:3])                                 # the bed
     m.box(-50, -36, -10, 2, 24, 40, CAN_P)                                    # a petrol can
+    for x in range(-64, 20, 12):
+        for y in (-27, 26):
+            m.box(x, x + 2, y, y + 1, 26, 40, STEEL[1:4])                     # the bed's cage
+    for y in (-27, 26):
+        m.box(-66, 20, y, y + 1, 38, 40, STEEL[2:])
+    m.box(-66, -64, -27, 27, 26, 40, STEEL[1:4])
     m.box(20, 58, -28, 28, 6, 52, TRUCK_P)                                    # the cab
     m.box(22, 52, -26, 26, 40, 50, GLASS[1:])                                 # windows
     m.box(56, 66, -27, 27, 6, 26, TRUCK_P)                                    # the nose

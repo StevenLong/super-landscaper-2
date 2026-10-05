@@ -81,8 +81,15 @@ func _room(floor_rect: Rect2, tile: Texture2D, wall_h: float, windows: Array = [
 	out.draw.connect(func() -> void:
 		var wide := Rect2(floor_rect.position.x - 900, floor_rect.position.y - wall_h - 600, floor_rect.size.x + 1800, 600 + wall_h + floor_rect.size.y + 12)
 		out.draw_rect(wide, ROOFS)
-		for i in range(0, int(wide.size.x), 46): # the roofs' ridges, round about
-			out.draw_line(Vector2(wide.position.x + i, wide.position.y), Vector2(wide.position.x + i, wide.end.y), ROOFS.lightened(0.04), 1.0)
+		var r := RandomNumberGenerator.new()
+		r.seed = 11
+		for y in range(int(wide.position.y), int(street), 34): # rows of roof sheeting, round about
+			out.draw_rect(Rect2(wide.position.x, y, wide.size.x, 4), ROOFS.lightened(0.12))
+			out.draw_rect(Rect2(wide.position.x, y + 30, wide.size.x, 4), ROOFS.darkened(0.25))
+			for x in range(int(wide.position.x), int(wide.end.x), 9):
+				out.draw_line(Vector2(x, y + 4), Vector2(x, y + 30), ROOFS.lightened(0.05), 1.0)
+			for k in 4:
+				out.draw_rect(Rect2(wide.position.x + r.randf() * wide.size.x, y + 8, 22, 16), Color("6a7a88"))
 		out.draw_texture_rect(preload("res://art/paving.png"), Rect2(wide.position.x, street, wide.size.x, 40), true) # the pavement
 		out.draw_rect(Rect2(wide.position.x, street + 40, wide.size.x, 4), Color("8a8a84")) # the kerb
 		out.draw_texture_rect(preload("res://art/asphalt.png"), Rect2(wide.position.x, street + 44, wide.size.x, 120), true) # the road
@@ -165,7 +172,7 @@ func _thing(foot: Vector2, ground: Vector2, hint: String, act: Callable, tex: Te
 		body.add_child(cs)
 		n.add_child(body)
 	_world.add_child(n)
-	if hint != "":
+	if hint != "" or solid: # decor too: you bump into it, and it fades when you're behind it
 		_things.append({"node": n, "rect": rect, "hint": hint, "act": act, "solid": solid})
 	return n
 
@@ -185,11 +192,27 @@ func _tag(on: Node2D, text: String, at: Vector2, color := TAG) -> Label:
 	return l
 
 
+## The nearest spot to `at` that's clear of everything solid and inside the room (where
+## you'd stand: never wedged in something).
+func _clear_spot(at: Vector2) -> Vector2:
+	var solid: Array = _things.filter(func(t: Dictionary) -> bool: return t.get("solid", false)).map(func(t: Dictionary) -> Rect2: return (t.rect as Rect2).grow(9.0))
+	var clear := func(p: Vector2) -> bool: return _bounds.has_point(p) and not solid.any(func(r: Rect2) -> bool: return r.has_point(p))
+	if clear.call(at):
+		return at
+	for ring in range(1, 40):
+		for k in 16:
+			var p := at + Vector2.RIGHT.rotated(TAU * k / 16.0) * ring * 6.0
+			if clear.call(p):
+				return p
+	return at
+
+
 ## You, on foot, at `at`, the camera on you (or, `fixed`, on the room's middle).
 func _spawn(at: Vector2, fixed: Variant = null) -> void:
 	if _stood != Vector2.INF: # laid out again after a card: where you were
 		at = _stood
 		_stood = Vector2.INF
+	at = _clear_spot(at)
 	walker = WalkerScript.new()
 	walker.position = at
 	walker.keep_in = func(p: Vector2) -> Vector2: return p.clamp(_bounds.position, _bounds.end)
@@ -202,7 +225,7 @@ func _spawn(at: Vector2, fixed: Variant = null) -> void:
 		cam.limit_left = int(_bounds.position.x - 80)
 		cam.limit_right = int(_bounds.end.x + 80)
 		cam.limit_top = int(_bounds.position.y - 160)
-		cam.limit_bottom = int(_bounds.end.y + 60)
+		cam.limit_bottom = int(_bounds.end.y + 150) # the street out front
 	cam.make_current()
 
 
@@ -221,8 +244,8 @@ func _premises() -> void:
 	var windows: Array = []
 	for x in range(int(ow + 160), int(bay_px.position.x) - 30, 120): # windows along the floor's wall, clear of the pegboard and the roller door
 		windows.append(float(x))
-	if Game.premises > 0:
-		windows.append(ow * 0.86)
+	if Game.premises == 0:
+		windows.append(ow * 0.85) # the lock-up's one window, over the office end
 	_room(room, preload("res://art/paving.png"), 70.0, windows)
 	var ground := Node2D.new() # the office's floorboards, its partition, the floor's cells, the bay
 	ground.z_index = -9
@@ -262,20 +285,23 @@ func _premises() -> void:
 		_roller.draw_rect(r, Color("4c4c48"), false, 2.0))
 	add_child(_roller)
 	# The office's fittings.
+	var front := room.size.y - 30.0 # the office's front row
+	var cork_x := maxf(ow * 0.15, 26.0)
 	var cork := Sprite2D.new()
 	cork.texture = preload("res://art/corkboard.png")
-	cork.position = Vector2(ow * 0.3, -40)
-	cork.scale = Vector2(0.7, 0.7)
+	cork.position = Vector2(cork_x, -40)
+	cork.scale = Vector2(0.55, 0.55)
 	cork.z_index = -5
 	add_child(cork)
-	_thing(Vector2(ow * 0.3, 4), Vector2(50, 6), "read the calendar on the corkboard", _to_board.bind("corkboard"), null, Callable(), false)
-	_thing(Vector2(ow * 0.3, 30), Vector2(76, 22), "sit at the desk (the client book)", _to_board.bind("desk"), preload("res://art/desk.png"), Callable(), true, true)
-	var phone_at := Vector2(ow * 0.86, 24)
+	_thing(Vector2(cork_x, 4), Vector2(40, 6), "read the calendar on the corkboard", _to_board.bind("corkboard"), null, Callable(), false)
+	_thing(Vector2(ow * 0.55 if Game.premises == 0 else ow * 0.5, 30), Vector2(76, 22), "sit at the desk (the client book)", _to_board.bind("desk"),
+		preload("res://art/desk.png"), Callable(), true, true)
+	var phone_at := Vector2(ow * (0.3 if Game.premises == 0 else 0.22), front)
 	_thing(phone_at, Vector2(26, 14), "use the phone (the paper, ringing round)", _phone_card, preload("res://art/phone_table.png"), Callable(), true, true)
 	if Game.staff_room != "":
-		_thing(Vector2(ow * 0.3 + 54, 24), Vector2(22, 14), "open the filing cabinet (your staff)", _cabinet_card, preload("res://art/cabinet.png"), Callable(), true, true)
+		_thing(Vector2(ow * 0.5, front), Vector2(22, 14), "open the filing cabinet (your staff)", _cabinet_card, preload("res://art/cabinet.png"), Callable(), true, true)
 	if Game.premises > 0: # a bigger office: shelving, and a rug to stand on
-		_thing(Vector2(ow * 0.22, room.size.y - 26), Vector2(64, 12), "", Callable(), preload("res://art/shelving.png"), Callable(), true, true)
+		_thing(Vector2(ow * 0.78, front + 4), Vector2(64, 12), "", Callable(), preload("res://art/shelving.png"), Callable(), true, true)
 		var rug := Node2D.new()
 		rug.z_index = -8
 		rug.draw.connect(func() -> void:
@@ -285,8 +311,8 @@ func _premises() -> void:
 			rug.draw_rect(r.grow(-12), Color("a85840"), false, 1.0))
 		add_child(rug)
 	if Game.PREMISES[Game.premises].street:
-		_door(ow * 0.62)
-		_thing(Vector2(ow * 0.62, 8), Vector2(30, 8), "lock up and go home (end the day)", _end_day_card, null, Callable(), false)
+		_door(ow * 0.85)
+		_thing(Vector2(ow * 0.85, 8), Vector2(30, 8), "lock up and go home (end the day)", _end_day_card, null, Callable(), false)
 	# The floor: everything where it stands, the truck in its bay.
 	var lay := Game.yard_layout()
 	for p: Dictionary in lay.placed:
@@ -303,7 +329,8 @@ func _premises() -> void:
 	_thing(truck_at, Vector2(bay.size.x - 12, bay.size.y - 8), "get in your truck", _truck_card, preload("res://art/truck_parked.png"), Callable(), true, true)
 	_standing()
 	_mark_covering()
-	var at: Vector2 = {"truck": truck_at + Vector2(-10, 26), "phone": phone_at + Vector2(0, 22), "paper": phone_at + Vector2(0, 22), "door": Vector2(ow * 0.62, 24)}.get(Game.spot, Vector2(ow * 0.3, 60))
+	var at: Vector2 = {"truck": truck_at + Vector2(-10, 26), "phone": phone_at + Vector2(0, -22), "paper": phone_at + Vector2(0, -22),
+		"door": Vector2(ow * 0.85, 24), "corkboard": Vector2(cork_x, 16)}.get(Game.spot, Vector2(ow * 0.5, 60))
 	_spawn(at)
 	_ghost = Node2D.new() # what you're carrying, set down where it'd go
 	_ghost.z_index = 30
@@ -358,10 +385,11 @@ func _yard_item(it: Dictionary, at: Vector2, sz: Vector2, turned: bool) -> void:
 	var paint := Callable()
 	var solid := true
 	var centred := false
+	var furniture: Array = []
 	if it.kind.begins_with("staff_"):
 		hint = "look at the %s" % Game.kit_name(it.kind).to_lower()
 		solid = false
-		var furniture: Array = [[preload("res://art/sofa.png"), Vector2(0.3, 0.3)], [preload("res://art/vending.png"), Vector2(0.88, 0.25)],
+		furniture = [[preload("res://art/sofa.png"), Vector2(0.3, 0.3)], [preload("res://art/vending.png"), Vector2(0.88, 0.25)],
 			[preload("res://art/cooler.png"), Vector2(0.68, 0.25)]]
 		if it.kind == "staff_breakroom":
 			furniture.append([preload("res://art/arcade.png"), Vector2(0.52, 0.25)])
@@ -371,9 +399,7 @@ func _yard_item(it: Dictionary, at: Vector2, sz: Vector2, turned: bool) -> void:
 			on.draw_rect(Rect2(r.position.x, r.position.y - 16, r.size.x, 16), Color("c8c0b0", 0.85)) # the partition's back, behind it all
 			on.draw_rect(Rect2(r.position.x - 3, r.position.y - 16, 3, r.size.y + 16), Color("a8a090")) # and its ends
 			on.draw_rect(Rect2(r.end.x, r.position.y - 16, 3, r.size.y + 16), Color("a8a090"))
-			for f: Array in furniture: # along its back, each still's middle on the ground there
-				var t: Texture2D = f[0]
-				on.draw_texture(t, r.position + r.size * (f[1] as Vector2) - t.get_size() / 2.0)
+
 	else:
 		match it.kind:
 			"van":
@@ -392,6 +418,12 @@ func _yard_item(it: Dictionary, at: Vector2, sz: Vector2, turned: bool) -> void:
 						on.draw_texture(trailer, Vector2(-trailer.get_width() / 2.0, -trailer.get_height() + 4))
 					Facing.draw(on, sheet, 3, 2, PI / 2.0 if turned else 0.0, Vector2(0, -24.0 if trailer else -12.0))
 	var n := _thing(foot - Vector2(0, 1), Vector2(sz.x - 4, sz.y - 2), hint, _yard_card.bind(it), tex, paint, solid, centred)
+	if it.kind.begins_with("staff_"): # its furniture along its back, each a thing of its own
+		for f: Array in furniture:
+			var t: Texture2D = f[0]
+			var ground := Vector2(minf(t.get_width() * 0.8, 70.0), 10.0)
+			var piece := _thing(at + sz * (f[1] as Vector2) + Vector2(0, ground.y / 2.0), ground, "", Callable(), t, Callable(), true, true)
+			piece.set_meta("of", Game.spot_key(it))
 	n.z_index = -6 if it.kind.begins_with("staff_") else 0
 	_item_nodes[Game.spot_key(it)] = n
 	if it.get("mine", false):
@@ -504,7 +536,7 @@ func _standing() -> void:
 			continue
 		var sheet := preload("res://art/walker.png")
 		var per := maxi(1, floori((room.size.x - 16.0) / 36.0)) # to a row, as many as the room's wide enough for
-		var at := (room.position + Vector2(16.0 + (i % per) * 36.0, room.size.y * 0.55 + floorf(float(i) / per) * 22.0)) if room.size != Vector2.ZERO \
+		var at := (room.position + Vector2(16.0 + (i % per) * 36.0, room.size.y * 0.7 + floorf(float(i) / per) * 12.0)) if room.size != Vector2.ZERO \
 			else Vector2(20.0 + i * 36.0, 70.0)
 		var reads := i % 3 == 1 # a magazine
 		i += 1
@@ -517,7 +549,7 @@ func _standing() -> void:
 		n.set_meta("facing", [PI / 2.0, PI * 0.25, PI * 0.75][i % 3])
 		n.set_meta("helper", true)
 		n.self_modulate = Color("b8d0ff") # not you: a helper (ponytail: your own sprite tinted, till the crew have their own)
-		_tag(n, h.name.split(" ")[0] + (" !" if h.has("asks") else ""), Vector2(0, -40), UI.GOLD if h.has("asks") else TAG)
+		_tag(n, h.name.split(" ")[0] + (" !" if h.has("asks") else ""), Vector2(0, -40 - (i % 2) * 11), UI.GOLD if h.has("asks") else TAG)
 
 
 func _standing_card(h: Dictionary) -> void:
@@ -552,6 +584,9 @@ func _start_carry(it: Dictionary) -> void:
 	var n: Node2D = _item_nodes.get(Game.spot_key(it))
 	if n:
 		n.visible = false
+	for c: Node in _world.get_children(): # its furniture goes with it
+		if c.get_meta("of", "") == Game.spot_key(it):
+			(c as Node2D).visible = false
 
 
 ## Where what you're carrying would go: the cells under you, a step ahead.
@@ -677,7 +712,7 @@ func _stock(kind: String, foot: Vector2) -> void:
 	var price: int = Game.VAN.price if kind == "van" else (Game.ROBOT.price if kind == "robot" else Game.MOWERS[kind].price)
 	if kind == "van":
 		n = _thing(foot, Vector2(150, 44), "look at the van", _stock_card.bind(kind), preload("res://art/van.png"), Callable(), true, true)
-		_tag(n, "VAN $%d" % price, Vector2(0, -96))
+		_tag(n, "VAN $%d" % price, Vector2(0, -128))
 		return
 	if kind == "robot":
 		n = _thing(foot, Vector2(24, 14), "look at the robot mower", _stock_card.bind(kind), null, func(c: Node2D) -> void: Robot.draw(c, Vector2(0, -10)))
@@ -797,7 +832,7 @@ func _covers(n: Node2D, at: Vector2) -> bool:
 func _mark_covering() -> void:
 	for th: Dictionary in _things:
 		for other: Dictionary in _things:
-			if other != th and other.solid and not (other.hint as String).begins_with("look at the van") 					and _covers(th.node, (other.node as Node2D).position + Vector2(0, -6)):
+			if other != th and other.solid and other.hint != "" and other.hint != "get in your truck" and not (other.hint as String).begins_with("look at the van") 					and _covers(th.node, (other.node as Node2D).position + Vector2(0, -6)):
 				th.covering = true
 
 
@@ -815,6 +850,8 @@ func _target() -> Dictionary:
 	var best := {}
 	var best_d := INF
 	for t: Dictionary in _things:
+		if t.hint == "":
+			continue # decor: nothing to do with it
 		var r: Rect2 = (t.rect as Rect2).grow(REACH)
 		if r.has_point(ahead) or r.has_point(walker.global_position):
 			var d := (t.rect as Rect2).get_center().distance_to(ahead)

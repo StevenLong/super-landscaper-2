@@ -217,7 +217,7 @@ def main(only=None):
                         save("cooler", v.still(v.cooler(), FURNITURE_TURN), 4), save("arcade", v.still(v.arcade(), FURNITURE_TURN), 4),
                         save("phone_table", v.still(v.phone_table(), FURNITURE_TURN), 4), save("shelving", v.still(v.shelving(), FURNITURE_TURN), 4),
                         save("corkboard", a.corkboard(), 4),
-                        save("door", a.door(), 4), save("floorboards", a.floorboards(), 6), save("shelf", a.shelf(), 4),
+                        save("door", a.door(), 4), save("floorboards", a.floorboards(), 6),
                         save("counter", a.counter(), 4), save("signpost", a.signpost(), 4)],
         "client": lambda: [save("client", v.sheet([v.client(0), v.client(1), v.client(2)]), 4)],
         "pond": lambda: [save("pond", sheet([a.pond(0), a.pond(1)]), 3)],
