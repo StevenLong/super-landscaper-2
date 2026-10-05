@@ -230,7 +230,11 @@ func _process(_delta: float) -> bool:
 			assert(s.find_child("Said", true, false).text.contains("ready to grow"), "Vince, with no offer: come back later")
 			_press("hop")
 			g.principal = 0
-			g.premises = 0 # the lock-up, outgrown: his offer stands
+			g.premises = 0 # the lock-up, outgrown: his offer stands (the warehouse's kit gone, so the unit takes what's left)
+			g.vans = 0
+			g.robots = 0
+			g.spares = {}
+			g.staff_room = ""
 			g.shark_offer = true
 			g.money = 0
 		27:

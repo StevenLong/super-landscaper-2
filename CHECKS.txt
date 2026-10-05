@@ -1,19 +1,30 @@
-PLAY CHECKS OWED  (5)
+PLAY CHECKS OWED  (8)
 
-The hub redesign's steps 1 and 2 (NOTES 248, 249): the crew and kit, and the building. Judge
-how it works, not how it looks: the art is step 5 (voxel vans and furniture, walls, windows).
+The hub redesign, all five steps (NOTES 248 to 252): the crew and kit, the building, the day's
+end and the client book, the paper and calls, the look.
 
-LOAD 1 of 1  (about 30 min: a new business, on the pad; [1] for money once you're past April)
-S25-PLACE  Start in the lock-up, move up to the unit (ring the estate agent from the phone),
-           later the warehouse. Does each read as your own place, tight at first? Pick
-           things up and set them down (a mower's card, Move it): does it feel right on the pad?
+LOAD 1 of 1  (about 40 min: a new business, on the pad; [1] for money once you're past April)
+S25-LOOK   Walk the lock-up, then (later) the unit and the warehouse, and the shop. Do they read
+           as places now, not boxes in a void? The vans and truck parked a little askew, the
+           furniture, doors that swing, the roller door going up as you near the truck,
+           helpers shifting about in the staff room. Anything still flat or hollow?
+>
+S25-PLACE  Move up (ring the estate agent from the phone). Pick things up and set them down
+           (a mower's card, Move it): does it feel right on the pad? Is the lock-up tight in a
+           good way?
 >
 S25-CREW   Fit a staff room (ring a builder), hire from the paper, send people from the
-           calendar's day. Is the who-goes list clear? Does marking a mower yours do what you'd
+           corkboard's day. Is the who-goes list clear? Does marking a mower yours do what you'd
            expect? Do helpers leaving and coming back read (gone from the staff room, van and all)?
 >
 S25-CAL    The corkboard: today as rows and bars, the month a tap of B away. Can you tell at a
            glance what's on, who's going and what's wrong?
+>
+S25-DAYEND The day's end as cards (A opens one), the sum card at the bottom; the client book's
+           index and pages. Clear? Anything you look for and can't find?
+>
+S25-PAPER  The paper: does it read as a newspaper now? Ringing an ad, a situation wanted and
+           Vince: do the calls feel like calls?
 >
 S25-END    Ending the day: the truck's "Drive home for the night", the street door (from the
            unit), Start's planner. Is there always one near you? Does the check ("still yours to
@@ -57,5 +68,9 @@ VERIFIED  251 the paper and calls: test_controls (a page at a time, the shoulder
           without an offer), test_crew_board (hired by a call), test_run_flow (booked by a
           call, a refused ad stamped), test_newsprint; screenshots of the front page, the
           classifieds, situations wanted and a call.
+VERIFIED  252 the look: test_hub (the walk round the building with the new art); screenshots
+          of the lock-up, unit, warehouse, the shop, carrying, the planner. Vans and the
+          truck are voxel stills parked 15 degrees askew (8 by 4 cells now, the bay 8 by 5);
+          the premises still hold what they did (test_premises).
 VERIFIED  sim_season SIM_CREW=0 and 2: no bankruptcies once the bot counts the move, the staff
           room and a month's rent and wages before it hires or moves.

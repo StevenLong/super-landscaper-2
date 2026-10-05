@@ -66,12 +66,12 @@ const PREMISES := [
 	{"name": "The unit", "w": 18, "d": 10, "deposit": 1500, "rent": 150, "staff": "corner", "street": true},
 	{"name": "The warehouse", "w": 30, "d": 16, "deposit": 8000, "rent": 600, "staff": "breakroom", "street": true},
 ]
-const BAY := Vector2i(8, 4) ## the truck's bay on the floor
+const BAY := Vector2i(8, 5) ## the truck's bay on the floor (parked a little askew, as the vans are)
 ## A staff room: hiring needs one, its seats how many you can employ. Bought and placed on
 ## your floor (it comes with you when you move); the warehouse takes a breakroom.
 const STAFF := {"corner": {"name": "Staff corner", "size": Vector2i(5, 4), "seats": 2, "price": 600},
 	"breakroom": {"name": "Breakroom", "size": Vector2i(9, 6), "seats": 6, "price": 2000}}
-const FOOT := {"push": Vector2i(2, 2), "petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "robot": Vector2i(2, 2), "van": Vector2i(7, 3)}
+const FOOT := {"push": Vector2i(2, 2), "petrol": Vector2i(2, 3), "rideon": Vector2i(4, 4), "robot": Vector2i(2, 2), "van": Vector2i(8, 4)} ## a van parked a little askew
 const HELP_SECS := {"push": 420.0, "petrol": 262.0, "rideon": 281.0} ## sim_balance's bot, default lawn to 85% (push guessed): a helper at pace 1 mows like it
 const WAGE := 25.0 ## a week per point of your name, asked by a helper of pace 1 and care 1 (less for less): fully booked, one brings in about twice it (tests/_probe in session 21, sim_season SIM_CREW)
 const WANTS_YOU := {"perfectionist": 15.0, "toff": 15.0} ## a regular of these wants you: a helper's visit starts their mood this much lower

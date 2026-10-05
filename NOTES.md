@@ -201,7 +201,7 @@ committed, the verifier after each; the dev plays a LOAD after 249 and after 252
    then a page per client, reputation on its first page).
 251. [BUILT 2026-10-05, unplayed] Step 4, the paper as a newspaper (newsprint, red-pen circles, three
    pages, the shark's standing ad) and calls as short dialogues in hud.gd's portrait box.
-252. [VISUAL, large] Step 5, the look (from 238, 244): vans, truck, furniture and fittings as
+252. [BUILT 2026-10-05, unplayed: CHECKS LOAD 1] Step 5, the look (from 238, 244): vans, truck, furniture and fittings as
    voxel models; four walls, windows, the building and street around them; clutter; the desk
    against a wall; doors that swing; helpers idling in the staff room. LOAD for the dev.
 253. [PARKED since 2026-10-05] An answering machine for missed incoming calls (the dev: fits

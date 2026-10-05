@@ -15,6 +15,7 @@ const REACH := 14.0 ## how far past a thing's footprint you can use it
 const WALL := Color("b8a47a")
 const WALL_DARK := Color("8a7650")
 const TAG := Color("f8e8c0")
+const ROOFS := Color("2c2e34") ## outside: the roofs round about
 
 var walker: CharacterBody2D
 var cam: Camera2D
@@ -29,6 +30,9 @@ var _floor_at := Vector2.ZERO ## the floor's cells start here
 var _carry := {} ## what you've picked up to set down elsewhere: {item, turned}
 var _ghost: Node2D ## where it'd go
 var _item_nodes := {} ## each thing on the floor's node, by its spot key
+var _doors: Array[Node2D] = [] ## doors that swing as you come up to them
+var _roller: Node2D ## the roller door over the truck's bay: up as you come to the truck
+var _idle := 0.0 ## till a helper in the staff room shifts about
 static var _stood := Vector2.INF ## where you stood when a card's act laid the place out again
 
 
@@ -66,14 +70,25 @@ func _ready() -> void:
 	_layer.add_child(_hint)
 
 
-## Lay out a room: its floor (a tiled texture), the back wall, and where you can walk.
-func _room(floor_rect: Rect2, tile: Texture2D, wall_h: float) -> void:
-	var dark := ColorRect.new() # beyond the room
-	dark.color = UI.BG
-	dark.position = floor_rect.position - Vector2(2000, 2000)
-	dark.size = floor_rect.size + Vector2(4000, 4000)
-	dark.z_index = -20
-	add_child(dark)
+## Lay out a room: what's outside it (roofs behind and beside, the pavement and the road in
+## front), its floor (a tiled texture), the back wall with its windows (`windows`: their
+## middles) and strip lights, the side walls, a low front wall cut away to see in, and
+## where you can walk.
+func _room(floor_rect: Rect2, tile: Texture2D, wall_h: float, windows: Array = []) -> void:
+	var out := Node2D.new() # outside
+	out.z_index = -20
+	var street := floor_rect.end.y + 12.0
+	out.draw.connect(func() -> void:
+		var wide := Rect2(floor_rect.position.x - 900, floor_rect.position.y - wall_h - 600, floor_rect.size.x + 1800, 600 + wall_h + floor_rect.size.y + 12)
+		out.draw_rect(wide, ROOFS)
+		for i in range(0, int(wide.size.x), 46): # the roofs' ridges, round about
+			out.draw_line(Vector2(wide.position.x + i, wide.position.y), Vector2(wide.position.x + i, wide.end.y), ROOFS.lightened(0.04), 1.0)
+		out.draw_texture_rect(preload("res://art/paving.png"), Rect2(wide.position.x, street, wide.size.x, 40), true) # the pavement
+		out.draw_rect(Rect2(wide.position.x, street + 40, wide.size.x, 4), Color("8a8a84")) # the kerb
+		out.draw_texture_rect(preload("res://art/asphalt.png"), Rect2(wide.position.x, street + 44, wide.size.x, 120), true) # the road
+		for x in range(int(wide.position.x), int(wide.end.x), 60):
+			out.draw_rect(Rect2(x, street + 102, 30, 3), Color("e8e0c0")))
+	add_child(out)
 	var ground := Node2D.new()
 	ground.z_index = -10
 	ground.draw.connect(func() -> void:
@@ -83,22 +98,59 @@ func _room(floor_rect: Rect2, tile: Texture2D, wall_h: float) -> void:
 			ground.draw_rect(w, WALL)
 			ground.draw_rect(Rect2(w.position, Vector2(w.size.x, 4)), WALL_DARK)
 			ground.draw_rect(Rect2(w.position + Vector2(0, w.size.y - 6), Vector2(w.size.x, 6)), WALL_DARK)
-			ground.draw_rect(Rect2(w.position + Vector2(0, w.size.y * 0.45), Vector2(w.size.x, 2)), WALL_DARK))
+			ground.draw_rect(Rect2(w.position + Vector2(0, w.size.y * 0.45), Vector2(w.size.x, 2)), WALL_DARK)
+			for x: float in windows: # windows onto outside
+				var g := Rect2(x - 17, w.position.y + 14, 34, 24)
+				ground.draw_rect(g.grow(3), WALL_DARK)
+				ground.draw_rect(g, Color("8fb8d8"))
+				ground.draw_rect(Rect2(g.position, Vector2(g.size.x, 8)), Color("b8d4e8"))
+				ground.draw_line(g.position + Vector2(6, g.size.y), g.position + Vector2(20, 0), Color(1, 1, 1, 0.5), 2.0) # a glint
+				ground.draw_rect(Rect2(g.position.x + 16, g.position.y, 2, g.size.y), WALL_DARK)
+			for x in range(int(floor_rect.position.x) + 50, int(floor_rect.end.x) - 30, 140): # strip lights
+				ground.draw_rect(Rect2(x - 20, w.position.y + 6, 40, 5), Color(1, 1, 0.85, 0.18))
+				ground.draw_rect(Rect2(x - 16, w.position.y + 7, 32, 3), Color("f4f4e8")))
 	add_child(ground)
+	var sides := Node2D.new() # the side walls and the low front one, in front of what's in the room
+	sides.z_index = 8
+	sides.draw.connect(func() -> void:
+		for x: float in [floor_rect.position.x - 12, floor_rect.end.x]:
+			sides.draw_rect(Rect2(x, floor_rect.position.y - wall_h, 12, floor_rect.size.y + wall_h + 12), WALL_DARK)
+			sides.draw_rect(Rect2(x + 2, floor_rect.position.y - wall_h, 8, floor_rect.size.y + wall_h + 12), WALL.darkened(0.15))
+		var front := Rect2(floor_rect.position.x - 12, floor_rect.end.y, floor_rect.size.x + 24, 12)
+		sides.draw_rect(front, WALL_DARK)
+		sides.draw_rect(Rect2(front.position, Vector2(front.size.x, 5)), WALL.darkened(0.1)))
+	add_child(sides)
 	_bounds = floor_rect.grow(-8.0)
+
+
+## A door in the back wall at `x`: it swings open as you come up to it.
+func _door(x: float) -> void:
+	var d := Node2D.new()
+	d.position = Vector2(x, -4)
+	d.z_index = -5
+	d.set_meta("open", 0.0)
+	var tex := preload("res://art/door.png")
+	d.draw.connect(func() -> void:
+		var w := tex.get_width()
+		var h := tex.get_height()
+		var o: float = d.get_meta("open")
+		d.draw_rect(Rect2(-w / 2.0, -h, w, h), Color("1a1814")) # the doorway
+		d.draw_texture_rect(tex, Rect2(-w / 2.0, -h, w * (1.0 - 0.8 * o), h), false, Color(1, 1, 1).darkened(0.35 * o))) # swung on its hinge
+	add_child(d)
+	_doors.append(d)
 
 
 ## Put a thing in the place: drawn standing on `foot` (its sprite's bottom centre there,
 ## or `paint` called with the node), taking up `ground` (a size, centred on foot, reaching
 ## back from it); `hint` what interacting does, `act` doing it. Solid unless said.
-func _thing(foot: Vector2, ground: Vector2, hint: String, act: Callable, tex: Texture2D = null, paint: Callable = Callable(), solid := true) -> Node2D:
+func _thing(foot: Vector2, ground: Vector2, hint: String, act: Callable, tex: Texture2D = null, paint: Callable = Callable(), solid := true, centred := false) -> Node2D:
 	var n := Node2D.new()
 	n.position = foot
 	if tex:
 		var s := Sprite2D.new()
 		s.texture = tex
-		s.centered = false
-		s.position = Vector2(-tex.get_width() / 2.0, -tex.get_height())
+		s.centered = centred # a voxel still: its middle on the ground at the ground's middle
+		s.position = Vector2(0, -ground.y / 2.0) if centred else Vector2(-tex.get_width() / 2.0, -tex.get_height())
 		n.add_child(s)
 	if paint.is_valid():
 		n.draw.connect(paint.bind(n))
@@ -165,7 +217,13 @@ func _premises() -> void:
 	var fl := Vector2(Game.floor_size()) * CELL
 	_floor_at = Vector2(ow, 0)
 	var room := Rect2(0, 0, ow + fl.x, fl.y + WALKWAY)
-	_room(room, preload("res://art/paving.png"), 70.0)
+	var bay_px := Rect2(_floor_at + Vector2(Game.bay().position) * CELL, Vector2(Game.bay().size) * CELL)
+	var windows: Array = []
+	for x in range(int(ow + 160), int(bay_px.position.x) - 30, 120): # windows along the floor's wall, clear of the pegboard and the roller door
+		windows.append(float(x))
+	if Game.premises > 0:
+		windows.append(ow * 0.86)
+	_room(room, preload("res://art/paving.png"), 70.0, windows)
 	var ground := Node2D.new() # the office's floorboards, its partition, the floor's cells, the bay
 	ground.z_index = -9
 	var boards := preload("res://art/floorboards.png")
@@ -179,17 +237,30 @@ func _premises() -> void:
 		for i in Game.floor_size().y + 1:
 			ground.draw_line(_floor_at + Vector2(0, i * CELL.y), _floor_at + Vector2(fl.x, i * CELL.y), Color(1, 1, 1, 0.13), 1.0)
 		ground.draw_rect(bay, Color("f8e070", 0.5), false, 2.0)
-		ground.draw_rect(Rect2(bay.position.x + 4, bay.end.y - 8, bay.size.x - 8, 3), Color("f8e070", 0.35)))
+		ground.draw_rect(Rect2(bay.position.x + 4, bay.end.y - 8, bay.size.x - 8, 3), Color("f8e070", 0.35))
+		var r := RandomNumberGenerator.new() # oil where things have stood
+		r.seed = Game.premises * 7 + 3
+		for i in 3 + Game.premises * 3:
+			var c := _floor_at + Vector2(r.randf_range(0.1, 0.9) * fl.x, r.randf_range(0.15, 0.95) * fl.y)
+			ground.draw_set_transform(c, 0.0, Vector2(1.0, 0.55))
+			ground.draw_circle(Vector2.ZERO, r.randf_range(5.0, 11.0), Color(0.05, 0.05, 0.06, 0.28))
+			ground.draw_set_transform(Vector2.ZERO)
+		ground.draw_set_transform(Vector2.ZERO)
+		_pegboard(ground, Rect2(ow + 14, -56, minf(110.0, bay.position.x - ow - 40), 30)))
 	add_child(ground)
-	var wall := Node2D.new() # the roller door, in the back wall over the bay
-	wall.z_index = -8
-	wall.draw.connect(func() -> void:
+	_roller = Node2D.new() # the roller door, in the back wall over the bay: up as you come to the truck
+	_roller.z_index = -8
+	_roller.set_meta("open", 0.0)
+	_roller.draw.connect(func() -> void:
 		var r := Rect2(bay.position.x + 8, -58, bay.size.x - 16, 56)
-		wall.draw_rect(r, Color("8c8c84"))
-		for y in range(int(r.position.y) + 4, int(r.end.y), 5):
-			wall.draw_line(Vector2(r.position.x, y), Vector2(r.end.x, y), Color("6c6c66"), 1.0)
-		wall.draw_rect(r, Color("4c4c48"), false, 2.0))
-	add_child(wall)
+		var o: float = _roller.get_meta("open")
+		_roller.draw_rect(r, Color("b8c8d0")) # daylight, outside
+		var shut := Rect2(r.position, Vector2(r.size.x, r.size.y * (1.0 - 0.85 * o)))
+		_roller.draw_rect(shut, Color("8c8c84"))
+		for y in range(int(shut.position.y) + 4, int(shut.end.y), 5):
+			_roller.draw_line(Vector2(r.position.x, y), Vector2(r.end.x, y), Color("6c6c66"), 1.0)
+		_roller.draw_rect(r, Color("4c4c48"), false, 2.0))
+	add_child(_roller)
 	# The office's fittings.
 	var cork := Sprite2D.new()
 	cork.texture = preload("res://art/corkboard.png")
@@ -198,25 +269,23 @@ func _premises() -> void:
 	cork.z_index = -5
 	add_child(cork)
 	_thing(Vector2(ow * 0.3, 4), Vector2(50, 6), "read the calendar on the corkboard", _to_board.bind("corkboard"), null, Callable(), false)
-	_thing(Vector2(ow * 0.3, 34), Vector2(76, 22), "sit at the desk (the client book)", _to_board.bind("desk"), preload("res://art/desk.png"))
-	var phone_at := Vector2(ow * 0.86, 30)
-	_thing(phone_at, Vector2(26, 14), "use the phone (the paper, ringing round)", _phone_card, null, func(on: Node2D) -> void:
-		on.draw_rect(Rect2(-13, -22, 26, 14), Color("6a4a2a")) # the side table
-		on.draw_rect(Rect2(-13, -8, 3, 8), Color("4a3018"))
-		on.draw_rect(Rect2(10, -8, 3, 8), Color("4a3018"))
-		on.draw_rect(Rect2(-10, -27, 10, 6), Color("c03028")) # the phone
-		on.draw_rect(Rect2(2, -25, 9, 4), Color("ece4cc"))) # the paper
+	_thing(Vector2(ow * 0.3, 30), Vector2(76, 22), "sit at the desk (the client book)", _to_board.bind("desk"), preload("res://art/desk.png"), Callable(), true, true)
+	var phone_at := Vector2(ow * 0.86, 24)
+	_thing(phone_at, Vector2(26, 14), "use the phone (the paper, ringing round)", _phone_card, preload("res://art/phone_table.png"), Callable(), true, true)
 	if Game.staff_room != "":
-		_thing(Vector2(ow * 0.62, room.size.y - 14), Vector2(16, 10), "open the filing cabinet (your staff)", _cabinet_card, null, func(on: Node2D) -> void:
-			on.draw_rect(Rect2(-8, -26, 16, 26), Color("8a9098"))
-			for y in [-22, -14, -6]:
-				on.draw_rect(Rect2(-4, y, 8, 2), Color("4a5058")))
+		_thing(Vector2(ow * 0.3 + 54, 24), Vector2(22, 14), "open the filing cabinet (your staff)", _cabinet_card, preload("res://art/cabinet.png"), Callable(), true, true)
+	if Game.premises > 0: # a bigger office: shelving, and a rug to stand on
+		_thing(Vector2(ow * 0.22, room.size.y - 26), Vector2(64, 12), "", Callable(), preload("res://art/shelving.png"), Callable(), true, true)
+		var rug := Node2D.new()
+		rug.z_index = -8
+		rug.draw.connect(func() -> void:
+			var r := Rect2(ow * 0.18, 64, ow * 0.6, minf(70.0, room.size.y - 120))
+			rug.draw_rect(r, Color("6a2a2a"))
+			rug.draw_rect(r.grow(-5), Color("8a3a30"), false, 2.0)
+			rug.draw_rect(r.grow(-12), Color("a85840"), false, 1.0))
+		add_child(rug)
 	if Game.PREMISES[Game.premises].street:
-		var door := Sprite2D.new()
-		door.texture = preload("res://art/door.png")
-		door.position = Vector2(ow * 0.62, -28)
-		door.z_index = -5
-		add_child(door)
+		_door(ow * 0.62)
 		_thing(Vector2(ow * 0.62, 8), Vector2(30, 8), "lock up and go home (end the day)", _end_day_card, null, Callable(), false)
 	# The floor: everything where it stands, the truck in its bay.
 	var lay := Game.yard_layout()
@@ -230,8 +299,8 @@ func _premises() -> void:
 		var sz := Vector2(Game.foot(it.kind)) * CELL
 		_yard_item(it, _floor_at + Vector2(x, fl.y + WALKWAY + 40), sz, false) # no room for it: outside, till it's sold
 		x += sz.x + 10.0
-	var truck_at := Vector2(bay.get_center().x, bay.end.y - 2)
-	_thing(truck_at, Vector2(120, 30), "get in your truck", _truck_card, preload("res://art/truck.png"))
+	var truck_at := Vector2(bay.get_center().x, bay.end.y - 4)
+	_thing(truck_at, Vector2(bay.size.x - 12, bay.size.y - 8), "get in your truck", _truck_card, preload("res://art/truck_parked.png"), Callable(), true, true)
 	_standing()
 	_mark_covering()
 	var at: Vector2 = {"truck": truck_at + Vector2(-10, 26), "phone": phone_at + Vector2(0, 22), "paper": phone_at + Vector2(0, 22), "door": Vector2(ow * 0.62, 24)}.get(Game.spot, Vector2(ow * 0.3, 60))
@@ -240,6 +309,26 @@ func _premises() -> void:
 	_ghost.z_index = 30
 	_ghost.draw.connect(_draw_ghost)
 	add_child(_ghost)
+
+
+## A pegboard of tools on the wall, if there's room for one.
+func _pegboard(on: Node2D, peg: Rect2) -> void:
+	if peg.size.x <= 30:
+		return
+	on.draw_rect(peg, Color("c8a878"))
+	on.draw_rect(peg, WALL_DARK, false, 2.0)
+	for i in range(int(peg.size.x / 22)):
+		var t := peg.position + Vector2(8 + i * 22, 5)
+		match i % 3:
+			0: # a hammer
+				on.draw_rect(Rect2(t + Vector2(3, 4), Vector2(2, 16)), Color("7c522e"))
+				on.draw_rect(Rect2(t, Vector2(8, 5)), Color("54545e"))
+			1: # a saw
+				on.draw_rect(Rect2(t + Vector2(0, 2), Vector2(6, 18)), Color("a8a8b4"))
+				on.draw_rect(Rect2(t + Vector2(-1, 0), Vector2(8, 4)), Color("a82a22"))
+			_: # a spanner
+				on.draw_rect(Rect2(t + Vector2(2, 2), Vector2(3, 17)), Color("7a7a86"))
+				on.draw_rect(Rect2(t, Vector2(7, 4)), Color("7a7a86"))
 
 
 ## To one of the office's paper things (Game.spot says which: the board opens on it).
@@ -268,24 +357,29 @@ func _yard_item(it: Dictionary, at: Vector2, sz: Vector2, turned: bool) -> void:
 	var tex: Texture2D = null
 	var paint := Callable()
 	var solid := true
+	var centred := false
 	if it.kind.begins_with("staff_"):
 		hint = "look at the %s" % Game.kit_name(it.kind).to_lower()
 		solid = false
+		var furniture: Array = [[preload("res://art/sofa.png"), Vector2(0.3, 0.3)], [preload("res://art/vending.png"), Vector2(0.88, 0.25)],
+			[preload("res://art/cooler.png"), Vector2(0.68, 0.25)]]
+		if it.kind == "staff_breakroom":
+			furniture.append([preload("res://art/arcade.png"), Vector2(0.52, 0.25)])
 		paint = func(on: Node2D) -> void:
 			var r := Rect2(-sz.x / 2.0, -sz.y, sz.x, sz.y)
-			on.draw_rect(r, Color("6a5a7a", 0.35))
-			on.draw_rect(r, Color("c8c0b0"), false, 3.0) # the partition
-			on.draw_rect(Rect2(r.position + Vector2(6, 4), Vector2(minf(56.0, r.size.x - 12.0), 12)), Color("8a3a3a")) # a sofa
-			on.draw_rect(Rect2(r.end.x - 16, r.position.y + 2, 12, 22), Color("3a6a9a")) # the vending machine
-			on.draw_rect(Rect2(r.end.x - 30, r.position.y + 10, 8, 14), Color("d8e8f0")) # the water cooler
-			if it.kind == "staff_breakroom":
-				on.draw_rect(Rect2(r.position.x + 70, r.position.y + 2, 14, 20), Color("2a2a3a")) # the arcade cabinet
-				on.draw_rect(Rect2(r.position.x + 72, r.position.y + 4, 10, 7), Color("40c0a0"))
+			on.draw_rect(r, Color("5a5070", 0.45)) # a carpet
+			on.draw_rect(Rect2(r.position.x, r.position.y - 16, r.size.x, 16), Color("c8c0b0", 0.85)) # the partition's back, behind it all
+			on.draw_rect(Rect2(r.position.x - 3, r.position.y - 16, 3, r.size.y + 16), Color("a8a090")) # and its ends
+			on.draw_rect(Rect2(r.end.x, r.position.y - 16, 3, r.size.y + 16), Color("a8a090"))
+			for f: Array in furniture: # along its back, each still's middle on the ground there
+				var t: Texture2D = f[0]
+				on.draw_texture(t, r.position + r.size * (f[1] as Vector2) - t.get_size() / 2.0)
 	else:
 		match it.kind:
 			"van":
 				hint = "look at the van"
 				tex = preload("res://art/van.png")
+				centred = true
 			"robot":
 				hint = "look at the robot mower"
 				paint = func(on: Node2D) -> void: Robot.draw(on, Vector2(0, -10))
@@ -297,7 +391,7 @@ func _yard_item(it: Dictionary, at: Vector2, sz: Vector2, turned: bool) -> void:
 					if trailer:
 						on.draw_texture(trailer, Vector2(-trailer.get_width() / 2.0, -trailer.get_height() + 4))
 					Facing.draw(on, sheet, 3, 2, PI / 2.0 if turned else 0.0, Vector2(0, -24.0 if trailer else -12.0))
-	var n := _thing(foot - Vector2(0, 1), Vector2(sz.x - 4, sz.y - 2), hint, _yard_card.bind(it), tex, paint, solid)
+	var n := _thing(foot - Vector2(0, 1), Vector2(sz.x - 4, sz.y - 2), hint, _yard_card.bind(it), tex, paint, solid, centred)
 	n.z_index = -6 if it.kind.begins_with("staff_") else 0
 	_item_nodes[Game.spot_key(it)] = n
 	if it.get("mine", false):
@@ -410,11 +504,18 @@ func _standing() -> void:
 			continue
 		var sheet := preload("res://art/walker.png")
 		var per := maxi(1, floori((room.size.x - 16.0) / 36.0)) # to a row, as many as the room's wide enough for
-		var at := (room.position + Vector2(16.0 + (i % per) * 36.0, 24.0 + floorf(float(i) / per) * 22.0)) if room.size != Vector2.ZERO \
+		var at := (room.position + Vector2(16.0 + (i % per) * 36.0, room.size.y * 0.55 + floorf(float(i) / per) * 22.0)) if room.size != Vector2.ZERO \
 			else Vector2(20.0 + i * 36.0, 70.0)
+		var reads := i % 3 == 1 # a magazine
 		i += 1
 		var n := _thing(at, Vector2(12, 6), "talk to %s" % h.name.split(" ")[0], _standing_card.bind(h), null,
-			func(on: Node2D) -> void: Facing.draw(on, sheet, 2, 0, PI / 2.0, Vector2(0, -14)), false)
+			func(on: Node2D) -> void:
+				Facing.draw(on, sheet, 2, 0, on.get_meta("facing", PI / 2.0), Vector2(0, -14))
+				if reads:
+					on.draw_rect(Rect2(-5, -19, 10, 7), Color("ece4cc"))
+					on.draw_rect(Rect2(-4, -18, 3, 2), Color("c03028")), false)
+		n.set_meta("facing", [PI / 2.0, PI * 0.25, PI * 0.75][i % 3])
+		n.set_meta("helper", true)
 		n.self_modulate = Color("b8d0ff") # not you: a helper (ponytail: your own sprite tinted, till the crew have their own)
 		_tag(n, h.name.split(" ")[0] + (" !" if h.has("asks") else ""), Vector2(0, -40), UI.GOLD if h.has("asks") else TAG)
 
@@ -559,26 +660,14 @@ func _planner() -> void:
 func _shop() -> void:
 	var floor_rect := Rect2(0, 0, 520, 230)
 	_room(floor_rect, preload("res://art/paving.png"), 80.0)
-	var shelf := Sprite2D.new()
-	shelf.texture = preload("res://art/shelf.png")
-	shelf.position = Vector2(70, -40)
-	shelf.z_index = -5
-	add_child(shelf)
-	var shelf2 := Sprite2D.new()
-	shelf2.texture = preload("res://art/shelf.png")
-	shelf2.position = Vector2(170, -40)
-	shelf2.z_index = -5
-	add_child(shelf2)
+	for x: float in [70.0, 170.0]: # shelving along the back wall
+		_thing(Vector2(x, 14), Vector2(64, 12), "", Callable(), preload("res://art/shelving.png"), Callable(), true, true)
 	var counter := _thing(Vector2(120, 110), Vector2(92, 18), "look at the counter (gloves, a trailer)", _counter_card, preload("res://art/counter.png"))
 	_tag(counter, "Gloves $%d   Trailer $%d" % [Game.UPGRADES.gloves.price, Game.UPGRADES.trailer.price], Vector2(0, -70))
-	var stock := [["petrol", Vector2(270, 90)], ["rideon", Vector2(360, 100)], ["robot", Vector2(450, 90)], ["van", Vector2(330, 200)]]
+	var stock := [["petrol", Vector2(270, 90)], ["rideon", Vector2(360, 100)], ["robot", Vector2(450, 90)], ["van", Vector2(330, 222)]]
 	for s: Array in stock:
 		_stock(s[0], s[1])
-	var door := Sprite2D.new()
-	door.texture = preload("res://art/door.png")
-	door.position = Vector2(480, -28)
-	door.z_index = -5
-	add_child(door)
+	_door(480.0)
 	_thing(Vector2(480, 8), Vector2(34, 8), "drive home, +%d min" % Game.DRIVE, drive_home, null, Callable(), false)
 	_spawn(Vector2(480, 30), Vector2(260, 70))
 
@@ -587,8 +676,8 @@ func _stock(kind: String, foot: Vector2) -> void:
 	var n: Node2D
 	var price: int = Game.VAN.price if kind == "van" else (Game.ROBOT.price if kind == "robot" else Game.MOWERS[kind].price)
 	if kind == "van":
-		n = _thing(foot, Vector2(130, 30), "look at the van", _stock_card.bind(kind), preload("res://art/van.png"))
-		_tag(n, "VAN $%d" % price, Vector2(0, -118))
+		n = _thing(foot, Vector2(150, 44), "look at the van", _stock_card.bind(kind), preload("res://art/van.png"), Callable(), true, true)
+		_tag(n, "VAN $%d" % price, Vector2(0, -96))
 		return
 	if kind == "robot":
 		n = _thing(foot, Vector2(24, 14), "look at the robot mower", _stock_card.bind(kind), null, func(c: Node2D) -> void: Robot.draw(c, Vector2(0, -10)))
@@ -657,8 +746,26 @@ func drive_home() -> void:
 
 # ---------------------------------------------------------------- walking about
 
-func _physics_process(_delta: float) -> void:
-	if walker == null or _card:
+func _physics_process(delta: float) -> void:
+	if walker == null:
+		return
+	for d: Node2D in _doors + ([_roller] if _roller else []):
+		var near := walker.position.distance_to(d.position + (Vector2(0, 20) if d != _roller else Vector2(0, 40))) < (40.0 if d != _roller else 140.0)
+		if d == _roller:
+			near = walker.position.distance_to(_target_of("get in your truck")) < 90.0
+		var o: float = move_toward(d.get_meta("open"), 1.0 if near else 0.0, delta * 3.0)
+		if o != d.get_meta("open"):
+			d.set_meta("open", o)
+			d.queue_redraw()
+	_idle -= delta
+	if _idle <= 0.0: # someone in the staff room shifts about
+		_idle = randf_range(1.5, 3.5)
+		var crew: Array = _things.filter(func(x: Dictionary) -> bool: return (x.node as Node2D).has_meta("helper"))
+		if not crew.is_empty():
+			var who: Node2D = crew.pick_random().node
+			who.set_meta("facing", randf_range(0.0, TAU))
+			who.queue_redraw()
+	if _card:
 		return
 	if not _carry.is_empty():
 		_hint.text = "%s set it down   %s%s put it back" % [Game.key("interact"), "" if _carry.item.kind == "van" else Game.key("throw") + " turn it   ", Game.key("hop")]
@@ -678,7 +785,10 @@ func _physics_process(_delta: float) -> void:
 ## drawn far taller than the floor it takes).
 func _covers(n: Node2D, at: Vector2) -> bool:
 	var spr := n.get_child(0) as Sprite2D if n.get_child_count() > 0 else null
-	return spr != null and at.y < n.position.y and Rect2(n.position + spr.position, spr.texture.get_size()).has_point(at)
+	if spr == null:
+		return false
+	var top_left := n.position + spr.position - (spr.texture.get_size() / 2.0 if spr.centered else Vector2.ZERO)
+	return at.y < n.position.y and Rect2(top_left, spr.texture.get_size()).has_point(at)
 
 
 ## Mark what would hide kit stood behind it: it stays see-through (NOTES 236). A van
@@ -689,6 +799,14 @@ func _mark_covering() -> void:
 		for other: Dictionary in _things:
 			if other != th and other.solid and not (other.hint as String).begins_with("look at the van") 					and _covers(th.node, (other.node as Node2D).position + Vector2(0, -6)):
 				th.covering = true
+
+
+## Where a thing stands, by its hint (or far away, if it isn't here).
+func _target_of(hint: String) -> Vector2:
+	for t: Dictionary in _things:
+		if t.hint == hint:
+			return (t.node as Node2D).position
+	return Vector2.INF
 
 
 ## What you'd use: the thing in front of you, else the nearest you're by.

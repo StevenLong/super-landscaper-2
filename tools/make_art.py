@@ -172,6 +172,10 @@ def save(name, canvas, preview_scale=4):
         bg.scaled(preview_scale).save(os.path.join(pv, "pv_" + name + ".png"))
 
 
+VEHICLE_TURN = 15 / 45 ## the vans and the truck parked a little askew, in eighths of a turn: the front shows
+FURNITURE_TURN = 1.7 ## the furniture square to you but for a few degrees, so a side shows
+
+
 def main(only=None):
     jobs = {
         "tiles": lambda: [
@@ -207,7 +211,12 @@ def main(only=None):
             save("squirrel", v.sheet([v.squirrel(0), v.squirrel(1)]), 4),
             save("splat", a.splat(), 6),
         ],
-        "hub": lambda: [save("van", a.van(), 3), save("desk", a.desk(), 4), save("corkboard", a.corkboard(), 4),
+        "hub": lambda: [save("van", v.still(v.van(), VEHICLE_TURN), 3), save("truck_parked", v.still(v.truck(), VEHICLE_TURN), 3),
+                        save("desk", v.still(v.desk(), FURNITURE_TURN), 4), save("cabinet", v.still(v.cabinet(), FURNITURE_TURN), 4),
+                        save("sofa", v.still(v.sofa(), FURNITURE_TURN), 4), save("vending", v.still(v.vending(), FURNITURE_TURN), 4),
+                        save("cooler", v.still(v.cooler(), FURNITURE_TURN), 4), save("arcade", v.still(v.arcade(), FURNITURE_TURN), 4),
+                        save("phone_table", v.still(v.phone_table(), FURNITURE_TURN), 4), save("shelving", v.still(v.shelving(), FURNITURE_TURN), 4),
+                        save("corkboard", a.corkboard(), 4),
                         save("door", a.door(), 4), save("floorboards", a.floorboards(), 6), save("shelf", a.shelf(), 4),
                         save("counter", a.counter(), 4), save("signpost", a.signpost(), 4)],
         "client": lambda: [save("client", v.sheet([v.client(0), v.client(1), v.client(2)]), 4)],

@@ -326,3 +326,167 @@ def car(paint):
         m.box(54, 56, s, s + 4, 12, 16, [hexc("fff8c0")])                      # headlights
         m.box(-56, -54, s, s + 4, 12, 15, RED[2:])                             # tail lights
     return m
+
+# ---------------------------------------------------------------- your premises (the hub)
+# Vehicles parked a little askew and the furniture square on, rendered once (a still, not
+# a sheet: they never turn), so they share the mowers' light and 3/4 view.
+
+CREAM_P = [hexc(h) for h in ("6a6050", "948a74", "bcb296", "dcd4b8", "f4eed8")]
+TRUCK_P = [hexc(h) for h in ("1c3060", "2a4a8a", "3c64b0", "5a82d0", "84a8e8")]
+CAN_P = [hexc(h) for h in ("6a4a10", "a07020", "d0a030", "f0c850")]
+FABRIC = [hexc(h) for h in ("3a1414", "5a2020", "7e3030", "a04440", "c06050")]
+CARD = [hexc(h) for h in ("5a4020", "7c5a30", "a07a48", "c09a68")]
+WHITE = [hexc(h) for h in ("8a8a90", "b8b8c0", "dcdce4", "f4f4f8")]
+TEAL = [hexc(h) for h in ("0c3a34", "14604c", "28a080", "60e0c0")]
+LIT = [hexc("fff8c0")]
+
+
+def still(m, facing):
+    """A thing that never turns, rendered once at `facing` (in eighths of a turn, any
+    fraction): the canvas fits it, the origin (its centre on the ground) at the canvas'
+    centre."""
+    R, top = m.extent()
+    W = math.ceil(R) * 2 + 4
+    H = math.ceil(max(top * F + R * G, R * G)) * 2 + 4
+    return render(m, facing, W, H)
+
+
+def van():
+    """A helper's box van, nose to +x: 140 long, 56 wide."""
+    m = Model()
+    for x in (-46, 44):
+        for s in (-1, 1):
+            m.wheel(x, 0, 9, 9, s * 27 - 4, s * 27 + 4, STEEL[:3], STEEL[3:], 0)
+    m.box(-68, 30, -28, 28, 6, 62, CREAM_P[1:])                               # the box
+    for s in (-29, 28):
+        m.box(-66, 28, s, s + 1, 30, 36, LEAF[2:])                            # the stripe
+        m.box(36, 56, s, s + 1, 28, 42, GLASS[1:])                            # side windows
+    m.box(-69, -68, -2, 2, 8, 60, STEEL[1:3])                                 # the back doors' seam
+    m.box(30, 62, -27, 27, 6, 44, CREAM_P[1:])                                # the cab
+    m.box(58, 63, -22, 22, 26, 42, GLASS[1:])                                 # windscreen
+    m.box(62, 70, -26, 26, 6, 24, CREAM_P[1:])                                # the nose
+    for s in (-22, 16):
+        m.box(69, 71, s, s + 6, 14, 19, LIT)                                  # headlights
+    m.box(-70, 71, -27, 27, 4, 7, STEEL[1:4])                                 # sill
+    return m
+
+
+def truck():
+    """Your pickup, nose to +x: 136 long, 56 wide, a petrol can in the bed."""
+    m = Model()
+    for x in (-40, 38):
+        for s in (-1, 1):
+            m.wheel(x, 0, 9, 9, s * 27 - 4, s * 27 + 4, STEEL[:3], STEEL[3:], 0)
+    m.box(-66, 20, -28, 28, 6, 26, TRUCK_P)                                   # the bed's sides
+    m.box(-64, 18, -25, 25, 7, 24, STEEL[:3])                                 # the bed
+    m.box(-50, -36, -10, 2, 24, 40, CAN_P)                                    # a petrol can
+    m.box(20, 58, -28, 28, 6, 52, TRUCK_P)                                    # the cab
+    m.box(22, 52, -26, 26, 40, 50, GLASS[1:])                                 # windows
+    m.box(56, 66, -27, 27, 6, 26, TRUCK_P)                                    # the nose
+    for s in (-22, 16):
+        m.box(65, 67, s, s + 6, 14, 19, LIT)
+    m.box(-68, 67, -27, 27, 4, 7, STEEL[1:4])
+    return m
+
+
+def desk():
+    """The desk, its front to +x (to you), its chair pulled out: 72 wide."""
+    m = Model()
+    m.box(-17, 17, -36, 36, 28, 31, WOOD[1:])                                 # the top
+    for y0 in (-36, 14):
+        m.box(-16, 16, y0, y0 + 22, 0, 28, WOOD[:4])                          # the pedestals
+        for z in (8, 17, 25):
+            m.box(16, 17, y0 + 8, y0 + 14, z, z + 2, YELLOW[2:])              # drawer handles
+    m.box(-12, 4, -30, -10, 31, 32, WHITE[1:])                                # papers
+    m.box(-8, 2, 6, 20, 31, 38, STEEL[1:4])                                   # a typewriter
+    m.box(22, 34, -9, 9, 15, 18, STEEL[1:4])                                  # the chair's seat
+    m.box(31, 34, -9, 9, 18, 34, STEEL[1:4])                                  # its back
+    for y in (-8, 7):
+        m.box(26, 28, y, y + 2, 0, 15, STEEL[:2])                             # its legs
+    return m
+
+
+def cabinet():
+    """The filing cabinet, drawers to +x."""
+    m = Model()
+    m.box(-11, 11, -11, 11, 0, 54, STEEL[2:])
+    for z in (14, 32, 50):
+        m.box(11, 12, -9, 9, z - 14, z - 13, STEEL[1:3])                      # drawer gaps
+        m.box(11, 13, -3, 3, z - 6, z - 4, STEEL[3:])                         # handles
+    return m
+
+
+def sofa():
+    """The staff room's sofa, its seat to +x: 72 wide."""
+    m = Model()
+    m.box(-14, 14, -36, 36, 2, 12, FABRIC)                                    # the base
+    m.box(-12, 14, -32, 32, 12, 16, FABRIC[1:])                               # the cushions
+    m.box(-14, -6, -36, 36, 12, 32, FABRIC)                                   # the back
+    for y0 in (-36, 30):
+        m.box(-14, 14, y0, y0 + 6, 12, 22, FABRIC)                            # the arms
+    return m
+
+
+def vending():
+    """The vending machine, its front (glass, rows of cans) to +x."""
+    m = Model()
+    m.box(-12, 12, -15, 15, 0, 66, BLUE[1:])
+    m.box(12, 13, -12, 6, 22, 60, GLASS[1:])                                  # the window
+    for z in (28, 38, 48):
+        for y in range(-10, 5, 5):
+            m.box(12, 14, y, y + 3, z, z + 5, (RED if (y + z) % 2 else CAN_P)[1:])  # what's for sale
+    m.box(12, 13, 8, 13, 36, 52, STEEL[2:])                                   # the coin slot
+    m.box(12, 13, -12, 12, 6, 14, STEEL[:2])                                  # the tray
+    return m
+
+
+def cooler():
+    """The water cooler, its tap to +x."""
+    m = Model()
+    m.box(-7, 7, -7, 7, 0, 34, WHITE)
+    m.ellipsoid(0, 0, 42, 6.5, 6.5, 9, GLASS[2:], zmin=34)                    # the bottle
+    m.box(7, 9, -2, 2, 24, 27, BLUE[3:])                                      # the tap
+    return m
+
+
+def arcade():
+    """The arcade cabinet, its screen to +x."""
+    m = Model()
+    m.box(-12, 10, -12, 12, 0, 64, STEEL[:3])
+    m.box(10, 16, -12, 12, 26, 32, STEEL[1:4])                                # the control panel
+    m.box(13, 15, -6, -3, 32, 35, RED[2:])                                    # the stick
+    m.box(13, 15, 3, 6, 32, 34, YELLOW[2:])                                   # the buttons
+    m.box(10, 11, -9, 9, 36, 54, TEAL)                                        # the screen, lit
+    m.box(10, 12, -10, 10, 56, 62, CAN_P[1:])                                 # the marquee
+    return m
+
+
+def phone_table():
+    """The side table by the door: the phone and the paper on it."""
+    m = Model()
+    m.box(-10, 10, -14, 14, 22, 25, WOOD[1:])                                 # the top
+    for x in (-9, 7):
+        for y in (-13, 11):
+            m.box(x, x + 2, y, y + 2, 0, 22, WOOD[:3])                        # the legs
+    m.box(-6, 4, -12, -1, 25, 30, RED[1:])                                    # the phone
+    m.box(-4, 2, -11, -2, 30, 32, RED[2:])                                    # its receiver
+    m.box(-8, 8, 2, 13, 25, 26, CREAM_P[2:])                                  # the paper
+    return m
+
+
+def shelving():
+    """Steel shelving against the wall, odds and ends on it, the front to +x."""
+    m = Model()
+    for x in (-9, 7):
+        for y in (-30, 28):
+            m.box(x, x + 2, y, y + 2, 0, 60, STEEL[1:4])                      # the uprights
+    for z in (2, 20, 38, 56):
+        m.box(-9, 9, -30, 30, z, z + 2, STEEL[2:])                            # the shelves
+    m.box(-6, 6, -26, -12, 4, 14, CARD)                                       # a box
+    m.box(-5, 5, -6, 4, 4, 18, CAN_P)                                         # a can
+    m.box(-6, 6, 10, 26, 22, 32, CARD)                                        # boxes
+    m.box(-4, 4, -24, -16, 22, 34, RED[1:])                                   # a toolbox
+    m.box(-5, 5, -2, 12, 40, 47, STEEL[1:3])                                  # the radio
+    m.box(5, 6, 0, 4, 42, 45, STEEL[4:])                                      # its dial
+    m.box(-6, 6, 16, 26, 40, 52, CARD[1:])                                    # more boxes
+    return m
