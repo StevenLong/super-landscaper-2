@@ -142,8 +142,8 @@ S11-SPAWN: nothing stuck seen since; the dev will say if it returns.
    Seeds got on a job or elsewhere, planted there, grow over several days: leave, come back
    to see a little growth, leave again. Later: another door off the hub (2026-10-04 grill).
 
-PROPOSED ORDER: the dev plays session 24's LOADs; 227 when the drawing comes; then a
-grill on 225 (upgrades as work, at the yard), 207 with 136, or 208 (your garden, a door).
+PROPOSED ORDER: superseded, see Notes 2026-10-05 (the hub redesign grill first). Still
+waiting: 227 when the drawing comes; grills on 225, 207 with 136, 208.
 
 ### Notes 2026-10-04 (LOAD 3 played, S17 and S18 check fallout, two bugs)
 
@@ -173,6 +173,85 @@ read (227). S21-CREW: the whole flow confusing (222).
 220, 222, 223, 224 and 217 grilled and built (228 to 234, session 24). 218, 219, 221 and 47
 built in session 23.
 
+### Notes 2026-10-05 (session 24's LOADs 1 and 2 played: the hub, the desk and the crew want another big pass)
+
+Verdicts: S24-PAD nothing beyond the notes below. S24-RAISE retired (the dev raises it if it
+plays wrong). S24-FENCE retired (the dev reports fences as seen, 194). The dev's overall
+read: the hub as built doesn't feel good yet; 239 to 245 are one redesign, grill them together.
+
+238. [VISUAL, large] The rooms don't read (S24-HUB): hollow, eerie, flat; nothing alive or
+   interactable; doors neither open nor animate; the desk's placement looks alien. The dev
+   isn't sure Claude should do this: they may make prototype visuals as guidance, or ask
+   someone good at it. WAITS on that. Home: hub.gd (rooms built in code), tools/art_sprites.py
+   group "hub". Joins 137 (the art pipeline). QUESTION: anything cheap meanwhile (doors that
+   swing as you pass), or leave the rooms alone until the visuals come?
+239. [DESIGN, large] The desk crams calendar, paper and client book into one place, and the
+   calendar gives nothing but a way to skip a day (S24-CAL). Too much repeated or idle text:
+   the date and time above a calendar that already shows the date, three money lines, the
+   reputation line, the date a third time on the day panel. The bookings mix whole numbers
+   and clock times. The dev's split, four things in the office, each its own interactable:
+   a. Calendar and planning: bring back the number-line timeline. Pick a day, see its
+      bookings beside the line; highlighting a job in the list lights it on the line;
+      assign who goes from there.
+   b. Newspaper and phone, together somewhere else in the office: how you ring people.
+   c. Client book, on the desk: your regulars.
+   d. Filing cabinet, by the desk: employees (stats, letting go; training later, out of
+      scope).
+   Home: board.gd (the desk), hub.gd (where the stations stand). The old timeline was the
+   board's pre-228 day view (git history). Decides with 245 (what assigning means) and 241.
+   238's look is separate: this decides what each station does, the look can follow.
+240. [DESIGN, large] The paper doesn't read as a paper (S24-PAPER): "the worst webpage ever
+   made", a white square, a centred title, left-aligned blocks. Wanted: it feels like you've
+   picked up a real newspaper, with the parts that matter to you highlighted. Still menu-ish
+   underneath: left/right at a page's edge or the shoulders turn the page, directions move
+   focus between things worth acting on, A acts (rings, or whatever fits). Home: board.gd's
+   paper pages. Leans on 238's visual direction for the page itself.
+241. [FEATURE, moderate] Ending the day means walking to the office and picking it from a menu
+   (S24-DAYEND). The dev's options, either or both: (a) a shopfront entrance on the office:
+   trying to leave through it offers to end the day; (b) a pocket planner that travels with
+   you, holding the things you'd otherwise walk back for: the day's plan, end the day.
+   Home: hub.gd (doors), board.gd (the end-day path). QUESTION: (a), (b) or both?
+242. [FEATURE, moderate] The day's end screen reads as sentences (S24-DAYEND, screenshot).
+   Wanted: a list of cards, one per job, yours and the crew's in one list (lose the separate
+   headings). Collapsed: the money change, who went, where. Expanded (A): the full job
+   report. A summary card at the bottom tallies everything. The screenshot also shows a
+   number that confuses: "Nigel: 1 job, $82" then "the crew +$9": $82 is what the customer
+   paid, +$9 the net after fuel and the flowerbed's bill (game.gd help_job, r.paid vs
+   r.net). A card's top line should be the net, the expanded view the pay, fuel and bill.
+   Home: board.gd _day_end (~860 to 930), game.gd end_day's day_end dict (has what's needed
+   for crew jobs; day_mine has net, outcome, mood for yours).
+243. [DESIGN, large] Storage (S24-YARD): a yellow box in a big room that you buy more of reads
+   arbitrary, "Backrooms-esque". Wanted: the real space is the inventory. Start smaller (a
+   shed, a lockup, a garage): the truck and the mower go in it and it gets tight; grow by
+   paying for a bigger place, not more squares. First hit the ceiling only via cheats (a
+   second van and a ride-on a few weeks in). Placement always looked wrong (see 244).
+   Supersedes the yard's +4 rows (hub.gd, game.gd yard rows) and folds in 237 (arranging by
+   hand). QUESTION for the grill: in a tight space, do you place things yourself (237 yes) or
+   does it still auto-pack?
+244. [VISUAL, moderate] The new vans and many new assets are weirdly narrow and feel
+   two-dimensional (S24-YARD). Home: tools/art_sprites.py group "hub" (8 sprites, session
+   24), tools/voxel.py for anything that turns. Goes with 238.
+245. [DESIGN, large] The crew UX, blank slate (S24-CREW, screenshot: a van's card offering
+   "Nigel steps out of the van / Let Nigel go (the van stays) / Put the crew's petrol mower
+   in it / Sell the van, $200 (Nigel steps out)"). The dev: "This UX is insane"; rebuild it
+   as if from scratch. There's a roster of employees, there's equipment, and there are jobs
+   that employees, with equipment, go to. No menu of every combination of who and what
+   stays or goes: simple, sensible defaults. Undoes the session 24 "three things, each
+   removable alone" cards (d41fa63) as UI; the model (helpers, vans, mowers separate) may
+   stay underneath. Home: hub.gd card builders (~600 to 700), game.gd helpers/vans. Decides
+   with 239d (the filing cabinet is the roster) and 239a (assigning on the calendar).
+246. [BUG, small] "Back ((B))" on the hub's cards: hub.gd:672 wraps Game.key("hop") in
+   parens, and key() already adds them (game.gd:371). Drop the outer parens; grep for other
+   "(%s)" % Game.key callers.
+247. [BUG, small] On Fridays the day panel's text (the payday line) doesn't wrap, so the panel
+   grows and squeezes the calendar (CHECKS NOTES). Home: board.gd's day panel; set autowrap
+   and a fixed width. Moot if 239 rebuilds the panel, so fix only if 239 waits.
+
+PROPOSED ORDER: one grill for 245, 239, 241, 242, 243 and 240 (in that order: the crew model
+decides what the filing cabinet and assigning are, which shapes the stations, the day's end
+cards and storage), then build in the same order; 246 rides with the first build. 238 and
+244 wait on the dev's visuals; 240's page look too.
+
 ### Grilled 2026-10-04c (the hub: 217, 220, 222, 223, 224, S14-CAL, S23-RAISE)
 
 Decided in the design doc (Outside the Season, The hub; The Business, Hired help, Growth
@@ -185,7 +264,7 @@ LOADs 1 and 2); Claude's calls in the doc's "As built". Left from it:
    when something wants ringing that isn't an ad (a regular to move a visit, the shark?).
 237. [DESIGN, small] Arranging the yard by hand: open (the dev, 2026-10-04: "not fully
    convinced we won't want to"). Auto-placed is biggest first, so free-looking cells may not
-   take a van: S24-YARD asks whether that reads wrong.
+   take a van: S24-YARD asks whether that reads wrong. (2026-10-05: it did; folded into 243.)
 
 ### Grilled 2026-10-04 (168 hired help with 189 robots: ways to buy time)
 
