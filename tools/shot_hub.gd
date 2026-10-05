@@ -18,11 +18,11 @@ func _initialize() -> void:
 	g.buy("robot")
 	g.buy("van")
 	g.hire(g.wanted[0])
-	g.buy("crew_petrol")
-	g.set_kit(g.helpers[0].id, "petrol")
+	g.buy("petrol")
+	g.mark_mine("petrol", true)
 	g.buy("van")
 	g.wanted.append({"id": 77, "name": "Agnes Crumb", "pace": 0.7, "care": 0.5, "wage": 80, "rep": 50.0})
-	g.hire(g.wanted[-1]) # no van left: she waits in the yard
+	g.hire(g.wanted[-1])
 	g.place = "office"
 	g.spot = "desk"
 	change_scene_to_file("res://hub.tscn")
@@ -36,7 +36,7 @@ func _process(_d: float) -> bool:
 		change_scene_to_file("res://hub.tscn")
 	if f == 40:
 		root.get_texture().get_image().save_png(out + "/hub_yard.png")
-		h.use("look in")
+		h.use("look at the van")
 	if f == 46:
 		root.get_texture().get_image().save_png(out + "/hub_van_card.png")
 		h._close_card()

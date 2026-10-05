@@ -66,7 +66,7 @@ func _process(_delta: float) -> bool:
 			assert(current_scene.find_children("*", "Button", true, false).any(func(b: Button) -> bool: return b.text == "Drop (owe $360)"), "Drop says what you'd owe back")
 			g.calendar = {g.day: [g._visit(_id)]}
 			current_scene._show("calendar")
-			assert(_labels().any(func(t: String) -> bool: return t.contains("Paid up front")), "today's visit: paid up front")
+			assert(_labels().any(func(t: String) -> bool: return t.to_lower().contains("paid up front")), "today's visit: paid up front")
 			# A sour visit: the summary says what changed.
 			g.last_result = {"outcome": "paid", "customer": "X", "comment": "Hmph.", "paid": 50, "net": 50, "fuel_cost": 0,
 				"rep": -1.0, "rep_lines": [["The job", -1.0]], "tip": 0, "rep_before": 50.0, "rep_after": 49.0, "terms": "fewer", "mood": 40.0}

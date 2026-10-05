@@ -41,12 +41,17 @@ func _process(_d: float) -> bool:
 		(b.find_child("EndDay", true, false) as Control).grab_focus()
 	if f == 40:
 		root.get_texture().get_image().save_png(out + "/board_calendar.png")
-		(b.find_child("Tile_%d" % (g.day + 1), true, false) as Control).grab_focus()
+		b._to_month()
 	if f == 44:
-		(b.find_child("DayPanel", true, false).find_child("Who", true, false) as Button).pressed.emit()
+		root.get_texture().get_image().save_png(out + "/board_month.png")
+		b._open_day = g.day + 2
+		b._cal_month = false
+		b._build()
+	if f == 46:
+		(b.find_child("Who", true, false) as Button).pressed.emit()
 	if f == 48:
 		root.get_texture().get_image().save_png(out + "/board_who.png")
-		(b.find_child("WhoMenu", true, false) as PopupMenu).hide()
+		b._close_pick()
 		b._show("paper")
 	if f == 52:
 		root.get_texture().get_image().save_png(out + "/board_front.png")

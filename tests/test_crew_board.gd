@@ -1,6 +1,7 @@
-# Hired help on the board (NOTES 209): the paper's situations wanted (no van, no ringing),
-# a van, ringing hires; a calendar day's booking sent to a helper and back (picked from a
-# list); their day in the day's end, a raise asked and paid there. Kit and vans: test_hub.
+# Hired help on the board (NOTES 209, 248): the paper's situations wanted (no van yet,
+# said so), a van, ringing hires; a calendar day's booking sent to a helper and back (picked
+# from the list beside it, with their facts), their colour on the month's tile; their day in
+# the day's end, a raise asked and paid there. Kit and vans: test_hub.
 extends SceneTree
 
 var g: Node
@@ -39,16 +40,16 @@ func _process(_delta: float) -> bool:
 			s._page = 99 # the situations wanted are at the back
 			s._build()
 		1:
-			assert(_texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and t.contains("No empty van")), "no van: rung, they'd wait in the yard")
+			assert(_texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and t.contains("No van yet")), "no van: rung, they'd wait in the yard")
 			assert(g.buy("van"), "a van (the shop's: test_hub)")
 		2:
-			assert(g.fleet.size() == 1, "a van bought")
+			assert(g.vans == 1, "a van bought")
 			s._show("paper")
 			s._page = 99
 			s._build()
 		3:
 			var ring: Button = s.find_child("Ring", true, false)
-			assert(ring != null and _texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and not t.contains("No empty van")), "a van: ring them")
+			assert(ring != null and _texts().any(func(t: String) -> bool: return t.contains("SITUATION WANTED") and not t.contains("No van yet")), "a van: ring them")
 			# The last page's first Ring is a situation wanted if no ads are left on it.
 			var n: int = g.helpers.size()
 			for b: Node in s.find_children("Ring", "Button", true, false):
@@ -64,21 +65,33 @@ func _process(_delta: float) -> bool:
 			s._show("calendar")
 		4:
 			var h: Dictionary = g.helpers[0]
-			s._open(g.day + 1) # the cursor on tomorrow's tile opens it
-			var who := s.find_child("DayPanel", true, false).find_child("Who", true, false) as Button
-			assert(who != null and who.text == "Going: you", "tomorrow's booking: you're going")
+			s._open_day = g.day + 1
+			s._cal_month = false
+			s._build()
+			var who := s.find_child("Calendar", true, false).find_child("Who", true, false) as Button
+			assert(who != null and not who.disabled and who.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return l.text == "You"),
+				"tomorrow's booking: you're going")
 			who.pressed.emit()
-			var menu := s.find_child("WhoMenu", true, false) as PopupMenu
-			assert(menu != null and menu.item_count == 2 and menu.get_item_text(1).begins_with(h.name + ": pace") and menu.get_item_text(1).ends_with("free that day"),
-				"who can go: you, and the helper with how good they are and their day")
-			menu.id_pressed.emit(1)
+			var menu := s.find_child("WhoMenu", true, false)
+			var picks := menu.find_children("*", "Button", true, false)
+			assert(picks.size() == 2 and picks[0].text.begins_with("You
+") and picks[1].text.begins_with(h.name + "
+")
+				and picks[1].text.contains("Sets off 7:30am, done in time") and picks[1].text.contains("Pace"), "who can go: you, and the helper with their facts: %s" % [picks[1].text])
+			(picks[1] as Button).pressed.emit()
 		5:
 			var h: Dictionary = g.helpers[0]
 			var b: Dictionary = g.bookings(g.day + 1)[0]
-			assert(b.get("helper", -1) == h.id and _button("Going: " + h.name.split(" ")[0]) != null, "sent: their name on it")
-			assert(_texts().any(func(t: String) -> bool: return t.begins_with(h.name.split(" ")[0] + ": ")), "and on the day's tile")
-			_button("Going: ").pressed.emit()
-			(s.find_child("WhoMenu", true, false) as PopupMenu).id_pressed.emit(0)
+			assert(b.get("helper", -1) == h.id and s.find_child("WhoMenu", true, false) == null, "sent, the list shut")
+			assert(_texts().has(h.name.split(" ")[0]), "their name on the row")
+			s._to_month()
+			var dots := (s.find_child("Tile_%d" % (g.day + 1), true, false) as Node).find_children("*", "ColorRect", true, false)
+			assert(dots.size() == 1 and (dots[0] as ColorRect).color == s._who_color(h.id), "and their colour on the day's tile")
+			s._open_day = g.day + 1
+			s._cal_month = false
+			s._build()
+			(s.find_child("Who", true, false) as Button).pressed.emit()
+			(s.find_child("WhoMenu", true, false).find_children("*", "Button", true, false)[0] as Button).pressed.emit()
 		6:
 			assert(not g.bookings(g.day + 1)[0].has("helper"), "picked again: back to you")
 			g.assign(g.bookings(g.day + 1)[0], g.helpers[0].id)

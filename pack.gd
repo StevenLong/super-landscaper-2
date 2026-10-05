@@ -21,6 +21,7 @@ var _say := "" ## a word on what just happened
 func _ready() -> void:
 	theme = UI.theme()
 	Sfx.music("music_menu")
+	Game.unpack_gone()
 	var job := Game.next_job if not Game.next_job.is_empty() else Game.today()
 	var head := UI.vbox(6)
 	head.position = Vector2(40, 24)

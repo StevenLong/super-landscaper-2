@@ -92,7 +92,7 @@ func _help_load(d: int, h: Dictionary) -> float:
 
 
 func _help_minutes(j: Dictionary, h: Dictionary) -> float:
-	return g.HELP_SECS[g.kit_of(h)] * float(j.size.x * j.size.y) / (1280.0 * 720.0) * g.MPS / h.pace
+	return g.help_minutes(j, h, "push") # ponytail: the slowest mower, so the load's never under; the plan picks the real one
 
 
 func _season_run(seed_value: int, seasons: int) -> Array:

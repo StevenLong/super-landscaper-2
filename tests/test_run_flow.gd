@@ -127,8 +127,10 @@ func _process(_delta: float) -> bool:
 			assert(game.money > 0 and game.run_tally.get("windows", 0) == 1, "the job paid, the season adds it up")
 			game.money = 1000
 			assert(game.buy("petrol") and game.equipped == "petrol", "buying a mower equips it")
-			assert(not game.buy("petrol"), "you can't buy the same mower twice")
 			assert(game.money == 1000 - game.MOWERS.petrol.price, "the price came off")
+			assert(game.buy("petrol") and game.total("petrol") == 2 and game.equipped == "petrol", "another goes in the pool")
+			game.sell("petrol")
+			assert(game.total("petrol") == 1 and "petrol" in game.owned, "and sold, one's left")
 			# To the regular's day, with things crept into the garden since.
 			game.day = _visit_day
 			game.minute = game.DAY_START

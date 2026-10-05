@@ -121,11 +121,15 @@ func _physics_process(_delta: float) -> bool:
 		11:
 			_fits()
 			_sideways()
-			# Shift and Ctrl turn the board's pages.
+			# Shift and Ctrl step the calendar's day; from its month, they turn the board's pages.
 			var shift := InputEventKey.new()
 			shift.keycode = KEY_SHIFT
 			shift.physical_keycode = KEY_SHIFT
 			shift.pressed = true
+			var today: int = g.day
+			current_scene._unhandled_input(shift)
+			assert(current_scene._view == "calendar" and current_scene._open_day == today + 1, "Shift on a day: the next day")
+			current_scene._to_month()
 			current_scene._unhandled_input(shift)
 			assert(current_scene._view == "paper" and current_scene._page == 0, "Shift turns to the paper, its front page")
 			current_scene._unhandled_input(shift)

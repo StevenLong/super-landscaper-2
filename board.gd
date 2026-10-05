@@ -11,12 +11,17 @@ const PER_PAGE := 3 ## ads to a page of the paper
 const CORK := Color("8a6238")
 const NOTE := Color("efe6cc")
 const INK := Color("2a2420")
-const CREW := Color("2a4a8a") ## a booking sent to a helper, on the corkboard
+const CREW_COLORS := [Color("1d9e75"), Color("7f77dd"), Color("e07050"), Color("d4537e"), Color("378add"), Color("8fbf3a"), Color("c8c8c8")] ## each helper's, on the calendar
+const INFO_W := 430.0 ## a calendar row's who-and-what
+const MOWER_W := 130.0 ## and its mower
+const ROW_SEP := 10
 
 var _call := "" ## what the last ad you rang said, shown by the paper
 var _view := "calendar"
 var _page := 0 ## the paper's page
-var _open_day := -1 ## the day open beside the calendar (today by default)
+var _open_day := -1 ## the calendar's day (today by default)
+var _cal_month := false ## the calendar showing the month, to pick a day from
+var _pick: Control = null ## who-goes list open beside a booking
 
 
 func _ready() -> void:
@@ -39,6 +44,8 @@ func _ready() -> void:
 ## Lay the desk out. `keep`: what you just changed (a booking's card), which keeps the
 ## cursor there instead of it jumping back to the top.
 func _build(keep := "") -> void:
+	Game.advance_crew() # whoever's due off has gone
+	_close_pick()
 	Game.save()
 	for c in get_children():
 		remove_child(c)
@@ -56,14 +63,12 @@ func _build(keep := "") -> void:
 	var root := UI.vbox(8)
 	margin.add_child(root)
 
-	# Header, two rows so it never runs off the side: the day, the time and money, then your name.
+	# The header: the time and your money, once (the rest is where it belongs); away and quit.
 	var head := UI.hbox(26)
-	head.add_child(UI.label(Game.date_text(), 30, UI.GOLD))
-	var now := UI.label(Game.time_text(Game.minute), 30, UI.BAD if Game.minute >= Game.DAY_END else UI.TEXT)
+	var now := UI.label(Game.time_text(Game.minute), 24, UI.BAD if Game.minute >= Game.DAY_END else UI.TEXT)
 	now.name = "Now"
 	head.add_child(now)
-	head.add_child(UI.label("$%d" % Game.money, 26))
-	head.add_child(UI.label("Friday: $%d" % Game.due(), 20, UI.BAD if Game.money < Game.due() else UI.DIM))
+	head.add_child(UI.label("$%d" % Game.money, 24))
 	var gap := Control.new()
 	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(gap)
@@ -74,16 +79,6 @@ func _build(keep := "") -> void:
 	var leave := UI.button("Save and quit", _save_and_quit, 18) # the board's always saved: this just says so
 	leave.name = "Quit"
 	head.add_child(leave)
-	root.add_child(head)
-	head = UI.hbox(26)
-	var trend := Game.rep_trend - Game.reputation
-	var arrow := "  (rising)" if trend > 3.0 else ("  (sliding)" if trend < -3.0 else "")
-	head.add_child(UI.label("Reputation: %s%s" % [UI.rep_word(Game.reputation), arrow], 20,
-		UI.GOOD if Game.reputation >= 45.0 else (UI.GOLD if Game.reputation >= 20.0 else UI.BAD)))
-	head.add_child(UI.label("Owed the shark: $%d" % Game.principal if Game.principal > 0 else "Free of the shark", 20,
-		UI.DIM if Game.principal > 0 else UI.GOOD))
-	if Game.record > 0.0:
-		head.add_child(UI.label("Record: %d" % roundi(Game.record), 20, UI.BAD))
 	root.add_child(head)
 
 	# The pages, as tabs: Shift and Ctrl (RB and LB) turn them too.
@@ -98,9 +93,10 @@ func _build(keep := "") -> void:
 			t.add_theme_color_override("font_color", UI.GOLD)
 			t.add_theme_color_override("font_focus_color", UI.GOLD)
 		tabs.add_child(t)
-	var hint := UI.label("%s %s turn the page" % [Game.key("gear_down"), Game.key("gear_up")], 18, UI.DIM)
-	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	tabs.add_child(hint)
+	if not (_view == "calendar" and not _cal_month): # a day's shoulders step its days
+		var hint := UI.label("%s %s turn the page" % [Game.key("gear_down"), Game.key("gear_up")], 18, UI.DIM)
+		hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		tabs.add_child(hint)
 	root.add_child(tabs)
 
 	var first: Control
@@ -121,22 +117,23 @@ func _show(view: String) -> void:
 	UI.focus(find_child("Tab_" + view, true, false))
 
 
-## Light up on the clock what pressing this would use: from now to `to`.
-## The calendar (design doc, The hub): five rolling weeks from this Monday, a tile for
-## every day. The tile under the cursor opens in the panel beside it (today's to start);
-## pressing one steps into its panel. There each job says how it stands, in words and
-## colour, and who's going. Returns the button to focus.
+## The calendar (design doc, The hub, redesigned): a day, or the month to get to one. It
+## opens on today. Returns the button to focus.
 func _calendar(root: Control, keep := "") -> Control:
 	if _open_day < Game.day:
 		_open_day = Game.day
-	var cols := UI.hbox(14)
-	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(cols)
+	return _month(root) if _cal_month else _day_view(root, keep)
+
+
+## The month: five rolling weeks from this Monday, a tile a day with a dot a booking in the
+## colour of who's going. A on one opens its day.
+func _month(root: Control) -> Control:
 	var grid := GridContainer.new()
 	grid.name = "Calendar"
 	grid.columns = 7
-	grid.add_theme_constant_override("h_separation", 5)
-	grid.add_theme_constant_override("v_separation", 5)
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
 	var monday: int = Game.day - (Game.date().weekday + 6) % 7
 	for i in 7:
 		var wd: int = (i + 1) % 7
@@ -152,36 +149,18 @@ func _calendar(root: Control, keep := "") -> Control:
 	cork.set_content_margin_all(8)
 	board.add_theme_stylebox_override("panel", cork)
 	board.add_child(grid)
-	board.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(board)
-	var side := ScrollContainer.new() # a busy day scrolls, following the cursor
-	side.name = "DayScroll"
-	side.follow_focus = true
-	side.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	side.custom_minimum_size.x = 440
-	cols.add_child(side)
-	var panel := UI.vbox(8)
-	panel.name = "DayPanel"
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	side.add_child(panel)
-	_fill_day(panel)
-	var kept := find_child(keep, true, false) if keep != "" else null
-	if kept:
-		for b: Button in kept.find_children("*", "Button", true, false):
-			if not b.disabled:
-				return b
-	if _open_day == Game.day:
-		return find_child("EndDay", true, false)
+	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(board)
 	return find_child("Tile_%d" % _open_day, true, false)
 
 
-## A day's tile on the corkboard: its date and what's on (a helper's name on what's
-## theirs). Today ringed; days gone, faded and out of reach.
+## A day's tile: its date, and a dot a booking in who's going's colour (court and the like
+## in words). Today ringed; days gone, faded and out of reach.
 func _tile(d: int) -> Control:
 	var t := Game.date(d)
 	var b := Button.new()
 	b.name = "Tile_%d" % d
-	b.custom_minimum_size = Vector2(0, 96)
+	b.custom_minimum_size = Vector2(0, 80)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.clip_contents = true
 	for state: String in ["normal", "hover", "pressed", "focus", "disabled"]:
@@ -191,125 +170,235 @@ func _tile(d: int) -> Control:
 		style.set_border_width_all(4 if state == "focus" else (3 if d == Game.day else 1))
 		style.set_content_margin_all(4)
 		b.add_theme_stylebox_override(state, style)
-	var notes := UI.vbox(0)
+	var notes := UI.vbox(4)
 	notes.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	notes.set_anchors_preset(Control.PRESET_FULL_RECT)
-	notes.offset_left = 4
+	notes.offset_left = 6
 	notes.offset_top = 2
 	b.add_child(notes)
 	notes.add_child(_ink("%d%s" % [t.day, " " + Game.MONTHS[t.month - 1].left(3) if t.day == 1 or d == Game.day else ""], Color("7a6a50")))
-	var l := Game.bookings(d)
-	for i in mini(l.size(), 2 if l.size() > 3 else 3):
-		var bk: Dictionary = l[i]
-		var text := "Court" if bk.has("court") else ("Jail" if bk.has("jail") else ("%s %s" % [_hours(bk.from), "Duty" if bk.has("service") else bk.customer.split(" ")[-1]]))
-		if bk.has("helper"): # sent out: whose it is
-			text = Game.helper(bk.helper).get("name", "?").split(" ")[0] + ": " + bk.customer.split(" ")[-1]
-		notes.add_child(_ink(text, Color("b03020") if bk.has("court") or bk.has("jail") or bk.has("service") else (CREW if bk.has("helper") else (Color("2e6a1e") if bk.has("regular") else INK))))
-	if l.size() > 3:
-		notes.add_child(_ink("+%d more" % (l.size() - 2), Color("7a6a50")))
+	var dots := HFlowContainer.new()
+	dots.add_theme_constant_override("h_separation", 4)
+	dots.add_theme_constant_override("v_separation", 4)
+	dots.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	notes.add_child(dots)
+	for bk: Dictionary in Game.bookings(d):
+		if bk.has("court") or bk.has("jail") or bk.has("service"):
+			notes.add_child(_ink("Court" if bk.has("court") else ("Jail" if bk.has("jail") else "Duty"), Color("b03020")))
+			continue
+		var dot := ColorRect.new()
+		dot.custom_minimum_size = Vector2(12, 12)
+		dot.color = _who_color(bk.get("helper", -1))
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		dots.add_child(dot)
 	for c: Control in notes.find_children("*", "Label", true, false):
 		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if d < Game.day: # gone: still reachable, as a disabled button is on the board
+	if d < Game.day: # gone: still there, as a disabled button is on the board
 		b.disabled = true
 	else:
-		b.focus_entered.connect(_open.bind(d))
 		b.pressed.connect(func() -> void:
-			var first := _panel_first()
-			if first:
-				first.grab_focus())
+			_open_day = d
+			_cal_month = false
+			_build())
 	return b
 
 
-## Open a day beside the calendar.
-func _open(d: int) -> void:
-	if d == _open_day and find_child("DayPanel", true, false).get_child_count() > 0:
-		return
-	_open_day = d
-	var panel := find_child("DayPanel", true, false)
-	for c in panel.get_children():
-		panel.remove_child(c)
-		c.queue_free()
-	_fill_day(panel)
+## Who's going's colour: you gold, each helper their own.
+func _who_color(id: int) -> Color:
+	if id < 0:
+		return UI.GOLD
+	var i := Game.helpers.find(Game.helper(id))
+	return CREW_COLORS[maxi(0, i) % CREW_COLORS.size()]
 
 
-## The first button in the open day's panel, or null.
-func _panel_first() -> Button:
-	for b: Button in find_child("DayPanel", true, false).find_children("*", "Button", true, false):
-		if not b.disabled:
-			return b
-	return null
-
-
-## The open day: each booking, how it stands and who's going; today, going and calling it a day.
-func _fill_day(panel: Control) -> void:
+## A day: a row a booking (who's going, when, the mower, what's wrong) with its window as a
+## bar on the day's line beside it, and the drive before it; today, now and what's gone.
+## The shoulders step days, B goes to the month.
+func _day_view(root: Control, keep := "") -> Control:
 	var d := _open_day
 	var t := Game.date(d)
-	panel.add_child(UI.label("%s, %d %s" % [Game.day_word(d) if d <= Game.day + 1 else Game.DAYS[t.weekday], t.day, Game.MONTHS[t.month - 1]], 24, UI.GOLD))
+	var top := UI.hbox(14)
+	var prev := UI.button("< " + Game.key("gear_down"), _step_day.bind(-1), 18)
+	prev.name = "PrevDay"
+	prev.disabled = d <= Game.day
+	top.add_child(prev)
+	var title := UI.label("%s %d %s%s" % [Game.DAYS[t.weekday], t.day, Game.MONTHS[t.month - 1], " (today)" if d == Game.day else ""], 26, UI.GOLD)
+	title.custom_minimum_size.x = 420
+	top.add_child(title)
+	var next := UI.button(Game.key("gear_up") + " >", _step_day.bind(1), 18)
+	next.name = "NextDay"
+	top.add_child(next)
+	var month := UI.button("Month " + Game.key("hop"), _to_month, 18)
+	month.name = "Month"
+	top.add_child(month)
 	if t.weekday == Game.FRIDAY:
-		panel.add_child(UI.label("Payday: the shark's man, rent and food%s." % (", wages" if Game.helpers else ""), 18, UI.DIM))
+		var pay := UI.label("Payday: $%d due" % Game.due(), 18, UI.DIM)
+		pay.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		top.add_child(pay)
+	root.add_child(top)
+	var axis := UI.hbox(ROW_SEP)
+	var lead := Control.new()
+	lead.custom_minimum_size.x = INFO_W + ROW_SEP + MOWER_W
+	axis.add_child(lead)
+	var hours := DayLine.new()
+	hours.axis = true
+	hours.custom_minimum_size.y = 24
+	hours.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	axis.add_child(hours)
+	root.add_child(axis)
+	var scroll := ScrollContainer.new() # a busy day scrolls, following the cursor
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(scroll)
+	var rows := UI.vbox(6)
+	rows.name = "Calendar"
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(rows)
+	var plan := Game.crew_plan(d)
 	var l := Game.bookings(d)
-	var mine := Game.jobs_today() if d == Game.day else []
-	if not mine.is_empty():
-		var go := UI.label("Your truck's in the yard: step away from the desk to go.", 18, UI.DIM)
-		go.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		panel.add_child(go)
 	for b: Dictionary in l:
 		if b.has("jail"):
-			panel.add_child(UI.label("A day in jail.", 20, UI.BAD))
+			rows.add_child(UI.label("A day in jail.", 20, UI.BAD))
 		elif b.has("court"):
-			panel.add_child(UI.label("Court: what happened at %s's." % b.court.customer, 20, UI.BAD))
+			rows.add_child(UI.label("Court: what happened at %s's." % b.court.customer, 20, UI.BAD))
 		else:
-			panel.add_child(_job_card(b))
+			rows.add_child(_row(b, plan))
 	if l.is_empty():
-		panel.add_child(UI.label("Nothing booked.", 20, UI.DIM))
+		rows.add_child(UI.label("Nothing booked. A free day.", 20, UI.DIM))
 	if d == Game.day:
 		# Every day ends on its own day's end, worked or not (the hub grill): nothing skips.
+		var mine := Game.jobs_today()
 		var end := UI.button("Call it a day" + (" (miss %d)" % mine.size() if mine else ""), func() -> void:
 			Game.end_day()
 			_open_day = -1
 			_ready(), 20)
 		end.name = "EndDay"
-		panel.add_child(end)
-	if not panel.is_inside_tree():
-		return
-	for b: Button in panel.find_children("*", "Button", true, false): # left from the panel, back to its tile
-		b.focus_neighbor_left = b.get_path_to(find_child("Tile_%d" % d, true, false))
+		var holder := UI.hbox(0)
+		holder.add_child(end)
+		rows.add_child(holder)
+	var kept := find_child(keep, true, false) if keep != "" else null
+	if kept:
+		for c: Button in kept.find_children("*", "Button", true, false):
+			if not c.disabled:
+				return c
+	for b: Button in rows.find_children("Who", "Button", true, false):
+		if not b.disabled:
+			return b
+	return find_child("EndDay", true, false) if d == Game.day else next
 
 
-## A booking in the open day: who, when and the pay; how it stands now (today); a regular
-## who wants you; who's going (pick from the crew). Going yourself is the truck's, in the yard.
-func _job_card(b: Dictionary) -> Control:
-	var box := UI.vbox(4)
-	var line := UI.label(b.customer + _job_line(b), 18, UI.BAD if b.has("service") else (UI.GOOD if b.has("regular") else UI.GOLD))
-	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(line)
-	if _open_day == Game.day:
+func _step_day(by: int) -> void:
+	_open_day = maxi(Game.day, _open_day + by)
+	_build()
+
+
+func _to_month() -> void:
+	_cal_month = true
+	_build()
+
+
+## A booking's row: who's going and its facts (A picks who), the mower (A changes it, the
+## crew's only: you pack yours), and its bar on the day's line.
+func _row(b: Dictionary, plan: Dictionary) -> Control:
+	var row := UI.hbox(ROW_SEP)
+	row.name = "job_%d_%d" % [_open_day, b.get("seed", 0)]
+	var p: Dictionary = plan.get(b.get("seed", -1), {})
+	var id: int = b.get("helper", -1)
+	var who := UI.button("", func() -> void: pass, 18)
+	who.name = "Who"
+	who.custom_minimum_size = Vector2(INFO_W, 0)
+	who.clip_contents = true
+	var lines := UI.vbox(0)
+	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lines.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lines.offset_left = 10
+	lines.offset_right = -10
+	lines.offset_top = 4
+	who.add_child(lines)
+	var first := UI.hbox(10)
+	var name_l := UI.label(b.customer, 20, UI.BAD if b.has("service") else UI.TEXT)
+	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_l.clip_text = true
+	first.add_child(name_l)
+	first.add_child(UI.label("You" if id < 0 else Game.helper(id).get("name", "?").split(" ")[0], 20, _who_color(id)))
+	lines.add_child(first)
+	var what := "Community service, unpaid" if b.has("service") else ("Your regular, " + ("paid up front" if Game.regulars.get(b.get("regular", -1), {}).get("prepaid", 0) > 0 else "$%d" % b.pay)
+		if b.has("regular") else "From the paper, $%d" % b.pay)
+	lines.add_child(UI.label("%s to %s. %s" % [Game.time_text(b.from), Game.time_text(b.by), what], 18, UI.DIM))
+	var warn := ""
+	var warn_color := UI.GOLD
+	if id < 0 and _open_day == Game.day:
 		var st := _state(b)
-		var l := UI.label(st[0], 20, st[1])
-		l.name = "State"
-		box.add_child(l)
-	if Game.wants_you(b) > 0.0:
-		var w := UI.label("Wants you: a helper starts them sour.", 18, UI.DIM)
-		w.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		box.add_child(w)
-	var row := UI.hbox(10)
-	if Game.helpers.any(func(h: Dictionary) -> bool: return not Game.van_of(h.id).is_empty()) and (Game.can_send(b) or b.has("helper")):
-		var who: Dictionary = Game.helper(b.get("helper", -1))
-		var pick := UI.button("Going: " + ("you" if who.is_empty() else who.name.split(" ")[0]), func() -> void: pass, 18)
-		pick.name = "Who"
-		pick.pressed.connect(_pick_who.bind(b, pick))
-		row.add_child(pick)
-	if row.get_child_count() > 0:
-		box.add_child(row)
-	var p := UI.panel(box)
-	p.name = "job_%d_%d" % [_open_day, b.get("seed", 0)]
-	return p
+		warn = st[0]
+		warn_color = st[1]
+	elif not p.is_empty():
+		if p.cant != "":
+			warn = "Can't go: %s." % p.cant
+			warn_color = UI.BAD
+		elif Game.set_off(b):
+			warn = "Set off at %s, there %s." % [Game.time_text(p.leave), Game.time_text(p.at)]
+			warn_color = UI.TEXT
+		else:
+			warn = "Sets off %s%s." % [Game.time_text(p.leave), ", won't finish in time" if p.over else ""]
+			warn_color = UI.GOLD if p.over else UI.TEXT
+	if Game.wants_you(b) > 0.0 and id >= 0:
+		warn += (" " if warn else "") + "Wants you."
+	if warn != "":
+		var w := UI.label(warn, 18, warn_color)
+		w.name = "State"
+		w.clip_text = true
+		lines.add_child(w)
+	for c: Control in lines.find_children("*", "Control", true, false):
+		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	who.custom_minimum_size.y = 26.0 * lines.get_child_count() + 12.0
+	var can_pick: bool = not Game.helpers.is_empty() and Game.can_send(b) and not Game.set_off(b)
+	who.disabled = not can_pick
+	if can_pick:
+		who.pressed.connect(_pick_who.bind(b, who))
+	row.add_child(who)
+	if id >= 0:
+		var kit: String = p.get("kit", "")
+		var pick: String = b.get("kit", "")
+		var mower := UI.button("%s\n(%s)" % [_mower_word(kit if kit != "" else pick), "your pick" if pick != "" else "best free"], func() -> void:
+			Game.set_job_kit(b, _next_kit(pick))
+			_build(row.name)
+			UI.focus(find_child(row.name, true, false).find_child("Mower", true, false)), 18)
+		mower.name = "Mower"
+		mower.custom_minimum_size.x = MOWER_W
+		mower.disabled = Game.set_off(b)
+		row.add_child(mower)
+	else:
+		var yours := UI.label("You pack it", 18, UI.DIM)
+		yours.custom_minimum_size.x = MOWER_W
+		yours.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		yours.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(yours)
+	var line := DayLine.new()
+	line.b = b
+	line.plan = p
+	line.color = _who_color(id)
+	line.today = _open_day == Game.day
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(line)
+	return row
 
 
-## How a booking today stands, in words and a colour (the board's clock, NOTES 224).
+func _mower_word(kind: String) -> String:
+	return {"": "Any mower", "push": "Push", "petrol": "Petrol", "rideon": "Ride-on"}.get(kind, kind)
+
+
+## The mower after `kind` for a booking's pick: the best free (""), then each kind you've got.
+func _next_kit(kind: String) -> String:
+	var kinds: Array[String] = [""]
+	for k: String in ["push", "petrol", "rideon"]:
+		if Game.total(k) > 0:
+			kinds.append(k)
+	return kinds[(kinds.find(kind) + 1) % kinds.size()]
+
+
+## How a booking of yours today stands, in words and a colour.
 func _state(b: Dictionary) -> Array:
-	if b.has("helper"):
-		return ["%s's going." % Game.helper(b.helper).get("name", "?").split(" ")[0], CREW.lightened(0.5)]
 	if not Game.can_go(b):
 		return ["Missed: too late to get there.", UI.BAD]
 	if Game.minute + Game.DRIVE < b.from:
@@ -327,38 +416,102 @@ func _span(m: int) -> String:
 	return "%dh%s" % [floori(m / 60.0), " %dm" % (m % 60) if m % 60 else ""]
 
 
-## Who goes to a booking: you, or one of the crew, each with how good, their kit and what
-## else they've got that day.
+## Who goes to a booking, picked from a list beside it: you, then each helper with what
+## matters for this one (free or out, on time or late, wants you; can't go in red). B shuts it.
 func _pick_who(b: Dictionary, from: Button) -> void:
-	var pop := PopupMenu.new()
-	pop.name = "WhoMenu"
-	pop.theme = theme
-	pop.add_theme_font_size_override("font_size", UI.px(20))
-	pop.add_item("You", 0)
-	for i in Game.helpers.size():
-		var h: Dictionary = Game.helpers[i]
-		var others := Game.bookings(_open_day).filter(func(x: Dictionary) -> bool: return x.get("helper", -1) == h.id and x != b).size()
-		var no_van: bool = Game.van_of(h.id).is_empty()
-		pop.add_item("%s: %s, %s" % [h.name, Game.card_text(h), "no van" if no_van else Game.MOWERS[Game.kit_of(h)].name.to_lower() +
-			(", %d more that day" % others if others else ", free that day")], i + 1)
-		pop.set_item_disabled(i + 1, no_van) # no van, no going out
-	pop.id_pressed.connect(func(id: int) -> void:
-		Game.assign(b, -1 if id == 0 else Game.helpers[id - 1].id)
-		_build("job_%d_%d" % [_open_day, b.get("seed", 0)]))
-	pop.popup_hide.connect(pop.queue_free)
-	add_child(pop)
-	pop.popup(Rect2i(Vector2i(from.get_global_rect().position + Vector2(0, from.size.y)), Vector2i.ZERO))
-	pop.set_focused_item(maxi(0, Game.helpers.find(Game.helper(b.get("helper", -1))) + 1)) # the cursor on who's going now
+	_close_pick()
+	var box := UI.vbox(6)
+	var you := UI.button("You\n" + _your_facts(b), func() -> void: _picked(b, -1), 18)
+	you.add_theme_color_override("font_color", UI.GOLD)
+	box.add_child(you)
+	for h: Dictionary in Game.helpers:
+		var facts := _helper_facts(b, h)
+		var pick := UI.button(h.name + "\n" + facts[0], func() -> void: _picked(b, h.id), 18)
+		pick.add_theme_color_override("font_color", _who_color(h.id))
+		pick.add_theme_color_override("font_disabled_color", UI.BAD)
+		pick.disabled = facts[1]
+		box.add_child(pick)
+	for c: Button in box.find_children("*", "Button", true, false):
+		c.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		c.custom_minimum_size.x = 560
+	for w: Button in find_children("Who", "Button", true, false):
+		w.set_meta("picking", w == from)
+	for c: Control in find_children("*", "BaseButton", true, false): # the list's the only thing the cursor can be on
+		if c.focus_mode != Control.FOCUS_NONE:
+			c.set_meta("focus_was", c.focus_mode)
+			c.focus_mode = Control.FOCUS_NONE
+	_pick = UI.panel(box)
+	_pick.name = "WhoMenu"
+	_pick.top_level = true
+	add_child(_pick)
+	_pick.position = Vector2(minf(from.global_position.x + from.size.x + 8.0, 1280.0 - 600.0), clampf(from.global_position.y, 20.0, 400.0))
+	var on := box.get_child(Game.helpers.find(Game.helper(b.get("helper", -1))) + 1) as Button
+	UI.focus(on if on and not on.disabled else you)
 
 
-## What a job is, after the customer's name.
-func _job_line(b: Dictionary) -> String:
-	var when := "%s to %s" % [Game.time_text(b.from), Game.time_text(b.by)]
-	if b.has("regular"):
-		return ", your regular, %s. %s" % [when, "Paid up front." if Game.regulars.get(b.regular, {}).get("prepaid", 0) > 0 else "$%d, no tips." % b.pay]
-	if b.has("service"):
-		return "'s churchyard, %s. Community service, unpaid." % when
-	return ", from the paper, %s. $%d." % [when, b.pay]
+## The Who button the open list was for, to go back to.
+func _pick_row() -> Control:
+	for b: Button in find_children("Who", "Button", true, false):
+		if b.has_focus() or b.get_meta("picking", false):
+			return b
+	return null
+
+
+func _picked(b: Dictionary, id: int) -> void:
+	Game.assign(b, id)
+	_close_pick()
+	_build("job_%d_%d" % [_open_day, b.get("seed", 0)])
+
+
+func _close_pick() -> void:
+	if _pick:
+		_pick.queue_free()
+		_pick = null
+		for c: Control in find_children("*", "BaseButton", true, false):
+			if c.has_meta("focus_was"):
+				c.focus_mode = c.get_meta("focus_was")
+				c.remove_meta("focus_was")
+
+
+## Your facts for a booking: today how it stands; another day, a clash with your others.
+func _your_facts(b: Dictionary) -> String:
+	if b.day == Game.day:
+		return _state(b)[0]
+	for o: Dictionary in Game.bookings(b.day):
+		if o != b and o.has("seed") and not o.has("helper") and o.from < b.by and b.from < o.by:
+			return "Clashes with %s, %s to %s." % [o.customer, Game.time_text(o.from), Game.time_text(o.by)]
+	return "Free then."
+
+
+## A helper's facts for a booking, as if they went: [words, can't go]. Out now, when they'd
+## set off and whether late, wants you, how good.
+func _helper_facts(b: Dictionary, h: Dictionary) -> Array:
+	var was: Variant = b.get("helper")
+	var sent: Variant = b.get("sent_at")
+	b.helper = h.id
+	if b.day == Game.day:
+		b.sent_at = Game.minute
+	var p: Dictionary = Game.crew_plan(b.day).get(b.seed, {})
+	for k: String in ["helper", "sent_at"]:
+		b.erase(k)
+	if was != null:
+		b.helper = was
+	if sent != null:
+		b.sent_at = sent
+	if p.is_empty():
+		return ["", true]
+	if p.cant != "":
+		return ["Can't go: %s." % p.cant, true]
+	var bits: Array[String] = []
+	var back := Game.out_till(h.id) if b.day == Game.day else -1
+	if back >= 0:
+		bits.append("Out till %s." % Game.time_text(back))
+	bits.append("Sets off %s, %s." % [Game.time_text(p.leave), "won't finish in time" if p.over else "done in time"])
+	if Game.wants_you(b) > 0.0:
+		bits.append("Wants you.")
+	bits.append(Game.card_text(h).capitalize() + ".")
+	return [" ".join(bits), false]
+
 
 
 ## A time as short as it'll go, for a calendar note: 9, 9:30, 12.
@@ -543,6 +696,12 @@ func _book_view(root: Control) -> Control:
 	var list := UI.vbox(6)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side.add_child(list)
+	var trend := Game.rep_trend - Game.reputation
+	var arrow := "  (rising)" if trend > 3.0 else ("  (sliding)" if trend < -3.0 else "")
+	list.add_child(UI.label("Your name: %s%s" % [UI.rep_word(Game.reputation), arrow], 22,
+		UI.GOOD if Game.reputation >= 45.0 else (UI.GOLD if Game.reputation >= 20.0 else UI.BAD)))
+	list.add_child(UI.label(("Owed the shark: $%d" % Game.principal if Game.principal > 0 else "Free of the shark")
+		+ ("   Record: %d" % roundi(Game.record) if Game.record > 0.0 else ""), 20, UI.DIM))
 	list.add_child(UI.label("Your regulars", 22))
 	if Game.regulars.is_empty():
 		list.add_child(UI.label("None yet. A good job from the paper might earn one.", 18, UI.DIM))
@@ -587,8 +746,8 @@ func _wanted(w: Dictionary) -> Control:
 	ad.text = "[color=#7a1c14]SITUATION WANTED.[/color] %s seeks gardening work. %s (%d/10), %s (%d/10). $%d a week. Ring %s." % [
 		w.name, pace, roundi(w.pace * 10.0), care, roundi(w.care * 10.0), w.wage, w.name.split(" ")[0]]
 	row.add_child(ad)
-	if Game.fleet.all(func(v: Dictionary) -> bool: return v.helper >= 0):
-		ad.text += "\n[color=#7a6a50]No empty van: they'd wait in the yard, on the wage, till they've one.[/color]"
+	if Game.vans == 0:
+		ad.text += "\n[color=#7a6a50]No van yet: they'd wait in the yard, on the wage, till you've one.[/color]"
 	var ring := UI.button("Ring\n+%d min" % Game.RING_TIME, func() -> void:
 		_call = Game.hire(w)
 		_build()
@@ -621,7 +780,19 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	var leave := find_child("Quit", true, false) as Button
-	if leave and event.is_action_pressed("pause"):
+	var day_open := leave != null and _view == "calendar" and not _cal_month
+	if _pick and (event.is_action_pressed("hop") or event.is_action_pressed("ui_cancel")): # shut the who-goes list
+		var row := _pick_row()
+		_close_pick()
+		UI.focus(row)
+		get_viewport().set_input_as_handled()
+	elif day_open and event.is_action_pressed("hop"): # the day, up to its month
+		get_viewport().set_input_as_handled()
+		_to_month()
+	elif day_open and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down")): # the day, along
+		get_viewport().set_input_as_handled()
+		_step_day(1 if event.is_action_pressed("gear_up") else -1)
+	elif leave and event.is_action_pressed("pause"):
 		UI.focus(leave)
 		get_viewport().set_input_as_handled()
 	elif leave and event.is_action_pressed("hop") and not (find_child("Away", true, false) as Button).disabled: # away from the desk
@@ -970,3 +1141,41 @@ func _run_over() -> void:
 	UI.focus(_centred_button(col, "Back to the title", func() -> void:
 		Game.in_run = false
 		get_tree().change_scene_to_file("res://title.tscn")))
+
+
+## A booking's bar on the day's line, 6am to 8pm: its window in who's going's colour, the
+## drive before it dashed, a helper's time at it solid; today, the past shaded and now in gold.
+## As `axis`, the hours instead.
+class DayLine extends Control:
+	var axis := false
+	var b := {}
+	var plan := {}
+	var color := Color.WHITE
+	var today := false
+
+	func _x(m: int) -> float:
+		return clampf(float(m - Game.DAY_START) / (Game.DAY_END - Game.DAY_START), 0.0, 1.0) * size.x
+
+	func _draw() -> void:
+		if axis:
+			var font := get_theme_default_font()
+			for hh in range(6, 21, 2):
+				var t: String = Game.time_text(hh * 60)
+				var w := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+				draw_string(font, Vector2(clampf(_x(hh * 60) - w / 2.0, 0.0, size.x - w), 18), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, UI.DIM)
+			return
+		draw_rect(Rect2(Vector2.ZERO, size), UI.PANEL)
+		for hh in range(6, 21, 2):
+			draw_line(Vector2(_x(hh * 60), 0), Vector2(_x(hh * 60), size.y), UI.PANEL_EDGE, 1.0)
+		var mid := size.y / 2.0
+		var at: int = plan.get("at", b.from)
+		var leave: int = plan.get("leave", b.from - Game.DRIVE)
+		for x in range(int(_x(leave)), int(_x(at)), 6): # the drive, dashed
+			draw_line(Vector2(x, mid), Vector2(minf(x + 3.0, _x(at)), mid), UI.TEXT, 2.0)
+		draw_rect(Rect2(_x(b.from), mid - 9.0, _x(b.by) - _x(b.from), 18.0), Color(color, 0.45))
+		if plan.has("end") and plan.get("cant", "") == "":
+			draw_rect(Rect2(_x(at), mid - 9.0, maxf(2.0, _x(plan.end) - _x(at)), 18.0), color)
+		if today:
+			draw_rect(Rect2(0, 0, _x(Game.minute), size.y), Color(0, 0, 0, 0.35))
+			draw_line(Vector2(_x(Game.minute), 0), Vector2(_x(Game.minute), size.y), UI.GOLD, 3.0)
+		draw_rect(Rect2(Vector2.ZERO, size), UI.PANEL_EDGE, false, 2.0)

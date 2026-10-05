@@ -4,8 +4,8 @@
 # up goes up). A slider's left and right change its value, so only its up and down count.
 # Screens: the summary (a raise to ask, a month up front, a regular's offer), the desk's
 # day's end with raises to answer, payday (paying, and short with kit to sell), court, the
-# winter, and the places' cards (a van, a helper with no van, a crew mower, the truck, the
-# shop's stock, paused).
+# winter, the places' cards (a van, a helper, a mower, the truck, the shop's stock, paused),
+# and the calendar (a day, who goes, the month; B shuts the list, then goes up to the month).
 extends SceneTree
 
 var g: Node
@@ -141,25 +141,24 @@ func _process(_delta: float) -> bool:
 			s._winter()
 		8:
 			_audit("the winter")
-			g.buy("crew_petrol")
+			g.buy("petrol")
 			g.place = "yard"
 			g.spot = "truck"
 			change_scene_to_file("res://hub.tscn")
 		9:
-			s.use("look in %s" % g.helpers[0].name.split(" ")[0])
+			s.use("look at the van")
 		10:
 			_audit("a van's card")
 			s._close_card()
-			g.set_driver(g.van_of(g.helpers[0].id).id, -1) # out of the van: stood in the yard
 			change_scene_to_file("res://hub.tscn")
 		11:
 			s.use("talk to %s" % g.helpers[0].name.split(" ")[0])
 		12:
-			_audit("a helper with no van")
+			_audit("a helper's card")
 			s._close_card()
-			s.use("look at the crew's petrol mower")
+			s.use("look at the petrol mower")
 		13:
-			_audit("a crew mower")
+			_audit("a mower")
 			s._close_card()
 			s.use("get in your truck")
 		14:
@@ -178,7 +177,32 @@ func _process(_delta: float) -> bool:
 			s.use("look at the petrol mower")
 		17:
 			_audit("the shop's stock")
-			assert(_walked.size() == 15, "every screen walked: %s" % [_walked])
+			for d in [0, 1]: # a day on the calendar: one booking each helper's, one yours
+				var j: Dictionary = g.make_job(60 + d)
+				j.day = g.day + 1
+				j.from = g.WINDOW_START + 120 * d
+				j.by = g.DAY_END
+				g.book(j)
+			g.assign(g.bookings(g.day + 1)[0], g.helpers[0].id)
+			g.place = "office"
+			g.spot = "desk"
+			change_scene_to_file("res://board.tscn")
+		18:
+			s._open_day = g.day + 1
+			s._build()
+		19:
+			_audit("the calendar's day")
+			(s.find_child("Who", true, false) as Button).pressed.emit()
+		20:
+			_audit("who goes")
+			_press("hop")
+		21:
+			assert(s._pick == null and root.gui_get_focus_owner() == s.find_child("Who", true, false), "B shuts the list, back on its booking")
+			_press("hop")
+		22:
+			assert(s._cal_month, "B on a day: its month")
+			_audit("the calendar's month")
+			assert(_walked.size() == 18, "every screen walked: %s" % [_walked])
 			print("PASS pad: %s" % ", ".join(_walked))
 			quit()
 	_step += 1

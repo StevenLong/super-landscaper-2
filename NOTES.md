@@ -184,7 +184,7 @@ the door and the planner; placing by hand). Decided in the design doc (Outside t
 "The hub, redesigned"), rejected options there too. Built in five steps, each green and
 committed, the verifier after each; the dev plays a LOAD after 249 and after 252.
 
-248. [FEATURE, large] Step 1, crew and kit: one pool of kit (no crew kit and yours; a "yours"
+248. [BUILT 2026-10-05, unplayed: LOAD after 249] Step 1, crew and kit: one pool of kit (no crew kit and yours; a "yours"
    mark on a mower's card); people the only thing assigned; helpers away on your clock with
    a van and a mower; the calendar swaps month and day (a Gantt day, the pick list, the
    mower spot); van, mower and helper cards cut down; 246 rides along. Old saves: crew_kit

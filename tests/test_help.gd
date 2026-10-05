@@ -1,8 +1,10 @@
-# Hired help, slice 1 (design doc, The Business: Hired help; NOTES 209): the paper's
-# situations wanted, hired with no van (waiting, on the wage), a van to drive, the wage on Friday, a booking sent to a helper and done
-# off screen on your clock's rules (as many as fit, too late is a no-show), the money and
-# your name moving, a regular who wanted you, mishaps, crew kit, growth and raises, losing
-# a van, the winter layoff, and the save.
+# Hired help (design doc, The Business: Hired help; The hub, redesigned, NOTES 248): the
+# paper's situations wanted, hired with no van (on the wage, can't go), kit as one pool (a
+# van brings a push mower; a helper takes the best free mower when they set off, never one
+# marked yours nor one you've out), the crew's day on your clock (gone from the yard while
+# out, as many bookings as fit, too late is a no-show, no van free and it's yours), the
+# money and your name moving, a regular who wanted you, mishaps, growth and raises, the
+# winter layoff, and the save (old saves' vans and crew mowers into the pool).
 extends SceneTree
 
 var g: Node
@@ -15,32 +17,29 @@ func _initialize() -> void:
 	assert(g.wanted.size() >= 1 and g.wanted.size() <= 3, "the paper's situations wanted: %d" % g.wanted.size())
 	var w: Dictionary = g.wanted[0]
 	assert(w.wage == g.wage_for(w) and w.pace > 0.0 and w.care > 0.0, "each with a pace, a care and an asking wage")
-	# Hired with no van: on the books and the wage, but they can't go out till they've one.
+	# Hired with no van: on the books and the wage, but they can't go out till there's one.
 	var due0: int = g.due()
 	g.money = 5000
 	var m0: int = g.minute
 	g.hire(w)
 	assert(g.helpers.size() == 1 and w not in g.wanted and g.minute == m0 + g.RING_TIME, "rung and hired, no van needed")
 	var h: Dictionary = g.helpers[0]
-	assert(g.van_of(h.id).is_empty() and g.due() == due0 + h.wage, "no van: still their wage on Friday")
-	var early := {"day": g.day, "seed": 1}
+	assert(g.due() == due0 + h.wage, "no van: still their wage on Friday")
+	var early: Dictionary = _job(10, g.WINDOW_START, g.DAY_END)
 	g.assign(early, h.id)
-	assert(not early.has("helper"), "no van: nobody to send")
-	assert(g.buy("van") and g.fleet.size() == 1 and g.money == 5000 - g.VAN.price, "a van from the shop")
-	assert(g.van_of(h.id) == g.fleet[0] and g.kit_of(h) == "push", "the one waiting gets in, on a push mower")
+	assert(g.crew_plan()[early.seed].cant.begins_with("no van free"), "sent with no van: the calendar says they can't go")
+	g._unbook(early)
+	assert(g.buy("van") and g.vans == 1 and g.money == 5000 - g.VAN.price and g.total("push") == 2, "a van from the shop, a push mower with it")
+	assert(g.mine == {"push": 1}, "your first push mower is marked yours")
 
-	# A booking sent out: not on your list; done at the day's end, on the clock's rules.
-	var job: Dictionary = g.make_job(11)
-	job.from = g.WINDOW_START
-	job.by = g.DAY_END
-	g.book(_today(job))
-	var late: Dictionary = g.make_job(12)
-	late.from = g.WINDOW_START + 30 # after the first, so they mow that first and miss this one
-	late.by = g.WINDOW_START + 90
-	g.book(_today(late))
+	# A booking sent out: not on your list; done on the clock's rules, reported at the day's end.
+	var job: Dictionary = _job(11, g.WINDOW_START, g.DAY_END)
+	var late: Dictionary = _job(12, g.WINDOW_START + 30, g.WINDOW_START + 90) # after the first: they mow that first and miss this
 	g.assign(job, h.id)
 	g.assign(late, h.id)
 	assert(g.jobs_today().is_empty(), "sent out: not on your list for today")
+	var plan: Dictionary = g.crew_plan()
+	assert(plan[job.seed].kit == "push" and plan[job.seed].leave == job.from - g.DRIVE, "off on the free push mower, just in time: %s" % [plan[job.seed]])
 	var money: int = g.money
 	var pace: float = h.pace
 	var day: int = g.day
@@ -51,38 +50,82 @@ func _initialize() -> void:
 	assert(g.crew_report.any(func(l: String) -> bool: return l.contains("couldn't get to " + late.customer)), "too late for the second: a no-show")
 	assert(late.customer in g.missed, "and it's yours, missed")
 	assert(g.money != money and h.jobs == 1 and h.pace > 0.4, "the money moved, and they grew")
+	assert(g.crew_trips.is_empty() and g.my_trips.is_empty(), "a new day: nobody out")
 	h.pace = pace
+
+	# The pool: the best free mower, never one marked yours, nor one you've out on a job.
+	g.buy("petrol")
+	var mow: Dictionary = _job(13, g.WINDOW_START + 120, g.DAY_END)
+	g.assign(mow, h.id)
+	assert(g.crew_plan()[mow.seed].kit == "petrol", "a petrol mower in the yard: they take it, the best free")
+	g.mark_mine("petrol", true)
+	assert(g.crew_plan()[mow.seed].kit == "push", "marked yours: they leave it")
+	g.mark_mine("petrol", false)
+	g.set_job_kit(mow, "push")
+	assert(g.crew_plan()[mow.seed].kit == "push", "a booking's own pick, if it's free")
+	g.set_job_kit(mow, "")
+	g.my_trips.append({"from": g.DAY_START, "to": g.DAY_END, "kinds": ["push", "petrol"]})
+	assert(g.crew_plan()[mow.seed].kit == "push", "you've the petrol out on a job: they take the other push mower")
+	g.my_trips.clear()
+	# Gone from the yard while out: their van and mower with them; packing can't have it.
+	g.packed.append({"kind": "petrol", "grid": "bed", "at": Vector2i.ZERO, "turned": false})
+	var leave: int = g.crew_plan()[mow.seed].leave
+	g.minute = leave + 5
+	g.advance_crew()
+	assert(g.out_till(h.id) > g.minute and g.out_now("van") == 1 and g.out_now("petrol") == 1, "set off: out till they're back")
+	assert(not g.free_for_you("petrol") and "petrol" not in g.unpacked(), "their mower's not yours to pack")
+	g.unpack_gone()
+	assert(not g.packed_has("petrol"), "nor still in the truck")
+	assert(not g.let_go(h.id) and g.helpers.size() == 1, "not let go while out on a job")
+	g.assign(mow, -1)
+	assert(mow.get("helper", -1) == h.id, "set off: too late to take it back")
+	g.minute = g.out_till(h.id)
+	g.advance_crew()
+	assert(g.out_till(h.id) < 0 and g.free_for_you("petrol"), "back: in the yard again")
+	# No van free when the next sets off: they don't go, it's yours again, and the day's end says why.
+	var w2 := {"id": 2, "name": "Agnes Crumb", "pace": 0.7, "care": 0.5, "wage": 80}
+	g.wanted.append(w2)
+	g.hire(w2)
+	var h2: Dictionary = g.helpers[1]
+	var a: Dictionary = _job(14, g.minute + 60, g.DAY_END)
+	var b2: Dictionary = _job(15, g.minute + 60, g.DAY_END)
+	g.assign(a, h.id)
+	g.assign(b2, h2.id)
+	assert(g.crew_plan()[b2.seed].cant.begins_with("no van free"), "one van, two going at once: the second can't")
+	g.minute += 60
+	g.advance_crew()
+	assert(not b2.has("helper") and g.crew_cant.size() == 1 and b2 in g.jobs_today(), "the second's yours again")
+	g.end_day()
+	assert(g.crew_report.any(func(l: String) -> bool: return l.contains("couldn't go to " + b2.customer)), "and the day's end says why: %s" % [g.crew_report])
+	g.let_go(h2.id)
+	g.missed.clear()
 
 	# Your own pending offer isn't the crew's to answer (the verifier's find).
 	var mine := {"id": 777, "job": g.make_job(17), "cadence": 14, "rate": 50, "mood": 70.0, "day": g.day, "drift": []}
 	g.offer = mine
-	var sour: Dictionary = g.make_job(18)
-	sour.from = g.WINDOW_START
-	sour.by = g.DAY_END
+	var sour: Dictionary = _job(18, g.WINDOW_START, g.DAY_END)
 	sour.start_mood = 0.0 # it can't win an offer itself
-	g.book(_today(sour))
 	g.assign(sour, h.id)
 	g.end_day()
 	assert(not g.regulars.has(777) and g.offer == mine, "your offer still waits for you")
 	g.offer = {}
-	# A regular won by a helper's job: its visits don't carry the sending (a stale set-off time).
+	# A regular won by a helper's job: its visits don't carry the sending (a stale set-off time, a mower picked).
 	var won: Dictionary = g.make_job(19)
 	won.from = g.WINDOW_START
 	won.by = g.DAY_END
 	won.start_mood = 100.0
-	g.book(_today(won))
-	g.minute = 900
-	g.assign(won, h.id)
-	g.minute = g.DAY_START
 	var tries := 0
 	while not g.regulars.has(won.seed) and tries < 50: # their offer's a chance: send them again till it comes
-		g.end_day()
 		won.erase("helper")
 		g.book(_today(won))
+		g.minute = 900
 		g.assign(won, h.id)
+		g.set_job_kit(won, "push")
+		g.minute = g.DAY_START
+		g.end_day()
 		tries += 1
 	assert(g.regulars.has(won.seed), "won a regular")
-	for k: String in ["sent_at", "helper", "prepaid"]:
+	for k: String in ["sent_at", "helper", "prepaid", "kit"]:
 		assert(not g.regulars[won.seed].job.has(k), "the regular's job doesn't keep %s" % k)
 	g.drop(won.seed)
 	for b: Dictionary in g.bookings():
@@ -113,21 +156,13 @@ func _initialize() -> void:
 		mishaps[1] += int(g.help_job(job, careful, 0.0).has("mishap"))
 	assert(mishaps[1] == 0 and mishaps[0] > 30 and mishaps[0] < 90, "mishaps by care: %s" % [mishaps])
 	# Kit: a petrol mower is quicker than a push.
-	var on_petrol := {"pace": 1.0, "care": 0.5, "kit": "petrol"}
-	assert(g.help_job(job, on_petrol, 0.0).minutes < g.help_job(job, careless, 0.0).minutes, "better kit, quicker")
-	assert(not g.set_kit(h.id, "petrol"), "no crew petrol mower to give")
-	g.buy("crew_petrol")
-	assert(g.set_kit(h.id, "petrol") and g.crew_free("petrol") == 0, "bought one for the crew, given out")
+	assert(g.help_job(job, careless, 0.0, "petrol").minutes < g.help_job(job, careless, 0.0).minutes, "better kit, quicker")
 
 	# Your name climbing doesn't make them ask (NOTES 222): their wage is priced on the name
 	# they answered the ad at.
 	var was_rep: float = g.reputation
 	g.reputation = minf(100.0, g.reputation + 40.0)
-	var pricier: Dictionary = g.make_job(16)
-	pricier.from = g.WINDOW_START
-	pricier.by = g.DAY_END
-	g.book(_today(pricier))
-	g.assign(pricier, h.id)
+	g.assign(_job(16, g.WINDOW_START, g.DAY_END), h.id)
 	g.end_day()
 	assert(not h.has("asks"), "a better name alone: no raise asked (wage $%d, now worth $%d)" % [h.wage, g.wage_for(h)])
 	g.reputation = was_rep
@@ -135,21 +170,13 @@ func _initialize() -> void:
 	# run 9 found pace and care ticking days apart, asks in pairs).
 	h.pace = 1.0
 	h.care = 0.849
-	var care_only: Dictionary = g.make_job(13)
-	care_only.from = g.WINDOW_START
-	care_only.by = g.DAY_END
-	g.book(_today(care_only))
-	g.assign(care_only, h.id)
+	g.assign(_job(13, g.WINDOW_START, g.DAY_END), h.id)
 	g.end_day()
 	assert(g.points_of(h).y == 9 and not h.has("asks"), "care up a point alone: no ask")
 	# A raise: a job that ticks their pace a point up, and they ask; yes pays it.
 	h.pace = 1.149
 	h.care = 0.9
-	var raise: Dictionary = g.make_job(14)
-	raise.from = g.WINDOW_START
-	raise.by = g.DAY_END
-	g.book(_today(raise))
-	g.assign(raise, h.id)
+	g.assign(_job(14, g.WINDOW_START, g.DAY_END), h.id)
 	g.end_day()
 	assert(h.has("asks") and g.crew_report.any(func(l: String) -> bool: return l.contains("asks $%d" % h.asks)), "worth more: they ask")
 	var asks: int = h.asks
@@ -157,16 +184,12 @@ func _initialize() -> void:
 	assert(h.wage == asks and not h.has("asks"), "a yes pays it")
 
 	# A day with only the crew's work in it ends on its own day's end, report and all.
-	var crew_only: Dictionary = g.make_job(15)
-	crew_only.from = g.WINDOW_START
-	crew_only.by = g.DAY_END
-	g.book(_today(crew_only))
-	g.assign(crew_only, h.id)
+	g.assign(_job(15, g.WINDOW_START, g.DAY_END), h.id)
 	day = g.day
 	g.end_day()
 	assert(g.day == day + 1 and g.day_end.day == day and g.day_end.crew.size() == 1 and g.day_end.crew_net != 0, "the crew's day, in its day's end")
 
-	# The heavies take the van: the helper goes, their bookings back to you.
+	# The heavies take the van: the helper stays, their bookings can't go.
 	var kept: Dictionary = g.make_job(16)
 	kept.day = g.day + 1
 	kept.from = g.WINDOW_START
@@ -174,49 +197,74 @@ func _initialize() -> void:
 	g.book(kept)
 	g.assign(kept, h.id)
 	g.sell("van")
-	assert(g.helpers.size() == 1 and g.fleet.is_empty() and not kept.has("helper"), "no van: they stay on, the booking's yours again")
-	assert(g.crew_free("petrol") == 1, "the van's petrol mower back in the yard")
+	assert(g.helpers.size() == 1 and g.vans == 0 and g.crew_plan(kept.day)[kept.seed].cant.begins_with("no van"), "no van: they stay on, and can't go")
+	assert(g.total("push") == 2 and g.total("petrol") == 1, "the van's push mower stays: it's the pool's")
 	g.let_go(h.id)
 
 	# The winter: laid off unpaid; back by how they were treated.
 	g.money = 5000
-	g.buy("van")
-	g.buy("van")
 	g.wanted.assign([{"id": 1, "name": "Keith Pratt", "pace": 0.7, "care": 0.5, "wage": 80}, {"id": 2, "name": "Agnes Crumb", "pace": 0.7, "care": 0.5, "wage": 80}])
 	g.hire(g.wanted[0])
 	g.hire(g.wanted[0])
 	g.helpers[0].happy = 100.0
 	g.helpers[1].happy = 0.0
 	g.helpers[0].pace = 0.9
-	var w2: Dictionary = g.settle_winter()
-	assert(w2.crew_back == ["Keith Pratt"] and w2.crew_gone == ["Agnes Crumb"], "the treated well come back: %s" % [w2])
+	var wint: Dictionary = g.settle_winter()
+	assert(wint.crew_back == ["Keith Pratt"] and wint.crew_gone == ["Agnes Crumb"], "the treated well come back: %s" % [wint])
 	assert(g.helpers.size() == 1 and g.helpers[0].pace == 0.9, "better, as they left")
 
-	# The save keeps the crew.
-	g.set_kit(g.helpers[0].id, "petrol")
+	# The save keeps the crew and the pool.
+	g.buy("van")
+	g.buy("van")
+	g.mark_mine("petrol", true)
 	g.save()
 	g.helpers.clear()
-	g.fleet.clear()
+	g.vans = 0
+	g.spares = {}
+	g.mine = {}
 	g.load_business()
-	assert(g.helpers.size() == 1 and g.fleet.size() == 2 and g.kit_of(g.helpers[0]) == "petrol", "saved and loaded, the mower in its van")
-	# A save from before vans were things: the helpers in them in order, with their mowers.
+	assert(g.helpers.size() == 1 and g.vans == 2 and g.total("push") == 4 and g.mine.get("petrol", 0) == 1, "saved and loaded, the pool and its marks")
+	# A save from before kit was one pool: its vans a count, each with a push mower; the crew's mowers spares.
 	var f := FileAccess.open(g.business_path(), FileAccess.READ)
 	var state: Dictionary = f.get_var()
 	f.close()
-	state.erase("fleet")
-	state.vans = 2
-	state.helpers[0].kit = "petrol"
-	f = FileAccess.open(g.business_path(), FileAccess.WRITE)
-	f.store_var(state)
-	f.close()
+	for k: String in ["vans", "spares", "mine", "crew_trips", "my_trips", "crew_cant"]:
+		state.erase(k)
+	state.owned = ["push"]
+	state.fleet = [{"id": 0, "helper": g.helpers[0].id, "kit": "petrol"}, {"id": 1, "helper": -1, "kit": "push"}]
+	state.crew_kit = {"petrol": 1, "rideon": 1}
+	_write(state)
 	g.load_business()
-	assert(g.fleet.size() == 2 and g.fleet[0].helper == g.helpers[0].id and g.fleet[0].kit == "petrol" and g.fleet[1].helper == -1
-		and not g.helpers[0].has("kit"), "an old save: two vans, the helper in the first with their mower")
+	assert(g.vans == 2 and g.total("push") == 3 and g.total("petrol") == 1 and g.total("rideon") == 1 and g.mine == {"push": 1},
+		"an old save: two vans, a push mower each, the crew's mowers in the pool")
+	# Older still: vans a count, a helper's kit their own.
+	state.erase("fleet")
+	state.erase("crew_kit")
+	state.vans = 1
+	state.helpers[0].kit = "petrol"
+	_write(state)
+	g.load_business()
+	assert(g.vans == 1 and g.total("petrol") == 1 and g.total("push") == 2 and not g.helpers[0].has("kit"), "an older save: the helper's petrol mower into the pool")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(g.business_path()))
 	print("PASS help")
 	quit()
 
 
+## A booking today, from `from` to `by`.
+func _job(n: int, from: int, by: int) -> Dictionary:
+	var j: Dictionary = g.make_job(n)
+	j.from = from
+	j.by = by
+	g.book(_today(j))
+	return j
+
+
 func _today(j: Dictionary) -> Dictionary:
 	j.day = g.day
 	return j
+
+
+func _write(state: Dictionary) -> void:
+	var f := FileAccess.open(g.business_path(), FileAccess.WRITE)
+	f.store_var(state)
+	f.close()

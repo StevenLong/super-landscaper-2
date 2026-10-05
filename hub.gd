@@ -33,6 +33,7 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred("res://board.tscn") # the desk has it to read
 		return
 	Sfx.music("music_menu")
+	Game.advance_crew() # whoever's due off has gone, van, mower and all
 	_world = Node2D.new()
 	_world.y_sort_enabled = true
 	add_child(_world)
@@ -220,7 +221,8 @@ func _yard() -> void:
 	_standing()
 	var lay := Game.yard_layout()
 	for p: Dictionary in lay.placed:
-		_yard_item(p.item, Vector2(p.at) * CELL, Vector2(p.size) * CELL)
+		if not _out(p.item): # out with the crew: its room stands empty till it's back
+			_yard_item(p.item, Vector2(p.at) * CELL, Vector2(p.size) * CELL)
 	var x := 0.0 # what's got no room, stood about below the floor
 	for it: Dictionary in lay.over:
 		var sz := Vector2(Game.FOOT[it.kind]) * CELL
@@ -236,6 +238,16 @@ func _yard() -> void:
 	_spawn(truck_at + Vector2(-10, 30) if Game.spot == "truck" else Vector2(wide + 60, 14))
 
 
+## Whether a van or a mower in the yard is out with the crew now: the last of its kind
+## not marked yours (the crew never take those).
+func _out(it: Dictionary) -> bool:
+	if it.kind == "van":
+		return it.n >= Game.vans - Game.out_now("van")
+	if Game.HELP_SECS.has(it.kind):
+		return it.n >= Game.total(it.kind) - Game.out_now(it.kind)
+	return false
+
+
 ## A van, a mower or a robot on the yard's floor, its sprite standing in its cells.
 func _yard_item(it: Dictionary, at: Vector2, sz: Vector2) -> void:
 	var foot := at + Vector2(sz.x / 2.0, sz.y)
@@ -244,13 +256,13 @@ func _yard_item(it: Dictionary, at: Vector2, sz: Vector2) -> void:
 	var paint := Callable()
 	match it.kind:
 		"van":
-			hint = "look in %s" % _van_name(Game.van(it.van))
+			hint = "look at the van"
 			tex = preload("res://art/van.png")
 		"robot":
 			hint = "look at the robot mower"
 			paint = func(on: Node2D) -> void: Robot.draw(on, Vector2(0, -10))
 		_:
-			hint = "look at %s %s" % ["the crew's" if it.get("crew", false) else "your", Game.MOWERS[it.kind].name.to_lower()]
+			hint = "look at %s %s" % ["your" if it.get("mine", false) else "the", Game.MOWERS[it.kind].name.to_lower()]
 			var sheet: Texture2D = load("res://art/mower_%s.png" % it.kind)
 			var trailer: Texture2D = preload("res://art/trailer.png") if it.kind == "rideon" else null
 			paint = func(on: Node2D) -> void:
@@ -258,30 +270,8 @@ func _yard_item(it: Dictionary, at: Vector2, sz: Vector2) -> void:
 					on.draw_texture(trailer, Vector2(-trailer.get_width() / 2.0, -trailer.get_height() + 4))
 				Facing.draw(on, sheet, 3, 2, 0.0, Vector2(0, -24.0 if trailer else -12.0))
 	var n := _thing(foot - Vector2(0, 1), Vector2(sz.x - 4, sz.y - 2), hint, _yard_card.bind(it), tex, paint)
-	if it.kind == "van":
-		var v := Game.van(it.van)
-		var h := Game.helper(v.helper)
-		var kit := "" if v.kit == "push" else (", petrol" if v.kit == "petrol" else ", ride-on")
-		_tag(n, (h.name.split(" ")[0] + (" !" if h.has("asks") else "") if not h.is_empty() else "empty") + kit, Vector2(0, -108),
-			UI.GOLD if h.has("asks") else TAG)
-	elif it.get("crew", false):
-		var v := _rideon_van(it)
-		var who := Game.helper(v.get("helper", -1))
-		_tag(n, "crew" + (": " + who.name.split(" ")[0] if not who.is_empty() else (": a van" if not v.is_empty() else "")), Vector2(0, -44))
-
-
-## "Derek's van", or "the empty van".
-func _van_name(v: Dictionary) -> String:
-	var h := Game.helper(v.get("helper", -1))
-	return h.name.split(" ")[0] + "'s van" if not h.is_empty() else "the empty van"
-
-
-## The van a crew ride-on on the floor is given to (they stay on their trailers in the yard), or {}.
-func _rideon_van(it: Dictionary) -> Dictionary:
-	if it.kind != "rideon":
-		return {}
-	var on := Game.fleet.filter(func(v: Dictionary) -> bool: return v.kit == "rideon")
-	return on[it.n] if it.n < on.size() else {}
+	if it.get("mine", false):
+		_tag(n, "yours", Vector2(0, -44))
 
 
 ## The card for something in the yard: what it is, and what you can do with it.
@@ -291,89 +281,52 @@ func _yard_card(it: Dictionary) -> void:
 	var title := ""
 	match it.kind:
 		"van":
-			var v := Game.van(it.van)
-			var h := Game.helper(v.helper)
-			title = h.name + "'s van" if not h.is_empty() else "An empty van"
-			if h.is_empty():
-				lines.append("Nobody's driving it.")
-				for hh: Dictionary in Game.helpers:
-					var from := Game.van_of(hh.id)
-					acts.append(["Put %s in it%s" % [hh.name.split(" ")[0], " (out of their van)" if not from.is_empty() else ""],
-						func() -> void: Game.set_driver(v.id, hh.id)])
-				if Game.helpers.is_empty():
-					lines.append("Ring a situation wanted in the paper to hire someone.")
-			else:
-				_helper_lines(h, lines, acts)
-				acts.append(["%s steps out of the van" % h.name.split(" ")[0], func() -> void: Game.set_driver(v.id, -1)])
-				acts.append(["Let %s go (the van stays)" % h.name.split(" ")[0], func() -> void: Game.let_go(h.id)])
-			lines.append("Its mower: %s%s." % [Game.MOWERS[v.kit].name.to_lower(), " (on its trailer in the yard)" if v.kit == "rideon" else ""])
-			if v.kit != "push":
-				var free: bool = v.kit == "rideon" or Game.yard_room(v.kit)
-				acts.append(["Take the %s out" % Game.MOWERS[v.kit].name.to_lower() if free else "No room in the yard for its mower",
-					func() -> void: Game.set_van_kit(v.id, "push"), not free])
-			for kind: String in ["petrol", "rideon"]:
-				if v.kit != kind and Game.crew_free(kind) > 0:
-					var stuck: bool = v.kit == "petrol" and not Game.yard_room("petrol")
-					acts.append(["Put the crew's %s in it%s" % [Game.MOWERS[kind].name.to_lower(), " (no room in the yard for its petrol mower)" if stuck else ""],
-						func() -> void: Game.set_van_kit(v.id, kind), stuck])
-			lines.append("Takes %s in the yard." % _cells("van"))
-			var also: Array[String] = []
-			if not h.is_empty():
-				also.append("%s steps out" % h.name.split(" ")[0])
-			if v.kit != "push":
-				also.append("its mower to the yard")
-			acts.append(["Sell the van, $%d%s" % [Game.resale("van"), " (%s)" % ", ".join(also) if also else ""], func() -> void: Game.sell_van(v.id)])
+			title = Game.VAN.name
+			lines.append("A helper takes a free one when they set off for a job.")
+			lines.append("You've %d%s." % [Game.vans, ", %d out now" % Game.out_now("van") if Game.out_now("van") > 0 else ""])
+			acts.append(["Sell it, $%d" % Game.resale("van"), func() -> void: Game.sell("van")])
 		"robot":
 			title = Game.ROBOT.name
 			lines.append(Game.ROBOT.blurb + " You pack it in the truck's bed, or the trailer.")
-			lines.append("Takes %s in the yard." % _cells("robot"))
 			if "trailer" not in Game.upgrades:
 				_upgrade(acts, "trailer")
 			acts.append(["Sell it, $%d" % Game.resale("robot"), func() -> void: Game.sell("robot")])
 		_:
 			var m: Dictionary = Game.MOWERS[it.kind]
-			if it.get("crew", false):
-				title = "The crew's " + m.name.to_lower()
-				lines.append(m.blurb + " A helper on it mows quicker.")
-				var given := _rideon_van(it)
-				if not given.is_empty():
-					lines.append("It goes out with %s." % _van_name(given))
-					acts.append(["Take it off %s" % _van_name(given), func() -> void: Game.set_van_kit(given.id, "push")])
-				else:
-					for v: Dictionary in Game.fleet:
-						if v.kit != it.kind:
-							acts.append(["Put it in %s" % _van_name(v), func() -> void: Game.set_van_kit(v.id, it.kind)])
-					if Game.fleet.is_empty():
-						lines.append("It goes out in a van: buy one at the shop.")
-				acts.append(["Sell it, $%d" % Game.resale("crew_" + it.kind), func() -> void:
-					if not given.is_empty():
-						Game.set_van_kit(given.id, "push") # this one, off its van, not another
-					Game.sell("crew_" + it.kind)])
-			else:
-				title = "Your " + m.name.to_lower()
-				lines.append(m.blurb + (" It rides in the cab." if it.kind == "push" else " Packed in the truck before each job."))
-				for u: String in ["tank", "blades"] + (["gear3", "gear4"] if it.kind == "rideon" else []):
-					_upgrade(acts, u)
-				if it.kind != "push":
-					acts.append(["Sell it, $%d" % Game.resale(it.kind), func() -> void: Game.sell(it.kind)])
-			lines.append("Takes %s in the yard." % _cells(it.kind))
+			title = ("Your " if it.mine else "A ") + m.name.to_lower()
+			lines.append(m.blurb + (" It rides in the cab." if it.kind == "push" else " Packed in the truck before each job."))
+			lines.append("Marked yours: the crew never take it." if it.mine else "The crew take it if it's the best free when they set off.")
+			acts.append(["Let the crew use it" if it.mine else "Mark it yours", func() -> void: Game.mark_mine(it.kind, not it.mine)])
+			for u: String in ["tank", "blades"] + (["gear3", "gear4"] if it.kind == "rideon" else []):
+				_upgrade(acts, u)
+			if it.kind != "push":
+				acts.append(["Sell it, $%d" % Game.resale(it.kind), func() -> void: Game.sell(it.kind)])
+	lines.append("Takes %s in the yard." % _cells(it.kind))
 	_open_card(title, lines, acts)
 
 
-## A helper on their card: how good, their wage, a raise they've asked for.
+## A helper on their card: how good, their wage, a raise they've asked for, today.
 func _helper_lines(h: Dictionary, lines: Array[String], acts: Array) -> void:
 	lines.append("%s. $%d a week, %d job%s done." % [Game.card_text(h).capitalize(), h.wage, h.jobs, "" if h.jobs == 1 else "s"])
 	if h.has("asks"):
 		lines.append("Asking $%d a week." % h.asks)
 		acts.append(["Pay it", func() -> void: Game.answer_raise(h.id, true)])
 		acts.append(["Say no", func() -> void: Game.answer_raise(h.id, false)])
+	var plan := Game.crew_plan()
+	var today: Array[String] = []
+	for b: Dictionary in Game.help_on(h.id):
+		var p: Dictionary = plan.get(b.seed, {})
+		today.append("%s at %s" % [b.customer, Game.time_text(b.from)] + (" (%s)" % p.cant if p.get("cant", "") != "" else ""))
+	lines.append("Today: " + (", ".join(today) if today else "nothing. Send them on the calendar."))
+	if Game.vans == 0:
+		lines.append("No van: they can't go out to jobs. Buy one at the shop.")
 
 
-## The crew without a van, stood about by the office door: talk to one for their card.
+## The crew who aren't out on a job, stood about by the office door: talk to one for their card.
 func _standing() -> void:
 	var i := 0
 	for h: Dictionary in Game.helpers:
-		if not Game.van_of(h.id).is_empty():
+		if Game.out_till(h.id) >= 0:
 			continue
 		var sheet := preload("res://art/walker.png")
 		@warning_ignore("integer_division")
@@ -389,15 +342,6 @@ func _standing_card(h: Dictionary) -> void:
 	var lines: Array[String] = []
 	var acts: Array = []
 	_helper_lines(h, lines, acts)
-	lines.append("No van: they can't go out to jobs. Still on the wage.")
-	var empties := Game.fleet.filter(func(v: Dictionary) -> bool: return v.helper < 0)
-	for k in empties.size():
-		var v: Dictionary = empties[k]
-		acts.append(["Into the empty van%s%s" % [" %d" % (k + 1) if empties.size() > 1 else "",
-			"" if v.kit == "push" else " (with the crew's %s)" % Game.MOWERS[v.kit].name.to_lower()],
-			func() -> void: Game.set_driver(v.id, h.id)])
-	if Game.fleet.all(func(v: Dictionary) -> bool: return v.helper >= 0):
-		lines.append("Every van has a driver: buy another at the shop, or swap someone out.")
 	acts.append(["Let %s go" % h.name.split(" ")[0], func() -> void: Game.let_go(h.id)])
 	_open_card(h.name, lines, acts)
 
@@ -505,15 +449,14 @@ func _stock(kind: String, foot: Vector2) -> void:
 	_tag(n, "$%d" % price, Vector2(0, -52))
 
 
-## A thing for sale: what it is, how it compares with yours, the room it takes, and buying
-## it (for you, or once you've one, another for the crew).
+## A thing for sale: what it is, how it compares with yours, the room it takes, and buying it.
 func _stock_card(kind: String) -> void:
 	var lines: Array[String] = []
 	var acts: Array = []
 	var title := ""
 	if kind == "van":
 		title = Game.VAN.name
-		lines.append(Game.VAN.blurb + " You've %d." % Game.fleet.size())
+		lines.append(Game.VAN.blurb + " You've %d. A push mower comes with it." % Game.vans)
 		_buy(acts, "van", "Buy it")
 	elif kind == "robot":
 		title = Game.ROBOT.name
@@ -533,12 +476,8 @@ func _stock_card(kind: String) -> void:
 		if kind == "rideon" and "trailer" not in Game.upgrades:
 			lines.append("Comes with a trailer to tow it.")
 		if kind in Game.owned:
-			lines.append("You've got one. Another would be the crew's.")
-			_buy(acts, "crew_" + kind, "Buy one for the crew")
-		else:
-			_buy(acts, kind, "Buy it")
-			if not Game.fleet.is_empty():
-				_buy(acts, "crew_" + kind, "Buy one for the crew")
+			lines.append("You've %d. Another goes in with them: you or the crew take whichever's free." % Game.total(kind))
+		_buy(acts, kind, "Buy it" if kind not in Game.owned else "Buy another")
 	lines.append("Takes %s in your yard." % _cells(kind))
 	_open_card(title, lines, acts)
 
@@ -594,7 +533,7 @@ func _covers(n: Node2D, at: Vector2) -> bool:
 func _mark_covering() -> void:
 	for th: Dictionary in _things:
 		for other: Dictionary in _things:
-			if other != th and not (other.hint as String).begins_with("look in") 					and _covers(th.node, (other.node as Node2D).position + Vector2(0, -6)):
+			if other != th and not (other.hint as String).begins_with("look at the van") 					and _covers(th.node, (other.node as Node2D).position + Vector2(0, -6)):
 				th.covering = true
 
 
@@ -669,7 +608,7 @@ func _open_card(title: String, lines: Array[String], acts: Array) -> void:
 		box.add_child(b)
 		if first == null and not b.disabled:
 			first = b
-	var back := UI.button("Back (%s)" % Game.key("hop"), _close_card, 20)
+	var back := UI.button("Back " + Game.key("hop"), _close_card, 20)
 	back.name = "CardBack"
 	box.add_child(back)
 	var p := UI.panel(box)
