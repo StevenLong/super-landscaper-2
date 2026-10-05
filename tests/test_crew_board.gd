@@ -84,6 +84,15 @@ func _process(_delta: float) -> bool:
 			var b: Dictionary = g.bookings(g.day + 1)[0]
 			assert(b.get("helper", -1) == h.id and s.find_child("WhoMenu", true, false) == null, "sent, the list shut")
 			assert(_texts().has(h.name.split(" ")[0]), "their name on the row")
+			# The mower: best free, then each kind the crew can take (not one marked yours).
+			assert(s._next_kit("") == "push" and s._next_kit("push") == "", "only push mowers to step through")
+			g.buy("petrol")
+			g.mark_mine("petrol", true)
+			assert(s._next_kit("push") == "", "a petrol marked yours isn't one to pick")
+			g.set_job_kit(b, "petrol")
+			s._build()
+			assert((s.find_child("Mower", true, false) as Button).text == "Push\n(petrol not free)", "a pick that isn't free says so")
+			g.set_job_kit(b, "")
 			s._to_month()
 			var dots := (s.find_child("Tile_%d" % (g.day + 1), true, false) as Node).find_children("*", "ColorRect", true, false)
 			assert(dots.size() == 1 and (dots[0] as ColorRect).color == s._who_color(h.id), "and their colour on the day's tile")

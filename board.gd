@@ -360,7 +360,8 @@ func _row(b: Dictionary, plan: Dictionary) -> Control:
 	if id >= 0:
 		var kit: String = p.get("kit", "")
 		var pick: String = b.get("kit", "")
-		var mower := UI.button("%s\n(%s)" % [_mower_word(kit if kit != "" else pick), "your pick" if pick != "" else "best free"], func() -> void:
+		var why := "best free" if pick == "" else ("your pick" if kit == pick or kit == "" else "%s not free" % _mower_word(pick).to_lower())
+		var mower := UI.button("%s\n(%s)" % [_mower_word(kit if kit != "" else pick), why], func() -> void:
 			Game.set_job_kit(b, _next_kit(pick))
 			_build(row.name)
 			UI.focus(find_child(row.name, true, false).find_child("Mower", true, false)), 18)
@@ -388,11 +389,12 @@ func _mower_word(kind: String) -> String:
 	return {"": "Any mower", "push": "Push", "petrol": "Petrol", "rideon": "Ride-on"}.get(kind, kind)
 
 
-## The mower after `kind` for a booking's pick: the best free (""), then each kind you've got.
+## The mower after `kind` for a booking's pick: the best free (""), then each kind the crew
+## can take (one not marked yours).
 func _next_kit(kind: String) -> String:
 	var kinds: Array[String] = [""]
 	for k: String in ["push", "petrol", "rideon"]:
-		if Game.total(k) > 0:
+		if Game.total(k) - Game.mine.get(k, 0) > 0:
 			kinds.append(k)
 	return kinds[(kinds.find(kind) + 1) % kinds.size()]
 
@@ -440,11 +442,21 @@ func _pick_who(b: Dictionary, from: Button) -> void:
 		if c.focus_mode != Control.FOCUS_NONE:
 			c.set_meta("focus_was", c.focus_mode)
 			c.focus_mode = Control.FOCUS_NONE
-	_pick = UI.panel(box)
-	_pick.name = "WhoMenu"
+	_pick = ColorRect.new() # the shade: a click off the list shuts it
+	_pick.name = "Shade"
+	(_pick as ColorRect).color = Color(0, 0, 0, 0.35)
 	_pick.top_level = true
+	_pick.size = get_viewport_rect().size
+	_pick.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed:
+			var row := _pick_row()
+			_close_pick()
+			UI.focus(row))
 	add_child(_pick)
-	_pick.position = Vector2(minf(from.global_position.x + from.size.x + 8.0, 1280.0 - 600.0), clampf(from.global_position.y, 20.0, 400.0))
+	var panel := UI.panel(box)
+	panel.name = "WhoMenu"
+	_pick.add_child(panel)
+	panel.position = Vector2(minf(from.global_position.x + from.size.x + 8.0, 1280.0 - 600.0), clampf(from.global_position.y, 20.0, 400.0))
 	var on := box.get_child(Game.helpers.find(Game.helper(b.get("helper", -1))) + 1) as Button
 	UI.focus(on if on and not on.disabled else you)
 
@@ -786,6 +798,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_close_pick()
 		UI.focus(row)
 		get_viewport().set_input_as_handled()
+	elif _pick and (event.is_action_pressed("gear_up") or event.is_action_pressed("gear_down") or event.is_action_pressed("pause")):
+		get_viewport().set_input_as_handled() # the list's open: nothing else
 	elif day_open and event.is_action_pressed("hop"): # the day, up to its month
 		get_viewport().set_input_as_handled()
 		_to_month()

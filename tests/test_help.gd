@@ -82,6 +82,8 @@ func _initialize() -> void:
 	g.minute = g.out_till(h.id)
 	g.advance_crew()
 	assert(g.out_till(h.id) < 0 and g.free_for_you("petrol"), "back: in the yard again")
+	assert(not g.let_go(h.id) and g.cant_let_go(h.id).begins_with("they've worked today"),
+		"back, but not let go till the day's done: their job's settled then (the verifier's run 11)")
 	# No van free when the next sets off: they don't go, it's yours again, and the day's end says why.
 	var w2 := {"id": 2, "name": "Agnes Crumb", "pace": 0.7, "care": 0.5, "wage": 80}
 	g.wanted.append(w2)
@@ -99,6 +101,19 @@ func _initialize() -> void:
 	assert(g.crew_report.any(func(l: String) -> bool: return l.contains("couldn't go to " + b2.customer)), "and the day's end says why: %s" % [g.crew_report])
 	g.let_go(h2.id)
 	g.missed.clear()
+
+	# Home between bookings with an hour or more from finishing to the next window; on, with less.
+	var one: Dictionary = _job(20, g.WINDOW_START, g.DAY_END)
+	var two: Dictionary = _job(21, g.WINDOW_START, g.DAY_END)
+	g.assign(one, h.id)
+	g.assign(two, h.id)
+	var done_at: int = g.crew_plan()[one.seed].end
+	for gap: int in [59, 60]:
+		two.from = done_at + gap
+		var p2: Dictionary = g.crew_plan()[two.seed]
+		assert((p2.leave == two.from - g.DRIVE) == (gap >= 60), "a gap of %d: %s" % [gap, "home between" if gap >= 60 else "straight on"])
+	g._unbook(one)
+	g._unbook(two)
 
 	# Your own pending offer isn't the crew's to answer (the verifier's find).
 	var mine := {"id": 777, "job": g.make_job(17), "cadence": 14, "rate": 50, "mood": 70.0, "day": g.day, "drift": []}
@@ -198,7 +213,7 @@ func _initialize() -> void:
 	g.assign(kept, h.id)
 	g.sell("van")
 	assert(g.helpers.size() == 1 and g.vans == 0 and g.crew_plan(kept.day)[kept.seed].cant.begins_with("no van"), "no van: they stay on, and can't go")
-	assert(g.total("push") == 2 and g.total("petrol") == 1, "the van's push mower stays: it's the pool's")
+	assert(g.total("push") == 1 and g.total("petrol") == 1, "the push mower it brought goes with it (the verifier's run 11)")
 	g.let_go(h.id)
 
 	# The winter: laid off unpaid; back by how they were treated.
@@ -223,7 +238,7 @@ func _initialize() -> void:
 	g.spares = {}
 	g.mine = {}
 	g.load_business()
-	assert(g.helpers.size() == 1 and g.vans == 2 and g.total("push") == 4 and g.mine.get("petrol", 0) == 1, "saved and loaded, the pool and its marks")
+	assert(g.helpers.size() == 1 and g.vans == 2 and g.total("push") == 3 and g.mine.get("petrol", 0) == 1, "saved and loaded, the pool and its marks")
 	# A save from before kit was one pool: its vans a count, each with a push mower; the crew's mowers spares.
 	var f := FileAccess.open(g.business_path(), FileAccess.READ)
 	var state: Dictionary = f.get_var()
@@ -237,6 +252,7 @@ func _initialize() -> void:
 	g.load_business()
 	assert(g.vans == 2 and g.total("push") == 3 and g.total("petrol") == 1 and g.total("rideon") == 1 and g.mine == {"push": 1},
 		"an old save: two vans, a push mower each, the crew's mowers in the pool")
+	assert("trailer" in g.upgrades, "the crew's ride-on comes with its trailer, so you can tow it too")
 	# Older still: vans a count, a helper's kit their own.
 	state.erase("fleet")
 	state.erase("crew_kit")

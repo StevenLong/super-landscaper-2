@@ -225,6 +225,8 @@ func _yard() -> void:
 			_yard_item(p.item, Vector2(p.at) * CELL, Vector2(p.size) * CELL)
 	var x := 0.0 # what's got no room, stood about below the floor
 	for it: Dictionary in lay.over:
+		if _out(it):
+			continue
 		var sz := Vector2(Game.FOOT[it.kind]) * CELL
 		_yard_item(it, Vector2(x, depth + 50), sz) # no room for it: over the edge, till it's sold
 		x += sz.x + 10.0
@@ -317,6 +319,9 @@ func _helper_lines(h: Dictionary, lines: Array[String], acts: Array) -> void:
 	for b: Dictionary in Game.help_on(h.id):
 		var p: Dictionary = plan.get(b.seed, {})
 		today.append("%s at %s" % [b.customer, Game.time_text(b.from)] + (" (%s)" % p.cant if p.get("cant", "") != "" else ""))
+	for c: Dictionary in Game.crew_cant:
+		if c.helper == h.id:
+			today.append("%s (couldn't go: %s)" % [c.customer, c.why])
 	lines.append("Today: " + (", ".join(today) if today else "nothing. Send them on the calendar."))
 	if Game.vans == 0:
 		lines.append("No van: they can't go out to jobs. Buy one at the shop.")
@@ -342,7 +347,8 @@ func _standing_card(h: Dictionary) -> void:
 	var lines: Array[String] = []
 	var acts: Array = []
 	_helper_lines(h, lines, acts)
-	acts.append(["Let %s go" % h.name.split(" ")[0], func() -> void: Game.let_go(h.id)])
+	var why := Game.cant_let_go(h.id)
+	acts.append(["Let %s go%s" % [h.name.split(" ")[0], " (%s)" % why if why != "" else ""], func() -> void: Game.let_go(h.id), why != ""])
 	_open_card(h.name, lines, acts)
 
 

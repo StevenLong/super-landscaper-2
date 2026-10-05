@@ -195,6 +195,8 @@ func _process(_delta: float) -> bool:
 			(s.find_child("Who", true, false) as Button).pressed.emit()
 		20:
 			_audit("who goes")
+			_press("gear_up")
+			assert(s._pick != null and s._open_day == g.day + 1, "the shoulders don't get past the list")
 			_press("hop")
 		21:
 			assert(s._pick == null and root.gui_get_focus_owner() == s.find_child("Who", true, false), "B shuts the list, back on its booking")

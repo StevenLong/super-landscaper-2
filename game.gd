@@ -941,10 +941,13 @@ func sellable() -> Array[String]:
 func sell(item: String) -> void:
 	if item == "gear3" and "gear4" in upgrades: # the fourth's no use without the third: it goes too
 		sell("gear4")
-	if item == "van":
+	if item == "van": # the push mower it brought goes with it, if one's in
 		if vans > 0:
 			vans -= 1
 			money += resale(item)
+			if spares.get("push", 0) > 0 and total("push") - out_now("push") > 1:
+				spares.push -= 1
+				mine["push"] = mini(mine.get("push", 0), total("push"))
 		return
 	money += resale(item)
 	if spares.get(item, 0) > 0: # one of several: the rest stay, and a mark stays on as many as are left
@@ -1560,10 +1563,20 @@ func helper(id: int) -> Dictionary:
 	return {}
 
 
-## Let a helper go: their bookings come back to you. Not while they're out on a job.
-func let_go(id: int) -> bool:
+## Why a helper can't be let go now, or "": not while they're out, nor on a day they've
+## been out (their jobs are settled at the day's end, theirs to be paid for).
+func cant_let_go(id: int) -> String:
 	advance_crew()
-	if not out_till(id) < 0:
+	if out_till(id) >= 0:
+		return "out on a job till %s" % time_text(out_till(id))
+	if crew_trips.any(func(t: Dictionary) -> bool: return t.helper == id):
+		return "they've worked today: once the day's done"
+	return ""
+
+
+## Let a helper go: their bookings come back to you. Not while out, nor on a day they've worked.
+func let_go(id: int) -> bool:
+	if cant_let_go(id) != "":
 		return false
 	helpers = helpers.filter(func(h: Dictionary) -> bool: return h.id != id)
 	_unsend(id)
@@ -1699,7 +1712,8 @@ func help_on(id: int, d := day) -> Array:
 ## their next booking when it's time (its window less the drive, not before they were sent
 ## or back), with a free van and the best free mower (the booking's own pick if that's
 ## free); a mower marked yours never goes, nor one you've out on a job. From one booking
-## they go on to the next unless there's time to come home between. No van or mower free
+## they go on to the next unless there's time to come home between (an hour or more from
+## finishing to the next window: the drive back, and out again). No van or mower free
 ## (or too late), they don't go. Today's trips already gone are as they went. Returns
 ## {seed: {helper, leave, at, end, over, kit, cant (why they can't go, or "")}} for the
 ## crew's bookings that day. With `until` (today only), the trips setting off by then are
@@ -1766,7 +1780,7 @@ func crew_plan(d := day, until := -1) -> Dictionary:
 			plan[b.seed] = {"helper": who, "leave": leave, "at": j.at, "end": j.at + ceili(j.minutes), "over": j.over, "kit": kit,
 				"cant": "too late to get there" if j.has("late") else ""}
 			var rest: Array = left[who]
-			if rest.is_empty() or rest[0].from - DRIVE >= t + 2 * DRIVE or rest[0].get("sent_at", DAY_START) > t:
+			if rest.is_empty() or rest[0].from - DRIVE >= t + DRIVE or rest[0].get("sent_at", DAY_START) > t:
 				break # home between, or nothing more
 			b = rest.pop_front()
 		trip.back = t + DRIVE
@@ -1972,6 +1986,8 @@ func load_business() -> void:
 			for hh: Dictionary in helpers:
 				if hh.get("kit", "push") != "push":
 					add_mower(hh.kit)
+		if total("rideon") > 0 and "trailer" not in upgrades: # a ride-on comes with its trailer, as bought
+			upgrades.append("trailer")
 	for hh: Dictionary in helpers:
 		hh.erase("kit")
 	_upgrade_save()
